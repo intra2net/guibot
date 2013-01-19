@@ -1,0 +1,119 @@
+*** Codename: guibender ***
+- GUI automation using computer vision + fuzzy images
+
+*** Desired features ***
+- Ready to use program that can load "scriptlets"
+- Logging
+- Screenshot on error
+- Easy API - similar to sikuli or Xpresser
+- Optional: Send e-mail on error
+- Usable as class or procedural program
+
+- Cmdline Parser + Config Settings
+- unit tests
+
+*** Later / ideas ***
+- Cross-platform: Windows / MacOSX
+    class Image:
+            Image(filename)
+            similar(similarity)
+            exact()
+            get_filename()
+            target_offset(dx, dy)            - offset relative to the center - if any
+            get_target_offset()
+
+    class Region:
+            x
+            y
+            w
+            h
+
+            get_x()
+            get_y()
+            get_w()
+            get_h()
+            get_center()
+
+            get_top_left()
+            get_top_right()
+            get_bottom_left()
+            get_bottom_right()
+
+            inside()
+            nearby(range=50)
+            above(range=0)
+            below(range=0)
+            left(range=0)
+            right(range=0)
+
+            find(Image or filename)
+            find_all(Image or filename)
+            wait(Image or filename, seconds)
+            wait_vanish(Image or filename, seconds)
+            exists(Image or filename, seconds)         - no exception if not found
+
+            Exception FindFailed
+
+            LATER:
+            mouse_down()
+            mouse_up()
+
+            click()
+            double_click()
+            right_click()
+            hover()
+            # LATER: drag()
+            # LATER: dropAt()
+            write(Text)
+            press('<Enter>')
+
+            # LATER: wheel
+            # LATER: key_down()
+            # LATER: key_up()
+
+    class Match(Region):
+        get_target()
+        get_score()
+
+    class Screen
+        get_x()
+        get_y()
+        get_width()
+        get_height()
+
+        capture(Range=none)
+
+*** API commands ***
+All API command functions of 'Region' are also
+exposed in the global namespace.
+
+*** API later on ***
+popup(text[, title])
+- Screen object / multi screen support
+
+
+*** Similar projects ***
+sikuli:
+  - Grandfather of image based GUI automation
+  - Development / maintenance stalled
+  - Java based + dependencies on old libs
+
+xpresser:
+  - similar to sikuli
+  - SCV in bazarr (no fun for me)
+  - more "code" driven
+  - uses SimpleCV / atspi as backend
+    - lots of dependencies
+    - SimpleCV f.e. converts images
+      to greyscale before matching them
+  - every screenshot is saved to disc
+
+libcvautomation:
+  - inspired by sikuli and xpresser
+  - more bash oriented
+  - python wrapper is incompleted as of Januar 2013
+
+dogtail:
+  - atspi driven (no image recognition)
+  - written scripts are more complicated
+    than they need to be

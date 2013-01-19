@@ -1,0 +1,7 @@
+*.pyc
+
+# Backup files and stuff from patches
+*.orig
+*.rej
+*~
+.*.swp
