@@ -75,3 +75,11 @@ class Image:
 
     def get_target_offset(self):
         return self.target_center_offset
+
+    def save(self, filename):
+        self.backend_data.save(filename)
+
+        new_image = self.copy()
+        new_image.filename = filename
+
+        return new_image

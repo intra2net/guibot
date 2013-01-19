@@ -19,6 +19,8 @@ import unittest
 import sys
 sys.path.append('../lib')
 
+from tempfile import NamedTemporaryFile
+
 from image import Image
 
 class ImageTest(unittest.TestCase):
@@ -89,6 +91,17 @@ class ImageTest(unittest.TestCase):
         new_image = image.exact()
         self.assertEqual(1.0, new_image.get_similarity())
         self.assertEqual(Image.DEFAULT_SIMILARITY, image.get_similarity())
+
+    def test_save(self):
+        image = Image(self.example_dir + 'all_shapes.png')
+
+        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            returned_image = image.save(f.name)
+            loaded_image = Image(f.name)
+
+            self.assertEqual(returned_image.filename, loaded_image.filename)
+            self.assertEqual(image.width, loaded_image.width)
+            self.assertEqual(image.height, loaded_image.height)
 
 if __name__ == '__main__':
     unittest.main()
