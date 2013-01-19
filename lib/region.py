@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import Location
+from location import Location
 
 class Region:
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
