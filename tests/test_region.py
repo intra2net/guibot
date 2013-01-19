@@ -20,14 +20,17 @@ import sys
 sys.path.append('../lib')
 
 from region import Region
+from screen import Screen
 
 class RegionTest(unittest.TestCase):
     def test_basic(self):
+        screen = Screen()
+
         region = Region()
         self.assertEqual(0, region.get_x())
         self.assertEqual(0, region.get_y())
-        self.assertEqual(0, region.get_width())
-        self.assertEqual(0, region.get_height())
+        self.assertEqual(screen.get_width(), region.get_width())
+        self.assertEqual(screen.get_height(), region.get_height())
 
         region = Region(10, 20, 300, 200)
         self.assertEqual(10, region.get_x())

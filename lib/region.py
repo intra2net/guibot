@@ -14,13 +14,24 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 from location import Location
+from screen import Screen
 
 class Region:
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
+        self.screen = Screen()
+
         self.xpos = xpos
         self.ypos = ypos
-        self.width = width
-        self.height = height
+
+        if width == 0:
+            self.width = self.screen.get_width()
+        else:
+            self.width = width
+
+        if height == 0:
+            self.height = self.screen.get_height()
+        else:
+            self.height = height
 
     def get_x(self):
         return self.xpos
