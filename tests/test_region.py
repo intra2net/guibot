@@ -61,5 +61,44 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(310, bottom_right.get_x())
         self.assertEqual(220, bottom_right.get_y())
 
+    def test_screen_clipping(self):
+        screen = Screen()
+
+        region = Region(0, 0, 80000, 40000)
+        self.assertEqual(screen.get_width(), region.get_width())
+        self.assertEqual(screen.get_height(), region.get_height())
+
+        region = Region(80000, 40000, 300, 200)
+        self.assertEqual(screen.get_width() - 1, region.get_x())
+        self.assertEqual(screen.get_height() - 1, region.get_y())
+        self.assertEqual(1, region.get_width())
+        self.assertEqual(1, region.get_height())
+
+        region = Region(200, 100, screen.get_width() * 2, screen.get_height() * 2)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(screen.get_width() - region.get_x(), region.get_width())
+        self.assertEqual(screen.get_height() - region.get_y(), region.get_height())
+
+    def test_nearby(self):
+        # TODO
+        pass
+
+    def test_above(self):
+        # TODO
+        pass
+
+    def test_below(self):
+        # TODO
+        pass
+
+    def test_left(self):
+        # TODO
+        pass
+
+    def test_right(self):
+        # TODO
+        pass
+
 if __name__ == '__main__':
     unittest.main()

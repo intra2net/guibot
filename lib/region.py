@@ -33,6 +33,30 @@ class Region:
         else:
             self.height = height
 
+        self._ensure_screen_clipping()
+
+    def _ensure_screen_clipping(self):
+        screen_width = self.screen.get_width()
+        screen_height = self.screen.get_height()
+
+        if self.xpos < 0:
+            self.xpos = 0
+
+        if self.ypos < 0:
+            self.ypos = 0
+
+        if self.xpos > screen_width:
+            self.xpos = screen_width -1
+
+        if self.ypos > screen_height:
+            self.ypos = screen_height -1
+
+        if self.xpos + self.width > screen_width:
+            self.width = screen_width - self.xpos
+
+        if self.ypos + self.height > screen_height:
+            self.height = screen_height - self.ypos
+
     def get_x(self):
         return self.xpos
 
@@ -62,3 +86,23 @@ class Region:
 
     def get_bottom_right(self):
         return Location(self.xpos + self.width, self.ypos + self.height)
+
+    def nearby(self, range=50):
+        # TODO
+        self._ensure_screen_clipping()
+
+    def above(self, range=0):
+        # TODO
+        self._ensure_screen_clipping()
+
+    def below(self, range=0):
+        # TODO
+        self._ensure_screen_clipping()
+
+    def left(self, range=0):
+        # TODO
+        self._ensure_screen_clipping()
+
+    def right(self, range=0):
+        # TODO
+        self._ensure_screen_clipping()

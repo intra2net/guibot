@@ -12,6 +12,11 @@
 - Cmdline Parser + Config Settings
 - unit tests
 
+*** Dependencies ***
+- autopy
+Later:
+    - python-imaging for intenal Image storage
+
 *** Later / ideas ***
 - Cross-platform: Windows / MacOSX
     class Image:
@@ -23,23 +28,6 @@
             get_target_offset()
 
     class Region:
-            x
-            y
-            w
-            h
-
-            get_x()
-            get_y()
-            get_w()
-            get_h()
-            get_center()
-
-            get_top_left()
-            get_top_right()
-            get_bottom_left()
-            get_bottom_right()
-
-            inside()
             nearby(range=50)
             above(range=0)
             below(range=0)
