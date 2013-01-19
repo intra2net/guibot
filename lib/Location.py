@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright 2013 Intranet AG / Thomas Jarosch
 #
 # guibender is free software: you can redistribute it and/or modify
@@ -14,19 +13,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-from lib import Region
+class Location:
+    def __init__(self, x_pos, y_pos):
+        self.xpos = x_pos
+        self.ypos = y_pos
 
-class GuiBender(object):
-    def execute_scriptlet(self, filename):
-        pass
+    def get_x(self):
+        return self.xpos
 
-    def double_click(self):
-        pass
-
-    def main(self):
-        # TODO: cmdline argument parsing
-        # TODO: Config file parsing
-
-if __name__ == '__main__':
-    BENDER = GuiBender()
-    BENDER.main()
+    def get_y(self):
+        return self.ypos
