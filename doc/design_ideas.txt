@@ -10,10 +10,9 @@
 - Usable as class or procedural program
 
 - Cmdline Parser + Config Settings
-- unit tests
 
 *** Dependencies ***
-- autopy
+- autopy (autopy.org)
 Later:
     - python-imaging for intenal Image storage
 
@@ -28,12 +27,6 @@ Later:
             get_target_offset()
 
     class Region:
-            nearby(range=50)
-            above(range=0)
-            below(range=0)
-            left(range=0)
-            right(range=0)
-
             find(Image or filename)
             find_all(Image or filename)
             wait(Image or filename, seconds)

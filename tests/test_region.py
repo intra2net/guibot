@@ -180,8 +180,6 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(screen_height - region.get_y(), region.get_height())
 
     def test_left(self):
-        screen_width = Screen().get_width()
-
         region = Region(200, 100, 20, 10).left(50)
         self.assertEqual(150, region.get_x())
         self.assertEqual(100, region.get_y())

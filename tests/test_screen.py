@@ -19,10 +19,9 @@ import unittest
 import sys
 sys.path.append('../lib')
 
-from region import Region
 from screen import Screen
 
-class RegionTest(unittest.TestCase):
+class ScreenTest(unittest.TestCase):
     def test_basic(self):
         screen = Screen()
 
