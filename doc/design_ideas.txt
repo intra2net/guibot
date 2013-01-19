@@ -15,17 +15,12 @@
 - autopy (autopy.org)
 Later:
     - python-imaging for intenal Image storage
+    - Cross-platform: Windows / MacOSX
+    - docstrings everywhere
+    - RPM package
+    - Documentation
 
 *** Later / ideas ***
-- Cross-platform: Windows / MacOSX
-    class Image:
-            Image(filename)
-            similar(similarity)
-            exact()
-            get_filename()
-            target_offset(dx, dy)            - offset relative to the center - if any
-            get_target_offset()
-
     class Region:
             find(Image or filename)
             find_all(Image or filename)
