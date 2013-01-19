@@ -14,7 +14,6 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 from location import Location
-from screen import Screen
 
 class Region:
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
@@ -147,3 +146,7 @@ class Region:
 
         # Final clipping is done in the Region constructor
         return Region(self.xpos, self.ypos, new_width, self.height)
+
+
+# break circular dependency
+from screen import Screen
