@@ -88,21 +88,62 @@ class Region:
         return Location(self.xpos + self.width, self.ypos + self.height)
 
     def nearby(self, range=50):
-        # TODO
-        self._ensure_screen_clipping()
+        new_xpos = self.xpos - range
+        if new_xpos < 0:
+            new_xpos = 0
+
+        new_ypos = self.ypos - range
+        if new_ypos < 0:
+            new_ypos = 0
+
+        new_width = self.width + range + self.xpos - new_xpos
+        new_height = self.height + range + self.ypos - new_ypos
+
+        # Final clipping is done in the Region constructor
+        return Region(new_xpos, new_ypos, new_width, new_height)
 
     def above(self, range=0):
-        # TODO
-        self._ensure_screen_clipping()
+        if range == 0:
+            new_ypos = 0
+            new_height = self.ypos + self.height
+        else:
+            new_ypos = self.ypos - range
+            if new_ypos < 0:
+                new_ypos = 0
+
+            new_height = self.height + self.ypos - new_ypos
+
+        # Final clipping is done in the Region constructor
+        return Region(self.xpos, new_ypos, self.width, new_height)
 
     def below(self, range=0):
-        # TODO
-        self._ensure_screen_clipping()
+        if range == 0:
+            range = self.screen.get_height()
+
+        new_height = self.height + range
+
+        # Final clipping is done in the Region constructor
+        return Region(self.xpos, self.ypos, self.width, new_height)
 
     def left(self, range=0):
-        # TODO
-        self._ensure_screen_clipping()
+        if range == 0:
+            new_xpos = 0
+            new_width = self.xpos + self.width
+        else:
+            new_xpos = self.xpos - range
+            if new_xpos < 0:
+                new_xpos = 0
+
+            new_width = self.width + self.xpos - new_xpos
+
+        # Final clipping is done in the Region constructor
+        return Region(new_xpos, self.ypos, new_width, self.height)
 
     def right(self, range=0):
-        # TODO
-        self._ensure_screen_clipping()
+        if range == 0:
+            range = self.screen.get_width()
+
+        new_width = self.width + range
+
+        # Final clipping is done in the Region constructor
+        return Region(self.xpos, self.ypos, new_width, self.height)

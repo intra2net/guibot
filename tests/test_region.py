@@ -24,13 +24,14 @@ from screen import Screen
 
 class RegionTest(unittest.TestCase):
     def test_basic(self):
-        screen = Screen()
+        screen_width = Screen().get_width()
+        screen_height = Screen().get_height()
 
         region = Region()
         self.assertEqual(0, region.get_x())
         self.assertEqual(0, region.get_y())
-        self.assertEqual(screen.get_width(), region.get_width())
-        self.assertEqual(screen.get_height(), region.get_height())
+        self.assertEqual(screen_width, region.get_width())
+        self.assertEqual(screen_height, region.get_height())
 
         region = Region(10, 20, 300, 200)
         self.assertEqual(10, region.get_x())
@@ -62,43 +63,165 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(220, bottom_right.get_y())
 
     def test_screen_clipping(self):
-        screen = Screen()
+        screen_width = Screen().get_width()
+        screen_height = Screen().get_height()
 
         region = Region(0, 0, 80000, 40000)
-        self.assertEqual(screen.get_width(), region.get_width())
-        self.assertEqual(screen.get_height(), region.get_height())
+        self.assertEqual(screen_width, region.get_width())
+        self.assertEqual(screen_height, region.get_height())
 
         region = Region(80000, 40000, 300, 200)
-        self.assertEqual(screen.get_width() - 1, region.get_x())
-        self.assertEqual(screen.get_height() - 1, region.get_y())
+        self.assertEqual(screen_width - 1, region.get_x())
+        self.assertEqual(screen_height - 1, region.get_y())
         self.assertEqual(1, region.get_width())
         self.assertEqual(1, region.get_height())
 
-        region = Region(200, 100, screen.get_width() * 2, screen.get_height() * 2)
+        region = Region(200, 100, screen_width * 2, screen_height * 2)
         self.assertEqual(200, region.get_x())
         self.assertEqual(100, region.get_y())
-        self.assertEqual(screen.get_width() - region.get_x(), region.get_width())
-        self.assertEqual(screen.get_height() - region.get_y(), region.get_height())
+        self.assertEqual(screen_width - region.get_x(), region.get_width())
+        self.assertEqual(screen_height - region.get_y(), region.get_height())
 
     def test_nearby(self):
-        # TODO
-        pass
+        screen_width = Screen().get_width()
+        screen_height = Screen().get_height()
+
+        # defaults to 50 pixels
+        region = Region(200, 100, 20, 10).nearby()
+        self.assertEqual(150, region.get_x())
+        self.assertEqual(50, region.get_y())
+        self.assertEqual(120, region.get_width())
+        self.assertEqual(110, region.get_height())
+
+        region = Region(200, 100, 20, 10).nearby(range=80000)
+        self.assertEqual(0, region.get_x())
+        self.assertEqual(0, region.get_y())
+        self.assertEqual(screen_width, region.get_width())
+        self.assertEqual(screen_height, region.get_height())
+
+        region = Region(200, 100, 20, 10).nearby(range=0)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(20, region.get_width())
+        self.assertEqual(10, region.get_height())
+
+    def test_nearby_clipping(self):
+        screen_width = Screen().get_width()
+        screen_height = Screen().get_height()
+
+        # clip upper side
+        region = Region(200, 100, 20, 10).nearby(range=150)
+        self.assertEqual(50, region.get_x())
+        self.assertEqual(0, region.get_y())
+        self.assertEqual(320, region.get_width())
+        self.assertEqual(260, region.get_height())
+
+        # clip lower side
+        region = Region(200, screen_height - 30, 20, 10).nearby(range=50)
+        self.assertEqual(150, region.get_x())
+        self.assertEqual(screen_height - 30 - 50, region.get_y())
+        self.assertEqual(120, region.get_width())
+        self.assertEqual(80, region.get_height())
+
+        # clip left side
+        region = Region(20, 100, 30, 10).nearby(range=50)
+        self.assertEqual(0, region.get_x())
+        self.assertEqual(50, region.get_y())
+        self.assertEqual(100, region.get_width())
+        self.assertEqual(110, region.get_height())
+
+        # clip right side
+        region = Region(screen_width - 30, 100, 20, 10).nearby(range=50)
+        self.assertEqual(screen_width - 30 - 50, region.get_x())
+        self.assertEqual(50, region.get_y())
+        self.assertEqual(80, region.get_width())
+        self.assertEqual(110, region.get_height())
 
     def test_above(self):
-        # TODO
-        pass
+        region = Region(200, 100, 20, 10).above(50)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(50, region.get_y())
+        self.assertEqual(20, region.get_width())
+        self.assertEqual(60, region.get_height())
+
+        region = Region(200, 100, 20, 10).above(80000)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(0, region.get_y())
+        self.assertEqual(20, region.get_width())
+        self.assertEqual(110, region.get_height())
+
+        # extend to full screen above
+        region = Region(200, 100, 20, 10).above()
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(0, region.get_y())
+        self.assertEqual(20, region.get_width())
+        self.assertEqual(110, region.get_height())
 
     def test_below(self):
-        # TODO
-        pass
+        screen_height = Screen().get_height()
+
+        region = Region(200, 100, 20, 10).below(50)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(20, region.get_width())
+        self.assertEqual(60, region.get_height())
+
+        region = Region(200, 100, 20, 10).below(80000)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(20, region.get_width())
+        self.assertEqual(screen_height - region.get_y(), region.get_height())
+
+        # extend to full screen below
+        region = Region(200, 100, 20, 10).below()
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(20, region.get_width())
+        self.assertEqual(screen_height - region.get_y(), region.get_height())
 
     def test_left(self):
-        # TODO
-        pass
+        screen_width = Screen().get_width()
+
+        region = Region(200, 100, 20, 10).left(50)
+        self.assertEqual(150, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(70, region.get_width())
+        self.assertEqual(10, region.get_height())
+
+        region = Region(200, 100, 20, 10).left(80000)
+        self.assertEqual(0, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(220, region.get_width())
+        self.assertEqual(10, region.get_height())
+
+        # extend to full screen above
+        region = Region(200, 100, 20, 10).left()
+        self.assertEqual(0, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(220, region.get_width())
+        self.assertEqual(10, region.get_height())
 
     def test_right(self):
-        # TODO
-        pass
+        screen_width = Screen().get_width()
+
+        region = Region(200, 100, 20, 10).right(50)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(70, region.get_width())
+        self.assertEqual(10, region.get_height())
+
+        region = Region(200, 100, 20, 10).right(80000)
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(screen_width - region.get_x(), region.get_width())
+        self.assertEqual(10, region.get_height())
+
+        # extend to full screen above
+        region = Region(200, 100, 20, 10).right()
+        self.assertEqual(200, region.get_x())
+        self.assertEqual(100, region.get_y())
+        self.assertEqual(screen_width - region.get_x(), region.get_width())
+        self.assertEqual(10, region.get_height())
 
 if __name__ == '__main__':
     unittest.main()
