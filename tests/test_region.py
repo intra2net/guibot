@@ -22,6 +22,7 @@ import time
 sys.path.append('../lib')
 
 from region import Region
+from match import Match
 from screen import Screen
 from image import Image
 from errors import *
@@ -110,6 +111,19 @@ class RegionTest(unittest.TestCase):
             self.fail('exception was not thrown')
         except FindError, e:
             pass
+
+    def test_exists(self):
+        self.show_image('all_shapes.png')
+
+        match = Region().find(Image(self.example_dir + 'shape_blue_circle.png'))
+        self.assertTrue(isinstance(match, Match))
+
+        self.close_windows()
+
+        match = Region().exists(Image(self.example_dir + 'shape_blue_circle.png'))
+        self.assertEqual(None, match)
+
+        self.close_windows()
 
     def test_hover(self):
         # Hover over Location

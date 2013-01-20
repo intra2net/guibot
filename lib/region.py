@@ -177,6 +177,14 @@ class Region(object):
 
         raise FindError()
 
+    def exists(self, image, timeout=0):
+        try:
+            return self.find(self, image, timeout)
+        except:
+            pass
+
+        return None
+
     def wait(self, image, timeout=30):
         return self.find(image, timeout)
 
@@ -225,14 +233,12 @@ class Region(object):
     # List of API functions to implement:
     #
     # find_all(Image or filename)
-    # exists(Image or filename, seconds)         - no exception if not found
     # wait_vanish(Image or filename, seconds)
     #
     # drag_drop(image, image, key_modifiers)
     # drag(image)
     # dropAt(image)
     #
-    # 
 
 # break circular dependency
 from screen import Screen
