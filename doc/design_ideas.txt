@@ -22,30 +22,20 @@ Later:
 
 *** Later / ideas ***
     class Region:
-            wait(Image or filename, seconds)
-            wait_vanish(Image or filename, seconds)
-            exists(Image or filename, seconds)         - no exception if not found
             find_all(Image or filename)
+            exists(Image or filename, seconds)         - no exception if not found
+            wait_vanish(Image or filename, seconds)
 
             LATER:
             mouse_down()
             mouse_up()
 
-            double_click()
-            right_click()
-
             # LATER: drag()
             # LATER: dropAt()
-            write(Text)
-            press('<Enter>')
 
             # LATER: wheel
             # LATER: key_down()
             # LATER: key_up()
-
-    class Match(Region):
-        get_target()
-        get_score()
 
 *** API commands ***
 All API command functions of 'Region' are also

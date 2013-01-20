@@ -181,7 +181,7 @@ class Region(object):
         except AttributeError:
             mouse.smooth_move(xpos_or_location, ypos)
 
-    def hover(self, image_or_location, ypos=0):
+    def hover(self, image_or_location):
         # Handle Location
         try:
             self._move_mouse(image_or_location.get_x(), image_or_location.get_y())
@@ -189,23 +189,34 @@ class Region(object):
         except AttributeError:
             pass
 
-        # Handle direct coordinate specification
-        if isinstance(image_or_location, (int, long)):
-            self._move_mouse(image_or_location, ypos)
-            return
-
         # Find image
         # TODO: Save last match?
         match = self.find(image_or_location)
         self._move_mouse(match.get_target())
 
-    def click(self, image_or_location, ypos=0):
-        self.hover(image_or_location, ypos)
+    def click(self, image_or_location):
+        self.hover(image_or_location)
         mouse.click()
 
-    def right_click(self, image_or_location, ypos=0):
+    def right_click(self, image_or_location):
         self.hover(image_or_location, ypos)
         mouse.right_click()
+
+    def double_click(self, image_or_location):
+        self.hover(image_or_location, ypos)
+        # TODO: Implement me
+        raise GuiBenderError()
+
+    # TODO: Implement key modifiers like SHIFT
+    def write(self, image_or_location, text):
+        # TODO: Implement me
+        raise GuiBenderError()
+
+    # TODO: Implement key modifiers like SHIFT
+    # Press key combinations
+    def press(self, image_or_location, text):
+        # TODO: Implement me
+        raise GuiBenderError()
 
 # break circular dependency
 from screen import Screen

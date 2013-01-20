@@ -115,10 +115,9 @@ class RegionTest(unittest.TestCase):
         # Hover over image filename
         Region().hover(self.example_dir + 'shape_green_box.png')
 
-        # Hover to specific coordinates
-        Region().hover(0, 0)
-
     # TODO: Test click() and right_click()
+    #       Implement a PyQT app for this
+    #       and fork it off as a python subprocess
 
 if __name__ == '__main__':
     unittest.main()
