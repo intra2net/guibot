@@ -31,6 +31,9 @@ class RegionTest(unittest.TestCase):
     def setUp(self):
         self.example_dir = '../examples/images/'
 
+    def tearDown(self):
+        self.close_windows()
+
     def test_basic(self):
         screen_width = Screen().get_width()
         screen_height = Screen().get_height()
@@ -86,8 +89,6 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(last_match.get_width(), match.get_width())
         self.assertEqual(last_match.get_height(), match.get_height())
 
-        self.close_windows()
-
     def test_find_target_offset(self):
         self.show_image('all_shapes.png')
 
@@ -102,8 +103,6 @@ class RegionTest(unittest.TestCase):
         match_offset = Region().find(Image(self.example_dir + 'shape_blue_circle.png').target_offset(-50, -30))
         self.assertEqual(match.get_target().get_x() - 50, match_offset.get_target().get_x())
         self.assertEqual(match.get_target().get_y() - 30, match_offset.get_target().get_y())
-
-        self.close_windows()
 
     def test_find_error(self):
         try:
@@ -139,8 +138,6 @@ class RegionTest(unittest.TestCase):
 
         # Hover over image filename
         Region().hover(self.example_dir + 'shape_green_box.png')
-
-        self.close_windows()
 
     # TODO: Test click() and right_click()
     #       Implement a PyQT app for this
