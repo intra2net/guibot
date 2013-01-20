@@ -160,13 +160,13 @@ class Region(object):
         if isinstance(image, basestring):
             image = Image(image)
 
-        autopy_screenshot = self.screen.capture().get_backend_data()
         autopy_needle = image.get_backend_data()
         autopy_tolerance = 1.0 - image.get_similarity()
 
         # TODO: Handle zero timeout without sleep()
         expires = time.time() + timeout
         while time.time() < expires:
+            autopy_screenshot = self.screen.capture().get_backend_data()
             coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((self.xpos, self.ypos), (self.width, self.height)))
             if coord is not None:
                 self.last_match = Match(coord[0], coord[1], image)
