@@ -20,23 +20,6 @@ Later:
     - RPM package
     - Documentation
 
-*** Later / ideas ***
-    class Region:
-            find_all(Image or filename)
-            exists(Image or filename, seconds)         - no exception if not found
-            wait_vanish(Image or filename, seconds)
-
-            LATER:
-            mouse_down()
-            mouse_up()
-
-            # LATER: drag()
-            # LATER: dropAt()
-
-            # LATER: wheel
-            # LATER: key_down()
-            # LATER: key_up()
-
 *** API commands ***
 All API command functions of 'Region' are also
 exposed in the global namespace.
@@ -44,7 +27,6 @@ exposed in the global namespace.
 *** API later on ***
 popup(text[, title])
 - Screen object / multi screen support
-
 
 *** Similar projects ***
 sikuli:

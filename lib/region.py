@@ -222,6 +222,18 @@ class Region(object):
         # TODO: Implement me
         raise GuiBenderError()
 
+    # List of API functions to implement:
+    #
+    # find_all(Image or filename)
+    # exists(Image or filename, seconds)         - no exception if not found
+    # wait_vanish(Image or filename, seconds)
+    #
+    # drag_drop(image, image, key_modifiers)
+    # drag(image)
+    # dropAt(image)
+    #
+    # 
+
 # break circular dependency
 from screen import Screen
 from match import Match
