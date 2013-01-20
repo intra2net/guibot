@@ -213,7 +213,7 @@ class Region(object):
         # Handle Location
         try:
             self._move_mouse(image_or_location.get_x(), image_or_location.get_y())
-            return
+            return None
         except AttributeError:
             pass
 
@@ -221,18 +221,23 @@ class Region(object):
         match = self.find(image_or_location)
         self._move_mouse(match.get_target())
 
+        return match
+
     def click(self, image_or_location):
-        self.hover(image_or_location)
+        match = self.hover(image_or_location)
         mouse.click()
+        return match
 
     def right_click(self, image_or_location):
-        self.hover(image_or_location)
-        mouse.click(button=mouse.RIGHT_BUTTON)
+        match = self.hover(image_or_location)
+        mouse.click(mouse.RIGHT_BUTTON)
+        return match
 
     def double_click(self, image_or_location):
-        self.hover(image_or_location)
+        match = self.hover(image_or_location)
         # TODO: Implement me
         raise GuiBenderError()
+        return match
 
     # TODO: Implement key modifiers like SHIFT
     def write(self, image_or_location, text):
