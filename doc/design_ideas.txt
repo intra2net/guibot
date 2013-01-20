@@ -51,14 +51,6 @@ Later:
         get_target()
         get_score()
 
-    class Screen
-        get_x()
-        get_y()
-        get_width()
-        get_height()
-
-        capture(Range=none)
-
 *** API commands ***
 All API command functions of 'Region' are also
 exposed in the global namespace.

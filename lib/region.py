@@ -14,8 +14,10 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 from location import Location
+from image import Image
+from errors import FindError
 
-class Region:
+class Region(object):
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
         self.screen = Screen()
 
@@ -147,6 +149,25 @@ class Region:
         # Final clipping is done in the Region constructor
         return Region(self.xpos, self.ypos, new_width, self.height)
 
+    def find(self, image, timeout=10):
+        # TODO: Replace fullscreen capture with capture of the Rect only
+        #       We should translate the coordinates to the full screen ones afterwards
+        autopy_screenshot = self.screen.capture().get_backend_data()
+        autopy_needle = image.get_backend_data()
+        autopy_tolerance = 1.0 - image.get_similarity()
+
+        # TODO: Implement wait for timeout loop
+        # TODO: Limit to Rect
+        coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, None)
+        if coord is not None:
+            # TODO: Take center point shift into account
+            return Match(coord[0], coord[1], image.get_width(), image.get_height())
+        else:
+            raise FindError()
+
+    def wait(self, image, timeout=30):
+        return self.find(image, timeout)
 
 # break circular dependency
 from screen import Screen
+from match import Match

@@ -103,5 +103,7 @@ class ImageTest(unittest.TestCase):
             self.assertEqual(image.width, loaded_image.width)
             self.assertEqual(image.height, loaded_image.height)
 
+    # TODO: Test exception on non-existing / permission denied image
+
 if __name__ == '__main__':
     unittest.main()
