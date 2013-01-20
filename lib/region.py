@@ -179,7 +179,7 @@ class Region(object):
 
     def exists(self, image, timeout=0):
         try:
-            return self.find(self, image, timeout)
+            return self.find(image, timeout)
         except:
             pass
 
@@ -223,11 +223,11 @@ class Region(object):
         mouse.click()
 
     def right_click(self, image_or_location):
-        self.hover(image_or_location, ypos)
-        mouse.right_click()
+        self.hover(image_or_location)
+        mouse.click(button=mouse.RIGHT_BUTTON)
 
     def double_click(self, image_or_location):
-        self.hover(image_or_location, ypos)
+        self.hover(image_or_location)
         # TODO: Implement me
         raise GuiBenderError()
 
