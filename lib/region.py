@@ -22,6 +22,7 @@ from autopy import mouse
 class Region(object):
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
         self.screen = Screen()
+        self.last_match = None
 
         self.xpos = xpos
         self.ypos = ypos
@@ -151,6 +152,9 @@ class Region(object):
         # Final clipping is done in the Region constructor
         return Region(self.xpos, self.ypos, new_width, self.height)
 
+    def get_last_match(self):
+        return self.last_match
+
     def find(self, image, timeout=10):
         # Load image if needed
         if isinstance(image, basestring):
@@ -165,7 +169,8 @@ class Region(object):
         while time.time() < expires:
             coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((self.xpos, self.ypos), (self.width, self.height)))
             if coord is not None:
-                return Match(coord[0], coord[1], image)
+                self.last_match = Match(coord[0], coord[1], image)
+                return self.last_match
 
             # don't hog the CPU
             time.sleep(0.2)
@@ -190,7 +195,6 @@ class Region(object):
             pass
 
         # Find image
-        # TODO: Save last match?
         match = self.find(image_or_location)
         self._move_mouse(match.get_target())
 

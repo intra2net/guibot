@@ -67,15 +67,23 @@ class RegionTest(unittest.TestCase):
         self.show_image('all_shapes.png')
 
         # TODO: Implement/use image finder
-        match = Region().find(Image(self.example_dir + 'shape_blue_circle.png'))
+        region = Region()
+        match = region.find(Image(self.example_dir + 'shape_blue_circle.png'))
 
         self.assertEqual(165, match.get_width())
         self.assertEqual(151, match.get_height())
 
         # Match again - this time just pass a filename
-        match = Region().find(self.example_dir + 'shape_pink_box.png')
+        match = region.find(self.example_dir + 'shape_pink_box.png')
         self.assertEqual(69, match.get_width())
         self.assertEqual(48, match.get_height())
+
+        # Test get_last_match()
+        last_match = region.get_last_match()
+        self.assertEqual(last_match.get_x(), match.get_x())
+        self.assertEqual(last_match.get_y(), match.get_y())
+        self.assertEqual(last_match.get_width(), match.get_width())
+        self.assertEqual(last_match.get_height(), match.get_height())
 
         self.close_windows()
 
