@@ -31,10 +31,9 @@ Later:
             mouse_down()
             mouse_up()
 
-            click()
             double_click()
             right_click()
-            hover()
+
             # LATER: drag()
             # LATER: dropAt()
             write(Text)

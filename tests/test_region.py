@@ -103,5 +103,22 @@ class RegionTest(unittest.TestCase):
         except FindError, e:
             pass
 
+    def test_hover(self):
+        # Hover over Location
+        self.show_image('all_shapes.png')
+        match = Region().find(Image(self.example_dir + 'shape_blue_circle.png'))
+        match.hover(match.get_target())
+
+        # Hover over Image with 50% similarity
+        Region().hover(Image(self.example_dir + 'shape_pink_box.png').similarity(0.5))
+
+        # Hover over image filename
+        Region().hover(self.example_dir + 'shape_green_box.png')
+
+        # Hover to specific coordinates
+        Region().hover(0, 0)
+
+    # TODO: Test click() and right_click()
+
 if __name__ == '__main__':
     unittest.main()

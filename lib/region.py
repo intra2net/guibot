@@ -17,6 +17,7 @@ import time
 from location import Location
 from image import Image
 from errors import FindError
+from autopy import mouse
 
 class Region(object):
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
@@ -151,6 +152,7 @@ class Region(object):
         return Region(self.xpos, self.ypos, new_width, self.height)
 
     def find(self, image, timeout=10):
+        # Load image if needed
         if isinstance(image, basestring):
             image = Image(image)
 
@@ -172,6 +174,38 @@ class Region(object):
 
     def wait(self, image, timeout=30):
         return self.find(image, timeout)
+
+    def _move_mouse(self, xpos_or_location, ypos=0):
+        try:
+            mouse.smooth_move(xpos_or_location.get_x(), xpos_or_location.get_y())
+        except AttributeError:
+            mouse.smooth_move(xpos_or_location, ypos)
+
+    def hover(self, image_or_location, ypos=0):
+        # Handle Location
+        try:
+            self._move_mouse(image_or_location.get_x(), image_or_location.get_y())
+            return
+        except AttributeError:
+            pass
+
+        # Handle direct coordinate specification
+        if isinstance(image_or_location, (int, long)):
+            self._move_mouse(image_or_location, ypos)
+            return
+
+        # Find image
+        # TODO: Save last match?
+        match = self.find(image_or_location)
+        self._move_mouse(match.get_target())
+
+    def click(self, image_or_location, ypos=0):
+        self.hover(image_or_location, ypos)
+        mouse.click()
+
+    def right_click(self, image_or_location, ypos=0):
+        self.hover(image_or_location, ypos)
+        mouse.right_click()
 
 # break circular dependency
 from screen import Screen

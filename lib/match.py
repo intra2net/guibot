@@ -19,7 +19,7 @@ from location import Location
 
 class Match(Region):
     def __init__(self, xpos, ypos, image):
-        super(Region,self).__init__()
+        super(Match,self).__init__()
 
         self.xpos = xpos
         self.ypos = ypos
