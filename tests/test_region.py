@@ -125,6 +125,9 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
+        # TODO: Own unit test for wait_vanish()
+        self.assertTrue(Region().wait_vanish('all_shapes.png'))
+
     def test_hover(self):
         # Hover over Location
         self.show_image('all_shapes.png')
@@ -137,9 +140,12 @@ class RegionTest(unittest.TestCase):
         # Hover over image filename
         Region().hover(self.example_dir + 'shape_green_box.png')
 
+        self.close_windows()
+
     # TODO: Test click() and right_click()
     #       Implement a PyQT app for this
     #       and fork it off as a python subprocess
+    # Also test: wait() and wait_vanish() via PyQT app
 
 if __name__ == '__main__':
     unittest.main()

@@ -188,6 +188,18 @@ class Region(object):
     def wait(self, image, timeout=30):
         return self.find(image, timeout)
 
+    def wait_vanish(self, image, timeout=30):
+        expires = time.time() + timeout
+        while time.time() < expires:
+            if self.exists(image, 0) is None:
+                return True
+
+            # don't hog the CPU
+            time.sleep(0.2)
+
+        # image is still there
+        return False
+
     def _move_mouse(self, xpos_or_location, ypos=0):
         try:
             mouse.smooth_move(xpos_or_location.get_x(), xpos_or_location.get_y())
