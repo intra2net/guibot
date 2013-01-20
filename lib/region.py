@@ -235,8 +235,12 @@ class Region(object):
 
     def double_click(self, image_or_location):
         match = self.hover(image_or_location)
-        # TODO: Implement me
-        raise GuiBenderError()
+
+        mouse.click()
+        # TODO: Make double click speed configurable
+        time.sleep(0.1)
+        mouse.click()
+
         return match
 
     # TODO: Implement key modifiers like SHIFT

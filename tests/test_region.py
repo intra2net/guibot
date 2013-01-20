@@ -158,7 +158,16 @@ class RegionTest(unittest.TestCase):
         # TODO: Wait timeout?
         self.assertEqual(0, child_pipe.wait())
 
-    # TODO: Also test: wait() and wait_vanish() via PyQT app
+    def test_double_click(self):
+        # TODO: Figure out script path relative to our own path
+        child_pipe = subprocess.Popen(['python', 'qt4_guitest.py'])
+
+        Region().double_click(Image('images/qt4gui_double_click.png').target_offset(0,-30))
+
+        # TODO: Wait timeout?
+        self.assertEqual(0, child_pipe.wait())
+
+# TODO: Also test: wait() and wait_vanish() via PyQT app
 
 if __name__ == '__main__':
     unittest.main()
