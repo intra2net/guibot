@@ -175,6 +175,9 @@ class Region(object):
             # don't hog the CPU
             time.sleep(0.2)
 
+        # TODO: Turn this into a setting / make it optional
+        autopy_screenshot.save('/tmp/guibender_last_finderror.png')
+        autopy_needle.save('/tmp/guibender_last_finderror_needle.png')
         raise FindError()
 
     def exists(self, image, timeout=0):
