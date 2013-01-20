@@ -151,20 +151,16 @@ class Region(object):
         return Region(self.xpos, self.ypos, new_width, self.height)
 
     def find(self, image, timeout=10):
-        # TODO: Replace fullscreen capture with capture of the Rect only
-        #       We should translate the coordinates to the full screen ones afterwards
         autopy_screenshot = self.screen.capture().get_backend_data()
         autopy_needle = image.get_backend_data()
         autopy_tolerance = 1.0 - image.get_similarity()
 
-        # TODO: Limit search area to rect
         # TODO: Handle zero timeout without sleep()
         expires = time.time() + timeout
         while time.time() < expires:
-            coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, None)
+            coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((self.xpos, self.ypos), (self.width, self.height)))
             if coord is not None:
-                # TODO: Take center point shift into account
-                return Match(coord[0], coord[1], image.get_width(), image.get_height())
+                return Match(coord[0], coord[1], image)
 
             # don't hog the CPU
             time.sleep(0.2)

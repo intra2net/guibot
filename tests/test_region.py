@@ -54,6 +54,9 @@ class RegionTest(unittest.TestCase):
         for i in range(1, 100):
             cv.WaitKey(2)
 
+        # Wait a bit so we can move the window
+        # cv.WaitKey(2000)
+
     def close_windows(self):
         cv.DestroyAllWindows()
         # Process event loop
@@ -68,6 +71,23 @@ class RegionTest(unittest.TestCase):
 
         self.assertEqual(165, match.get_width())
         self.assertEqual(151, match.get_height())
+
+        self.close_windows()
+
+    def test_find_target_offset(self):
+        self.show_image('all_shapes.png')
+
+        match = Region().find(Image(self.example_dir + 'shape_blue_circle.png'))
+
+        # Positive target offset
+        match_offset = Region().find(Image(self.example_dir + 'shape_blue_circle.png').target_offset(200, 100))
+        self.assertEqual(match.get_target().get_x() + 200, match_offset.get_target().get_x())
+        self.assertEqual(match.get_target().get_y() + 100, match_offset.get_target().get_y())
+
+        # Positive target offset
+        match_offset = Region().find(Image(self.example_dir + 'shape_blue_circle.png').target_offset(-50, -30))
+        self.assertEqual(match.get_target().get_x() - 50, match_offset.get_target().get_x())
+        self.assertEqual(match.get_target().get_y() - 30, match_offset.get_target().get_y())
 
         self.close_windows()
 
