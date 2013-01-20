@@ -73,7 +73,7 @@ class RegionTest(unittest.TestCase):
 
     def test_find_error(self):
         try:
-            Region().find(Image(self.example_dir + 'shape_blue_circle.png'))
+            Region().find(Image(self.example_dir + 'shape_blue_circle.png'), 0)
             self.fail('exception was not thrown')
         except FindError, e:
             pass

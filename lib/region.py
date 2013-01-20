@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
+import time
 from location import Location
 from image import Image
 from errors import FindError
@@ -156,14 +157,19 @@ class Region(object):
         autopy_needle = image.get_backend_data()
         autopy_tolerance = 1.0 - image.get_similarity()
 
-        # TODO: Implement wait for timeout loop
-        # TODO: Limit to Rect
-        coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, None)
-        if coord is not None:
-            # TODO: Take center point shift into account
-            return Match(coord[0], coord[1], image.get_width(), image.get_height())
-        else:
-            raise FindError()
+        # TODO: Limit search area to rect
+        # TODO: Handle zero timeout without sleep()
+        expires = time.time() + timeout
+        while time.time() < expires:
+            coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, None)
+            if coord is not None:
+                # TODO: Take center point shift into account
+                return Match(coord[0], coord[1], image.get_width(), image.get_height())
+
+            # don't hog the CPU
+            time.sleep(0.2)
+
+        raise FindError()
 
     def wait(self, image, timeout=30):
         return self.find(image, timeout)
