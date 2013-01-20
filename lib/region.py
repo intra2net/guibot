@@ -151,6 +151,9 @@ class Region(object):
         return Region(self.xpos, self.ypos, new_width, self.height)
 
     def find(self, image, timeout=10):
+        if isinstance(image, basestring):
+            image = Image(image)
+
         autopy_screenshot = self.screen.capture().get_backend_data()
         autopy_needle = image.get_backend_data()
         autopy_tolerance = 1.0 - image.get_similarity()

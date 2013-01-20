@@ -72,6 +72,11 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(165, match.get_width())
         self.assertEqual(151, match.get_height())
 
+        # Match again - this time just pass a filename
+        match = Region().find(self.example_dir + 'shape_pink_box.png')
+        self.assertEqual(69, match.get_width())
+        self.assertEqual(48, match.get_height())
+
         self.close_windows()
 
     def test_find_target_offset(self):

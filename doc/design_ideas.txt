@@ -22,13 +22,10 @@ Later:
 
 *** Later / ideas ***
     class Region:
-            find(Image or filename)
-            find_all(Image or filename)
             wait(Image or filename, seconds)
             wait_vanish(Image or filename, seconds)
             exists(Image or filename, seconds)         - no exception if not found
-
-            Exception FindFailed
+            find_all(Image or filename)
 
             LATER:
             mouse_down()
