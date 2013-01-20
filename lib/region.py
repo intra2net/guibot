@@ -163,21 +163,25 @@ class Region(object):
         autopy_needle = image.get_backend_data()
         autopy_tolerance = 1.0 - image.get_similarity()
 
-        # TODO: Handle zero timeout without sleep()
-        expires = time.time() + timeout
-        while time.time() < expires:
+        timeout_limit = time.time() + timeout
+        while True:
             autopy_screenshot = self.screen.capture().get_backend_data()
             coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((self.xpos, self.ypos), (self.width, self.height)))
             if coord is not None:
                 self.last_match = Match(coord[0], coord[1], image)
                 return self.last_match
 
+            if time.time() > timeout_limit:
+                # TODO: Turn this into a setting / make it optional
+                autopy_screenshot.save('/tmp/guibender_last_finderror.png')
+                autopy_needle.save('/tmp/guibender_last_finderror_needle.png')
+
+                break
+
             # don't hog the CPU
+            # TODO: Make 'rescan speed' configurable
             time.sleep(0.2)
 
-        # TODO: Turn this into a setting / make it optional
-        autopy_screenshot.save('/tmp/guibender_last_finderror.png')
-        autopy_needle.save('/tmp/guibender_last_finderror_needle.png')
         raise FindError()
 
     def exists(self, image, timeout=0):
