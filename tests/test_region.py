@@ -19,6 +19,7 @@ import unittest
 import sys
 import cv               # OpenCV
 import time
+import subprocess
 sys.path.append('../lib')
 
 from region import Region
@@ -139,10 +140,25 @@ class RegionTest(unittest.TestCase):
         # Hover over image filename
         Region().hover(self.example_dir + 'shape_green_box.png')
 
-    # TODO: Test click() and right_click()
-    #       Implement a PyQT app for this
-    #       and fork it off as a python subprocess
-    # Also test: wait() and wait_vanish() via PyQT app
+    def test_click(self):
+        # TODO: Figure out script path relative to our own path
+        child_pipe = subprocess.Popen(['python', 'qt4_guitest.py'])
+
+        Region().click('images/qt4gui_button.png')
+        Region().wait_vanish('images/qt4gui_button.png')
+
+        self.assertEqual(0, child_pipe.wait())
+
+    def test_right_click(self):
+        # TODO: Figure out script path relative to our own path
+        child_pipe = subprocess.Popen(['python', 'qt4_guitest.py'])
+
+        Region().right_click('images/qt4gui_contextmenu_label.png').nearby(200).click('images/qt4gui_contextmenu_quit.png')
+
+        # TODO: Wait timeout?
+        self.assertEqual(0, child_pipe.wait())
+
+    # TODO: Also test: wait() and wait_vanish() via PyQT app
 
 if __name__ == '__main__':
     unittest.main()
