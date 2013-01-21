@@ -15,6 +15,7 @@
 #
 import copy
 import os
+import logging
 import PIL.Image
 
 from location import Location

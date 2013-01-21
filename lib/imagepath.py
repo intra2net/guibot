@@ -14,6 +14,7 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
+import logging
 from errors import *
 
 class ImagePath:
