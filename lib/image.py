@@ -15,13 +15,14 @@
 #
 import copy
 import autopy.bitmap
+import os
 from location import Location
 
 class Image:
     DEFAULT_SIMILARITY = 0.8
 
-    def __init__(self, filename_or_Image=None, similarity=DEFAULT_SIMILARITY, backend_data=None):
-        self.filename = filename_or_Image
+    def __init__(self, filename=None, similarity=DEFAULT_SIMILARITY, backend_data=None):
+        self.filename = filename
         self.img_similarity = similarity
         self.backend_data = backend_data
 
@@ -32,7 +33,11 @@ class Image:
         if self.filename is not None and backend_data is None:
             # TODO: Load just once and store in a global ImageCache instance
             # TODO: Abstract out autopy backend into separate backend class
-            # TODO: Implement image "finder"
+            if not os.path.exists(self.filename):
+                new_name = ImageFinder().search_filename(self.filename)
+                if not new_name is None:
+                    self.filename = new_name
+
             self.backend_data = autopy.bitmap.Bitmap.open(self.filename)
 
         # Set width and height
@@ -83,3 +88,5 @@ class Image:
         new_image.filename = filename
 
         return new_image
+
+from imagefinder import ImageFinder

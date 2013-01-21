@@ -15,7 +15,6 @@
 #
 import os
 import autopy.bitmap
-from image import Image
 from errors import *
 
 class ImageFinder:
@@ -57,3 +56,5 @@ class ImageFinder:
 
         self._imageCache[filename] = Image(fullpath)
         return self._imageCache[filename]
+
+from image import Image
