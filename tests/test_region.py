@@ -21,6 +21,7 @@ import time
 import subprocess
 sys.path.append('../lib')
 
+from location import Location
 from region import Region
 from match import Match
 from screen import Screen
@@ -161,6 +162,21 @@ class RegionTest(unittest.TestCase):
 
         # TODO: Wait timeout?
         self.assertEqual(0, child_pipe.wait())
+
+    def test_get_mouse_location(self):
+        Region().hover(Location(0,0))
+
+        pos = Region().get_mouse_location()
+        # Exact match currently not possible, autopy is not pixel perfect.
+        self.assertTrue(pos.get_x() < 5)
+        self.assertTrue(pos.get_y() < 5)
+
+        Region().hover(Location(30,20))
+
+        pos = Region().get_mouse_location()
+        # Exact match currently not possible, autopy is not pixel perfect.
+        self.assertTrue(pos.get_x() > 25 and pos.get_x() < 35)
+        self.assertTrue(pos.get_y() > 15 and pos.get_y() < 25)
 
 # TODO: Also test: wait() and wait_vanish() via PyQT app
 

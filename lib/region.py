@@ -209,9 +209,16 @@ class Region(object):
 
     def _move_mouse(self, xpos_or_location, ypos=0):
         try:
+            # Note: Sometimes this is not pixel perfect.
+            # Need to investigate the autopy source later on
             mouse.smooth_move(xpos_or_location.get_x(), xpos_or_location.get_y())
+            # mouse.move(xpos_or_location.get_x(), xpos_or_location.get_y())
         except AttributeError:
             mouse.smooth_move(xpos_or_location, ypos)
+
+    def get_mouse_location(self):
+        autopy_pos = mouse.get_pos()
+        return Location(autopy_pos[0], autopy_pos[1])
 
     def hover(self, image_or_location):
         # Handle Location
