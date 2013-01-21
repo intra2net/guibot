@@ -16,6 +16,7 @@
 import time
 
 from autopy import mouse
+from autopy import bitmap
 
 # interconnected classes - import only their modules
 # to avoid circular reference
@@ -167,12 +168,18 @@ class Region(object):
         if isinstance(image, basestring):
             image = Image(image)
 
-        autopy_needle = image.get_backend_data()
+        # TODO: Factor out backend and remove loading from file
+        autopy_needle = bitmap.Bitmap.open(image.get_filename())
         autopy_tolerance = 1.0 - image.get_similarity()
 
         timeout_limit = time.time() + timeout
         while True:
-            autopy_screenshot = self.screen.capture().get_backend_data()
+            # TODO: Factor out autopy code
+            # Remove temporary conversion code using files.
+            # This is just an intermediate step for the backend refactoring
+            self.screen.capture().save('/tmp/guibender_temp_screenshot.png')
+            autopy_screenshot = bitmap.Bitmap.open('/tmp/guibender_temp_screenshot.png')
+
             coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((self.xpos, self.ypos), (self.width, self.height)))
             if coord is not None:
                 self.last_match = match.Match(coord[0], coord[1], image)

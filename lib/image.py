@@ -14,8 +14,8 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import copy
-import autopy.bitmap
 import os
+import PIL.Image
 
 from location import Location
 from imagepath import ImagePath
@@ -25,31 +25,30 @@ class Image:
 
     _cache = {}
 
-    def __init__(self, image_filename=None, similarity=DEFAULT_SIMILARITY, backend_data=None):
+    def __init__(self, image_filename=None, similarity=DEFAULT_SIMILARITY, pil_image=None):
         self.filename = image_filename
         self.img_similarity = similarity
-        self.backend_data = backend_data
+        self.pil_image = pil_image
 
         self.width = 0
         self.height = 0
         self.target_center_offset = Location(0, 0)
 
-        if self.filename is not None and backend_data is None:
+        if self.filename is not None and pil_image is None:
             if not os.path.exists(self.filename):
                 self.filename = ImagePath().search(self.filename)
 
             if self.filename in self._cache:
-                self.backend_data = self._cache[self.filename]
+                self.pil_image = self._cache[self.filename]
             else:
                 # load and cache image
-                # TODO: Abstract out autopy backend into separate backend class
-                self.backend_data = autopy.bitmap.Bitmap.open(self.filename)
-                self._cache[self.filename] = self.backend_data
+                self.pil_image = PIL.Image.open(self.filename)
+                self._cache[self.filename] = self.pil_image
 
         # Set width and height
-        if self.backend_data:
-            self.width = self.backend_data.width
-            self.height = self.backend_data.height
+        if self.pil_image:
+            self.width = self.pil_image.size[0]
+            self.height = self.pil_image.size[1]
 
     def copy(self):
         return copy.copy(self)
@@ -63,8 +62,8 @@ class Image:
     def get_height(self):
         return self.height
 
-    def get_backend_data(self):
-        return self.backend_data
+    def get_pil_image(self):
+        return self.pil_image
 
     def get_similarity(self):
         return self.img_similarity
@@ -88,7 +87,7 @@ class Image:
         return self.target_center_offset
 
     def save(self, filename):
-        self.backend_data.save(filename)
+        self.pil_image.save(filename)
 
         new_image = self.copy()
         new_image.filename = filename

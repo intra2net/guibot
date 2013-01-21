@@ -42,7 +42,7 @@ class ImageTest(unittest.TestCase):
         my_copy = image.copy()
         self.assertEqual(image.filename, my_copy.filename)
         self.assertEqual(image.img_similarity, my_copy.img_similarity)
-        self.assertEqual(image.backend_data, my_copy.backend_data)
+        self.assertEqual(image.pil_image, my_copy.pil_image)
         self.assertEqual(image.width, my_copy.width)
         self.assertEqual(image.height, my_copy.height)
         self.assertEqual(image.target_center_offset, my_copy.target_center_offset)
@@ -57,7 +57,7 @@ class ImageTest(unittest.TestCase):
         new_image = image.target_offset(100, 30)
         self.assertEqual(image.filename, new_image.filename)
         self.assertEqual(image.img_similarity, new_image.img_similarity)
-        self.assertEqual(image.backend_data, new_image.backend_data)
+        self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
         self.assertNotEqual(image.target_center_offset, new_image.target_center_offset)
@@ -80,7 +80,7 @@ class ImageTest(unittest.TestCase):
 
         self.assertEqual(image.filename, new_image.filename)
         self.assertNotEqual(image.img_similarity, new_image.img_similarity)
-        self.assertEqual(image.backend_data, new_image.backend_data)
+        self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
         self.assertEqual(image.target_center_offset, new_image.target_center_offset)
@@ -114,13 +114,13 @@ class ImageTest(unittest.TestCase):
         image = Image(self.example_dir + 'all_shapes.png')
 
         second_image = Image(self.example_dir + 'all_shapes.png')
-        self.assertEqual(image.get_backend_data(), second_image.get_backend_data())
+        self.assertEqual(image.get_pil_image(), second_image.get_pil_image())
 
-        # Clear backend cache the hard way
+        # Clear image cache the hard way
         Image()._cache.clear()
 
         third_image = Image(self.example_dir + 'all_shapes.png')
-        self.assertNotEqual(image.get_backend_data(), third_image.get_backend_data())
+        self.assertNotEqual(image.get_pil_image(), third_image.get_pil_image())
 
 if __name__ == '__main__':
     unittest.main()

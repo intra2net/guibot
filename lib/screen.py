@@ -14,6 +14,9 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import autopy.screen
+import PIL.Image
+from tempfile import NamedTemporaryFile
+
 from image import Image
 
 class Screen:
@@ -66,7 +69,12 @@ class Screen:
         if ypos + height > self.height:
             height = self.height - ypos
 
-        autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
+        # TODO: Switch to in-memory conversion. toString()
+        # is a base64 encoded, zlib compressed stream.
+        # Ask autopy author about a get_raw() method.
+        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
+            autopy_bmp.save(f.name)
 
-        return Image(None, Image.DEFAULT_SIMILARITY, autopy_bmp)
-
+            pil_image = PIL.Image.open(f.name)
+            return Image(None, Image.DEFAULT_SIMILARITY, pil_image)
