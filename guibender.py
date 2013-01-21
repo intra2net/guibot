@@ -14,19 +14,57 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-from lib import Region
+import time, sys
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
+
+CONFIG_FILENAME = "guiblender.cfg"
 
 class GuiBender(object):
+    def __init__(self):
+        self.load_config()
+
+    def load_config(self):
+        self.config = configparser.RawConfigParser()
+        success = self.config.read(CONFIG_FILENAME)
+
+        # if no file is found create a default one
+        if(len(success)==0):
+            if(not self.config.has_section('basic_settings')):
+                self.config.add_section('basic_settings')
+            self.config.set('basic_settings', 'file_log_level', logging.INFO)
+            self.config.set('basic_settings', 'console_log_level', logging.INFO)
+            # TODO: optional disable smooth_mouse for speed
+            self.config.set('basic_settings', 'string_setting', 'stringvalue')
+            self.config.set('basic_settings', 'bool_setting', "True")
+            self.save_config()
+
+        try:
+            self.config.get('basic_settings', 'file_log_level')
+            self.config.get('basic_settings', 'console_log_level')
+            self.config.get('basic_settings', 'string_setting')
+            self.config.getboolean('basic_settings', 'bool_setting')
+        except (configparser.NoSectionError, configparser.NoOptionError, ValueError) as ex:
+            print("Could not read config file '%s': %s." % (CONFIG_FILENAME, ex))
+            print("Please change or remove the config file.")
+            sys.exit()
+
+    def save_config(self):
+        with open(CONFIG_FILENAME, 'w') as configfile:
+            self.config.write(configfile)
+            configfile.write("# 0 NOTSET, 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL\n")
+            configfile.write("# Add further custom sections below\n\n")
+
     def execute_scriptlet(self, filename):
         pass
 
     def double_click(self):
         pass
 
-    def main(self):
-        # TODO: cmdline argument parsing
-        # TODO: Config file parsing
-
+# TODO: cmdline argument parsing
 if __name__ == '__main__':
     BENDER = GuiBender()
-    BENDER.main()
+    print "GuiBender instantiated"
+    print "Logging level - " + BENDER.config.get("basic_settings", 'console_log_level')
