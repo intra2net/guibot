@@ -162,7 +162,7 @@ class RegionTest(unittest.TestCase):
         # TODO: Figure out script path relative to our own path
         child_pipe = subprocess.Popen(['python', 'qt4_guitest.py'])
 
-        Region().double_click(Image('images/qt4gui_double_click.png').target_offset(0,-30))
+        Region().double_click(Image('images/qt4gui_double_click.png').target_offset(0,-10))
 
         # TODO: Wait timeout?
         self.assertEqual(0, child_pipe.wait())

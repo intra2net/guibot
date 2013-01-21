@@ -26,20 +26,31 @@ class ControlsWithLayout(QtGui.QWidget):
 
         self.setWindowTitle('guibender test application')
 
+        font_family = 'Helvetica'
+        font_size = 10
+
         button_click = QtGui.QPushButton("Close on click()")
+        button_click.setFixedSize(100, 20)
+        button_click.setStyleSheet('QPushButton { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
         self.connect(button_click, QtCore.SIGNAL('clicked()'),
             QtGui.qApp, QtCore.SLOT('quit()'))
 
         list_view = QtGui.QListWidget()
         list_view.addItem('Double click')
+        list_view.setFixedSize(80, 100)
+        list_view.setFont(QtGui.QFont(font_family, font_size))
+        #list_view.setStyleSheet('QPushButton { font-family: Helvetica; font-size: 10pt; }')
         self.connect(list_view, QtCore.SIGNAL("itemDoubleClicked (QListWidgetItem *)"), QtGui.qApp.quit)
 
         right_click_view = QtGui.QListWidget()
+        right_click_view.setFixedSize(80, 100)
+        right_click_view.setFont(QtGui.QFont(font_family, font_size))
         right_click_view.addItem('Contextmenu')
 
         right_click_view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu);
 
         quit_action = QtGui.QAction("Quit", self)
+        quit_action.setFont(QtGui.QFont(font_family, font_size))
         right_click_view.addAction(quit_action)
         quit_action.triggered.connect(QtGui.qApp.quit)
 
