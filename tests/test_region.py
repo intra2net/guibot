@@ -17,7 +17,6 @@
 
 import unittest
 import sys
-import cv               # OpenCV
 import time
 import subprocess
 sys.path.append('../lib')
@@ -31,6 +30,7 @@ from errors import *
 class RegionTest(unittest.TestCase):
     def setUp(self):
         self.example_dir = '../examples/images/'
+        self.child_show_picture = None
 
     def tearDown(self):
         self.close_windows()
@@ -52,21 +52,13 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(200, region.get_height())
 
     def show_image(self, filename):
-        image=cv.LoadImage(self.example_dir + filename, cv.CV_LOAD_IMAGE_COLOR)
-
-        cv.ShowImage('test_region', image)
-        # Process event loop
-        for i in range(1, 100):
-            cv.WaitKey(2)
-
-        # Wait a bit so we can move the window
-        # cv.WaitKey(2000)
+        self.child_show_picture = subprocess.Popen(['python', 'show_picture.py', self.example_dir + filename])
 
     def close_windows(self):
-        cv.DestroyAllWindows()
-        # Process event loop
-        for i in range(1, 100):
-            cv.WaitKey(2)
+        if self.child_show_picture is not None:
+            self.child_show_picture.kill()
+            self.child_show_picture.wait()
+            self.child_show_picture = None
 
     def test_find(self):
         self.show_image('all_shapes.png')
