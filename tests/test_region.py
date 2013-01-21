@@ -56,9 +56,12 @@ class RegionTest(unittest.TestCase):
 
     def close_windows(self):
         if self.child_show_picture is not None:
-            self.child_show_picture.kill()
+            self.child_show_picture.terminate()
             self.child_show_picture.wait()
             self.child_show_picture = None
+
+            # Hack to make sure app is really closed
+            time.sleep(0.5)
 
     def test_find(self):
         self.show_image('all_shapes.png')
