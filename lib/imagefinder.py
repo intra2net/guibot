@@ -49,32 +49,30 @@ import cv2
 import numpy
 class BackendOpenCV:
     def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
-        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-            haystack.save(f.name)
+        opencv_haystack = numpy.array(haystack.get_pil_image())
+        opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
 
-            # TODO: Use in-memory conversion once this is working
-            opencv_haystack = cv2.imread(f.name)
-            opencv_needle = cv2.imread(needle.get_filename())
+        opencv_needle = numpy.array(needle.get_pil_image())
+        opencv_needle = opencv_needle[:, :, ::-1].copy()
 
-            result = cv2.matchTemplate(opencv_haystack,opencv_needle,cv2.TM_CCOEFF_NORMED)
+        result = cv2.matchTemplate(opencv_haystack,opencv_needle,cv2.TM_CCOEFF_NORMED)
+        minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
 
-            minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+        #print('minVal: ' + str(minVal))
+        #print('minLoc: ' + str(minLoc))
+        #print('maxVal (similarity): '+ str(maxVal))
+        #print('maxLoc (x,y): ' + str(maxLoc))
 
-            #print('minVal: ' + str(minVal))
-            #print('minLoc: ' + str(minLoc))
-            #print('maxVal (similarity): '+ str(maxVal))
-            #print('maxLoc (x,y): ' + str(maxLoc))
+        # TODO: Figure out how the threshold works
+        # need to read openCV documentation
+        if maxVal > similarity:
+            return Location(maxLoc[0], maxLoc[1])
 
-            # TODO: Figure out how the threshold works
-            # need to read openCV documentation
-            if maxVal > similarity:
-                return Location(maxLoc[0], maxLoc[1])
+        # For multiple matches (seen on stackoverflow)
+        #match_indices = numpy.arange(result.size)[(result>similarity).flatten()]
+        #all_matches = numpy.unravel_index(match_indices,result.shape)
 
-            # For multiple matches (seen on stackoverflow)
-            #match_indices = numpy.arange(result.size)[(result>similarity).flatten()]
-            #all_matches = numpy.unravel_index(match_indices,result.shape)
-
-            return None
+        return None
 
 class ImageFinder:
     _backend = None

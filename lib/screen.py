@@ -70,5 +70,5 @@ class Screen:
             autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
             autopy_bmp.save(f.name)
 
-            pil_image = PIL.Image.open(f.name)
+            pil_image = PIL.Image.open(f.name).convert('RGB')
             return Image(None, Image.DEFAULT_SIMILARITY, pil_image)

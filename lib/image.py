@@ -43,7 +43,7 @@ class Image:
                 self.pil_image = self._cache[self.filename]
             else:
                 # load and cache image
-                self.pil_image = PIL.Image.open(self.filename)
+                self.pil_image = PIL.Image.open(self.filename).convert('RGB')
                 self._cache[self.filename] = self.pil_image
 
         # Set width and height
