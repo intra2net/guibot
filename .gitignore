@@ -1,4 +1,6 @@
 *.pyc
+*.log
+*.cfg
 
 # Backup files and stuff from patches
 *.orig
