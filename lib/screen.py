@@ -62,5 +62,3 @@ class Screen:
 
         return Image(None, Image.DEFAULT_SIMILARITY, autopy_bmp)
 
-# break circular dependency
-from region import Region

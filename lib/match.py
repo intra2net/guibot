@@ -13,14 +13,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-from region import Region
+
+# interconnected classes - import only their modules
+# to avoid circular reference
+import region
+
 from image import Image
 from location import Location
 
-class Match(Region):
+class Match:
     def __init__(self, xpos, ypos, image):
-        super(Match,self).__init__()
-
         self.xpos = xpos
         self.ypos = ypos
         self.width = image.get_width()
@@ -30,7 +32,7 @@ class Match(Region):
         self.target = self.calc_click_point(xpos, ypos, self.width, self.height, target_offset)
 
     def calc_click_point(self, xpos, ypos, width, height, offset):
-        center_region = Region(0, 0, width, height)
+        center_region = region.Region(0, 0, width, height)
         click_center = center_region.get_center()
 
         target_xpos = xpos + click_center.get_x() + offset.get_x()

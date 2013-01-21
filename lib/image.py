@@ -16,6 +16,7 @@
 import copy
 import autopy.bitmap
 import os
+
 from location import Location
 from imagepath import ImagePath
 

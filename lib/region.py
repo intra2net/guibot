@@ -14,14 +14,21 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import time
+
+from autopy import mouse
+
+# interconnected classes - import only their modules
+# to avoid circular reference
+import screen
+import match, sys
+
+from errors import *
 from location import Location
 from image import Image
-from errors import *
-from autopy import mouse
 
 class Region(object):
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
-        self.screen = Screen()
+        self.screen = screen.Screen()
         self.last_match = None
 
         self.xpos = xpos
@@ -168,7 +175,7 @@ class Region(object):
             autopy_screenshot = self.screen.capture().get_backend_data()
             coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((self.xpos, self.ypos), (self.width, self.height)))
             if coord is not None:
-                self.last_match = Match(coord[0], coord[1], image)
+                self.last_match = match.Match(coord[0], coord[1], image)
                 return self.last_match
 
             if time.time() > timeout_limit:
@@ -274,7 +281,3 @@ class Region(object):
     # drag(image)
     # dropAt(image)
     #
-
-# break circular dependency
-from screen import Screen
-from match import Match
