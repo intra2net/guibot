@@ -17,7 +17,6 @@ import logging
 import time, sys
 
 from autopy import mouse
-from autopy import bitmap
 
 # interconnected classes - import only their modules
 # to avoid circular reference
@@ -26,10 +25,12 @@ import screen
 from errors import *
 from location import Location
 from image import Image
+from imagefinder import ImageFinder
 
 class Region(object):
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
         self.screen = screen.Screen()
+        self.imagefinder = ImageFinder()
         self.last_match = None
 
         self.xpos = xpos
@@ -168,27 +169,20 @@ class Region(object):
         if isinstance(image, basestring):
             image = Image(image)
 
-        # TODO: Factor out backend and remove loading from file
-        autopy_needle = bitmap.Bitmap.open(image.get_filename())
-        autopy_tolerance = 1.0 - image.get_similarity()
-
         timeout_limit = time.time() + timeout
         while True:
-            # TODO: Factor out autopy code
-            # Remove temporary conversion code using files.
-            # This is just an intermediate step for the backend refactoring
-            self.screen.capture().save('/tmp/guibender_temp_screenshot.png')
-            autopy_screenshot = bitmap.Bitmap.open('/tmp/guibender_temp_screenshot.png')
+            screen_capture = self.screen.capture()
+            similarity = image.get_similarity()
 
-            coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((self.xpos, self.ypos), (self.width, self.height)))
-            if coord is not None:
-                self.last_match = match.Match(coord[0], coord[1], image)
+            found_pic = self.imagefinder.find_image(screen_capture, image, similarity, self.xpos, self.ypos, self.width, self.height)
+            if found_pic is not None:
+                self.last_match = match.Match(found_pic.get_x(), found_pic.get_y(), image)
                 return self.last_match
 
             if time.time() > timeout_limit:
                 # TODO: Turn this into a setting / make it optional
-                autopy_screenshot.save('/tmp/guibender_last_finderror.png')
-                autopy_needle.save('/tmp/guibender_last_finderror_needle.png')
+                screen_capture.save('/tmp/guibender_last_finderror.png')
+                image.save('/tmp/guibender_last_finderror_needle.png')
 
                 break
 
