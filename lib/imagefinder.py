@@ -14,11 +14,10 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
-import autopy.bitmap
 from errors import *
 
 class ImageFinder:
-    _imageCache = {}
+    # Shared between all instances
     _imageDirs = []
 
     def add_path(self, directory):
@@ -33,7 +32,7 @@ class ImageFinder:
 
         return True
 
-    def search_filename(self, filename):
+    def search(self, filename):
         for dir in self._imageDirs:
             fullname = os.path.join(dir, filename)
             if os.path.exists(fullname):
@@ -44,17 +43,4 @@ class ImageFinder:
             if os.path.exists(fullname):
                 return fullname
 
-        return None
-
-    def find_image(self, filename):
-        if filename in self._imageCache:
-            return self._imageCache[filename]
-
-        fullpath = self.search_filename(filename)
-        if fullpath is None:
-            raise FileNotFoundError('File ' + filename + ' not found')
-
-        self._imageCache[filename] = Image(fullpath)
-        return self._imageCache[filename]
-
-from image import Image
+        raise FileNotFoundError('File ' + filename + ' not found')

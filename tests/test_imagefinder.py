@@ -20,7 +20,6 @@ import sys
 sys.path.append('../lib')
 
 from imagefinder import ImageFinder
-from image import Image
 from errors import *
 
 class ImageFinderTest(unittest.TestCase):
@@ -39,30 +38,20 @@ class ImageFinderTest(unittest.TestCase):
     def test_remove_unknown_path(self):
         self.finder.remove_path('foobar_does_not_exist')
 
-    def test_searchfile(self):
+    def test_search(self):
         self.finder.add_path('images')
-        self.assertEqual('images/qt4gui_button.png', self.finder.search_filename('qt4gui_button.png'))
+        self.assertEqual('images/qt4gui_button.png', self.finder.search('qt4gui_button.png'))
         # Test without .png extension
-        self.assertEqual('images/qt4gui_button.png', self.finder.search_filename('qt4gui_button'))
+        self.assertEqual('images/qt4gui_button.png', self.finder.search('qt4gui_button'))
 
         # Create another ImageFinder instance.
         # It should contain the same search paths
         new_finder = ImageFinder()
-        self.assertEqual('images/qt4gui_button.png', new_finder.search_filename('qt4gui_button'))
-
-    def test_find_image(self):
-        self.finder.add_path('images')
-        image = self.finder.find_image('qt4gui_button')
-        self.assertTrue(isinstance(image, Image))
-
-        # get image again. Should point to the same object
-        new_finder = ImageFinder()
-        second_image = new_finder.find_image('qt4gui_button')
-        self.assertEqual(image, second_image)
+        self.assertEqual('images/qt4gui_button.png', new_finder.search('qt4gui_button'))
 
     def test_find_image_error(self):
         try:
-            image = self.finder.find_image('foobar_does_not_exist')
+            image = self.finder.search('foobar_does_not_exist')
             self.fail('Exception not thrown')
         except FileNotFoundError, e:
             pass

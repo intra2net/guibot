@@ -59,7 +59,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(200, region.get_height())
 
     def show_image(self, filename):
-        filename = self.finder.search_filename(filename)
+        filename = self.finder.search(filename)
 
         self.child_show_picture = subprocess.Popen(['python', 'show_picture.py', filename])
 

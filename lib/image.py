@@ -17,6 +17,7 @@ import copy
 import autopy.bitmap
 import os
 from location import Location
+from imagefinder import ImageFinder
 
 class Image:
     DEFAULT_SIMILARITY = 0.8
@@ -34,9 +35,7 @@ class Image:
             # TODO: Load just once and store in a global ImageCache instance
             # TODO: Abstract out autopy backend into separate backend class
             if not os.path.exists(self.filename):
-                new_name = ImageFinder().search_filename(self.filename)
-                if not new_name is None:
-                    self.filename = new_name
+                self.filename = ImageFinder().search(self.filename)
 
             self.backend_data = autopy.bitmap.Bitmap.open(self.filename)
 
@@ -88,5 +87,3 @@ class Image:
         new_image.filename = filename
 
         return new_image
-
-from imagefinder import ImageFinder
