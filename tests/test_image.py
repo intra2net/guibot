@@ -20,8 +20,8 @@ import sys
 sys.path.append('../lib')
 
 from tempfile import NamedTemporaryFile
-
 from image import Image
+from errors import *
 
 class ImageTest(unittest.TestCase):
     def setUp(self):
@@ -103,7 +103,24 @@ class ImageTest(unittest.TestCase):
             self.assertEqual(image.width, loaded_image.width)
             self.assertEqual(image.height, loaded_image.height)
 
-    # TODO: Test exception on non-existing / permission denied image
+    def test_nonexisting_image(self):
+        try:
+            image = Image('foobar_does_not_exist')
+            self.fail('Exception not thrown')
+        except FileNotFoundError:
+            pass
+
+    def test_image_cache(self):
+        image = Image(self.example_dir + 'all_shapes.png')
+
+        second_image = Image(self.example_dir + 'all_shapes.png')
+        self.assertEqual(image.get_backend_data(), second_image.get_backend_data())
+
+        # Clear backend cache the hard way
+        Image()._cache.clear()
+
+        third_image = Image(self.example_dir + 'all_shapes.png')
+        self.assertNotEqual(image.get_backend_data(), third_image.get_backend_data())
 
 if __name__ == '__main__':
     unittest.main()

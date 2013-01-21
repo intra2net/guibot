@@ -22,8 +22,10 @@ from imagefinder import ImageFinder
 class Image:
     DEFAULT_SIMILARITY = 0.8
 
-    def __init__(self, filename=None, similarity=DEFAULT_SIMILARITY, backend_data=None):
-        self.filename = filename
+    _cache = {}
+
+    def __init__(self, image_filename=None, similarity=DEFAULT_SIMILARITY, backend_data=None):
+        self.filename = image_filename
         self.img_similarity = similarity
         self.backend_data = backend_data
 
@@ -32,12 +34,16 @@ class Image:
         self.target_center_offset = Location(0, 0)
 
         if self.filename is not None and backend_data is None:
-            # TODO: Load just once and store in a global ImageCache instance
-            # TODO: Abstract out autopy backend into separate backend class
             if not os.path.exists(self.filename):
                 self.filename = ImageFinder().search(self.filename)
 
-            self.backend_data = autopy.bitmap.Bitmap.open(self.filename)
+            if self.filename in self._cache:
+                self.backend_data = self._cache[self.filename]
+            else:
+                # load and cache image
+                # TODO: Abstract out autopy backend into separate backend class
+                self.backend_data = autopy.bitmap.Bitmap.open(self.filename)
+                self._cache[self.filename] = self.backend_data
 
         # Set width and height
         if self.backend_data:
