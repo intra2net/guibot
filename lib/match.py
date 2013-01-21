@@ -22,7 +22,7 @@ import region
 from image import Image
 from location import Location
 
-class Match:
+class Match(region.Region):
     def __init__(self, xpos, ypos, image):
         self.xpos = xpos
         self.ypos = ypos

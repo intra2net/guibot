@@ -14,7 +14,7 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import logging
-import time
+import time, sys
 
 from autopy import mouse
 from autopy import bitmap
@@ -22,7 +22,6 @@ from autopy import bitmap
 # interconnected classes - import only their modules
 # to avoid circular reference
 import screen
-import match, sys
 
 from errors import *
 from location import Location
@@ -289,3 +288,6 @@ class Region(object):
     # drag(image)
     # dropAt(image)
     #
+
+# TODO: make this more pythonic
+import match
