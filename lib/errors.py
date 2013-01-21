@@ -16,5 +16,8 @@
 class GuiBenderError(Exception):
     """GuiBender exception base class"""
 
+class FileNotFoundError(GuiBenderError):
+    """Exception raised when a picture file cannot be found on disc"""
+
 class FindError(GuiBenderError):
     """Exception raised when an Image cannot be found on the screen"""
