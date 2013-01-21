@@ -14,12 +14,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import time, sys
+import re, sys, os
 import logging
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
+import argparse
 
 CONFIG_FILENAME = "guiblender.cfg"
 LOG_FILENAME = "guiblender.log"
@@ -84,8 +85,38 @@ class GuiBender(object):
     def double_click(self):
         pass
 
-# TODO: cmdline argument parsing
 if __name__ == '__main__':
     BENDER = GuiBender()
-    print "GuiBender instantiated"
-    print "Logging level - " + BENDER.config.get("basic_settings", 'console_log_level')
+    logging.info("GuiBender instantiated")
+    logging.info("Logging level - %s", BENDER.config.get("basic_settings", 'console_log_level'))
+
+    # parse arguments
+    parser = argparse.ArgumentParser(description="Tool for automatic GUI testing")
+    parser.add_argument('-f', '--file', dest='testfile', action='store',
+                        required=True, help='python script file to run')
+    parser.add_argument('-c', '--code_snipplet', dest='snipplet', action='store',
+                        default="", help='directory to run all test scripts from')
+    parser.add_argument('-s', '--smooth', dest='smooth_mouse', action='store_true',
+                        default=True, help="use smooth mouse motion to run the tests")
+    args = parser.parse_args()
+
+    if args.snipplet != "":
+        logging.info("Running code snipplet %s from file %s", args.snipplet, args.testfile)
+    else:
+        logging.info("Running the file %s", args.testfile)
+    if args.smooth_mouse:
+        logging.info("Running the mouse in smooth mode")
+
+    # TODO: correct relative paths in the unit tests
+    # possibly make them usable from here using the code below
+    execfile(args.testfile)
+
+
+    # run all tests if test argument
+    #testdir = os.path.join(os.path.dirname(__file__), "tests")
+    #logging.info("Loading tests from directory %s", testdir)
+    #for test_name in os.listdir(testdir):
+    #    print "check " + test_name
+    #    if re.match("test_\w+\.py", test_name) != None:
+    #        logging.info("[Executing] %s" % test_name)
+    #        execfile(os.path.join(testdir, test_name))
