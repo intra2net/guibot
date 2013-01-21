@@ -17,7 +17,7 @@ import copy
 import autopy.bitmap
 import os
 from location import Location
-from imagefinder import ImageFinder
+from imagepath import ImagePath
 
 class Image:
     DEFAULT_SIMILARITY = 0.8
@@ -35,7 +35,7 @@ class Image:
 
         if self.filename is not None and backend_data is None:
             if not os.path.exists(self.filename):
-                self.filename = ImageFinder().search(self.filename)
+                self.filename = ImagePath().search(self.filename)
 
             if self.filename in self._cache:
                 self.backend_data = self._cache[self.filename]

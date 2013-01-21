@@ -21,7 +21,7 @@ import time
 import subprocess
 sys.path.append('../lib')
 
-from imagefinder import ImageFinder
+from imagepath import ImagePath
 from location import Location
 from region import Region
 from match import Match
@@ -32,9 +32,9 @@ from errors import *
 class RegionTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.finder = ImageFinder()
-        self.finder.add_path('images')
-        self.finder.add_path('../examples/images')
+        self.imagepath = ImagePath()
+        self.imagepath.add_path('images')
+        self.imagepath.add_path('../examples/images')
 
     def setUp(self):
         self.child_show_picture = None
@@ -59,7 +59,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(200, region.get_height())
 
     def show_image(self, filename):
-        filename = self.finder.search(filename)
+        filename = self.imagepath.search(filename)
 
         self.child_show_picture = subprocess.Popen(['python', 'show_picture.py', filename])
 

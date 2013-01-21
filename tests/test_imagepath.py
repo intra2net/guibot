@@ -19,39 +19,39 @@ import unittest
 import sys
 sys.path.append('../lib')
 
-from imagefinder import ImageFinder
+from imagepath import ImagePath
 from errors import *
 
-class ImageFinderTest(unittest.TestCase):
+class ImagePathTest(unittest.TestCase):
     def setUp(self):
-        self.finder = ImageFinder()
+        self.imagepath = ImagePath()
 
     def test_basic(self):
-        self.finder.add_path('images')
+        self.imagepath.add_path('images')
 
     def test_remove_path(self):
-        self.finder.add_path('images')
-        self.assertEqual(True, self.finder.remove_path('images'))
+        self.imagepath.add_path('images')
+        self.assertEqual(True, self.imagepath.remove_path('images'))
         # No longer in imagefinder
-        self.assertEqual(False, self.finder.remove_path('images'))
+        self.assertEqual(False, self.imagepath.remove_path('images'))
 
     def test_remove_unknown_path(self):
-        self.finder.remove_path('foobar_does_not_exist')
+        self.imagepath.remove_path('foobar_does_not_exist')
 
     def test_search(self):
-        self.finder.add_path('images')
-        self.assertEqual('images/qt4gui_button.png', self.finder.search('qt4gui_button.png'))
+        self.imagepath.add_path('images')
+        self.assertEqual('images/qt4gui_button.png', self.imagepath.search('qt4gui_button.png'))
         # Test without .png extension
-        self.assertEqual('images/qt4gui_button.png', self.finder.search('qt4gui_button'))
+        self.assertEqual('images/qt4gui_button.png', self.imagepath.search('qt4gui_button'))
 
-        # Create another ImageFinder instance.
+        # Create another ImagePath instance.
         # It should contain the same search paths
-        new_finder = ImageFinder()
+        new_finder = ImagePath()
         self.assertEqual('images/qt4gui_button.png', new_finder.search('qt4gui_button'))
 
     def test_find_image_error(self):
         try:
-            image = self.finder.search('foobar_does_not_exist')
+            image = self.imagepath.search('foobar_does_not_exist')
             self.fail('Exception not thrown')
         except FileNotFoundError, e:
             pass

@@ -16,24 +16,24 @@
 import os
 from errors import *
 
-class ImageFinder:
+class ImagePath:
     # Shared between all instances
-    _imageDirs = []
+    _imagePaths = []
 
     def add_path(self, directory):
-        if directory not in self._imageDirs:
-            self._imageDirs.append(directory)
+        if directory not in self._imagePaths:
+            self._imagePaths.append(directory)
 
     def remove_path(self, directory):
         try:
-            self._imageDirs.remove(directory)
+            self._imagePaths.remove(directory)
         except:
             return False
 
         return True
 
     def search(self, filename):
-        for dir in self._imageDirs:
+        for dir in self._imagePaths:
             fullname = os.path.join(dir, filename)
             if os.path.exists(fullname):
                 return fullname
