@@ -16,7 +16,7 @@
 import time
 from location import Location
 from image import Image
-from errors import FindError
+from errors import *
 from autopy import mouse
 
 class Region(object):

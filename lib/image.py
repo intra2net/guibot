@@ -18,7 +18,7 @@ import autopy.bitmap
 from location import Location
 
 class Image:
-    DEFAULT_SIMILARITY = 0.95
+    DEFAULT_SIMILARITY = 0.8
 
     def __init__(self, filename_or_Image=None, similarity=DEFAULT_SIMILARITY, backend_data=None):
         self.filename = filename_or_Image
