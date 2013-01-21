@@ -20,7 +20,6 @@ from location import Location
 from errors import *
 
 from autopy import bitmap
-
 class BackendAutoPy:
     _bitmapcache = {}
 
@@ -46,16 +45,53 @@ class BackendAutoPy:
 
         return None
 
+import cv2
+import numpy
+class BackendOpenCV:
+    def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
+        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            haystack.save(f.name)
+
+            # TODO: Use in-memory conversion once this is working
+            opencv_haystack = cv2.imread(f.name)
+            opencv_needle = cv2.imread(needle.get_filename())
+
+            result = cv2.matchTemplate(opencv_haystack,opencv_needle,cv2.TM_CCOEFF_NORMED)
+
+            minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+
+            #print('minVal: ' + str(minVal))
+            #print('minLoc: ' + str(minLoc))
+            #print('maxVal (similarity): '+ str(maxVal))
+            #print('maxLoc (x,y): ' + str(maxLoc))
+
+            # TODO: Figure out how the threshold works
+            # need to read openCV documentation
+            if maxVal > similarity:
+                return Location(maxLoc[0], maxLoc[1])
+
+            # For multiple matches (seen on stackoverflow)
+            #match_indices = numpy.arange(result.size)[(result>similarity).flatten()]
+            #all_matches = numpy.unravel_index(match_indices,result.shape)
+
+            return None
+
 class ImageFinder:
     _backend = None
 
     def __init__(self, backend='auto'):
-        if backend is not 'auto' and self._backend is not None:
-            raise ImageFinderBackendError('_backend already initialized')
-
-        if self._backend is None:
-            # Currently autopy is implemented only
+        if backend is 'auto':
+            try:
+                # TODO: Test 'import cv'
+                self._backend = BackendOpenCV()
+            except:
+                self._backend = BackendAutoPy()
+        elif backend is 'opencv':
+            self._backend = BackendOpenCV()
+        elif backend is 'autopy':
             self._backend = BackendAutoPy()
+        else:
+            raise ImageFinderBackendError('Unsupported backend: ' + backend)
 
     def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
         return self._backend.find_image(haystack, needle, similarity, xpos, ypos, width, height)

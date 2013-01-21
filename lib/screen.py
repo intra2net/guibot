@@ -28,14 +28,6 @@ class Screen:
         self.width = screen_size[0]
         self.height = screen_size[1]
 
-        # TODO: HACK to reduce screen size
-        # Only for debugging right now, autopy finder
-        # gets too slow with dual head in twin view mode
-        if self.width > 800:
-            self.width = 800
-        if self.height > 600:
-            self.height = 600
-
     def get_width(self):
         return self.width
 
