@@ -260,17 +260,17 @@ class Region(object):
         self.desktop.mouse_up(button)
         return match
 
-    def drag_drop(self, src_image_or_location, dst_image_or_location):
-        self.drag(src_image_or_location)
-        match = self.drop_at(dst_image_or_location)
+    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers = None):
+        self.drag(src_image_or_location, modifiers)
+        match = self.drop_at(dst_image_or_location, modifiers)
         return match
 
-    def drag(self, image_or_location):
+    def drag(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
 
-        # TODO: Handle key modfiers (with delay)
-        #time.sleep(0.2)
-        #autopy.key.toggle(autopy.key.K_CONTROL, True)
+        time.sleep(0.2)
+        self.desktop.keys_toggle(modifiers, True)
+        #self.desktop.keys_toggle(["Ctrl"], True)
 
         self.desktop.mouse_down(self.LEFT_BUTTON)
         # TODO: Make delay after drag configurable
@@ -278,7 +278,7 @@ class Region(object):
 
         return match
 
-    def drop_at(self, image_or_location):
+    def drop_at(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
 
         # TODO: Make delay before drop configurable
@@ -286,9 +286,9 @@ class Region(object):
 
         self.desktop.mouse_up(self.LEFT_BUTTON)
 
-        # TODO: Handle key modifiers
-        #time.sleep(0.5)
-        #autopy.key.toggle(autopy.key.K_CONTROL, False)
+        time.sleep(0.5)
+        self.desktop.keys_toggle(modifiers, False)
+        #self.desktop.keys_toggle(["Ctrl"], False)
 
         return match
 
