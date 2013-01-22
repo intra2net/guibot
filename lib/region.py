@@ -16,8 +16,6 @@
 import logging
 import time, sys
 
-from autopy import mouse
-
 # interconnected classes - import only their modules
 # to avoid circular reference
 from desktopcontrol import DesktopControl
@@ -215,30 +213,20 @@ class Region(object):
         # image is still there
         return False
 
-    def _move_mouse(self, xpos_or_location, ypos=0):
-        try:
-            # Note: Sometimes this is not pixel perfect.
-            # Need to investigate the autopy source later on
-            mouse.smooth_move(xpos_or_location.get_x(), xpos_or_location.get_y())
-            # mouse.move(xpos_or_location.get_x(), xpos_or_location.get_y())
-        except AttributeError:
-            mouse.smooth_move(xpos_or_location, ypos)
-
     def get_mouse_location(self):
-        autopy_pos = mouse.get_pos()
-        return Location(autopy_pos[0], autopy_pos[1])
+        return self.desktop.get_mouse_location()
 
     def hover(self, image_or_location):
         # Handle Location
         try:
-            self._move_mouse(image_or_location.get_x(), image_or_location.get_y())
+            self.desktop.mouse_move(image_or_location)
             return None
         except AttributeError:
             pass
 
         # Find image
         match = self.find(image_or_location)
-        self._move_mouse(match.get_target())
+        self.desktop.mouse_move(match.get_target())
 
         return match
 

@@ -16,10 +16,13 @@
 import logging
 
 import autopy.screen
+import autopy.mouse
+
 import PIL.Image
 from tempfile import NamedTemporaryFile
 
 from image import Image
+from location import Location
 
 class DesktopControl:
     def __init__(self):
@@ -72,3 +75,12 @@ class DesktopControl:
 
             pil_image = PIL.Image.open(f.name).convert('RGB')
             return Image(None, Image.DEFAULT_SIMILARITY, pil_image)
+
+    def mouse_move(self, location):
+        # Note: Sometimes this is not pixel perfect.
+        # Need to investigate the autopy source later on
+        autopy.mouse.smooth_move(location.get_x(), location.get_y())
+
+    def get_mouse_location(self):
+        autopy_pos = autopy.mouse.get_pos()
+        return Location(autopy_pos[0], autopy_pos[1])
