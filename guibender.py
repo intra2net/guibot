@@ -22,8 +22,8 @@ except ImportError:
     import ConfigParser as configparser
 import argparse
 
-CONFIG_FILENAME = "guiblender.cfg"
-LOG_FILENAME = "guiblender.log"
+CONFIG_FILENAME = "guibender.cfg"
+LOG_FILENAME = "guibender.log"
 
 class GuiBender(object):
     def __init__(self):
