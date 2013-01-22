@@ -32,6 +32,28 @@ class DesktopControl:
     RIGHT_BUTTON=autopy.mouse.RIGHT_BUTTON
     CENTER_BUTTON=autopy.mouse.CENTER_BUTTON
 
+    # Keyboard special and secondary keys
+    specialkeys = {'<Ctrl>' : autopy.key.K_CONTROL, '<Shift>' : autopy.key.K_SHIFT,
+                   '<Alt>' : autopy.key.K_ALT, '<Meta>' : autopy.key.K_META,
+                   # no Tab and Super keys supported
+                   '<Tab>' : autopy.key.K_CAPSLOCK, '<Super>' : autopy.key.K_CAPSLOCK,
+                   # no, and Fn key supported
+                   '<Fn>' : autopy.key.K_CAPSLOCK, '<PgUp>' : autopy.key.K_PAGEUP,
+                   '<PgDn>' : autopy.key.K_PAGEDOWN, '<Delete>' : autopy.key.K_DELETE,
+                   '<Home>' : autopy.key.K_HOME, '<Esc>' : autopy.key.K_ESCAPE,
+                   '<F1>' : autopy.key.K_F1, '<F2>' : autopy.key.K_F2,
+                   '<F3>' : autopy.key.K_F3, '<F4>' : autopy.key.K_F4,
+                   '<F5>' : autopy.key.K_F5, '<F6>' : autopy.key.K_F6,
+                   '<F7>' : autopy.key.K_F7, '<F8>' : autopy.key.K_F8,
+                   '<F9>' : autopy.key.K_F9, '<F10>' : autopy.key.K_F10,
+                   '<F11>' : autopy.key.K_F11, '<F12>' : autopy.key.K_F12,
+                   '<Enter>' : autopy.key.K_RETURN}
+
+    shiftkeys = ['~', '!', '@', '#', '$', '%',
+                 '^', '&', '*', '(', ')', '_',
+                 '+', '{', '}', '|', ':', '"',
+                 '?', '>', '<']
+
     def __init__(self):
         screen_size = autopy.screen.get_size()
 
@@ -111,4 +133,26 @@ class DesktopControl:
         autopy.mouse.toggle(False, button)
 
     def write(self, text):
-        autopy.key.type_string(text)
+        for char in text:
+            if char in self.shiftkeys:
+                autopy.key.tap(char, autopy.key.MOD_SHIFT)
+            else:
+                autopy.key.type_string(char)
+
+    def press(self, keys, duration = 0.5):
+        logging.debug("Pressing key combination: %s", "+".join(keys))
+        self.toggle(keys, True)
+        time.sleep(duration)
+        self.toggle(keys, False)
+
+    def toggle(self, keys, up_down):
+        for key in keys:
+            if key in self.specialkeys.keys():
+                logging.debug("Detected special key: %s [%s]",
+                              key, self.specialkeys[key])
+                autopy.key.toggle(self.specialkeys[key], up_down)
+            elif key in self.shiftkeys:
+                logging.debug("Detected shift key: %s", key)
+                autopy.key.toggle(key, up_down, autopy.key.MOD_SHIFT)
+            else:
+                autopy.key.toggle(key, up_down)

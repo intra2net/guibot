@@ -294,15 +294,18 @@ class Region(object):
 
     # TODO: Implement key modifiers like SHIFT
     # TODO: Fix support for international characters
-    def write(self, image_or_location, text):
-        self.click(image_or_location)
+    def write(self, text, image_or_location = None):
+        if image_or_location != None:
+            self.click(image_or_location)
         self.desktop.write(text)
 
     # TODO: Implement key modifiers like SHIFT
-    # Press key combinations
-    def press(self, image_or_location, text):
-        # TODO: Implement me
-        raise GuiBenderError()
+    # Press key combinations - text must be a list
+    # for special characters
+    def press(self, keys, image_or_location = None, duration = 0.5):
+        if image_or_location != None:
+            self.click(image_or_location)
+        self.desktop.press(keys, duration)
 
     # List of API functions to implement:
     #
