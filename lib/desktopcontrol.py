@@ -26,6 +26,11 @@ from image import Image
 from location import Location
 
 class DesktopControl:
+    # Mouse buttons
+    LEFT_BUTTON=0
+    RIGHT_BUTTON=1
+    MIDDLE_BUTTON=2
+
     def __init__(self):
         screen_size = autopy.screen.get_size()
 
@@ -98,5 +103,11 @@ class DesktopControl:
         time.sleep(0.1)
         autopy.mouse.click()
 
+    def mouse_down(self, button=LEFT_BUTTON):
+        autopy.mouse.toggle(True, button)
+
+    def mouse_up(self, button=LEFT_BUTTON):
+        autopy.mouse.toggle(False, button)
+
     def write(self, text):
-        autopy.keyboard.key.type_string(text)
+        autopy.key.type_string(text)

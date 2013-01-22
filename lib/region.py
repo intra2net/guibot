@@ -26,6 +26,11 @@ from image import Image
 from imagefinder import ImageFinder
 
 class Region(object):
+    # Mouse buttons
+    LEFT_BUTTON=DesktopControl.LEFT_BUTTON
+    RIGHT_BUTTON=DesktopControl.RIGHT_BUTTON
+    MIDDLE_BUTTON=DesktopControl.MIDDLE_BUTTON
+
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
         self.desktop = DesktopControl()
         self.imagefinder = ImageFinder()
@@ -243,6 +248,29 @@ class Region(object):
     def double_click(self, image_or_location):
         match = self.hover(image_or_location)
         self.desktop.mouse_double_click()
+        return match
+
+    def mouse_down(self, image_or_location, button=LEFT_BUTTON):
+        match = self.hover(image_or_location)
+        self.desktop.mouse_down(button)
+        return match
+
+    def mouse_up(self, image_or_location, button=LEFT_BUTTON):
+        match = self.hover(image_or_location)
+        self.desktop.mouse_up(button)
+        return match
+
+    def drap_drop(self, src_image_or_location, dst_image_or_location):
+        self.drag(src_image_or_location)
+        match = self.drop(dst_image_or_location)
+        return match
+
+    def drag(self, image_or_location):
+        match = self.mouse_down(image_or_location)
+        return match
+
+    def drop(self, image_or_location):
+        match = self.mouse_up(image_or_location)
         return match
 
     # TODO: Implement key modifiers like SHIFT

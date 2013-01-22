@@ -75,7 +75,6 @@ class RegionTest(unittest.TestCase):
     def test_find(self):
         self.show_image('all_shapes')
 
-        # TODO: Implement/use image finder
         region = Region()
         match = region.find(Image('shape_blue_circle'))
 
@@ -195,7 +194,18 @@ class RegionTest(unittest.TestCase):
         self.assertTrue(pos.get_x() > 25 and pos.get_x() < 35)
         self.assertTrue(pos.get_y() > 15 and pos.get_y() < 25)
 
-# TODO: Also test: wait() and wait_vanish() via PyQT app
+# TODO: Write tests for:
+# wait()
+# wait_vanish()
+#
+# PyQt GUI based:
+# drag_drop()
+# drag()
+# drop()
+# mouse_down()
+# mouse_up()
+# write()
+# press()
 
 if __name__ == '__main__':
     unittest.main()
