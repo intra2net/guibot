@@ -293,10 +293,10 @@ class Region(object):
         return match
 
     # TODO: Implement key modifiers like SHIFT
+    # TODO: Fix support for international characters
     def write(self, image_or_location, text):
         self.click(image_or_location)
         self.desktop.write(text)
-        raise GuiBenderError()
 
     # TODO: Implement key modifiers like SHIFT
     # Press key combinations
