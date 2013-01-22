@@ -235,19 +235,19 @@ class Region(object):
 
         return match
 
-    def click(self, image_or_location):
+    def click(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
-        self.desktop.mouse_click()
+        self.desktop.mouse_click(modifiers)
         return match
 
-    def right_click(self, image_or_location):
+    def right_click(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
-        self.desktop.mouse_right_click()
+        self.desktop.mouse_right_click(modifiers)
         return match
 
-    def double_click(self, image_or_location):
+    def double_click(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
-        self.desktop.mouse_double_click()
+        self.desktop.mouse_double_click(modifiers)
         return match
 
     def mouse_down(self, image_or_location, button=LEFT_BUTTON):
@@ -292,24 +292,21 @@ class Region(object):
 
         return match
 
-    # TODO: Implement key modifiers like SHIFT
     # Press key combinations - text must be a list
     # for special characters
     def press(self, image_or_location, keys, duration = 0.5):
         if image_or_location != None:
             self.click(image_or_location)
-        self.desktop.press(keys, duration)
+        self.desktop.keys_press(keys, duration)
 
-    # TODO: Implement key modifiers like SHIFT
     # TODO: Fix support for international characters
-    def type_text(self, image_or_location, text):
+    def type_text(self, image_or_location, text, modifiers = None):
         self.click(image_or_location)
-        self.desktop.write(text)
+        self.desktop.keys_type(text, modifiers)
 
-    # TODO: Implement key modifiers like SHIFT
     # TODO: Fix support for international characters
-    def type_text_only(self, text):
-        self.desktop.write(text)
+    def type_text_only(self, text, modifiers = None):
+        self.desktop.keys_type(text, modifiers)
 
     # List of API functions to implement:
     #

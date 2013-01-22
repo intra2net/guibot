@@ -114,17 +114,29 @@ class DesktopControl:
         autopy_pos = autopy.mouse.get_pos()
         return Location(autopy_pos[0], autopy_pos[1])
 
-    def mouse_click(self):
+    def mouse_click(self, modifiers = None):
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
         autopy.mouse.click()
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
 
-    def mouse_right_click(self):
+    def mouse_right_click(self, modifiers = None):
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
         autopy.mouse.click(autopy.mouse.RIGHT_BUTTON)
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
 
-    def mouse_double_click(self):
+    def mouse_double_click(self, modifiers = None):
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
         autopy.mouse.click()
         # TODO: Make double click speed configurable
         time.sleep(0.1)
         autopy.mouse.click()
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button=LEFT_BUTTON):
         autopy.mouse.toggle(True, button)
@@ -132,20 +144,24 @@ class DesktopControl:
     def mouse_up(self, button=LEFT_BUTTON):
         autopy.mouse.toggle(False, button)
 
-    def write(self, text):
+    def keys_type(self, text, modifiers):
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
         for char in text:
             if char in self.shiftkeys:
                 autopy.key.tap(char, autopy.key.MOD_SHIFT)
             else:
                 autopy.key.type_string(char)
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
 
-    def press(self, keys, duration = 0.5):
+    def keys_press(self, keys, duration = 0.5):
         logging.debug("Pressing key combination: %s", "+".join(keys))
-        self.toggle(keys, True)
+        self.keys_toggle(keys, True)
         time.sleep(duration)
-        self.toggle(keys, False)
+        self.keys_toggle(keys, False)
 
-    def toggle(self, keys, up_down):
+    def keys_toggle(self, keys, up_down):
         for key in keys:
             if key in self.specialkeys.keys():
                 logging.debug("Detected special key: %s [%s]",
