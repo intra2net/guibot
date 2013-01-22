@@ -15,6 +15,7 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import re, sys, os
+import traceback
 import logging
 try:
     import configparser
@@ -79,16 +80,41 @@ class GuiBender(object):
         logging.getLogger('').addHandler(console)
         return
 
-    def execute_scriptlet(self, filename):
-        pass
+    def execute_script(self, filename):
+        script_globals = {'__file__': filename, '__name__': '__main__', 'guibender' : self }
 
-    def double_click(self):
-        pass
+        my_dir = os.path.dirname(os.path.abspath(__file__))
+
+        api_import = 'import sys\n'
+        api_import += 'sys.path.insert(0, "' + my_dir + '")\n'
+        api_import += 'from guibender_api import *\n'
+        api_import += 'sys.path.pop(0)\n'
+
+        script_directory = os.path.dirname(os.path.abspath(filename))
+        current_directory = os.getcwd()
+
+        logging.info('Executing script: %s', filename)
+
+        with open(filename, 'rb') as script:
+            full_script = api_import + script.read()
+
+            os.chdir(script_directory)
+            try:
+                exec(compile(full_script, filename, 'exec'), script_globals)
+            except:
+                print ('')
+                print traceback.format_exc()
+                logging.error('Script %s aborted by exception', filename)
+
+            os.chdir(current_directory)
+
+        logging.info('Script %s finished', filename)
 
 if __name__ == '__main__':
-    BENDER = GuiBender()
+    guibender = GuiBender()
+
     logging.info("GuiBender instantiated")
-    logging.info("Logging level - %s", BENDER.config.get("basic_settings", 'console_log_level'))
+    logging.info("Logging level - %s", guibender.config.get("basic_settings", 'console_log_level'))
 
     # parse arguments
     parser = argparse.ArgumentParser(description="Tool for automatic GUI testing")
@@ -109,8 +135,7 @@ if __name__ == '__main__':
 
     # TODO: correct relative paths in the unit tests
     # possibly make them usable from here using the code below
-    execfile(args.testfile)
-
+    guibender.execute_script(args.testfile)
 
     # run all tests if test argument
     #testdir = os.path.join(os.path.dirname(__file__), "tests")
