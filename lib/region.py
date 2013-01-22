@@ -232,27 +232,23 @@ class Region(object):
 
     def click(self, image_or_location):
         match = self.hover(image_or_location)
-        mouse.click()
+        self.desktop.mouse_click()
         return match
 
     def right_click(self, image_or_location):
         match = self.hover(image_or_location)
-        mouse.click(mouse.RIGHT_BUTTON)
+        self.desktop.mouse_right_click()
         return match
 
     def double_click(self, image_or_location):
         match = self.hover(image_or_location)
-
-        mouse.click()
-        # TODO: Make double click speed configurable
-        time.sleep(0.1)
-        mouse.click()
-
+        self.desktop.mouse_double_click()
         return match
 
     # TODO: Implement key modifiers like SHIFT
     def write(self, image_or_location, text):
-        # TODO: Implement me
+        self.click(image_or_location)
+        self.desktop.write(text)
         raise GuiBenderError()
 
     # TODO: Implement key modifiers like SHIFT
@@ -264,7 +260,6 @@ class Region(object):
     # List of API functions to implement:
     #
     # find_all(Image or filename)
-    # wait_vanish(Image or filename, seconds)
     #
     # drag_drop(image, image, key_modifiers)
     # drag(image)

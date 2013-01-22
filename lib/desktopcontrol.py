@@ -14,6 +14,7 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import logging
+import time
 
 import autopy.screen
 import autopy.mouse
@@ -84,3 +85,18 @@ class DesktopControl:
     def get_mouse_location(self):
         autopy_pos = autopy.mouse.get_pos()
         return Location(autopy_pos[0], autopy_pos[1])
+
+    def mouse_click(self):
+        autopy.mouse.click()
+
+    def mouse_right_click(self):
+        autopy.mouse.click(autopy.mouse.RIGHT_BUTTON)
+
+    def mouse_double_click(self):
+        autopy.mouse.click()
+        # TODO: Make double click speed configurable
+        time.sleep(0.1)
+        autopy.mouse.click()
+
+    def write(self, text):
+        autopy.keyboard.key.type_string(text)
