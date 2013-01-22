@@ -24,10 +24,7 @@ from location import Location
 
 class Match(region.Region):
     def __init__(self, xpos, ypos, image):
-        self.xpos = xpos
-        self.ypos = ypos
-        self.width = image.get_width()
-        self.height = image.get_height()
+        super(Match,self).__init__(xpos, ypos, image.get_width(), image.get_height())
 
         target_offset = image.get_target_offset()
         self.target = self.calc_click_point(xpos, ypos, self.width, self.height, target_offset)
