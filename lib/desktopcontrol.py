@@ -18,6 +18,7 @@ import time
 
 import autopy.screen
 import autopy.mouse
+import autopy.key
 
 import PIL.Image
 from tempfile import NamedTemporaryFile
@@ -27,9 +28,9 @@ from location import Location
 
 class DesktopControl:
     # Mouse buttons
-    LEFT_BUTTON=0
-    RIGHT_BUTTON=1
-    MIDDLE_BUTTON=2
+    LEFT_BUTTON=autopy.mouse.LEFT_BUTTON
+    RIGHT_BUTTON=autopy.mouse.RIGHT_BUTTON
+    CENTER_BUTTON=autopy.mouse.CENTER_BUTTON
 
     def __init__(self):
         screen_size = autopy.screen.get_size()

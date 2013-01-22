@@ -29,7 +29,7 @@ class Region(object):
     # Mouse buttons
     LEFT_BUTTON=DesktopControl.LEFT_BUTTON
     RIGHT_BUTTON=DesktopControl.RIGHT_BUTTON
-    MIDDLE_BUTTON=DesktopControl.MIDDLE_BUTTON
+    CENTER_BUTTON=DesktopControl.CENTER_BUTTON
 
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
         self.desktop = DesktopControl()
@@ -260,17 +260,36 @@ class Region(object):
         self.desktop.mouse_up(button)
         return match
 
-    def drap_drop(self, src_image_or_location, dst_image_or_location):
+    def drag_drop(self, src_image_or_location, dst_image_or_location):
         self.drag(src_image_or_location)
-        match = self.drop(dst_image_or_location)
+        match = self.drop_at(dst_image_or_location)
         return match
 
     def drag(self, image_or_location):
-        match = self.mouse_down(image_or_location)
+        match = self.hover(image_or_location)
+
+        # TODO: Handle key modfiers (with delay)
+        #time.sleep(0.2)
+        #autopy.key.toggle(autopy.key.K_CONTROL, True)
+
+        self.desktop.mouse_down(self.LEFT_BUTTON)
+        # TODO: Make delay after drag configurable
+        time.sleep(0.5)
+
         return match
 
-    def drop(self, image_or_location):
-        match = self.mouse_up(image_or_location)
+    def drop_at(self, image_or_location):
+        match = self.hover(image_or_location)
+
+        # TODO: Make delay before drop configurable
+        time.sleep(0.5)
+
+        self.desktop.mouse_up(self.LEFT_BUTTON)
+
+        # TODO: Handle key modifiers
+        #time.sleep(0.5)
+        #autopy.key.toggle(autopy.key.K_CONTROL, False)
+
         return match
 
     # TODO: Implement key modifiers like SHIFT
@@ -288,11 +307,6 @@ class Region(object):
     # List of API functions to implement:
     #
     # find_all(Image or filename)
-    #
-    # drag_drop(image, image, key_modifiers)
-    # drag(image)
-    # dropAt(image)
-    #
 
 # TODO: make this more pythonic
 import match
