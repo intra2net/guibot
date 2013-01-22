@@ -89,6 +89,7 @@ class GuiBender(object):
         api_import += 'sys.path.insert(0, "' + my_dir + '")\n'
         api_import += 'from guibender_api import *\n'
         api_import += 'sys.path.pop(0)\n'
+        api_import += 'init_guibender_api(guibender)\n'
 
         script_directory = os.path.dirname(os.path.abspath(filename))
         current_directory = os.getcwd()
@@ -109,6 +110,9 @@ class GuiBender(object):
             os.chdir(current_directory)
 
         logging.info('Script %s finished', filename)
+
+    def api_callback(self):
+        logging.info("Testing API call from script")
 
 if __name__ == '__main__':
     guibender = GuiBender()

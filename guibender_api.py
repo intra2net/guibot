@@ -31,6 +31,14 @@ from match import Match
 
 sys.path.pop(0)
 
+api_guibender = None
+
+# Call from main guibender program
+# to initialize local guibender instance
+def init_guibender_api(guibender):
+    global api_guibender
+    api_guibender = guibender
+
 def add_image_path(directory):
     ImagePath().add_path(directory)
 
@@ -38,4 +46,5 @@ def remove_image_path(directory):
     ImagePath().remove_path(directory)
 
 def exists(image_or_location, timeout=0):
+    api_guibender.api_callback()
     return Region().exists(image_or_location, timeout)
