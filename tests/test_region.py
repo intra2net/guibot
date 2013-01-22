@@ -58,6 +58,20 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(300, region.get_width())
         self.assertEqual(200, region.get_height())
 
+    def wait_end(self, subprocess_pipe, timeout=30):
+        expires = time.time() + timeout
+
+        while True:
+            exit_code = subprocess_pipe.poll()
+            if exit_code is not None:
+                return exit_code
+
+            if time.time() > expires:
+                self.fail('Program did not close on time. Ignoring')
+                break
+
+            time.sleep(0.2)
+
     def show_image(self, filename):
         filename = self.imagepath.search(filename)
 
@@ -66,7 +80,7 @@ class RegionTest(unittest.TestCase):
     def close_windows(self):
         if self.child_show_picture is not None:
             self.child_show_picture.terminate()
-            self.child_show_picture.wait()
+            self.wait_end(self.child_show_picture)
             self.child_show_picture = None
 
             # Hack to make sure app is really closed
@@ -153,7 +167,7 @@ class RegionTest(unittest.TestCase):
         Region().click('qt4gui_button')
         Region().wait_vanish('qt4gui_button')
 
-        self.assertEqual(0, child_pipe.wait())
+        self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_right_click(self):
         # TODO: Fix openCV image finder first
@@ -164,8 +178,7 @@ class RegionTest(unittest.TestCase):
 
         Region().right_click('qt4gui_contextmenu_label').nearby(200).click('qt4gui_contextmenu_quit')
 
-        # TODO: Wait timeout?
-        self.assertEqual(0, child_pipe.wait())
+        self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_double_click(self):
         # TODO: Fix openCV image finder first
@@ -176,8 +189,7 @@ class RegionTest(unittest.TestCase):
 
         Region().double_click(Image('qt4gui_double_click').target_offset(0,-10))
 
-        # TODO: Wait timeout?
-        self.assertEqual(0, child_pipe.wait())
+        self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_get_mouse_location(self):
         Region().hover(Location(0,0))
