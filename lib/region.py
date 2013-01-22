@@ -20,7 +20,7 @@ from autopy import mouse
 
 # interconnected classes - import only their modules
 # to avoid circular reference
-import screen
+from desktopcontrol import DesktopControl
 
 from errors import *
 from location import Location
@@ -29,7 +29,7 @@ from imagefinder import ImageFinder
 
 class Region(object):
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
-        self.screen = screen.Screen()
+        self.desktop = DesktopControl()
         self.imagefinder = ImageFinder()
         self.last_match = None
 
@@ -37,20 +37,20 @@ class Region(object):
         self.ypos = ypos
 
         if width == 0:
-            self.width = self.screen.get_width()
+            self.width = self.desktop.get_width()
         else:
             self.width = width
 
         if height == 0:
-            self.height = self.screen.get_height()
+            self.height = self.desktop.get_height()
         else:
             self.height = height
 
         self._ensure_screen_clipping()
 
     def _ensure_screen_clipping(self):
-        screen_width = self.screen.get_width()
-        screen_height = self.screen.get_height()
+        screen_width = self.desktop.get_width()
+        screen_height = self.desktop.get_height()
 
         if self.xpos < 0:
             self.xpos = 0
@@ -131,7 +131,7 @@ class Region(object):
 
     def below(self, range=0):
         if range == 0:
-            range = self.screen.get_height()
+            range = self.desktop.get_height()
 
         new_height = self.height + range
 
@@ -154,7 +154,7 @@ class Region(object):
 
     def right(self, range=0):
         if range == 0:
-            range = self.screen.get_width()
+            range = self.desktop.get_width()
 
         new_width = self.width + range
 
@@ -171,7 +171,7 @@ class Region(object):
 
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.screen.capture()
+            screen_capture = self.desktop.capture_screen()
             similarity = image.get_similarity()
 
             found_pic = self.imagefinder.find_image(screen_capture, image, similarity, self.xpos, self.ypos, self.width, self.height)

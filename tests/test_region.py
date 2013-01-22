@@ -25,7 +25,7 @@ from imagepath import ImagePath
 from location import Location
 from region import Region
 from match import Match
-from screen import Screen
+from desktopcontrol import DesktopControl
 from image import Image
 from errors import *
 
@@ -43,8 +43,8 @@ class RegionTest(unittest.TestCase):
         self.close_windows()
 
     def test_basic(self):
-        screen_width = Screen().get_width()
-        screen_height = Screen().get_height()
+        screen_width = DesktopControl().get_width()
+        screen_height = DesktopControl().get_height()
 
         region = Region()
         self.assertEqual(0, region.get_x())

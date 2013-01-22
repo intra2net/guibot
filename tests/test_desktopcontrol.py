@@ -19,47 +19,47 @@ import unittest
 import sys
 sys.path.append('../lib')
 
-from screen import Screen
+from desktopcontrol import DesktopControl
 from region import Region
 
-class ScreenTest(unittest.TestCase):
+class DesktopControlTest(unittest.TestCase):
     def test_basic(self):
-        screen = Screen()
+        desktop = DesktopControl()
 
-        self.assertTrue(screen.get_width() > 0)
-        self.assertTrue(screen.get_height() > 0)
+        self.assertTrue(desktop.get_width() > 0)
+        self.assertTrue(desktop.get_height() > 0)
 
     def test_capture(self):
-        screen = Screen()
-        screen_width = screen.get_width()
-        screen_height = screen.get_height()
+        desktop = DesktopControl()
+        screen_width = desktop.get_width()
+        screen_height = desktop.get_height()
 
         # Fullscreen capture
-        captured = screen.capture()
+        captured = desktop.capture_screen()
         self.assertEquals(screen_width, captured.get_width())
         self.assertEquals(screen_height, captured.get_height())
 
         # Capture with coordiantes
-        captured = screen.capture(20, 10, screen_width/2, screen_height/2)
+        captured = desktop.capture_screen(20, 10, screen_width/2, screen_height/2)
         self.assertEquals(screen_width/2, captured.get_width())
         self.assertEquals(screen_height/2, captured.get_height())
 
         # Capture with Region
         region = Region(10, 10, 320, 200)
-        captured = screen.capture(region)
+        captured = desktop.capture_screen(region)
         self.assertEquals(320, captured.get_width())
         self.assertEquals(200, captured.get_height())
 
     def test_capture_clipping(self):
-        screen = Screen()
-        screen_width = screen.get_width()
-        screen_height = screen.get_height()
+        desktop = DesktopControl()
+        screen_width = desktop.get_width()
+        screen_height = desktop.get_height()
 
-        captured = screen.capture(0, 0, 80000, 40000)
+        captured = desktop.capture_screen(0, 0, 80000, 40000)
         self.assertEquals(screen_width, captured.get_width())
         self.assertEquals(screen_height, captured.get_height())
 
-        captured = screen.capture(60000, 50000, 80000, 40000)
+        captured = desktop.capture_screen(60000, 50000, 80000, 40000)
         self.assertEquals(1, captured.get_width())
         self.assertEquals(1, captured.get_height())
 

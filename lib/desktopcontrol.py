@@ -21,7 +21,7 @@ from tempfile import NamedTemporaryFile
 
 from image import Image
 
-class Screen:
+class DesktopControl:
     def __init__(self):
         screen_size = autopy.screen.get_size()
 
@@ -34,7 +34,7 @@ class Screen:
     def get_height(self):
         return self.height
 
-    def capture(self, *args):
+    def capture_screen(self, *args):
         if len(args) == 4:
             xpos = args[0]
             ypos = args[1]

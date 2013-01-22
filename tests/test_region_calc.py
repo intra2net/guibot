@@ -20,7 +20,7 @@ import sys
 sys.path.append('../lib')
 
 from region import Region
-from screen import Screen
+from desktopcontrol import DesktopControl
 
 class RegionTest(unittest.TestCase):
     def test_position_calc(self):
@@ -47,8 +47,8 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(220, bottom_right.get_y())
 
     def test_screen_clipping(self):
-        screen_width = Screen().get_width()
-        screen_height = Screen().get_height()
+        screen_width = DesktopControl().get_width()
+        screen_height = DesktopControl().get_height()
 
         region = Region(0, 0, 80000, 40000)
         self.assertEqual(screen_width, region.get_width())
@@ -67,8 +67,8 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(screen_height - region.get_y(), region.get_height())
 
     def test_nearby(self):
-        screen_width = Screen().get_width()
-        screen_height = Screen().get_height()
+        screen_width = DesktopControl().get_width()
+        screen_height = DesktopControl().get_height()
 
         # defaults to 50 pixels
         region = Region(200, 100, 20, 10).nearby()
@@ -90,8 +90,8 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.get_height())
 
     def test_nearby_clipping(self):
-        screen_width = Screen().get_width()
-        screen_height = Screen().get_height()
+        screen_width = DesktopControl().get_width()
+        screen_height = DesktopControl().get_height()
 
         # clip upper side
         region = Region(200, 100, 20, 10).nearby(range=150)
@@ -142,7 +142,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(110, region.get_height())
 
     def test_below(self):
-        screen_height = Screen().get_height()
+        screen_height = DesktopControl().get_height()
 
         region = Region(200, 100, 20, 10).below(50)
         self.assertEqual(200, region.get_x())
@@ -184,7 +184,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.get_height())
 
     def test_right(self):
-        screen_width = Screen().get_width()
+        screen_width = DesktopControl().get_width()
 
         region = Region(200, 100, 20, 10).right(50)
         self.assertEqual(200, region.get_x())
