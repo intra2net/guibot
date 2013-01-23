@@ -14,30 +14,24 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-# guibender public API: Used by the scripts.
-# The import of this API file is injected before every script
+# guibender simple, procedural API.
+# Creates an internal GuiBender() object.
 
 import os, sys
-
-my_dir = os.path.dirname(os.path.abspath(__file__))
-lib_dir = os.path.join(my_dir, 'lib')
-sys.path.insert(0, lib_dir)
 
 from imagepath import ImagePath
 from region import Region
 from image import Image
 from location import Location
 from match import Match
+from guibender import GuiBender
 
-sys.path.pop(0)
+guibender = GuiBender()
+region = guibender.get_region()
 
-api_guibender = None
-
-# Call from main guibender program
-# to initialize local guibender instance
-def init_guibender_api(guibender):
-    global api_guibender
-    api_guibender = guibender
+# return main guibender object
+def get_guibender():
+    return guibender
 
 def add_image_path(directory):
     ImagePath().add_path(directory)
@@ -46,5 +40,4 @@ def remove_image_path(directory):
     ImagePath().remove_path(directory)
 
 def exists(image_or_location, timeout=0):
-    api_guibender.api_callback()
-    return Region().exists(image_or_location, timeout)
+    return region.exists(image_or_location, timeout)
