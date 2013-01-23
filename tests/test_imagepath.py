@@ -36,6 +36,10 @@ class ImagePathTest(unittest.TestCase):
     def setUp(self):
         self.imagepath = ImagePath()
 
+        # Clear paths from any previous unit test since
+        # the paths are shared between all ImagePath instances
+        self.imagepath.clear()
+
     def test_basic(self):
         self.imagepath.add_path('images')
 

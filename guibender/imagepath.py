@@ -33,6 +33,10 @@ class ImagePath:
 
         return True
 
+    def clear(self):
+        # empty list but keep reference
+        del self._imagePaths[:]
+
     def search(self, filename):
         for dir in self._imagePaths:
             fullname = os.path.join(dir, filename)
