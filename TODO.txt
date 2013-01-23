@@ -1,0 +1,19 @@
+Non-critical tasks:
+- Implement Region.find_all()
+- Unit test for Region.find_all(): Tests the three red shapes
+
+- Qt4 Gui: Test text input fields
+- Qt4 Gui: Implement drag'n'drop (perhaps two lists views)
+- Test drag'n'drop
+
+- wait_vanish() unit test
+
+- Test other image detection based on "feature detection":
+  Currently detecting text via images depends heavily
+  on the font size. OpenCV also offers "feature detection".
+
+  Test if feature based detection handles works
+  better for smaller / bigger font sizes.
+
+  If yes, then we can talk about adjust Image()
+  to enable or disable feature based matching.
