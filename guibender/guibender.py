@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# Copyright 2013 Intranet AG / Thomas Jarosch
+# Copyright 2013 Intranet AG / Thomas Jarosch and Plamen Dimitrov
 #
 # guibender is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -18,6 +18,7 @@ import os, sys
 
 from imagepath import ImagePath
 from region import Region
+import logging
 
 # The main guibender object is also a region
 # with some convenience functions added
@@ -29,12 +30,23 @@ class GuiBender(Region):
 
         self.imagepath = ImagePath()
 
-    # TODO: easy logging
-
     def add_image_path(self, directory):
         self.imagepath.add_path(directory)
 
     def remove_image_path(self, directory):
         self.imagepath.remove_path(directory)
+
+    # TODO: Thougts about logging:
+    #
+    # We should log into an own logger object
+    # and chain that into the default logger if wanted.
+    #
+    # May be the user already uses the python logging module
+    # and if we just call logging.info() from everyhere it the code
+    # it will pollute the main program log just 'using' guibender (f.e. autotest)
+    #
+    # May be this will do:
+    #     def enable_log(filename_or_parent_logger, log_level, log_on_console=False)
+    #     def disable_log()
 
     # Real API is inherited from Region - see region.py
