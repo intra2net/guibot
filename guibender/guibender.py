@@ -19,10 +19,22 @@ import os, sys
 from imagepath import ImagePath
 from region import Region
 
-class GuiBender(object):
-    def __init__(self):
-        self.imagepath = ImagePath()
-        self.region = Region()
+# The main guibender object is also a region
+# with some convenience functions added
 
-    def get_region(self):
-        return self.region
+class GuiBender(Region):
+    def __init__(self):
+        # Init with default region of full screen
+        super(GuiBender, self).__init__()
+
+        self.imagepath = ImagePath()
+
+    # TODO: easy logging
+
+    def add_image_path(self, directory):
+        self.imagepath.add_path(directory)
+
+    def remove_image_path(self, directory):
+        self.imagepath.remove_path(directory)
+
+    # Real API is inherited from Region - see region.py

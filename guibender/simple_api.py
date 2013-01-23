@@ -19,25 +19,71 @@
 
 import os, sys
 
-from imagepath import ImagePath
-from region import Region
-from image import Image
-from location import Location
-from match import Match
 from guibender import GuiBender
 
 guibender = GuiBender()
-region = guibender.get_region()
+
+LEFT_BUTTON=GuiBender.LEFT_BUTTON
+RIGHT_BUTTON=GuiBender.RIGHT_BUTTON
+CENTER_BUTTON=GuiBender.CENTER_BUTTON
 
 # return main guibender object
 def get_guibender():
     return guibender
 
 def add_image_path(directory):
-    ImagePath().add_path(directory)
+    guibender.add_image_path(directory)
 
 def remove_image_path(directory):
-    ImagePath().remove_path(directory)
+    guibender.remove_image_path(directory)
 
-def exists(image_or_location, timeout=0):
-    return region.exists(image_or_location, timeout)
+def find(image, timeout=10):
+    return guibender.find(image, timeout)
+
+def exists(image, timeout=0):
+    return guibender.exists(image, timeout)
+
+def wait(image, timeout=30):
+    return guibender.wait(image, timeout)
+
+def wait_vanish(image, timeout=30):
+    return guibender.wait_vanish(image, timeout)
+
+def get_mouse_location(self):
+    return guibender.get_mouse_location()
+
+def hover(image_or_location):
+    return guibender.hover(image_or_location)
+
+def click(image_or_location, modifiers = None):
+    return guibender.click(image_or_location, modifiers)
+
+def right_click(image_or_location, modifiers = None):
+    return guibender.right_click(image_or_location, modifiers)
+
+def double_click(image_or_location, modifiers = None):
+    return guibender.double_click(image_or_location, modifiers)
+
+def mouse_down(image_or_location, button=LEFT_BUTTON):
+    return guibender.mouse_down(image_or_location, button)
+
+def mouse_up(image_or_location, button=LEFT_BUTTON):
+    return guibender.mouse_up(image_or_location, button)
+
+def drag_drop(src_image_or_location, dst_image_or_location, modifiers = None):
+    return guibender.drag_drop(src_image_or_location, dst_image_or_location, modifiers)
+
+def drag(image_or_location, modifiers = None):
+    return guibender.drag(image_or_location, modifiers)
+
+def drop_at(image_or_location, modifiers = None):
+    return guibender.drop_at(image_or_location, modifiers)
+
+def press(image_or_location, keys, duration = 0.5):
+    return guibender.press(image_or_location, keys, duration)
+
+def type_text(image_or_location, text, modifiers = None):
+    return guibender.type_text(image_or_location, text, modifiers)
+
+def type_text_only(text, modifiers = None):
+    return self.type_text_only(text, modifiers)
