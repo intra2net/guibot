@@ -140,12 +140,3 @@ if __name__ == '__main__':
     # TODO: correct relative paths in the unit tests
     # possibly make them usable from here using the code below
     guibender.execute_script(args.testfile)
-
-    # run all tests if test argument
-    #testdir = os.path.join(os.path.dirname(__file__), "tests")
-    #logging.info("Loading tests from directory %s", testdir)
-    #for test_name in os.listdir(testdir):
-    #    print "check " + test_name
-    #    if re.match("test_\w+\.py", test_name) != None:
-    #        logging.info("[Executing] %s" % test_name)
-    #        execfile(os.path.join(testdir, test_name))
