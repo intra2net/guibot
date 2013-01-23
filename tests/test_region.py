@@ -15,11 +15,11 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
 import unittest
-import sys
 import time
 import subprocess
-sys.path.append('../lib')
+import common_test
 
 from imagepath import ImagePath
 from location import Location
@@ -33,8 +33,11 @@ class RegionTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.imagepath = ImagePath()
-        self.imagepath.add_path('images')
-        self.imagepath.add_path('../examples/images')
+        self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
+
+        self.script_show_picture = os.path.join(common_test.unittest_dir, 'show_picture.py')
+        self.script_qt4_guitest = os.path.join(common_test.unittest_dir, 'qt4_guitest.py')
 
     def setUp(self):
         self.child_show_picture = None
@@ -75,7 +78,7 @@ class RegionTest(unittest.TestCase):
     def show_image(self, filename):
         filename = self.imagepath.search(filename)
 
-        self.child_show_picture = subprocess.Popen(['python', 'show_picture.py', filename])
+        self.child_show_picture = subprocess.Popen(['python', self.script_show_picture, filename])
 
     def close_windows(self):
         if self.child_show_picture is not None:
@@ -161,8 +164,7 @@ class RegionTest(unittest.TestCase):
         # TODO: Fix openCV image finder first
         return
 
-        # TODO: Figure out script path relative to our own path
-        child_pipe = subprocess.Popen(['python', 'qt4_guitest.py'])
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         Region().click('qt4gui_button')
         Region().wait_vanish('qt4gui_button')
@@ -173,8 +175,7 @@ class RegionTest(unittest.TestCase):
         # TODO: Fix openCV image finder first
         return
 
-        # TODO: Figure out script path relative to our own path
-        child_pipe = subprocess.Popen(['python', 'qt4_guitest.py'])
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         Region().right_click('qt4gui_contextmenu_label').nearby(200).click('qt4gui_contextmenu_quit')
 
@@ -184,8 +185,7 @@ class RegionTest(unittest.TestCase):
         # TODO: Fix openCV image finder first
         return
 
-        # TODO: Figure out script path relative to our own path
-        child_pipe = subprocess.Popen(['python', 'qt4_guitest.py'])
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         Region().double_click(Image('qt4gui_double_click').target_offset(0,-10))
 

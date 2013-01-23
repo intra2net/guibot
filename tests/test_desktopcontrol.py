@@ -16,8 +16,7 @@
 #
 
 import unittest
-import sys
-sys.path.append('../lib')
+import common_test
 
 from desktopcontrol import DesktopControl
 from region import Region
