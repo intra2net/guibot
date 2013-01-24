@@ -20,6 +20,11 @@
 import os, sys
 
 from guibender import GuiBender
+from key import Key
+from image import Image
+from match import Match
+from location import Location
+import errors
 
 guibender = GuiBender()
 
