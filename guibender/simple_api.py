@@ -79,11 +79,8 @@ def drag(image_or_location, modifiers = None):
 def drop_at(image_or_location, modifiers = None):
     return guibender.drop_at(image_or_location, modifiers)
 
-def press(image_or_location, keys, duration = 0.5):
+def press(image_or_location=None, keys=[], duration = 0.5):
     return guibender.press(image_or_location, keys, duration)
 
-def type_text(image_or_location, text, modifiers = None):
+def type_text(image_or_location=None, text='', modifiers=None):
     return guibender.type_text(image_or_location, text, modifiers)
-
-def type_text_only(text, modifiers = None):
-    return self.type_text_only(text, modifiers)
