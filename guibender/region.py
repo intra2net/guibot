@@ -174,12 +174,12 @@ class Region(object):
 
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.desktop.capture_screen()
+            screen_capture = self.desktop.capture_screen(self)
             similarity = image.get_similarity()
 
-            found_pic = self.imagefinder.find_image(screen_capture, image, similarity, self.xpos, self.ypos, self.width, self.height)
+            found_pic = self.imagefinder.find_image(screen_capture, image, similarity, 0, 0, self.width, self.height)
             if found_pic is not None:
-                self.last_match = match.Match(found_pic.get_x(), found_pic.get_y(), image)
+                self.last_match = match.Match(self.xpos + found_pic.get_x(), self.ypos + found_pic.get_y(), image)
                 return self.last_match
 
             if time.time() > timeout_limit:
