@@ -294,7 +294,7 @@ class Region(object):
 
     # Press key combinations - text must be a list
     # for special characters
-    def press(self, image_or_location=None, keys=[], duration=0.5):
+    def press(self, image_or_location=None, keys=[], duration=0):
         if image_or_location != None:
             self.click(image_or_location)
         self.desktop.keys_press(keys, duration)

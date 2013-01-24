@@ -79,7 +79,7 @@ def drag(image_or_location, modifiers = None):
 def drop_at(image_or_location, modifiers = None):
     return guibender.drop_at(image_or_location, modifiers)
 
-def press(image_or_location=None, keys=[], duration = 0.5):
+def press(image_or_location=None, keys=[], duration = 0):
     return guibender.press(image_or_location, keys, duration)
 
 def type_text(image_or_location=None, text='', modifiers=None):
