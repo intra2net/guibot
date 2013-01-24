@@ -5,16 +5,15 @@
 - Ready to use program that can load "scriptlets"
 - Logging
 - Screenshot on error
-- Easy API - similar to sikuli or Xpresser
 - Optional: Send e-mail on error
-- Usable as class or procedural program
-
-- Cmdline Parser + Config Settings
 
 *** Dependencies ***
 - autopy (autopy.org)
+- python-imaging
+- opencv-python
+- xdotool
+
 Later:
-    - python-imaging for intenal Image storage
     - Cross-platform: Windows / MacOSX
     - docstrings everywhere
     - RPM package
@@ -24,9 +23,10 @@ Later:
 All API command functions of 'Region' are also
 exposed in the global namespace.
 
-*** API later on ***
-popup(text[, title])
-- Screen object / multi screen support
+*** Future ideas ***
+- API to ask for simple user input
+- API to show simple popups
+- Multi screen support
 
 *** Similar projects ***
 sikuli:
