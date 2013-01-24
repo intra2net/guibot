@@ -49,6 +49,11 @@ import cv2
 import numpy
 class BackendOpenCV:
     def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
+        # Sanity check: Needle size must be smaller than haystack
+        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
+            # TODO: Log warning to developer
+            return None
+
         opencv_haystack = numpy.array(haystack.get_pil_image())
         opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
 
