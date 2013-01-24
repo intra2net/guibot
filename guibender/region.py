@@ -294,25 +294,24 @@ class Region(object):
 
     # Press key combinations - text must be a list
     # of special characters
-    def press(self, keys, duration=0):
-        self.desktop.keys_press(keys, duration)
+    def press(self, keys):
+        self.desktop.keys_press(keys)
+        return self
 
-    def press_at(self, image_or_location=None, keys=[], duration=0):
+    def press_at(self, image_or_location=None, keys=[]):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
 
-        self.desktop.keys_press(keys, duration)
+        self.desktop.keys_press(keys)
         return match
 
-    # TODO: Fix support for international characters
     def type_text(self, text, modifiers=None):
         self.desktop.keys_type(text, modifiers)
+        return self
 
-    # TODO: Fix support for international characters
     def type_at(self, image_or_location=None, text='', modifiers=None):
         match = None
-
         if image_or_location != None:
             match = self.click(image_or_location)
 

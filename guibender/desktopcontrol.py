@@ -25,32 +25,15 @@ from tempfile import NamedTemporaryFile
 
 from image import Image
 from location import Location
+from key import Key
+
+import subprocess
 
 class DesktopControl:
     # Mouse buttons
     LEFT_BUTTON=autopy.mouse.LEFT_BUTTON
     RIGHT_BUTTON=autopy.mouse.RIGHT_BUTTON
     CENTER_BUTTON=autopy.mouse.CENTER_BUTTON
-
-    # Keyboard special and secondary keys
-    specialkeys = {'Enter' : autopy.key.K_RETURN, 'Ctrl' : autopy.key.K_CONTROL,
-                   'Shift' : autopy.key.K_SHIFT, 'Alt' : autopy.key.K_ALT,
-                   # no Tab key supported
-                   'Tab' : autopy.key.K_CAPSLOCK,
-                   'PgUp' : autopy.key.K_PAGEUP, 'Meta' : autopy.key.K_META,
-                   'PgDn' : autopy.key.K_PAGEDOWN, 'Delete' : autopy.key.K_DELETE,
-                   'Home' : autopy.key.K_HOME, 'Esc' : autopy.key.K_ESCAPE,
-                   'F1' : autopy.key.K_F1, 'F2' : autopy.key.K_F2,
-                   'F3' : autopy.key.K_F3, 'F4' : autopy.key.K_F4,
-                   'F5' : autopy.key.K_F5, 'F6' : autopy.key.K_F6,
-                   'F7' : autopy.key.K_F7, 'F8' : autopy.key.K_F8,
-                   'F9' : autopy.key.K_F9, 'F10' : autopy.key.K_F10,
-                   'F11' : autopy.key.K_F11, 'F12' : autopy.key.K_F12}
-
-    shiftkeys = ['~', '!', '@', '#', '$', '%',
-                 '^', '&', '*', '(', ')', '_',
-                 '+', '{', '}', '|', ':', '"',
-                 '?', '>', '<']
 
     def __init__(self):
         screen_size = autopy.screen.get_size()
@@ -142,31 +125,34 @@ class DesktopControl:
     def mouse_up(self, button=LEFT_BUTTON):
         autopy.mouse.toggle(False, button)
 
+    def keys_toggle(self, keys, up_down):
+        try:
+            # Support lists
+            for key in keys:
+                autopy.key.toggle(key, up_down)
+        except:
+            autopy.key.toggle(keys, up_down)
+
+    def keys_press(self, keys):
+        self.keys_toggle(keys, True)
+        self.keys_toggle(keys, False)
+
     def keys_type(self, text, modifiers):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
-        for char in text:
-            if char in self.shiftkeys:
-                autopy.key.tap(char, autopy.key.MOD_SHIFT)
+
+        if isinstance(text, basestring) or isinstance(text, str):
+            # TODO: Fix autopy to handle international chars and other stuff
+            subprocess.call(['xdotool', 'type', text], shell=False)
+            return
+
+        # Support list of something
+        for subtext in text:
+            if isinstance(subtext, basestring) or isinstance(subtext, str):
+                # TODO: Fix autopy to handle international chars and other stuff
+                subprocess.call(['xdotool', 'type', subtext], shell=False)
             else:
-                autopy.key.type_string(char)
+                autopy.key.tap(subtext)
+
         if modifiers != None:
             self.keys_toggle(modifiers, False)
-
-    def keys_press(self, keys, duration = 0.5):
-        logging.debug("Pressing key combination: %s", "+".join(keys))
-        self.keys_toggle(keys, True)
-        time.sleep(duration)
-        self.keys_toggle(keys, False)
-
-    def keys_toggle(self, keys, up_down):
-        for key in keys:
-            if key in self.specialkeys.keys():
-                logging.debug("Detected special key: %s [%s]",
-                              key, self.specialkeys[key])
-                autopy.key.toggle(self.specialkeys[key], up_down)
-            elif key in self.shiftkeys:
-                logging.debug("Detected shift key: %s", key)
-                autopy.key.toggle(key, up_down, autopy.key.MOD_SHIFT)
-            else:
-                autopy.key.toggle(key, up_down)
