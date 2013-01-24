@@ -17,3 +17,6 @@ Non-critical tasks:
 
   If yes, then we can talk about adjust Image()
   to enable or disable feature based matching.
+
+- sikuli has a "pyramid match". Figure out what it does
+  (wild guess: Try different zoom levels of the same image?)
