@@ -302,6 +302,8 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
+            # TODO: Make configurable
+            time.sleep(0.2)
 
         self.desktop.keys_press(keys)
         return match
@@ -314,6 +316,8 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
+            # TODO: Make configurable
+            time.sleep(0.2)
 
         self.desktop.keys_type(text, modifiers)
         return match
