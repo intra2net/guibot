@@ -293,17 +293,31 @@ class Region(object):
         return match
 
     # Press key combinations - text must be a list
-    # for special characters
-    def press(self, image_or_location=None, keys=[], duration=0):
-        if image_or_location != None:
-            self.click(image_or_location)
+    # of special characters
+    def press(self, keys, duration=0):
         self.desktop.keys_press(keys, duration)
 
-    # TODO: Fix support for international characters
-    def type_text(self, image_or_location=None, text='', modifiers=None):
+    def press_at(self, image_or_location=None, keys=[], duration=0):
+        match = None
         if image_or_location != None:
-            self.click(image_or_location)
+            match = self.click(image_or_location)
+
+        self.desktop.keys_press(keys, duration)
+        return match
+
+    # TODO: Fix support for international characters
+    def type_text(self, text, modifiers=None):
         self.desktop.keys_type(text, modifiers)
+
+    # TODO: Fix support for international characters
+    def type_at(self, image_or_location=None, text='', modifiers=None):
+        match = None
+
+        if image_or_location != None:
+            match = self.click(image_or_location)
+
+        self.desktop.keys_type(text, modifiers)
+        return match
 
     # List of API functions to implement:
     #
