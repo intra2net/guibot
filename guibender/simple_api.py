@@ -36,6 +36,9 @@ CENTER_BUTTON=GuiBender.CENTER_BUTTON
 def get_guibender():
     return guibender
 
+def last_match():
+    return guibender.get_last_match()
+
 def add_image_path(directory):
     guibender.add_image_path(directory)
 
