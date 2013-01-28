@@ -132,6 +132,55 @@ class RegionTest(unittest.TestCase):
         except FindError, e:
             pass
 
+        try:
+            Region().find_all(Image('shape_blue_circle.png'), 0)
+            self.fail('exception was not thrown')
+        except FindError, e:
+            pass
+
+    def test_zero_matches(self):
+        self.show_image('all_shapes')
+
+        matches = Region().find_all(Image('shape_blue_circle'))
+        self.assertEqual(len(matches), 1)
+
+        self.close_windows()
+
+        matches = Region().find_all(Image('shape_blue_circle'), allow_zero = True)
+        self.assertEqual(len(matches), 0)
+
+        self.close_windows()
+
+    def test_find_all(self):
+        self.show_image('all_shapes')
+        region = Region()
+        # TODO: find should consider both autopy
+        # and OpenCV but both may not be supported
+        # at developer's platform
+        #region.imagefinder = ImageFinder('autopy')
+
+        matches = region.find_all(Image('shape_green_box'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(67, matches[0].get_width())
+        self.assertEqual(52, matches[0].get_height())
+
+        matches = region.find_all(Image('shape_red_box'))
+        self.assertEqual(len(matches), 3)
+        for match in matches:
+            region.hover(match)
+            time.sleep(0.5)
+            self.assertEqual(68, match.get_width())
+            self.assertEqual(56, match.get_height())
+
+        # pink is similar to red, so 4 matches are expected
+        matches = region.find_all(Image('shape_pink_box').similarity(0.5))
+        self.assertEqual(len(matches), 4)
+        for match in matches:
+            region.hover(match)
+            time.sleep(0.5)
+            self.assertEqual(69, match.get_width())
+            self.assertEqual(48, match.get_height())
+
     def test_exists(self):
         self.show_image('all_shapes')
 
