@@ -193,3 +193,6 @@ class ImageFinder:
 
     def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
         return self._backend.find_image(haystack, needle, similarity, xpos, ypos, width, height)
+
+    def find_all(self, haystack, needle, similarity, xpos, ypos, width, height):
+        return self._backend.find_all(haystack, needle, similarity, xpos, ypos, width, height)

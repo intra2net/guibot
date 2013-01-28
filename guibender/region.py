@@ -182,18 +182,49 @@ class Region(object):
                 self.last_match = match.Match(self.xpos + found_pic.get_x(), self.ypos + found_pic.get_y(), image)
                 return self.last_match
 
-            if time.time() > timeout_limit:
+            elif time.time() > timeout_limit:
                 # TODO: Turn this into a setting / make it optional
                 screen_capture.save('/tmp/guibender_last_finderror.png')
                 image.save('/tmp/guibender_last_finderror_needle.png')
+                raise FindError()
 
-                break
+            else:
+                # don't hog the CPU
+                # TODO: Make 'rescan speed' configurable
+                time.sleep(0.2)
 
-            # don't hog the CPU
-            # TODO: Make 'rescan speed' configurable
-            time.sleep(0.2)
+    def find_all(self, image, timeout=10, allow_zero = False):
+        # Load image if needed
+        if isinstance(image, basestring):
+            image = Image(image)
 
-        raise FindError()
+        # TODO: decide about updating the last_match attribute
+        last_matches = []
+        timeout_limit = time.time() + timeout
+        while True:
+
+            screen_capture = self.desktop.capture_screen(self)
+            similarity = image.get_similarity()
+            found_pics = self.imagefinder.find_all(screen_capture, image, similarity, 0, 0, self.width, self.height)
+
+            if len(found_pics) > 0:
+                for found_pic in found_pics:
+                    last_matches.append(match.Match(self.xpos + found_pic.get_x(), self.ypos + found_pic.get_y(), image))
+                return last_matches
+
+            elif time.time() > timeout_limit:
+                if allow_zero:
+                    return last_matches
+                else:
+                    # TODO: Turn this into a setting / make it optional
+                    screen_capture.save('/tmp/guibender_last_finderror.png')
+                    image.save('/tmp/guibender_last_finderror_needle.png')
+                    raise FindError()
+
+            else:
+                # don't hog the CPU
+                # TODO: Make 'rescan speed' configurable
+                time.sleep(0.2)
 
     def exists(self, image, timeout=0):
         try:
