@@ -172,9 +172,20 @@ class RegionTest(unittest.TestCase):
             self.assertEqual(68, match.get_width())
             self.assertEqual(56, match.get_height())
 
-        # pink is similar to red, so 4 matches are expected
+        # pink is similar to red, so the best fuzzy matches are
+        # the three red boxes when considering color
         matches = region.find_all(Image('shape_pink_box').similarity(0.5))
         self.assertEqual(len(matches), 4)
+        for match in matches:
+            region.hover(match)
+            time.sleep(0.5)
+            self.assertEqual(69, match.get_width())
+            self.assertEqual(48, match.get_height())
+
+        # ignore colors here so the best matches for the pink box
+        # should be based on shape (the green and yellow box)
+        matches = region.find_all(Image('shape_pink_box'), nocolor = True)
+        self.assertEqual(len(matches), 3)
         for match in matches:
             region.hover(match)
             time.sleep(0.5)
