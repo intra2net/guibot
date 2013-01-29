@@ -39,10 +39,36 @@ class BackendAutoPy:
             autopy_screenshot = bitmap.Bitmap.open(f.name)
 
             autopy_tolerance = 1.0 - similarity
+            # TODO: since only the coordinates are available
+            # and fuzzy areas of matches are returned we need
+            # to ask autopy team for returning the matching rates
+            # as well
             coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((xpos, ypos), (width, height)))
 
             if coord is not None:
                 return Location(coord[0], coord[1])
+
+        return None
+
+    def find_all(self, haystack, needle, similarity, xpos, ypos, width, height):
+        if needle.get_filename() in self._bitmapcache:
+            autopy_needle = self._bitmapcache[needle.get_filename()]
+        else:
+            # load and cache it
+            # TODO: Use in-memory conversion
+            autopy_needle = bitmap.Bitmap.open(needle.get_filename())
+            self._bitmapcache[needle.get_filename()] = autopy_needle
+
+        # TODO: Use in-memory conversion
+        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            haystack.save(f.name)
+            autopy_screenshot = bitmap.Bitmap.open(f.name)
+
+            autopy_tolerance = 1.0 - similarity
+            coords = autopy_screenshot.find_every_bitmap(autopy_needle, autopy_tolerance, ((xpos, ypos), (width, height)))
+            print coords
+
+            return [Location(*xy) for xy in coords]
 
         return None
 
