@@ -208,6 +208,16 @@ class RegionTest(unittest.TestCase):
         # TODO: Own unit test for wait_vanish()
         self.assertTrue(Region().wait_vanish('all_shapes'))
 
+    def test_wait_vanish(self):
+        self.show_image('all_shapes')
+        time.sleep(5)
+        self.assertFalse(Region().wait_vanish('all_shapes', timeout = 5))
+
+        self.close_windows()
+        self.assertTrue(Region().wait_vanish('all_shapes', timeout = 10))
+
+        self.close_windows()
+
     def test_hover(self):
         # Hover over Location
         self.show_image('all_shapes')
