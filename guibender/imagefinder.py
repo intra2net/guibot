@@ -75,13 +75,15 @@ class BackendAutoPy:
 import cv, cv2
 import numpy
 class BackendOpenCV:
-    def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
-        result = self._match(haystack, needle)
+    def find_image(self, haystack, needle, similarity, xpos, ypos,
+                   width, height, nocolor = True):
+        result = self._match(haystack, needle, nocolor)
 
         minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
         logging.debug('minVal: %s', str(minVal))
         logging.debug('minLoc: %s', str(minLoc))
-        logging.debug('maxVal (similarity): %s (%s)', str(maxVal), similarity)
+        logging.debug('maxVal (similarity): %s (%s)',
+                      str(maxVal), similarity)
         logging.debug('maxLoc (x,y): %s', str(maxLoc))
 
         # TODO: Figure out how the threshold works
@@ -91,8 +93,9 @@ class BackendOpenCV:
 
         return None
 
-    def find_all(self, haystack, needle, similarity, xpos, ypos, width, height):
-        result = self._match(haystack, needle)
+    def find_all(self, haystack, needle, similarity, xpos, ypos,
+                 width, height, nocolor = True):
+        result = self._match(haystack, needle, nocolor)
 
         # variant 1: extract all matches above required similarity
         # problems: clouds of matches (like electron clouds), too slow
@@ -185,7 +188,7 @@ class BackendOpenCV:
 
         return maxima
 
-    def _match(self, haystack, needle):
+    def _match(self, haystack, needle, nocolor = True):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
             logging.warning("The size of the searched image is smaller than its region - are you insane?")
@@ -197,7 +200,13 @@ class BackendOpenCV:
         opencv_needle = numpy.array(needle.get_pil_image())
         opencv_needle = opencv_needle[:, :, ::-1].copy()
 
-        match = cv2.matchTemplate(opencv_haystack,opencv_needle,cv2.TM_CCOEFF_NORMED)
+        if nocolor:
+            # convert to greyscale
+            gray_haystack = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
+            gray_needle = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
+            match = cv2.matchTemplate(gray_haystack, gray_needle, cv2.TM_CCOEFF_NORMED)
+        else:
+            match = cv2.matchTemplate(opencv_haystack, opencv_needle, cv2.TM_CCOEFF_NORMED)
         return match
 
 class ImageFinder:
@@ -217,8 +226,8 @@ class ImageFinder:
         else:
             raise ImageFinderBackendError('Unsupported backend: ' + backend)
 
-    def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
-        return self._backend.find_image(haystack, needle, similarity, xpos, ypos, width, height)
+    def find_image(self, haystack, needle, similarity, xpos, ypos, width, height, nocolor = True):
+        return self._backend.find_image(haystack, needle, similarity, xpos, ypos, width, height, nocolor)
 
-    def find_all(self, haystack, needle, similarity, xpos, ypos, width, height):
-        return self._backend.find_all(haystack, needle, similarity, xpos, ypos, width, height)
+    def find_all(self, haystack, needle, similarity, xpos, ypos, width, height, nocolor = True):
+        return self._backend.find_all(haystack, needle, similarity, xpos, ypos, width, height, nocolor)

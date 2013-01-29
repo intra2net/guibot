@@ -167,7 +167,7 @@ class Region(object):
     def get_last_match(self):
         return self.last_match
 
-    def find(self, image, timeout=10):
+    def find(self, image, timeout=10, nocolor=False):
         # Load image if needed
         if isinstance(image, basestring):
             image = Image(image)
@@ -177,7 +177,10 @@ class Region(object):
             screen_capture = self.desktop.capture_screen(self)
             similarity = image.get_similarity()
 
-            found_pic = self.imagefinder.find_image(screen_capture, image, similarity, 0, 0, self.width, self.height)
+            found_pic = self.imagefinder.find_image(screen_capture, image,
+                                                    similarity, 0, 0,
+                                                    self.width, self.height,
+                                                    nocolor)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(), self.ypos + found_pic.get_y(), image)
                 return self.last_match
@@ -193,7 +196,7 @@ class Region(object):
                 # TODO: Make 'rescan speed' configurable
                 time.sleep(0.2)
 
-    def find_all(self, image, timeout=10, allow_zero = False):
+    def find_all(self, image, timeout=10, nocolor=False, allow_zero = False):
         # Load image if needed
         if isinstance(image, basestring):
             image = Image(image)
@@ -205,7 +208,10 @@ class Region(object):
 
             screen_capture = self.desktop.capture_screen(self)
             similarity = image.get_similarity()
-            found_pics = self.imagefinder.find_all(screen_capture, image, similarity, 0, 0, self.width, self.height)
+            found_pics = self.imagefinder.find_all(screen_capture, image,
+                                                    similarity, 0, 0,
+                                                    self.width, self.height,
+                                                    nocolor)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
