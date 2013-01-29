@@ -48,6 +48,9 @@ def remove_image_path(directory):
 def find(image, timeout=10):
     return guibender.find(image, timeout)
 
+def find_all(image, timeout=10, allow_zero=False):
+    return guibender.find_all(image, timeout, allow_zero)
+
 def exists(image, timeout=0):
     return guibender.exists(image, timeout)
 
