@@ -1,4 +1,4 @@
-# Copyright 2013 Intranet AG / Thomas Jarosch
+# Copyright 2013 Intranet AG / Thomas Jarosch and Plamen Dimitrov
 #
 # guibender is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -352,10 +352,6 @@ class Region(object):
 
         self.desktop.keys_type(text, modifiers)
         return match
-
-    # List of API functions to implement:
-    #
-    # find_all(Image or filename)
 
 # TODO: make this more pythonic
 import match
