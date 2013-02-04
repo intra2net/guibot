@@ -189,10 +189,6 @@ class BackendOpenCV:
         return maxima
 
     def find_features(self, haystack, needle, similarity, nocolor = True):
-        # Sanity check: Needle size must be smaller than haystack
-        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
-            logging.warning("The size of the searched image is smaller than its region - are you insane?")
-            return None
 
         opencv_haystack = numpy.array(haystack.get_pil_image())
         opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
