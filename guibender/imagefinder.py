@@ -214,15 +214,60 @@ class BackendOpenCV:
         return match
 
     def find_features(self, haystack, needle, similarity, nocolor = True):
+        # TODO: multichannel matching using the color option
+        mhkp, hkp, mnkp, nkp = self._match_features(haystack, needle, similarity)
 
-        opencv_haystack = numpy.array(haystack.get_pil_image())
-        opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
+        #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
+        if len(mhkp) < 4 or len(mnkp) < 4:
+            # minimum 4 features are required for calculating the homography matrix
+            raise IndexError("Minimum 4 features are required while %s\\%s from needle "\
+                             "and %s\\%s from haystack were matched with your required "\
+                             "similarity and image size" % (len(mhkp), len(hkp),
+                                                            len(mnkp), len(nkp)))
+        H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
+                                     numpy.array([kp.pt for kp in mhkp]))
 
-        opencv_needle = numpy.array(needle.get_pil_image())
-        opencv_needle = opencv_needle[:, :, ::-1].copy()
+        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
+        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
+        #print orig_center_wrapped.shape, H.shape
+        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
+        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
-        ngray = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
-        hgray = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
+        # TODO: remove this code currently used for debugging
+        # draw projected image center as well as matched and unmatched features
+        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
+        cv2.circle(opencv_haystack, (int(mcx),int(mcy)), 2,(0,255,0),-1)
+        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 2,(0,255,0),-1)
+        for kp in hkp:
+            if kp in mhkp:
+                # draw matched keypoints in red color
+                color = (0, 0, 255)
+            else:
+                # draw unmatched in blue color
+                color = (255, 0, 0)
+            # draw matched key points on original h image
+            x,y = kp.pt
+            cv2.circle(opencv_haystack, (int(x),int(y)), 2, color, -1)
+        for kp in nkp:
+            if kp in mnkp:
+                # draw matched keypoints in red color
+                color = (0, 0, 255)
+            else:
+                # draw unmatched in blue color
+                color = (255, 0, 0)
+            # draw matched key points on original n image
+            x,y = kp.pt
+            cv2.circle(opencv_needle, (int(x),int(y)), 2, color, -1)
+        cv2.imshow('haystack', opencv_haystack)
+        cv2.imshow('needle', opencv_needle)
+        #time.sleep(10)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        return Location(int(mcx), int(mcy))
+
+    def _match_features(self, haystack, needle, similarity):
+        hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
 
         # TODO: use these methods of the newer version
         # they offer multiple implementations of different feature detectors,
@@ -268,10 +313,6 @@ class BackendOpenCV:
         cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
         """
 
-        if len(hkeypoints) < 4 or len(nkeypoints) < 4:
-            raise IndexError("Minimum 4 features are required and less were detected "\
-                             "with your needle size")
-
         # extract vectors of size 64 from raw descriptors numpy arrays
         rowsize = len(hdescriptors) / len(hkeypoints)
         hrows = numpy.array(hdescriptors, dtype = numpy.float32).reshape((-1, rowsize))
@@ -285,7 +326,6 @@ class BackendOpenCV:
         knn = cv2.KNearest()
         knn.train(samples,responses)
 
-
         match_hkeypoints = []
         match_nkeypoints = []
         # retrieve index and value through enumeration
@@ -296,56 +336,13 @@ class BackendOpenCV:
             res, dist =  int(results[0][0]), dists[0][0]
             #print res, dist
 
-            # use similarity here
             if dist <= 1.0 - similarity:
                 match_hkeypoints.append(hkeypoints[res])
                 match_nkeypoints.append(nkeypoints[i])
             else:
-                print "no", dist
-
-        #print len(match_nkeypoints), len(match_hkeypoints)
-        if len(match_hkeypoints) < 4 or len(match_nkeypoints) < 4:
-            raise IndexError("Minimum 4 features are required and less were matched "\
-                             "with your required similarity")
-        H, mask = cv2.findHomography(numpy.array([nkp.pt for nkp in match_nkeypoints]),
-                                     numpy.array([hkp.pt for hkp in match_hkeypoints]))
-
-        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
-        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
-        #print orig_center_wrapped.shape, H.shape
-        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
-        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
-
-        # TODO: remove this code currently used for debugging
-        # draw projected image center as well as matched and unmatched features
-        cv2.circle(opencv_haystack, (int(mcx),int(mcy)), 2,(0,255,0),-1)
-        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 2,(0,255,0),-1)
-        for hkp in hkeypoints:
-            if hkp in match_hkeypoints:
-                # draw matched keypoints in red color
-                color = (0, 0, 255)
-            else:
-                # draw unmatched in blue color
-                color = (255, 0, 0)
-            # draw matched key points on original h image
-            x,y = hkp.pt
-            cv2.circle(opencv_haystack, (int(x),int(y)), 2, color, -1)
-        for nkp in nkeypoints:
-            if nkp in match_nkeypoints:
-                # draw matched keypoints in red color
-                color = (0, 0, 255)
-            else:
-                # draw unmatched in blue color
-                color = (255, 0, 0)
-            # draw matched key points on original n image
-            x,y = nkp.pt
-            cv2.circle(opencv_needle, (int(x),int(y)), 2, color, -1)
-        cv2.imshow('haystack', opencv_haystack)
-        cv2.imshow('needle', opencv_needle)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
-        return Location(int(mcx), int(mcy))
+                pass
+                #print "no", dist
+        return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
 
     def _get_opencv_images(self, haystack, needle, gray = False):
         opencv_haystack = numpy.array(haystack.get_pil_image())
