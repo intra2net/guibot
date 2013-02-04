@@ -188,6 +188,144 @@ class BackendOpenCV:
 
         return maxima
 
+    def find_features(self, haystack, needle, similarity, nocolor = True):
+        # Sanity check: Needle size must be smaller than haystack
+        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
+            logging.warning("The size of the searched image is smaller than its region - are you insane?")
+            return None
+
+        opencv_haystack = numpy.array(haystack.get_pil_image())
+        opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
+
+        opencv_needle = numpy.array(needle.get_pil_image())
+        opencv_needle = opencv_needle[:, :, ::-1].copy()
+
+        ngrey = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
+        hgrey = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
+
+        # TODO: use these methods of the newer version
+        # they offer multiple implementations of different feature detectors,
+        # description extractors, and matchers all of which can be compared
+        # and made available
+        """
+        # version test
+        print cv2.__version__
+        detector2 = cv2.FeatureDetector_create("SURF")
+
+        extractor = cv2.DescriptorExtractor_create("SURF") #"BRIEF", etc
+        matcher = cv2.DescriptorMatcher_create("BruteForce-Hamming")
+
+        # keypoints
+        haystack_keypoints = detector.detect(grey_haystack)
+        needle_keypoints = detector.detect(grey_needle)
+
+        # feature vectors (descriptors)
+        (haystack_keypoints2, haystack_descriptors) = extractor.compute(grey_haystack, haystack_keypoints)
+        (needle_keypoints2, needle_descriptors) = extractor.compute(grey_needle, needle_keypoints)
+
+        # build matcher and match feature vectors
+        matches = matcher.match(needle_descriptors, haystack_descriptors)
+        # then extract matches above some similarity as done below
+        """
+
+        # build feature detector and descriptor extractor
+        hessian_threshold = 85
+        detector = cv2.SURF(hessian_threshold)
+        (hkeypoints, hdescriptors) = detector.detect(hgrey, None, useProvidedKeypoints = False)
+        (nkeypoints, ndescriptors) = detector.detect(ngrey, None, useProvidedKeypoints = False)
+
+        # TODO: this MSER blob feature detector is also available in
+        # the current cv2 module
+        """
+        detector = cv2.MSER()
+        hregions = detector.detect(hgrey, None)
+        nregions = detector.detect(ngrey, None)
+        hhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in hregions]
+        nhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in nregions]
+        # show on final result
+        cv2.polylines(opencv_haystack, hhulls, 1, (0, 255, 0))
+        cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
+        """
+
+        if len(hkeypoints) < 4 or len(nkeypoints) < 4:
+            raise IndexError("Minimum 4 features are required and less were detected "\
+                             "with your needle size")
+
+        # extract vectors of size 64 from raw descriptors numpy arrays
+        rowsize = len(hdescriptors) / len(hkeypoints)
+        hrows = numpy.array(hdescriptors, dtype = numpy.float32).reshape((-1, rowsize))
+        nrows = numpy.array(ndescriptors, dtype = numpy.float32).reshape((-1, rowsize))
+        #print hrows.shape, nrows.shape
+
+        # kNN training - learn mapping from hrow to hkeypoints index
+        samples = hrows
+        responses = numpy.arange(len(hkeypoints), dtype = numpy.float32)
+        #print len(samples), len(responses)
+        knn = cv2.KNearest()
+        knn.train(samples,responses)
+
+
+        match_hkeypoints = []
+        match_nkeypoints = []
+        # retrieve index and value through enumeration
+        for i, descriptor in enumerate(nrows):
+            descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, 64))
+            #print i, descriptor.shape, samples[0].shape
+            retval, results, neigh_resp, dists = knn.find_nearest(descriptor, 1)
+            res, dist =  int(results[0][0]), dists[0][0]
+            #print res, dist
+
+            # use similarity here
+            if dist <= 1.0 - similarity:
+                match_hkeypoints.append(hkeypoints[res])
+                match_nkeypoints.append(nkeypoints[i])
+            else:
+                print "no", dist
+
+        #print len(match_nkeypoints), len(match_hkeypoints)
+        if len(match_hkeypoints) < 4 or len(match_nkeypoints) < 4:
+            raise IndexError("Minimum 4 features are required and less were matched "\
+                             "with your required similarity")
+        H, mask = cv2.findHomography(numpy.array([nkp.pt for nkp in match_nkeypoints]),
+                                     numpy.array([hkp.pt for hkp in match_hkeypoints]))
+
+        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
+        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
+        #print orig_center_wrapped.shape, H.shape
+        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
+        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+
+        # TODO: remove this code currently used for debugging
+        # draw projected image center as well as matched and unmatched features
+        cv2.circle(opencv_haystack, (int(mcx),int(mcy)), 2,(0,255,0),-1)
+        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 2,(0,255,0),-1)
+        for hkp in hkeypoints:
+            if hkp in match_hkeypoints:
+                # draw matched keypoints in red color
+                color = (0, 0, 255)
+            else:
+                # draw unmatched in blue color
+                color = (255, 0, 0)
+            # draw matched key points on original h image
+            x,y = hkp.pt
+            cv2.circle(opencv_haystack, (int(x),int(y)), 2, color, -1)
+        for nkp in nkeypoints:
+            if nkp in match_nkeypoints:
+                # draw matched keypoints in red color
+                color = (0, 0, 255)
+            else:
+                # draw unmatched in blue color
+                color = (255, 0, 0)
+            # draw matched key points on original n image
+            x,y = nkp.pt
+            cv2.circle(opencv_needle, (int(x),int(y)), 2, color, -1)
+        cv2.imshow('haystack', opencv_haystack)
+        cv2.imshow('needle', opencv_needle)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+        return Location(int(mcx), int(mcy))
+
     def _match(self, haystack, needle, nocolor = True):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
