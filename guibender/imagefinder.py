@@ -206,8 +206,8 @@ class BackendOpenCV:
         opencv_needle = numpy.array(needle.get_pil_image())
         opencv_needle = opencv_needle[:, :, ::-1].copy()
 
-        ngrey = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
-        hgrey = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
+        ngray = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
+        hgray = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
 
         # TODO: use these methods of the newer version
         # they offer multiple implementations of different feature detectors,
@@ -222,12 +222,12 @@ class BackendOpenCV:
         matcher = cv2.DescriptorMatcher_create("BruteForce-Hamming")
 
         # keypoints
-        haystack_keypoints = detector.detect(grey_haystack)
-        needle_keypoints = detector.detect(grey_needle)
+        haystack_keypoints = detector.detect(hgray)
+        needle_keypoints = detector.detect(ngray)
 
         # feature vectors (descriptors)
-        (haystack_keypoints2, haystack_descriptors) = extractor.compute(grey_haystack, haystack_keypoints)
-        (needle_keypoints2, needle_descriptors) = extractor.compute(grey_needle, needle_keypoints)
+        (haystack_keypoints2, haystack_descriptors) = extractor.compute(hgray, haystack_keypoints)
+        (needle_keypoints2, needle_descriptors) = extractor.compute(ngray, needle_keypoints)
 
         # build matcher and match feature vectors
         matches = matcher.match(needle_descriptors, haystack_descriptors)
@@ -237,15 +237,15 @@ class BackendOpenCV:
         # build feature detector and descriptor extractor
         hessian_threshold = 85
         detector = cv2.SURF(hessian_threshold)
-        (hkeypoints, hdescriptors) = detector.detect(hgrey, None, useProvidedKeypoints = False)
-        (nkeypoints, ndescriptors) = detector.detect(ngrey, None, useProvidedKeypoints = False)
+        (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
+        (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
 
         # TODO: this MSER blob feature detector is also available in
         # the current cv2 module
         """
         detector = cv2.MSER()
-        hregions = detector.detect(hgrey, None)
-        nregions = detector.detect(ngrey, None)
+        hregions = detector.detect(hgray, None)
+        nregions = detector.detect(ngray, None)
         hhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in hregions]
         nhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in nregions]
         # show on final result
@@ -345,7 +345,7 @@ class BackendOpenCV:
         opencv_needle = opencv_needle[:, :, ::-1].copy()
 
         if nocolor:
-            # convert to greyscale
+            # convert to gray scale
             gray_haystack = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
             gray_needle = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
             match = cv2.matchTemplate(gray_haystack, gray_needle, cv2.TM_CCOEFF_NORMED)
