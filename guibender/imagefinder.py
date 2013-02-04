@@ -68,9 +68,19 @@ class BackendAutoPy:
             coords = autopy_screenshot.find_every_bitmap(autopy_needle, autopy_tolerance, ((xpos, ypos), (width, height)))
             print coords
 
+            # autopy does not provide the matching value in order to
+            # extract only the extrema
             return [Location(*xy) for xy in coords]
 
         return None
+
+    def find_features(self, haystack, needle, similarity, nocolor = True):
+        # autopy only performes a template match at the moment
+        raise NotImplementedError
+
+    def measure_match_methods(self, haystack, needle):
+        # autopy does not provide alternative template match methods
+        raise NotImplementedError
 
 import cv, cv2
 import numpy
@@ -387,3 +397,9 @@ class ImageFinder:
 
     def find_all(self, haystack, needle, similarity, xpos, ypos, width, height, nocolor = True):
         return self._backend.find_all(haystack, needle, similarity, xpos, ypos, width, height, nocolor)
+
+    def find_features(self, haystack, needle, similarity, nocolor = True):
+        return self._backend.find_features(haystack, needle, similarity, nocolor)
+
+    def measure_match_methods(self, haystack, needle):
+        return self._backend.measure_match_methods(self, haystack, needle)
