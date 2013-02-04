@@ -341,7 +341,29 @@ class BackendOpenCV:
             match = cv2.matchTemplate(gray_haystack, gray_needle, cv2.TM_CCOEFF_NORMED)
         else:
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, cv2.TM_CCOEFF_NORMED)
+
         return match
+
+    def measure_match_methods(self, haystack, needle):
+        # Sanity check: Needle size must be smaller than haystack
+        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
+            logging.warning("The size of the searched image is smaller than its region - are you insane?")
+            return None
+
+        opencv_haystack = numpy.array(haystack.get_pil_image())
+        opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
+
+        opencv_needle = numpy.array(needle.get_pil_image())
+        opencv_needle = opencv_needle[:, :, ::-1].copy()
+
+        # test all methods
+        for method in (cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
+                       cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
+                       cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED):
+            for image in (needle, cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)):
+                match = cv2.matchTemplate(opencv_haystack, opencv_needle, method)
+                minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(match)
+                print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
 
 class ImageFinder:
     _backend = None
