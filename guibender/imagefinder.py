@@ -198,6 +198,21 @@ class BackendOpenCV:
 
         return maxima
 
+    def _match(self, haystack, needle, nocolor = True):
+        # Sanity check: Needle size must be smaller than haystack
+        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
+            logging.warning("The size of the searched image is smaller than its region - are you insane?")
+            return None
+
+        if nocolor:
+            gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
+            match = cv2.matchTemplate(gray_haystack, gray_needle, cv2.TM_CCOEFF_NORMED)
+        else:
+            opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
+            match = cv2.matchTemplate(opencv_haystack, opencv_needle, cv2.TM_CCOEFF_NORMED)
+
+        return match
+
     def find_features(self, haystack, needle, similarity, nocolor = True):
 
         opencv_haystack = numpy.array(haystack.get_pil_image())
@@ -332,27 +347,20 @@ class BackendOpenCV:
 
         return Location(int(mcx), int(mcy))
 
-    def _match(self, haystack, needle, nocolor = True):
-        # Sanity check: Needle size must be smaller than haystack
-        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
-            logging.warning("The size of the searched image is smaller than its region - are you insane?")
-            return None
-
+    def _get_opencv_images(self, haystack, needle, gray = False):
         opencv_haystack = numpy.array(haystack.get_pil_image())
-        opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
-
+        # convert RGB to BGR
+        opencv_haystack = opencv_haystack[:, :, ::-1].copy()
+ 
         opencv_needle = numpy.array(needle.get_pil_image())
+        # convert RGB to BGR
         opencv_needle = opencv_needle[:, :, ::-1].copy()
 
-        if nocolor:
-            # convert to gray scale
-            gray_haystack = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
-            gray_needle = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
-            match = cv2.matchTemplate(gray_haystack, gray_needle, cv2.TM_CCOEFF_NORMED)
-        else:
-            match = cv2.matchTemplate(opencv_haystack, opencv_needle, cv2.TM_CCOEFF_NORMED)
+        if gray:
+            opencv_haystack = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
+            opencv_needle = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
 
-        return match
+        return (opencv_haystack, opencv_needle)
 
     def measure_match_methods(self, haystack, needle):
         # Sanity check: Needle size must be smaller than haystack
@@ -360,18 +368,18 @@ class BackendOpenCV:
             logging.warning("The size of the searched image is smaller than its region - are you insane?")
             return None
 
-        opencv_haystack = numpy.array(haystack.get_pil_image())
-        opencv_haystack = opencv_haystack[:, :, ::-1].copy()            # Convert RGB to BGR
-
-        opencv_needle = numpy.array(needle.get_pil_image())
-        opencv_needle = opencv_needle[:, :, ::-1].copy()
+        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
+        gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
 
         # test all methods
         for method in (cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
                        cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
                        cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED):
-            for image in (needle, cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)):
-                match = cv2.matchTemplate(opencv_haystack, opencv_needle, method)
+            for gray in (False, True):
+                if gray:
+                    match = cv2.matchTemplate(gray_haystack, gray_needle, method)
+                else:
+                    match = cv2.matchTemplate(opencv_haystack, opencv_needle, method)
                 minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(match)
                 print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
 
