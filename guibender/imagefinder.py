@@ -233,37 +233,6 @@ class BackendOpenCV:
         match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
         (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
-        # TODO: remove this code currently used for debugging
-        # draw projected image center as well as matched and unmatched features
-        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
-        cv2.circle(opencv_haystack, (int(mcx),int(mcy)), 2,(0,255,0),-1)
-        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 2,(0,255,0),-1)
-        for kp in hkp:
-            if kp in mhkp:
-                # draw matched keypoints in red color
-                color = (0, 0, 255)
-            else:
-                # draw unmatched in blue color
-                color = (255, 0, 0)
-            # draw matched key points on original h image
-            x,y = kp.pt
-            cv2.circle(opencv_haystack, (int(x),int(y)), 2, color, -1)
-        for kp in nkp:
-            if kp in mnkp:
-                # draw matched keypoints in red color
-                color = (0, 0, 255)
-            else:
-                # draw unmatched in blue color
-                color = (255, 0, 0)
-            # draw matched key points on original n image
-            x,y = kp.pt
-            cv2.circle(opencv_needle, (int(x),int(y)), 2, color, -1)
-        cv2.imshow('haystack', opencv_haystack)
-        cv2.imshow('needle', opencv_needle)
-        #time.sleep(10)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
         return Location(int(mcx), int(mcy))
 
     def _match_features(self, haystack, needle, similarity):
