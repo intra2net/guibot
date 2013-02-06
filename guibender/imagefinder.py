@@ -78,7 +78,7 @@ class BackendAutoPy:
         # autopy only performes a template match at the moment
         raise NotImplementedError
 
-    def measure_match_methods(self, haystack, needle):
+    def measure_match_template(self, haystack, needle):
         # autopy does not provide alternative template match methods
         raise NotImplementedError
 
@@ -87,7 +87,7 @@ import numpy
 class BackendOpenCV:
     def find_image(self, haystack, needle, similarity, xpos, ypos,
                    width, height, nocolor = True):
-        result = self._match(haystack, needle, nocolor)
+        result = self._match_template(haystack, needle, nocolor)
 
         minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
         logging.debug('minVal: %s', str(minVal))
@@ -105,7 +105,7 @@ class BackendOpenCV:
 
     def find_all(self, haystack, needle, similarity, xpos, ypos,
                  width, height, nocolor = True):
-        result = self._match(haystack, needle, nocolor)
+        result = self._match_template(haystack, needle, nocolor)
 
         # variant 1: extract all matches above required similarity
         # problems: clouds of matches (like electron clouds), too slow
@@ -198,7 +198,7 @@ class BackendOpenCV:
 
         return maxima
 
-    def _match(self, haystack, needle, nocolor = True):
+    def _match_template(self, haystack, needle, nocolor = True):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
             logging.warning("The size of the searched image is smaller than its region - are you insane?")
@@ -281,7 +281,6 @@ class BackendOpenCV:
 
         return (hkeypoints, hdescriptors, nkeypoints, ndescriptors)
 
-
     def _match_features(self, hkeypoints, hdescriptors,
                         nkeypoints, ndescriptors, similarity, match):
         # match can be: inhouse, BruteForce-Hamming, ...
@@ -354,7 +353,7 @@ class BackendOpenCV:
 
         return (opencv_haystack, opencv_needle)
 
-    def measure_match_methods(self, haystack, needle):
+    def measure_match_template(self, haystack, needle):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
             logging.warning("The size of the searched image is smaller than its region - are you insane?")
@@ -401,5 +400,5 @@ class ImageFinder:
     def find_features(self, haystack, needle, similarity, nocolor = True):
         return self._backend.find_features(haystack, needle, similarity, nocolor)
 
-    def measure_match_methods(self, haystack, needle):
-        return self._backend.measure_match_methods(self, haystack, needle)
+    def measure_match_template(self, haystack, needle):
+        return self._backend.measure_match_template(self, haystack, needle)
