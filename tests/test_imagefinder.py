@@ -39,7 +39,20 @@ class ImageTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
 
-        self.algorithms = ("ORB", "ORB", "BruteForce-Hamming")
+        # detectors:
+        # FAST, STAR, SIFT, SURF, ORB, MSER, GFTT
+        # HARRIS, Dense, SimpleBlob
+        # GridFAST, GridStar, ...
+        # PyramidFAST, PyramidSTAR, ...
+
+        # extractors:
+        # SIFT, SURF, ORB, BRIEF, FREAK, inhouse
+
+        # matchers:
+        # BruteForce, BruteForce-L1, BruteForce-Hamming,
+        # BruteForce-Hamming(2), FlannBased, inhouse
+
+        self.algorithms = ("ORB", "BRIEF", "BruteForce-Hamming(2)")
 
         self.script_show_picture = os.path.join(common_test.unittest_dir,
                                                 'show_picture.py')
@@ -65,6 +78,8 @@ class ImageTest(unittest.TestCase):
                                             detect = self.algorithms[0],
                                             extract = self.algorithms[1],
                                             match = self.algorithms[2])
+        if pos == None:
+            raise FindError
         mcx, mcy = pos.xpos, pos.ypos
 
         # draw projected image center as well as matched and unmatched features
