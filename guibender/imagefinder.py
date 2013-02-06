@@ -332,7 +332,8 @@ class BackendOpenCV:
             match_hkeypoints = []
             match_nkeypoints = []
             for match in matches:
-                if match.distance >= 0.0:
+                print match.distance
+                if match.distance <= 100.0 - 100 * similarity:
                     match_hkeypoints.append(hkeypoints[match.trainIdx])
                     match_nkeypoints.append(nkeypoints[match.queryIdx])
 
