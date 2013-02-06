@@ -224,22 +224,25 @@ class BackendOpenCV:
                                                     similarity, match)
 
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
-        if len(mhkp) < 4 or len(mnkp) < 4:
+        if len(mhkp) > 4 or len(mnkp) > 4:
+            H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
+                                         numpy.array([kp.pt for kp in mhkp]))
+
+            (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
+            orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
+            #print orig_center_wrapped.shape, H.shape
+            match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
+            (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+
+            return Location(int(mcx), int(mcy))
+
+        else:
             # minimum 4 features are required for calculating the homography matrix
-            raise IndexError("Minimum 4 features are required while %s\\%s from needle "\
-                             "and %s\\%s from haystack were matched with your required "\
-                             "similarity and image size" % (len(mhkp), len(hkp),
-                                                            len(mnkp), len(nkp)))
-        H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
-                                     numpy.array([kp.pt for kp in mhkp]))
-
-        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
-        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
-        #print orig_center_wrapped.shape, H.shape
-        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
-        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
-
-        return Location(int(mcx), int(mcy))
+            #raise IndexError("Minimum 4 features are required while %s\\%s from needle "\
+            #                 "and %s\\%s from haystack were matched with your required "\
+            #                 "similarity and image size" % (len(mhkp), len(hkp),
+            #                                                len(mnkp), len(nkp)))
+            return None
 
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
