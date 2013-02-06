@@ -39,6 +39,8 @@ class ImageTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
 
+        self.algorithms = ("ORB", "ORB", "BruteForce-Hamming")
+
         self.script_show_picture = os.path.join(common_test.unittest_dir,
                                                 'show_picture.py')
 
@@ -53,15 +55,16 @@ class ImageTest(unittest.TestCase):
         # use private methods for unit testing to visualize internal structure
         opencv_haystack, opencv_needle = finder._backend._get_opencv_images(haystack, needle)
         hkp, hdc, nkp, ndc = finder._backend._detect_features(haystack, needle,
-                                                              detect = "ORB",
-                                                              extract = "ORB")
+                                                              detect = self.algorithms[0],
+                                                              extract = self.algorithms[1])
         mhkp, hkp, mnkp, nkp = finder._backend._match_features(hkp, hdc, nkp, ndc,
-                                                               0.0, match = "BruteForce-Hamming")
+                                                               0.0, match = self.algorithms[2])
         print "matched %s\\%s from haystack with %s\\%s from needle" % (len(mhkp), len(hkp),
                                                                         len(mnkp), len(nkp))
         pos = finder._backend.find_features(haystack, needle, 0.0,
-                                            detect = "ORB", extract = "ORB",
-                                            match = "BruteForce-Hamming")
+                                            detect = self.algorithms[0],
+                                            extract = self.algorithms[1],
+                                            match = self.algorithms[2])
         mcx, mcy = pos.xpos, pos.ypos
 
         # draw projected image center as well as matched and unmatched features
