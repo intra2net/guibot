@@ -52,10 +52,16 @@ class ImageTest(unittest.TestCase):
 
         # use private methods for unit testing to visualize internal structure
         opencv_haystack, opencv_needle = finder._backend._get_opencv_images(haystack, needle)
-        mhkp, hkp, mnkp, nkp = finder._backend._match_features(haystack, needle, 0.0)
+        hkp, hdc, nkp, ndc = finder._backend._detect_features(haystack, needle,
+                                                              detect = "ORB",
+                                                              extract = "ORB")
+        mhkp, hkp, mnkp, nkp = finder._backend._match_features(hkp, hdc, nkp, ndc,
+                                                               0.0, match = "BruteForce-Hamming")
         print "matched %s\\%s from haystack with %s\\%s from needle" % (len(mhkp), len(hkp),
                                                                         len(mnkp), len(nkp))
-        pos = finder.find_features(haystack, needle, 0.0)
+        pos = finder._backend.find_features(haystack, needle, 0.0,
+                                            detect = "ORB", extract = "ORB",
+                                            match = "BruteForce-Hamming")
         mcx, mcy = pos.xpos, pos.ypos
 
         # draw projected image center as well as matched and unmatched features
