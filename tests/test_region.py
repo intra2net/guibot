@@ -227,8 +227,12 @@ class RegionTest(unittest.TestCase):
         # Hover over Image with 50% similarity
         Region().hover(Image('shape_pink_box').similarity(0.5))
 
-        # Hover over image filename
-        Region().hover('shape_green_box')
+        self.close_windows()
+
+        # Test hovering over projected location
+        self.show_image('h_ibs_viewport')
+        match = Region().find_features(Image('n_ibs'))
+        Region().hover(match.get_target())
 
     def test_click(self):
         # TODO: Fix openCV image finder first

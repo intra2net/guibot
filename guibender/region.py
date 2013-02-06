@@ -196,6 +196,34 @@ class Region(object):
                 # TODO: Make 'rescan speed' configurable
                 time.sleep(0.2)
 
+    def find_features(self, image, timeout=10):
+        # Load image if needed
+        if isinstance(image, basestring):
+            image = Image(image)
+
+        timeout_limit = time.time() + timeout
+        while True:
+            screen_capture = self.desktop.capture_screen(self)
+            similarity = image.get_similarity()
+            # TODO: synchronize the different types of similarity
+            # currently requires 0.1 similarity
+            found_pic = self.imagefinder.find_features(screen_capture, image, 0.1)
+            if found_pic is not None:
+                self.last_match = match.Match(self.xpos + found_pic.get_x(),
+                                              self.ypos + found_pic.get_y(), image)
+                return self.last_match
+
+            elif time.time() > timeout_limit:
+                # TODO: Turn this into a setting / make it optional
+                screen_capture.save('/tmp/guibender_last_finderror.png')
+                image.save('/tmp/guibender_last_finderror_needle.png')
+                raise FindError()
+
+            else:
+                # don't hog the CPU
+                # TODO: Make 'rescan speed' configurable
+                time.sleep(0.2)
+
     def find_all(self, image, timeout=10, nocolor=False, allow_zero = False):
         # Load image if needed
         if isinstance(image, basestring):
