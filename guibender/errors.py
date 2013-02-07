@@ -22,5 +22,5 @@ class FileNotFoundError(GuiBenderError):
 class FindError(GuiBenderError):
     """Exception raised when an Image cannot be found on the screen"""
 
-class ImageFinderBackendError(GuiBenderError):
-    """Exception raised when there's a problem with the ImageFinder backend"""
+class ImageFinderMethodError(GuiBenderError):
+    """Exception raised when a non-existent method is used for finding an image"""

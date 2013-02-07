@@ -157,7 +157,7 @@ class RegionTest(unittest.TestCase):
         # TODO: find should consider both autopy
         # and OpenCV but both may not be supported
         # at developer's platform
-        #region.imagefinder = ImageFinder('autopy')
+        #region.imagefinder = ImageFinder()
 
         matches = region.find_all(Image('shape_green_box'))
         self.assertEqual(len(matches), 1)

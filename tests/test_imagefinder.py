@@ -23,7 +23,7 @@ import common_test
 import cv, cv2
 from tempfile import NamedTemporaryFile
 
-from imagefinder import ImageFinder, BackendOpenCV
+from imagefinder import ImageFinder
 from imagepath import ImagePath
 from location import Location
 from region import Region
@@ -39,21 +39,6 @@ class ImageTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
 
-        # detectors:
-        # FAST, STAR, SIFT, SURF, ORB, MSER, GFTT
-        # HARRIS, Dense, SimpleBlob
-        # GridFAST, GridStar, ...
-        # PyramidFAST, PyramidSTAR, ...
-
-        # extractors:
-        # SIFT, SURF, ORB, BRIEF, FREAK, inhouse
-
-        # matchers:
-        # BruteForce, BruteForce-L1, BruteForce-Hamming,
-        # BruteForce-Hamming(2), FlannBased, inhouse
-
-        self.algorithms = ("ORB", "BRIEF", "BruteForce-Hamming(2)")
-
         self.script_show_picture = os.path.join(common_test.unittest_dir,
                                                 'show_picture.py')
 
@@ -62,22 +47,20 @@ class ImageTest(unittest.TestCase):
         cv2.destroyAllWindows()
 
     def draw_features_and_clicking_point(self, needle, haystack, extra_title):
-        finder = ImageFinder("opencv")
+        finder = ImageFinder()
+        self.algorithms = (finder.detect_features, finder.extract_features, finder.match_features)
         (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
 
         # use private methods for unit testing to visualize internal structure
-        opencv_haystack, opencv_needle = finder._backend._get_opencv_images(haystack, needle)
-        hkp, hdc, nkp, ndc = finder._backend._detect_features(haystack, needle,
+        opencv_haystack, opencv_needle = finder._get_opencv_images(haystack, needle)
+        hkp, hdc, nkp, ndc = finder._detect_features(haystack, needle,
                                                               detect = self.algorithms[0],
                                                               extract = self.algorithms[1])
-        mhkp, hkp, mnkp, nkp = finder._backend._match_features(hkp, hdc, nkp, ndc,
+        mhkp, hkp, mnkp, nkp = finder._match_features(hkp, hdc, nkp, ndc,
                                                                0.0, match = self.algorithms[2])
         print "matched %s\\%s from haystack with %s\\%s from needle" % (len(mhkp), len(hkp),
                                                                         len(mnkp), len(nkp))
-        pos = finder._backend.find_features(haystack, needle, 0.0,
-                                            detect = self.algorithms[0],
-                                            extract = self.algorithms[1],
-                                            match = self.algorithms[2])
+        pos = finder.find_features(haystack, needle, 0.0)
         if pos == None:
             raise FindError
         mcx, mcy = pos.xpos, pos.ypos

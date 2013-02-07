@@ -21,90 +21,98 @@ from location import Location
 from errors import *
 
 from autopy import bitmap
-class BackendAutoPy:
-    _bitmapcache = {}
-
-    def find_image(self, haystack, needle, similarity, xpos, ypos, width, height):
-        if needle.get_filename() in self._bitmapcache:
-            autopy_needle = self._bitmapcache[needle.get_filename()]
-        else:
-            # load and cache it
-            # TODO: Use in-memory conversion
-            autopy_needle = bitmap.Bitmap.open(needle.get_filename())
-            self._bitmapcache[needle.get_filename()] = autopy_needle
-
-        # TODO: Use in-memory conversion
-        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-            haystack.save(f.name)
-            autopy_screenshot = bitmap.Bitmap.open(f.name)
-
-            autopy_tolerance = 1.0 - similarity
-            # TODO: since only the coordinates are available
-            # and fuzzy areas of matches are returned we need
-            # to ask autopy team for returning the matching rates
-            # as well
-            coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((xpos, ypos), (width, height)))
-
-            if coord is not None:
-                return Location(coord[0], coord[1])
-
-        return None
-
-    def find_all(self, haystack, needle, similarity, xpos, ypos, width, height):
-        if needle.get_filename() in self._bitmapcache:
-            autopy_needle = self._bitmapcache[needle.get_filename()]
-        else:
-            # load and cache it
-            # TODO: Use in-memory conversion
-            autopy_needle = bitmap.Bitmap.open(needle.get_filename())
-            self._bitmapcache[needle.get_filename()] = autopy_needle
-
-        # TODO: Use in-memory conversion
-        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-            haystack.save(f.name)
-            autopy_screenshot = bitmap.Bitmap.open(f.name)
-
-            autopy_tolerance = 1.0 - similarity
-            coords = autopy_screenshot.find_every_bitmap(autopy_needle, autopy_tolerance, ((xpos, ypos), (width, height)))
-            print coords
-
-            # autopy does not provide the matching value in order to
-            # extract only the extrema
-            return [Location(*xy) for xy in coords]
-
-        return None
-
-    def find_features(self, haystack, needle, similarity, nocolor = True):
-        # autopy only performes a template match at the moment
-        raise NotImplementedError
-
-    def measure_match_template(self, haystack, needle):
-        # autopy does not provide alternative template match methods
-        raise NotImplementedError
-
 import cv, cv2
 import numpy
-class BackendOpenCV:
+
+
+class ImageFinder:
+    _bitmapcache = {}
+
+    def __init__(self):
+        """
+        Initiate the image finder with default algorithm configuration.
+
+        template matchers:
+            opencv, autopy
+
+        feature detectors:
+            FAST, STAR, SIFT, SURF, ORB, MSER,
+            GFTT, HARRIS, Dense, SimpleBlob
+            GridFAST, GridStar, ...
+            PyramidFAST, PyramidSTAR, ...
+
+        feature extractors:
+            SIFT, SURF, ORB, BRIEF, FREAK, inhouse
+
+        feature matchers:
+            BruteForce, BruteForce-L1, BruteForce-Hamming,
+            BruteForce-Hamming(2), FlannBased, inhouse
+        """
+        self.match_template = "opencv"
+        self.detect_features = "ORB"
+        self.extract_features = "BRIEF"
+        self.match_features = "BruteForce-Hamming"
+
     def find_image(self, haystack, needle, similarity, xpos, ypos,
                    width, height, nocolor = True):
-        result = self._match_template(haystack, needle, nocolor)
+        """
+        Finds a needle image in a haystack image using template matching.
 
-        minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
-        logging.debug('minVal: %s', str(minVal))
-        logging.debug('minLoc: %s', str(minLoc))
-        logging.debug('maxVal (similarity): %s (%s)',
-                      str(maxVal), similarity)
-        logging.debug('maxLoc (x,y): %s', str(maxLoc))
+        Returns a Location object for the match or None in not found.
+        Available template matching methods are: autopy, opencv
+        """
+        if self.match_template == "autopy":
+            if needle.get_filename() in self._bitmapcache:
+                autopy_needle = self._bitmapcache[needle.get_filename()]
+            else:
+                # load and cache it
+                # TODO: Use in-memory conversion
+                autopy_needle = bitmap.Bitmap.open(needle.get_filename())
+                self._bitmapcache[needle.get_filename()] = autopy_needle
 
-        # TODO: Figure out how the threshold works
-        # need to read openCV documentation
-        if maxVal > similarity:
-            return Location(maxLoc[0], maxLoc[1])
+            # TODO: Use in-memory conversion
+            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+                haystack.save(f.name)
+                autopy_screenshot = bitmap.Bitmap.open(f.name)
 
-        return None
+                autopy_tolerance = 1.0 - similarity
+                # TODO: since only the coordinates are available
+                # and fuzzy areas of matches are returned we need
+                # to ask autopy team for returning the matching rates
+                # as well
+                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((xpos, ypos), (width, height)))
+
+                if coord is not None:
+                    return Location(coord[0], coord[1])
+            return None
+
+        elif self.match_template == "opencv":
+            result = self._match_template(haystack, needle, nocolor)
+
+            minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+            logging.debug('minVal: %s', str(minVal))
+            logging.debug('minLoc: %s', str(minLoc))
+            logging.debug('maxVal (similarity): %s (%s)',
+                          str(maxVal), similarity)
+            logging.debug('maxLoc (x,y): %s', str(maxLoc))
+
+            # TODO: Figure out how the threshold works
+            # need to read openCV documentation
+            if maxVal > similarity:
+                return Location(maxLoc[0], maxLoc[1])
+            return None
+
+        else:
+            raise ImageFinderMethodError
 
     def find_all(self, haystack, needle, similarity, xpos, ypos,
                  width, height, nocolor = True):
+        """
+        Finds all needle images in a haystack image using template matching.
+
+        Returns a list of Location objects for all matches or None in not found.
+        Available template matching methods are: opencv
+        """
         result = self._match_template(haystack, needle, nocolor)
 
         # variant 1: extract all matches above required similarity
@@ -213,15 +221,21 @@ class BackendOpenCV:
 
         return match
 
-    def find_features(self, haystack, needle, similarity, nocolor = True,
-                      detect = "inhouse", extract = "inhouse", match = "inhouse"):
-        # TODO: describe and test all methods
+    def find_features(self, haystack, needle, similarity, nocolor = True):
+        """
+        Finds a needle image in a haystack image using feature matching.
+
+        Returns a Location object for the match or None in not found.
+        Available methods include a combination of feature detector,
+        extractor, and matcher.
+        """
+        # TODO: test all methods
         # TODO: multichannel matching using the color option
         hkp, hdc, nkp, ndc = self._detect_features(haystack, needle,
-                                                   detect = detect,
-                                                   extract = extract)
+                                                   detect = self.detect_features,
+                                                   extract = self.extract_features)
         mhkp, hkp, mnkp, nkp = self._match_features(hkp, hdc, nkp, ndc,
-                                                    similarity, match)
+                                                    similarity, self.match_features)
 
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
         if len(mhkp) > 4 or len(mnkp) > 4:
@@ -268,7 +282,8 @@ class BackendOpenCV:
             cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
             """
 
-        else:
+        # include only methods tested for compatibility
+        elif detect in ("ORB") and extract in ("ORB", "BRIEF"):
             # SURF, ORB
             detector = cv2.FeatureDetector_create(detect)
             # SURF, ORB, BRIEF
@@ -281,6 +296,9 @@ class BackendOpenCV:
             # feature vectors (descriptors)
             (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
             (nkeypoints, ndescriptors) = extractor.compute(ngray, nkeypoints)
+
+        else:
+            raise ImageFinderMethodError
 
         return (hkeypoints, hdescriptors, nkeypoints, ndescriptors)
 
@@ -326,7 +344,8 @@ class BackendOpenCV:
                     #print "no", dist
             return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
 
-        else:
+        # include only methods tested for compatibility
+        elif match in ("BruteForce-Hamming", "BruteForce-Hamming(2)"):
             matcher = cv2.DescriptorMatcher_create(match)
             # build matcher and match feature vectors
             matches = matcher.match(ndescriptors, hdescriptors)
@@ -341,6 +360,9 @@ class BackendOpenCV:
                     match_nkeypoints.append(nkeypoints[match.queryIdx])
 
             return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
+
+        else:
+            raise ImageFinderMethodError
 
     def _get_opencv_images(self, haystack, needle, gray = False):
         opencv_haystack = numpy.array(haystack.get_pil_image())
@@ -377,32 +399,3 @@ class BackendOpenCV:
                     match = cv2.matchTemplate(opencv_haystack, opencv_needle, method)
                 minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(match)
                 print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
-
-class ImageFinder:
-    _backend = None
-
-    def __init__(self, backend='auto'):
-        if backend is 'auto':
-            try:
-                # TODO: Test 'import cv'
-                self._backend = BackendOpenCV()
-            except:
-                self._backend = BackendAutoPy()
-        elif backend is 'opencv':
-            self._backend = BackendOpenCV()
-        elif backend is 'autopy':
-            self._backend = BackendAutoPy()
-        else:
-            raise ImageFinderBackendError('Unsupported backend: ' + backend)
-
-    def find_image(self, haystack, needle, similarity, xpos, ypos, width, height, nocolor = True):
-        return self._backend.find_image(haystack, needle, similarity, xpos, ypos, width, height, nocolor)
-
-    def find_all(self, haystack, needle, similarity, xpos, ypos, width, height, nocolor = True):
-        return self._backend.find_all(haystack, needle, similarity, xpos, ypos, width, height, nocolor)
-
-    def find_features(self, haystack, needle, similarity, nocolor = True):
-        return self._backend.find_features(haystack, needle, similarity, nocolor)
-
-    def measure_match_template(self, haystack, needle):
-        return self._backend.measure_match_template(self, haystack, needle)
