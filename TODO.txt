@@ -1,17 +1,24 @@
-Non-critical tasks:
-- Qt4 Gui: Test text input fields
-- Qt4 Gui: Implement drag'n'drop (perhaps two lists views)
-- Test drag'n'drop
+- Test Qt4 Gui's text input fields. Implement drag'n'drop (perhaps
+  two lists views) and test it.
 
-- Test other image detection based on "feature detection":
-  Currently detecting text via images depends heavily
-  on the font size. OpenCV also offers "feature detection".
+- Currently detecting text via images depends heavily
+  on the font size. Test if feature based detection handles works
+  better for smaller / bigger font sizes. If yes, then we can talk
+  about adjust Image() to enable or disable feature based matching.
 
-  Test if feature based detection handles works
-  better for smaller / bigger font sizes.
+- Improved debugging that includes some visualizations (logging in
+  case of image processing is a bit useless although it can still
+  be used). Use this to fix some OpenCV window issues.
 
-  If yes, then we can talk about adjust Image()
-  to enable or disable feature based matching.
+- Similarity and tolerance - for the variety of algorithms, there are
+  different scales that can basically be suggested by the developer - 
+  add some benchmarking functions and method suggestion functions to
+  image finder (the developer can then decide for the best method for
+  each image! - or test for various image categories like text, button, etc.)
 
-- sikuli has a "pyramid match". Figure out what it does
-  (wild guess: Try different zoom levels of the same image?)
+- Need an advanced method to analyze if the matcher returned a meaningful
+  match to use for projecting the clicking point. Sometimes it returns a
+  bunch of unrelated features giving 100% match (matched all). A guess is
+  to analyse the mapping of features for continuity (Continuous functions in
+  discrete space and some real analysis). We could even improve our own
+  inhouse matcher with such ability.
