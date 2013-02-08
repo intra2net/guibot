@@ -209,7 +209,7 @@ class ImageFinder:
     def _match_template(self, haystack, needle, nocolor = True):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
-            logging.warning("The size of the searched image is smaller than its region - are you insane?")
+            logging.warning("The size of the searched image is smaller than its region")
             return None
 
         if nocolor:
@@ -382,7 +382,7 @@ class ImageFinder:
     def measure_match_template(self, haystack, needle):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
-            logging.warning("The size of the searched image is smaller than its region - are you insane?")
+            logging.warning("The size of the searched image is smaller than its region")
             return None
 
         opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
