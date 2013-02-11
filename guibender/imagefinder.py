@@ -46,6 +46,17 @@ class ImageFinder:
         feature matchers:
             BruteForce, BruteForce-L1, BruteForce-Hamming,
             BruteForce-Hamming(2), FlannBased, inhouse
+
+        The image logging consists of saving the last hotmap.
+
+        If the template matching method was used, the hotmap is
+        a fingerprint of the matching in the entire haystack. Its
+        lighter areas are places where the needle was matched better.
+
+        If the feature matching method was used, the hotmap contains
+        the matched needle features in the haystack (green), the ones
+        that were not matched (red), and the calculated focus point
+        that would be used for clicking, hovering, etc. (blue).
         """
         self.match_template = "opencv"
         self.detect_features = "ORB"
@@ -252,8 +263,18 @@ class ImageFinder:
                                                    extract = self.extract_features)
         mhkp, hkp, mnkp, nkp = self._match_features(hkp, hdc, nkp, ndc,
                                                     similarity, self.match_features)
-
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
+
+        if self.image_logging:
+            hotmap, _ = self._get_opencv_images(haystack, needle)
+            for kp in hkp:
+                if kp in mhkp:
+                    color = (0, 0, 255)
+                else:
+                    color = (0, 255, 0)
+                x, y = kp.pt
+                cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+
         if len(mhkp) > 4 or len(mnkp) > 4:
             H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
                                          numpy.array([kp.pt for kp in mhkp]))
@@ -263,6 +284,11 @@ class ImageFinder:
             #print orig_center_wrapped.shape, H.shape
             match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
             (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+
+            if self.image_logging:
+                # hotmap should already be defined so careful with the line above
+                cv2.circle(hotmap, (int(mcx),int(mcy)), 2, (255,0,0), -1)
+                cv2.imwrite("last_hotmap.png", hotmap)
 
             return Location(int(mcx), int(mcy))
 
