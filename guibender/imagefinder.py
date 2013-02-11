@@ -26,7 +26,6 @@ import numpy
 
 
 class ImageFinder:
-    _bitmapcache = {}
 
     def __init__(self):
         """
@@ -52,6 +51,9 @@ class ImageFinder:
         self.detect_features = "ORB"
         self.extract_features = "BRIEF"
         self.match_features = "BruteForce-Hamming"
+
+        self._bitmapcache = {}
+        self.image_logging = False
 
     def find_image(self, haystack, needle, similarity, xpos, ypos,
                    width, height, nocolor = True):
@@ -80,7 +82,8 @@ class ImageFinder:
                 # and fuzzy areas of matches are returned we need
                 # to ask autopy team for returning the matching rates
                 # as well
-                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance, ((xpos, ypos), (width, height)))
+                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance,
+                                                      ((xpos, ypos), (width, height)))
 
                 if coord is not None:
                     return Location(coord[0], coord[1])
@@ -219,6 +222,19 @@ class ImageFinder:
             opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, cv2.TM_CCOEFF_NORMED)
 
+        # print a hotmap of the results for debugging purposes
+        if self.image_logging:
+            # currenly the image showing methods still don't work
+            # due to opencv bug
+            #cv2.startWindowThread()
+            #cv2.namedWindow("test", 1)
+            #cv2.imshow("test", match)
+
+            hotmap = cv.CreateMat(len(match), len(match[0]), cv.CV_8UC1)
+            cv.ConvertScale(cv.fromarray(match), hotmap, scale = 255.0)
+            hotmap = numpy.asarray(hotmap)
+            cv2.imwrite("last_hotmap.png", hotmap)
+
         return match
 
     def find_features(self, haystack, needle, similarity, nocolor = True):
@@ -284,9 +300,7 @@ class ImageFinder:
 
         # include only methods tested for compatibility
         elif detect in ("ORB") and extract in ("ORB", "BRIEF"):
-            # SURF, ORB
             detector = cv2.FeatureDetector_create(detect)
-            # SURF, ORB, BRIEF
             extractor = cv2.DescriptorExtractor_create(extract)
 
             # keypoints
