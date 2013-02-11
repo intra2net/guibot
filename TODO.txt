@@ -6,10 +6,6 @@
   better for smaller / bigger font sizes. If yes, then we can talk
   about adjust Image() to enable or disable feature based matching.
 
-- Improved debugging that includes some visualizations (logging in
-  case of image processing is a bit useless although it can still
-  be used). Use this to fix some OpenCV window issues.
-
 - Similarity and tolerance - for the variety of algorithms, there are
   different scales that can basically be suggested by the developer - 
   add some benchmarking functions and method suggestion functions to
