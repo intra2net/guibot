@@ -18,16 +18,16 @@
 import cv                           # OpenCV
 import sys
 
-def show_image(filename):
+def show_image(filename, title = "show_picture"):
     image=cv.LoadImage(filename, cv.CV_LOAD_IMAGE_COLOR)
 
-    cv.ShowImage('show_picture', image)
+    cv.ShowImage(title, image)
 
     # Wait a bit so we can move the window
-    cv.WaitKey(20000)
+    cv.WaitKey(50000)
 
 def main():
-    show_image(sys.argv[1])
+    show_image(*sys.argv[1:])
 
 if __name__ == "__main__":
     main()
