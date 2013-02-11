@@ -38,19 +38,20 @@ class ImageTest(unittest.TestCase):
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
+        self.imagepath.add_path(".")
 
         self.script_show_picture = os.path.join(common_test.unittest_dir, 'show_picture.py')
 
     def setUp(self):
-        self.child_show_picture = None
+        self.shown_pictures = []
 
     def tearDown(self):
         self.close_windows()
-
-    def show_image(self, filename):
-        filename = self.imagepath.search(filename)
-
-        self.child_show_picture = subprocess.Popen(['python', self.script_show_picture, filename])
+        needle_file = os.path.join(common_test.unittest_dir, 'images/', 'needle.png')
+        try:
+            os.unlink(needle_file)
+        except OSError:
+            pass
 
     def wait_end(self, subprocess_pipe, timeout=30):
         expires = time.time() + timeout
@@ -66,79 +67,91 @@ class ImageTest(unittest.TestCase):
 
             time.sleep(0.2)
 
+    def show_image(self, filename, title = "show_image"):
+        filename = self.imagepath.search(filename)
+        self.shown_pictures.append(subprocess.Popen(['python',
+                                                    self.script_show_picture,
+                                                    filename, title]))
+
     def close_windows(self):
-        if self.child_show_picture is not None:
-            self.child_show_picture.terminate()
-            self.wait_end(self.child_show_picture)
-            self.child_show_picture = None
+        time.sleep(2)
+        for window in self.shown_pictures:
+            window.terminate()
+            self.wait_end(window)
 
             # Hack to make sure app is really closed
             time.sleep(0.5)
 
-    def draw_features_and_clicking_point(self, needle, haystack, extra_title):
+        self.shown_pictures = []
+
+    def draw_needle_features(self, needle, haystack):
         finder = ImageFinder()
+        finder.image_logging = True
         self.algorithms = (finder.detect_features, finder.extract_features, finder.match_features)
-        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
 
         # use private methods for unit testing to visualize internal structure
-        opencv_haystack, opencv_needle = finder._get_opencv_images(haystack, needle)
+        _, opencv_needle = finder._get_opencv_images(haystack, needle)
         hkp, hdc, nkp, ndc = finder._detect_features(haystack, needle,
                                                      detect = self.algorithms[0],
                                                      extract = self.algorithms[1])
         mhkp, hkp, mnkp, nkp = finder._match_features(hkp, hdc, nkp, ndc,
                                                       0.0, match = self.algorithms[2])
-        print "matched %s\\%s from haystack with %s\\%s from needle" % (len(mhkp), len(hkp),
-                                                                        len(mnkp), len(nkp))
-        pos = finder.find_features(haystack, needle, 0.0)
-        if pos == None:
-            raise FindError
-        mcx, mcy = pos.xpos, pos.ypos
+        print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
+                                                                    len(mnkp), len(nkp))
 
-        # draw projected image center as well as matched and unmatched features
-        cv2.circle(opencv_haystack, (int(mcx),int(mcy)), 2,(0,255,0),-1)
-        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 2,(0,255,0),-1)
-        for kp in hkp:
-            if kp in mhkp:
-                # draw matched keypoints in red color
-                color = (0, 0, 255)
-            else:
-                # draw unmatched in blue color
-                color = (255, 0, 0)
-            # draw matched key points on original h image
-            x,y = kp.pt
-            cv2.circle(opencv_haystack, (int(x),int(y)), 2, color, -1)
+        # draw focus point as well as matched and unmatched features
+        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
+        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 2, (255,0,0), -1)
         for kp in nkp:
             if kp in mnkp:
-                # draw matched keypoints in red color
-                color = (0, 0, 255)
+                color = (0, 255, 0)
             else:
-                # draw unmatched in blue color
-                color = (255, 0, 0)
-            # draw matched key points on original n image
+                color = (0, 0, 255)
             x,y = kp.pt
             cv2.circle(opencv_needle, (int(x),int(y)), 2, color, -1)
-        cv2.imshow('haystack' + extra_title, opencv_haystack)
-        cv2.imshow('needle', opencv_needle)
-        cv2.waitKey(5000)
-        # TODO: this function does not work and contaminates the tests
-        # this should be resolved with the improved image finder debugging
-        # which would only use our showimage function and some more
-        cv2.destroyAllWindows()
+        needle_file = os.path.join(common_test.unittest_dir, 'images/', 'needle.png')
+        cv2.imwrite(needle_file, opencv_needle)
+        self.show_image(needle_file, "needle")
 
-    def find_feature_basic_viewport(self):
+        # if these functions are fixed in the future, they could simplify the
+        # code since the drawn image can directly be shown and saved only if
+        # needed (while imshow works here, destroyAllWindows fails)
+        #cv2.imshow("needle", opencv_needle)
+        #cv2.waitKey(5000)
+        #cv2.destroyAllWindows()
+
+    def test_find_feature_basic_viewport(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_viewport')
-        self.draw_features_and_clicking_point(needle, haystack, " viewport")
+        self.draw_needle_features(needle, haystack)
+
+        finder = ImageFinder()
+        finder.image_logging = True
+        finder.find_features(haystack, needle, 0.0)
+        hotmap_file = os.path.join('last_hotmap.png')
+        self.show_image(hotmap_file, "basic viewport")
 
     def test_find_feature_rotation(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_rotated')
-        self.draw_features_and_clicking_point(needle, haystack, " rotation")
+        self.draw_needle_features(needle, haystack)
+
+        finder = ImageFinder()
+        finder.image_logging = True
+        finder.find_features(haystack, needle, 0.0)
+        hotmap_file = os.path.join('last_hotmap.png')
+        self.show_image(hotmap_file, "rotated + viewport")
 
     def test_find_feature_scaling(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_scaled')
-        self.draw_features_and_clicking_point(needle, haystack, " scaling")
+        self.draw_needle_features(needle, haystack)
+
+        finder = ImageFinder()
+        finder.image_logging = True
+        finder.find_features(haystack, needle, 0.0)
+        hotmap_file = os.path.join('last_hotmap.png')
+        self.show_image(hotmap_file, "scaled + viewport")
 
     def test_viewport_template_match(self):
         desktop = DesktopControl()
@@ -162,10 +175,15 @@ class ImageTest(unittest.TestCase):
         time.sleep(3)
         haystack = desktop.capture_screen()
 
-        # visualize matched features before hover test
-        self.draw_features_and_clicking_point(needle, haystack, " screen")
+        self.draw_needle_features(needle, haystack)
 
-    def test_viewport_hover(self):
+        finder = ImageFinder()
+        finder.image_logging = True
+        finder.find_features(haystack, needle, 0.0)
+        hotmap_file = os.path.join('last_hotmap.png')
+        self.show_image(hotmap_file, "screen + viewport")
+
+    def test_viewport_mouse_hover(self):
         desktop = DesktopControl()
         needle = Image('n_ibs')
         needle_viewport = Image('h_ibs_viewport')
