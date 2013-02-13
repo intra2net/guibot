@@ -96,8 +96,17 @@ class ImageTest(unittest.TestCase):
                                                      extract = self.algorithms[1])
         mhkp, hkp, mnkp, nkp = finder._match_features(hkp, hdc, nkp, ndc,
                                                       0.0, match = self.algorithms[2])
-        print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
-                                                                    len(mnkp), len(nkp))
+        #print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
+        #                                                            len(mnkp), len(nkp))
+        self.assertEqual(len(mhkp), len(mnkp), "The matched keypoints in the haystack and "\
+                        "the image should be equal.")
+        # this rule does not apply to the haystack since it may be scaled and reduced in size
+        self.assertGreaterEqual(len(nkp), len(mnkp), "The matched keypoints in the needle "\
+                                "should be fewer than all detected keypoints in the needle")
+        self.assertGreaterEqual(len(mhkp), 4, "Minimum of 4 keypoints should be matched in "\
+                                "the haystack")
+        self.assertGreaterEqual(len(mnkp), 4, "Minimum of 4 keypoints should be matched in "\
+                                "the needle")
 
         # draw focus point as well as matched and unmatched features
         (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
@@ -127,7 +136,9 @@ class ImageTest(unittest.TestCase):
 
         finder = ImageFinder()
         finder.image_logging = True
-        finder.find_features(haystack, needle, 0.0)
+        match = finder.find_features(haystack, needle, 0.0)
+        self.assertIsNotNone(match, "The viewport transformed image "\
+                             "should be matched in the screen.")
         hotmap_file = os.path.join('last_hotmap.png')
         self.show_image(hotmap_file, "basic viewport")
 
@@ -138,7 +149,9 @@ class ImageTest(unittest.TestCase):
 
         finder = ImageFinder()
         finder.image_logging = True
-        finder.find_features(haystack, needle, 0.0)
+        match = finder.find_features(haystack, needle, 0.0)
+        self.assertIsNotNone(match, "The rotated image "\
+                             "should be matched in the screen.")
         hotmap_file = os.path.join('last_hotmap.png')
         self.show_image(hotmap_file, "rotated + viewport")
 
@@ -149,7 +162,9 @@ class ImageTest(unittest.TestCase):
 
         finder = ImageFinder()
         finder.image_logging = True
-        finder.find_features(haystack, needle, 0.0)
+        match = finder.find_features(haystack, needle, 0.0)
+        self.assertIsNotNone(match, "The scaled image "\
+                             "should be matched in the screen.")
         hotmap_file = os.path.join('last_hotmap.png')
         self.show_image(hotmap_file, "scaled + viewport")
 
@@ -165,7 +180,8 @@ class ImageTest(unittest.TestCase):
         match = ImageFinder().find_image(haystack, needle, 0.9, 0, 0,
                                      haystack.width, haystack.height,
                                      nocolor = True)
-        self.assertEqual(match, None)
+        self.assertIsNone(match, "Template matching should fail finding "\
+                          "viewport transformed image.")
 
     def test_viewport_in_screen(self):
         desktop = DesktopControl()
@@ -179,7 +195,9 @@ class ImageTest(unittest.TestCase):
 
         finder = ImageFinder()
         finder.image_logging = True
-        finder.find_features(haystack, needle, 0.0)
+        match = finder.find_features(haystack, needle, 0.0)
+        self.assertIsNotNone(match, "The viewport transformed image "\
+                             "should be matched in the screen.")
         hotmap_file = os.path.join('last_hotmap.png')
         self.show_image(hotmap_file, "screen + viewport")
 
@@ -193,15 +211,13 @@ class ImageTest(unittest.TestCase):
 
         # test hovering over viewport needle
         match = ImageFinder().find_features(haystack, needle, 0.0)
-        if match is not None:
-            #match = Match(match.get_x(), match.get_y(), needle)
-            Region().hover(match)
-        else:
-            raise FindError
+        self.assertIsNotNone(match, "The viewport transformed image "\
+                             "should be matched in the screen.")
+        Region().hover(match)
 
     def test_benchmark_find(self):
-        needle = Image('all_shapes')
-        haystack = Image('shape_blue_circle')
+        haystack = Image('all_shapes')
+        needle = Image('shape_blue_circle')
 
         finder = ImageFinder()
         results = finder.benchmark_find(haystack, needle)
