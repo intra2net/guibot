@@ -131,47 +131,13 @@ class ImageFinder:
         Returns a list of Location objects for all matches or None in not found.
         Available template matching methods are: opencv
         """
-        result = self._match_template(haystack, needle, nocolor, "ccoeff_normed")
+        if self.match_template not in ("sqdiff", "ccorr", "ccoeff", "sqdiff_normed",
+                                       "ccorr_normed", "ccoeff_normed"):
+            raise ImageFinderMethodError
 
-        # variant 1: extract all matches above required similarity
-        # problems: clouds of matches (like electron clouds), too slow
-        """
-        locations = []
-        for i in range(len(result)):
-            for j in range(len(result[i])):
-                if result[i][j] > similarity:
-                    locations.append((j, i))
-        print locations
-        max_loc = (None, 0.0)
-        for l in locations:
-            if result[l[1], l[0]] > max_loc[1]:
-                max_loc = ((l[0], l[1]), result[l[1], l[0]])
-        print max_loc
-        """
+        result = self._match_template(haystack, needle, nocolor, self.match_template)
 
-        # variant 2: extract all matches above required similarity
-        # problems: trims everything, still more matches then desired are left
-        #result = cv2.threshold(result, similarity, 1.0, cv.CV_THRESH_BINARY)
-        #print result
-
-        # variant 3: extract all discrete function maxima
-        # problems: rigged match areas with multiple neighboring maxima
-        # instead of analytic functions
-        """
-        maxima = []
-        for i in range(1, len(result) - 1):
-            for j in range(1, len(result[i]) - 1):
-                if result[i][j] > 0.0:
-                    if (result[i][j] > result[i+1][j] and
-                        result[i][j] > result[i-1][j] and
-                        result[i][j] > result[i][j+1] and
-                        result[i][j] > result[i][j-1]):
-                        maxima.append(((j, i), result[i][j]))
-        print len(maxima)
-        """
-
-        # variant 4: extract maxima once for each needle size
-        # working but needs unit tests
+        # extract maxima once for each needle size region
         maxima = []
         while True:
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
@@ -214,13 +180,6 @@ class ImageFinder:
             logging.debug("Total maxima up to the point are %i", len(maxima))
             logging.debug("maxLoc was %s and is now %s", maxVal, result[maxLoc[1], maxLoc[0]])
         logging.info("%i matches found" % len(maxima))
-
-        # variant 5: stackoverflow solution
-        # For multiple matches (seen on stackoverflow)
-        #match_indices = numpy.arange(result.size)[(result>similarity).flatten()]
-        #print match_indices
-        #all_matches = numpy.unravel_index(match_indices,result.shape)
-        #print all_matches
 
         return maxima
 
