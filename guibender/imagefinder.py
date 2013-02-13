@@ -210,16 +210,6 @@ class ImageFinder:
                                                     similarity, self.match_features)
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
 
-        if self.image_logging:
-            hotmap, _ = self._get_opencv_images(haystack, needle)
-            for kp in hkp:
-                if kp in mhkp:
-                    color = (0, 0, 255)
-                else:
-                    color = (0, 255, 0)
-                x, y = kp.pt
-                cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
-
         if len(mhkp) > 4 or len(mnkp) > 4:
             H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
                                          numpy.array([kp.pt for kp in mhkp]),
@@ -232,8 +222,17 @@ class ImageFinder:
             (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
             if self.image_logging:
-                # hotmap should already be defined so careful with the line above
-                cv2.circle(hotmap, (int(mcx),int(mcy)), 2, (255,0,0), -1)
+                final_matches = 0
+                hotmap, _ = self._get_opencv_images(haystack, needle)
+                for kp in hkp:
+                    # true matches are also inliers for the homography
+                    if kp in mhkp and mask[mhkp.index(kp)][0] == 1:
+                        color = (0, 255, 0)
+                    else:
+                        color = (0, 0, 255)
+                    x, y = kp.pt
+                    cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+                cv2.circle(hotmap, (int(mcx),int(mcy)), 4, (255,0,0), -1)
                 cv2.imwrite("last_hotmap.png", hotmap)
 
             return Location(int(mcx), int(mcy))
@@ -244,6 +243,15 @@ class ImageFinder:
             #                 "and %s\\%s from haystack were matched with your required "\
             #                 "similarity and image size" % (len(mhkp), len(hkp),
             #                                                len(mnkp), len(nkp)))
+            if self.image_logging:
+                hotmap, _ = self._get_opencv_images(haystack, needle)
+                for kp in hkp:
+                    if kp in mhkp:
+                        color = (0, 255, 0)
+                    else:
+                        color = (0, 0, 255)
+                    x, y = kp.pt
+                    cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
             return None
 
     def benchmark_find(self, haystack, needle):

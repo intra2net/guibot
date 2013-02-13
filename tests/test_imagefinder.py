@@ -109,8 +109,6 @@ class ImageTest(unittest.TestCase):
                                 "the needle")
 
         # draw focus point as well as matched and unmatched features
-        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
-        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 2, (255,0,0), -1)
         for kp in nkp:
             if kp in mnkp:
                 color = (0, 255, 0)
@@ -118,6 +116,9 @@ class ImageTest(unittest.TestCase):
                 color = (0, 0, 255)
             x,y = kp.pt
             cv2.circle(opencv_needle, (int(x),int(y)), 2, color, -1)
+        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
+        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 4, (255,0,0), -1)
+
         needle_file = os.path.join(common_test.unittest_dir, 'images/', 'needle.png')
         cv2.imwrite(needle_file, opencv_needle)
         self.show_image(needle_file, "needle")
