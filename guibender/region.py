@@ -167,6 +167,29 @@ class Region(object):
     def get_last_match(self):
         return self.last_match
 
+    def configure_find(self, template_match = None, feature_match = None,
+                       feature_detect = None, feature_extract = None):
+        if template_match != None:
+            if template_match not in self.imagefinder.template_matchers:
+                raise ImageFinderMethodError
+            else:
+                self.imagefinder.template_match = template_match
+        if feature_match != None:
+            if feature_match not in self.imagefinder.feature_matchers:
+                raise ImageFinderMethodError
+            else:
+                self.imagefinder.feature_match = feature_match
+        if feature_detect != None:
+            if feature_detect not in self.imagefinder.feature_detectors:
+                raise ImageFinderMethodError
+            else:
+                self.imagefinder.feature_detect = feature_detect
+        if feature_extract != None:
+            if feature_extract not in self.imagefinder.feature_extractors:
+                raise ImageFinderMethodError
+            else:
+                self.imagefinder.feature_extract = feature_extract
+
     def find(self, image, timeout=10, nocolor=False):
         # Load image if needed
         if isinstance(image, basestring):
@@ -182,7 +205,8 @@ class Region(object):
                                                     self.width, self.height,
                                                     nocolor)
             if found_pic is not None:
-                self.last_match = match.Match(self.xpos + found_pic.get_x(), self.ypos + found_pic.get_y(), image)
+                self.last_match = match.Match(self.xpos + found_pic.get_x(),
+                                              self.ypos + found_pic.get_y(), image)
                 return self.last_match
 
             elif time.time() > timeout_limit:
@@ -243,7 +267,8 @@ class Region(object):
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
-                    last_matches.append(match.Match(self.xpos + found_pic.get_x(), self.ypos + found_pic.get_y(), image))
+                    last_matches.append(match.Match(self.xpos + found_pic.get_x(),
+                                                    self.ypos + found_pic.get_y(), image))
                 return last_matches
 
             elif time.time() > timeout_limit:
