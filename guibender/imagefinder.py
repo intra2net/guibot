@@ -32,7 +32,8 @@ class ImageFinder:
         Initiate the image finder with default algorithm configuration.
 
         template matchers:
-            opencv, autopy
+            autopy, sqdiff, ccorr, ccoeff
+            sqdiff_normed, *ccorr_normed, ccoeff_normed
 
         feature detectors:
             FAST, STAR, SIFT, SURF, ORB, MSER,
@@ -47,6 +48,8 @@ class ImageFinder:
             BruteForce, BruteForce-L1, BruteForce-Hamming,
             BruteForce-Hamming(2), FlannBased, inhouse
 
+        Starred methods are currently known to be buggy.
+
         The image logging consists of saving the last hotmap.
 
         If the template matching method was used, the hotmap is
@@ -58,7 +61,7 @@ class ImageFinder:
         that were not matched (red), and the calculated focus point
         that would be used for clicking, hovering, etc. (blue).
         """
-        self.match_template = "opencv"
+        self.match_template = "ccoeff_normed"
         self.detect_features = "ORB"
         self.extract_features = "BRIEF"
         self.match_features = "BruteForce-Hamming"
@@ -100,8 +103,9 @@ class ImageFinder:
                     return Location(coord[0], coord[1])
             return None
 
-        elif self.match_template == "opencv":
-            result = self._match_template(haystack, needle, nocolor)
+        elif self.match_template in ("sqdiff", "ccorr", "ccoeff", "sqdiff_normed",
+                                     "ccorr_normed", "ccoeff_normed"):
+            result = self._match_template(haystack, needle, nocolor, self.match_template)
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
             logging.debug('minVal: %s', str(minVal))
@@ -127,7 +131,7 @@ class ImageFinder:
         Returns a list of Location objects for all matches or None in not found.
         Available template matching methods are: opencv
         """
-        result = self._match_template(haystack, needle, nocolor)
+        result = self._match_template(haystack, needle, nocolor, "ccoeff_normed")
 
         # variant 1: extract all matches above required similarity
         # problems: clouds of matches (like electron clouds), too slow
@@ -220,18 +224,22 @@ class ImageFinder:
 
         return maxima
 
-    def _match_template(self, haystack, needle, nocolor = True):
+    def _match_template(self, haystack, needle, nocolor, match):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
             logging.warning("The size of the searched image is smaller than its region")
             return None
 
+        methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
+                   "ccorr" : cv2.TM_CCORR, "ccorr_normed" : cv2.TM_CCORR_NORMED,
+                   "ccoeff" : cv2.TM_CCOEFF, "ccoeff_normed" : cv2.TM_CCOEFF_NORMED}
+
         if nocolor:
             gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
-            match = cv2.matchTemplate(gray_haystack, gray_needle, cv2.TM_CCOEFF_NORMED)
+            match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
         else:
             opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
-            match = cv2.matchTemplate(opencv_haystack, opencv_needle, cv2.TM_CCOEFF_NORMED)
+            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         # print a hotmap of the results for debugging purposes
         if self.image_logging:
