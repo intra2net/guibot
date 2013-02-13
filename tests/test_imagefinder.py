@@ -199,6 +199,16 @@ class ImageTest(unittest.TestCase):
         else:
             raise FindError
 
+    def test_benchmark_find(self):
+        needle = Image('all_shapes')
+        haystack = Image('shape_blue_circle')
+
+        finder = ImageFinder()
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
 if __name__ == '__main__':
     unittest.main()
 

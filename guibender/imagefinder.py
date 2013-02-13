@@ -235,26 +235,52 @@ class ImageFinder:
             #                                                len(mnkp), len(nkp)))
             return None
 
-    def measure_match_template(self, haystack, needle):
-        # Sanity check: Needle size must be smaller than haystack
-        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
-            logging.warning("The size of the searched image is smaller than its region")
-            return None
+    def benchmark_find(self, haystack, needle):
+        """
+        Returns a list of (method, success, coordinates) tuples sorted in
+        descending order with all available image matching methods.
 
+        Keep in mind that the success is not scaled and methods that are
+        not normalized will be returned first.
+
+        Methods that are supported by OpenCV but currently don't worked are
+        excluded from the dictionary. The dictionary can thus also be used
+        to assess what are the available methods and their success for a given
+        needle and haystack.
+
+        TODO: This method should soon be able to include feature matching methods
+        in the comparison. After all the idea is to benchmark ALL working ways to
+        find a given needle in a given haystack.
+        """
         opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
         gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
 
-        # test all methods
-        for method in (cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
-                       cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
-                       cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED):
-            for gray in (False, True):
+        results = []
+
+        # test all template matching methods
+        methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
+                   "ccorr" : cv2.TM_CCORR, "ccorr_normed" : cv2.TM_CCORR_NORMED,
+                   "ccoeff" : cv2.TM_CCOEFF, "ccoeff_normed" : cv2.TM_CCOEFF_NORMED}
+        for key in methods.keys():
+            for gray in (True, False):
                 if gray:
-                    match = cv2.matchTemplate(gray_haystack, gray_needle, method)
+                    method = key + "_gray"
+                    match = cv2.matchTemplate(gray_haystack, gray_needle, methods[key])
                 else:
-                    match = cv2.matchTemplate(opencv_haystack, opencv_needle, method)
+                    method = key
+                    match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[key])
+
                 minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(match)
-                print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
+                #print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
+                if key in ("sqdiff", "sqdiff_normed"):
+                    success = 1 - minVal
+                    location = minLoc
+                else:
+                    success = maxVal
+                    location = maxLoc
+
+                results.append((method, success, location))
+        return sorted(results, key = lambda x: x[1], reverse = True)
 
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
