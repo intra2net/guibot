@@ -224,38 +224,6 @@ class ImageFinder:
 
         return maxima
 
-    def _match_template(self, haystack, needle, nocolor, match):
-        # Sanity check: Needle size must be smaller than haystack
-        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
-            logging.warning("The size of the searched image is smaller than its region")
-            return None
-
-        methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
-                   "ccorr" : cv2.TM_CCORR, "ccorr_normed" : cv2.TM_CCORR_NORMED,
-                   "ccoeff" : cv2.TM_CCOEFF, "ccoeff_normed" : cv2.TM_CCOEFF_NORMED}
-
-        if nocolor:
-            gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
-            match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
-        else:
-            opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
-            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
-
-        # print a hotmap of the results for debugging purposes
-        if self.image_logging:
-            # currenly the image showing methods still don't work
-            # due to opencv bug
-            #cv2.startWindowThread()
-            #cv2.namedWindow("test", 1)
-            #cv2.imshow("test", match)
-
-            hotmap = cv.CreateMat(len(match), len(match[0]), cv.CV_8UC1)
-            cv.ConvertScale(cv.fromarray(match), hotmap, scale = 255.0)
-            hotmap = numpy.asarray(hotmap)
-            cv2.imwrite("last_hotmap.png", hotmap)
-
-        return match
-
     def find_features(self, haystack, needle, similarity, nocolor = True):
         """
         Finds a needle image in a haystack image using feature matching.
@@ -307,6 +275,27 @@ class ImageFinder:
             #                 "similarity and image size" % (len(mhkp), len(hkp),
             #                                                len(mnkp), len(nkp)))
             return None
+
+    def measure_match_template(self, haystack, needle):
+        # Sanity check: Needle size must be smaller than haystack
+        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
+            logging.warning("The size of the searched image is smaller than its region")
+            return None
+
+        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
+        gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
+
+        # test all methods
+        for method in (cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
+                       cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
+                       cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED):
+            for gray in (False, True):
+                if gray:
+                    match = cv2.matchTemplate(gray_haystack, gray_needle, method)
+                else:
+                    match = cv2.matchTemplate(opencv_haystack, opencv_needle, method)
+                minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(match)
+                print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
 
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
@@ -427,23 +416,35 @@ class ImageFinder:
 
         return (opencv_haystack, opencv_needle)
 
-    def measure_match_template(self, haystack, needle):
+    def _match_template(self, haystack, needle, nocolor, match):
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
             logging.warning("The size of the searched image is smaller than its region")
             return None
 
-        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
-        gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
+        methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
+                   "ccorr" : cv2.TM_CCORR, "ccorr_normed" : cv2.TM_CCORR_NORMED,
+                   "ccoeff" : cv2.TM_CCOEFF, "ccoeff_normed" : cv2.TM_CCOEFF_NORMED}
 
-        # test all methods
-        for method in (cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED,
-                       cv2.TM_CCORR, cv2.TM_CCORR_NORMED,
-                       cv2.TM_CCOEFF, cv2.TM_CCOEFF_NORMED):
-            for gray in (False, True):
-                if gray:
-                    match = cv2.matchTemplate(gray_haystack, gray_needle, method)
-                else:
-                    match = cv2.matchTemplate(opencv_haystack, opencv_needle, method)
-                minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(match)
-                print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
+        if nocolor:
+            gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
+            match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
+        else:
+            opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
+            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
+
+        # print a hotmap of the results for debugging purposes
+        if self.image_logging:
+            # currenly the image showing methods still don't work
+            # due to opencv bug
+            #cv2.startWindowThread()
+            #cv2.namedWindow("test", 1)
+            #cv2.imshow("test", match)
+
+            hotmap = cv.CreateMat(len(match), len(match[0]), cv.CV_8UC1)
+            cv.ConvertScale(cv.fromarray(match), hotmap, scale = 255.0)
+            hotmap = numpy.asarray(hotmap)
+            cv2.imwrite("last_hotmap.png", hotmap)
+
+        return match
+
