@@ -222,7 +222,8 @@ class ImageFinder:
 
         if len(mhkp) > 4 or len(mnkp) > 4:
             H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
-                                         numpy.array([kp.pt for kp in mhkp]))
+                                         numpy.array([kp.pt for kp in mhkp]),
+                                         cv2.RANSAC, 10.0)
 
             (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
             orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
