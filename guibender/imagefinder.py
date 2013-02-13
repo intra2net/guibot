@@ -38,15 +38,15 @@ class ImageFinder:
         feature detectors:
             FAST, STAR, SIFT, SURF, ORB, MSER,
             GFTT, HARRIS, Dense, SimpleBlob
-            GridFAST, GridStar, ...
+            GridFAST, GridSTAR, ...
             PyramidFAST, PyramidSTAR, ...
 
         feature extractors:
-            SIFT, SURF, ORB, BRIEF, FREAK, inhouse
+            SIFT, SURF, ORB, BRIEF, FREAK, in-house
 
         feature matchers:
             BruteForce, BruteForce-L1, BruteForce-Hamming,
-            BruteForce-Hamming(2), FlannBased, inhouse
+            BruteForce-Hamming(2), FlannBased, in-house
 
         Starred methods are currently known to be buggy.
 
@@ -61,6 +61,13 @@ class ImageFinder:
         that were not matched (red), and the calculated focus point
         that would be used for clicking, hovering, etc. (blue).
         """
+        # currently fully compatible methods
+        self.template_matchers = ("autopy", "sqdiff", "ccorr", "ccoeff",
+                                  "sqdiff_normed", "ccorr_normed", "ccoeff_normed")
+        self.feature_matchers = ("BruteForce-Hamming", "BruteForce-Hamming(2)", "in-house")
+        self.feature_detectors = ("ORB", "in-house")
+        self.feature_extractors = ("ORB", "BRIEF")
+
         self.match_template = "ccoeff_normed"
         self.detect_features = "ORB"
         self.extract_features = "BRIEF"
@@ -77,7 +84,10 @@ class ImageFinder:
         Returns a Location object for the match or None in not found.
         Available template matching methods are: autopy, opencv
         """
-        if self.match_template == "autopy":
+        if self.match_template not in self.template_matchers:
+            raise ImageFinderMethodError
+
+        elif self.match_template == "autopy":
             if needle.get_filename() in self._bitmapcache:
                 autopy_needle = self._bitmapcache[needle.get_filename()]
             else:
@@ -103,8 +113,7 @@ class ImageFinder:
                     return Location(coord[0], coord[1])
             return None
 
-        elif self.match_template in ("sqdiff", "ccorr", "ccoeff", "sqdiff_normed",
-                                     "ccorr_normed", "ccoeff_normed"):
+        else:
             result = self._match_template(haystack, needle, nocolor, self.match_template)
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
@@ -120,9 +129,6 @@ class ImageFinder:
                 return Location(maxLoc[0], maxLoc[1])
             return None
 
-        else:
-            raise ImageFinderMethodError
-
     def find_all(self, haystack, needle, similarity, xpos, ypos,
                  width, height, nocolor = True):
         """
@@ -131,11 +137,15 @@ class ImageFinder:
         Returns a list of Location objects for all matches or None in not found.
         Available template matching methods are: opencv
         """
-        if self.match_template not in ("sqdiff", "ccorr", "ccoeff", "sqdiff_normed",
-                                       "ccorr_normed", "ccoeff_normed"):
+        if self.match_template not in self.template_matchers:
             raise ImageFinderMethodError
-
-        result = self._match_template(haystack, needle, nocolor, self.match_template)
+        # autopy template matching for find_all is replaced by ccoeff_normed
+        # since it is inefficient and returns match clouds
+        if self.match_template == "autopy":
+            match_template = "ccoeff_normed"
+        else:
+            match_template = self.match_template
+        result = self._match_template(haystack, needle, nocolor, match_template)
 
         # extract maxima once for each needle size region
         maxima = []
@@ -252,25 +262,25 @@ class ImageFinder:
         in the comparison. After all the idea is to benchmark ALL working ways to
         find a given needle in a given haystack.
         """
-        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
-        gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
-
         results = []
-
         # test all template matching methods
-        methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
-                   "ccorr" : cv2.TM_CCORR, "ccorr_normed" : cv2.TM_CCORR_NORMED,
-                   "ccoeff" : cv2.TM_CCOEFF, "ccoeff_normed" : cv2.TM_CCOEFF_NORMED}
-        for key in methods.keys():
+        for key in self.template_matchers:
+
+            # autopy does not provide any similarity value therefore cannot be compared
+            if key == "autopy":
+                continue
+
             for gray in (True, False):
                 if gray:
                     method = key + "_gray"
-                    match = cv2.matchTemplate(gray_haystack, gray_needle, methods[key])
+                    #match = cv2.matchTemplate(gray_haystack, gray_needle, methods[key])
                 else:
                     method = key
-                    match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[key])
+                    #match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[key])
 
-                minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(match)
+                match = self._match_template(haystack, needle, gray, key)
+                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(match)
+
                 #print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
                 if key in ("sqdiff", "sqdiff_normed"):
                     success = 1 - minVal
@@ -285,7 +295,7 @@ class ImageFinder:
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
 
-        if detect == "inhouse":
+        if detect == "in-house":
             # build the old surf feature detector
             hessian_threshold = 85
             detector = cv2.SURF(hessian_threshold)
@@ -307,7 +317,7 @@ class ImageFinder:
             """
 
         # include only methods tested for compatibility
-        elif detect in ("ORB") and extract in ("ORB", "BRIEF"):
+        elif detect in self.feature_detectors and extract in self.feature_extractors:
             detector = cv2.FeatureDetector_create(detect)
             extractor = cv2.DescriptorExtractor_create(extract)
 
@@ -326,8 +336,7 @@ class ImageFinder:
 
     def _match_features(self, hkeypoints, hdescriptors,
                         nkeypoints, ndescriptors, similarity, match):
-        # match can be: inhouse, BruteForce-Hamming, ...
-        if match == "inhouse":
+        if match == "in-house":
             # match the number of keypoints to their descriptor vectors
             # if a flat descriptor list is returned (old OpenCV descriptors)
             # e.g. needle row 5 is a descriptor vector for needle keypoint 5
@@ -367,7 +376,7 @@ class ImageFinder:
             return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
 
         # include only methods tested for compatibility
-        elif match in ("BruteForce-Hamming", "BruteForce-Hamming(2)"):
+        elif match in self.feature_matchers:
             matcher = cv2.DescriptorMatcher_create(match)
             # build matcher and match feature vectors
             matches = matcher.match(ndescriptors, hdescriptors)
@@ -410,6 +419,8 @@ class ImageFinder:
         methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
                    "ccorr" : cv2.TM_CCORR, "ccorr_normed" : cv2.TM_CCORR_NORMED,
                    "ccoeff" : cv2.TM_CCOEFF, "ccoeff_normed" : cv2.TM_CCOEFF_NORMED}
+        if match not in methods.keys():
+            raise ImageFinderMethodError
 
         if nocolor:
             gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
