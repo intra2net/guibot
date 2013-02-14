@@ -132,7 +132,7 @@ class ImageTest(unittest.TestCase):
 
     def draw_haystack_hotmap(self, haystack, needle, title, logging = 20):
         finder = ImageFinder()
-        finder.image_logging = True
+        finder.image_logging = logging
         match = finder.find_features(haystack, needle, 0.0)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")

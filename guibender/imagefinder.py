@@ -74,7 +74,8 @@ class ImageFinder:
         self.match_features = "BruteForce-Hamming"
 
         self._bitmapcache = {}
-        self.image_logging = False
+        # 0 NOTSET, 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
+        self.image_logging = 20
 
     def find_image(self, haystack, needle, similarity, xpos, ypos,
                    width, height, nocolor = True):
@@ -201,6 +202,8 @@ class ImageFinder:
         Available methods include a combination of feature detector,
         extractor, and matcher.
         """
+        hotmap, _ = self._get_opencv_images(haystack, needle)
+
         # TODO: test all methods
         # TODO: multichannel matching using the color option
         hkp, hdc, nkp, ndc = self._detect_features(haystack, needle,
@@ -209,8 +212,7 @@ class ImageFinder:
         mhkp, hkp, mnkp, nkp = self._match_features(hkp, hdc, nkp, ndc,
                                                     similarity, self.match_features)
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
-        if self.image_logging:
-            hotmap, _ = self._get_opencv_images(haystack, needle)
+        if self.image_logging <= 10:
             for kp in hkp:
                 if kp in mhkp:
                     # these matches are half the way to being good
@@ -231,20 +233,21 @@ class ImageFinder:
             match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
             (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
-            if self.image_logging:
+            if self.image_logging <= 10:
                 for kp in mhkp:
                     # true matches are also inliers for the homography
                     if mask[mhkp.index(kp)][0] == 1:
                         color = (0, 255, 0)
                         x, y = kp.pt
                         cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+            if self.image_logging <= 20:
                 cv2.circle(hotmap, (int(mcx),int(mcy)), 4, (255,0,0), -1)
                 cv2.imwrite("last_hotmap.png", hotmap)
 
             return Location(int(mcx), int(mcy))
 
         else:
-            if self.image_logging:
+            if self.image_logging <= 10:
                 cv2.imwrite("last_hotmap.png", hotmap)
 
             return None
@@ -467,7 +470,7 @@ class ImageFinder:
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         # print a hotmap of the results for debugging purposes
-        if self.image_logging:
+        if self.image_logging <= 20:
             # currenly the image showing methods still don't work
             # due to opencv bug
             #cv2.startWindowThread()
