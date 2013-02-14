@@ -130,65 +130,42 @@ class ImageTest(unittest.TestCase):
         #cv2.waitKey(5000)
         #cv2.destroyAllWindows()
 
-    def test_find_feature_text(self):
-        needle = Image('shape_text')
-        haystack = Image('all_shapes')
-        self.draw_needle_features(needle, haystack)
-
+    def draw_haystack_hotmap(self, haystack, needle, title, logging = 20):
         finder = ImageFinder()
         finder.image_logging = True
         match = finder.find_features(haystack, needle, 0.0)
-        self.assertIsNotNone(match, "The viewport transformed image "\
+        self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
         hotmap_file = os.path.join('last_hotmap.png')
-        self.show_image(hotmap_file, "basic viewport")
+        self.show_image(hotmap_file, title)
+
 
     def test_find_feature_basic_viewport(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_viewport')
         self.draw_needle_features(needle, haystack)
-
-        finder = ImageFinder()
-        finder.image_logging = True
-        match = finder.find_features(haystack, needle, 0.0)
-        self.assertIsNotNone(match, "The viewport transformed image "\
-                             "should be matched in the screen.")
-        hotmap_file = os.path.join('last_hotmap.png')
-        self.show_image(hotmap_file, "basic viewport")
+        self.draw_haystack_hotmap(haystack, needle,
+                                  "basic viewport", 10)
 
     def test_find_feature_rotation(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_rotated')
         self.draw_needle_features(needle, haystack)
-
-        finder = ImageFinder()
-        finder.image_logging = True
-        match = finder.find_features(haystack, needle, 0.0)
-        self.assertIsNotNone(match, "The rotated image "\
-                             "should be matched in the screen.")
-        hotmap_file = os.path.join('last_hotmap.png')
-        self.show_image(hotmap_file, "rotated + viewport")
+        self.draw_haystack_hotmap(haystack, needle,
+                                  "rotated + viewport", 10)
 
     def test_find_feature_scaling(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_scaled')
         self.draw_needle_features(needle, haystack)
-
-        finder = ImageFinder()
-        finder.image_logging = True
-        match = finder.find_features(haystack, needle, 0.0)
-        self.assertIsNotNone(match, "The scaled image "\
-                             "should be matched in the screen.")
-        hotmap_file = os.path.join('last_hotmap.png')
-        self.show_image(hotmap_file, "scaled + viewport")
+        self.draw_haystack_hotmap(haystack, needle,
+                                  "scaled + viewport", 10)
 
     def test_viewport_template_match(self):
-        desktop = DesktopControl()
         needle = Image('n_ibs')
-        needle_viewport = Image('h_ibs_viewport')
         self.show_image('h_ibs_viewport')
         time.sleep(3)
-        haystack = desktop.capture_screen()
+        haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
         match = ImageFinder().find_image(haystack, needle, 0.9, 0, 0,
@@ -198,30 +175,20 @@ class ImageTest(unittest.TestCase):
                           "viewport transformed image.")
 
     def test_viewport_in_screen(self):
-        desktop = DesktopControl()
         needle = Image('n_ibs')
-        needle_viewport = Image('h_ibs_viewport')
         self.show_image('h_ibs_viewport')
         time.sleep(3)
-        haystack = desktop.capture_screen()
+        haystack = DesktopControl().capture_screen()
 
         self.draw_needle_features(needle, haystack)
-
-        finder = ImageFinder()
-        finder.image_logging = True
-        match = finder.find_features(haystack, needle, 0.0)
-        self.assertIsNotNone(match, "The viewport transformed image "\
-                             "should be matched in the screen.")
-        hotmap_file = os.path.join('last_hotmap.png')
-        self.show_image(hotmap_file, "screen + viewport")
+        self.draw_haystack_hotmap(haystack, needle,
+                                  "screen + viewport", 10)
 
     def test_viewport_mouse_hover(self):
-        desktop = DesktopControl()
         needle = Image('n_ibs')
-        needle_viewport = Image('h_ibs_viewport')
         self.show_image('h_ibs_viewport')
         time.sleep(3)
-        haystack = desktop.capture_screen()
+        haystack = DesktopControl().capture_screen()
 
         # test hovering over viewport needle
         match = ImageFinder().find_features(haystack, needle, 0.0)
@@ -238,6 +205,12 @@ class ImageTest(unittest.TestCase):
         #print results
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
+
+    def test_find_feature_text_shapes(self):
+        needle = Image('shape_text')
+        haystack = Image('all_shapes')
+        self.draw_needle_features(needle, haystack)
+        self.draw_haystack_hotmap(haystack, needle, "shape text")
 
 if __name__ == '__main__':
     unittest.main()
