@@ -209,6 +209,16 @@ class ImageFinder:
         mhkp, hkp, mnkp, nkp = self._match_features(hkp, hdc, nkp, ndc,
                                                     similarity, self.match_features)
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
+        if self.image_logging:
+            hotmap, _ = self._get_opencv_images(haystack, needle)
+            for kp in hkp:
+                if kp in mhkp:
+                    # these matches are half the way to being good
+                    color = (0, 255, 255)
+                else:
+                    color = (0, 0, 255)
+                x, y = kp.pt
+                cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
 
         if len(mhkp) > 4 or len(mnkp) > 4:
             H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
@@ -222,36 +232,21 @@ class ImageFinder:
             (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
             if self.image_logging:
-                final_matches = 0
-                hotmap, _ = self._get_opencv_images(haystack, needle)
-                for kp in hkp:
+                for kp in mhkp:
                     # true matches are also inliers for the homography
-                    if kp in mhkp and mask[mhkp.index(kp)][0] == 1:
+                    if mask[mhkp.index(kp)][0] == 1:
                         color = (0, 255, 0)
-                    else:
-                        color = (0, 0, 255)
-                    x, y = kp.pt
-                    cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+                        x, y = kp.pt
+                        cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
                 cv2.circle(hotmap, (int(mcx),int(mcy)), 4, (255,0,0), -1)
                 cv2.imwrite("last_hotmap.png", hotmap)
 
             return Location(int(mcx), int(mcy))
 
         else:
-            # minimum 4 features are required for calculating the homography matrix
-            #raise IndexError("Minimum 4 features are required while %s\\%s from needle "\
-            #                 "and %s\\%s from haystack were matched with your required "\
-            #                 "similarity and image size" % (len(mhkp), len(hkp),
-            #                                                len(mnkp), len(nkp)))
             if self.image_logging:
-                hotmap, _ = self._get_opencv_images(haystack, needle)
-                for kp in hkp:
-                    if kp in mhkp:
-                        color = (0, 255, 0)
-                    else:
-                        color = (0, 0, 255)
-                    x, y = kp.pt
-                    cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+                cv2.imwrite("last_hotmap.png", hotmap)
+
             return None
 
     def benchmark_find(self, haystack, needle):
@@ -303,43 +298,66 @@ class ImageFinder:
 
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
+        hkeypoints = []
+        nkeypoints = []
 
-        if detect == "in-house":
-            # build the old surf feature detector
-            hessian_threshold = 85
-            detector = cv2.SURF(hessian_threshold)
+        # minimum 4 features are required for calculating the homography matrix
+        while len(hkeypoints) < 4 or len(nkeypoints) < 4:
+            if detect == "in-house":
+                # build the old surf feature detector
+                hessian_threshold = 85
+                detector = cv2.SURF(hessian_threshold)
 
-            (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
-            (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
+                (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
+                (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
 
-            # TODO: this MSER blob feature detector is also available in
-            # version 2.2.3
-            """
-            detector = cv2.MSER()
-            hregions = detector.detect(hgray, None)
-            nregions = detector.detect(ngray, None)
-            hhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in hregions]
-            nhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in nregions]
-            # show on final result
-            cv2.polylines(opencv_haystack, hhulls, 1, (0, 255, 0))
-            cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
-            """
+                # TODO: this MSER blob feature detector is also available in
+                # version 2.2.3
+                """
+                detector = cv2.MSER()
+                hregions = detector.detect(hgray, None)
+                nregions = detector.detect(ngray, None)
+                hhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in hregions]
+                nhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in nregions]
+                # show on final result
+                cv2.polylines(opencv_haystack, hhulls, 1, (0, 255, 0))
+                cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
+                """
 
-        # include only methods tested for compatibility
-        elif detect in self.feature_detectors and extract in self.feature_extractors:
-            detector = cv2.FeatureDetector_create(detect)
-            extractor = cv2.DescriptorExtractor_create(extract)
+            # include only methods tested for compatibility
+            elif detect in self.feature_detectors and extract in self.feature_extractors:
+                detector = cv2.FeatureDetector_create(detect)
+                extractor = cv2.DescriptorExtractor_create(extract)
 
-            # keypoints
-            hkeypoints = detector.detect(hgray)
-            nkeypoints = detector.detect(ngray)
+                # keypoints
+                hkeypoints = detector.detect(hgray)
+                nkeypoints = detector.detect(ngray)
 
-            # feature vectors (descriptors)
-            (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
-            (nkeypoints, ndescriptors) = extractor.compute(ngray, nkeypoints)
+                # feature vectors (descriptors)
+                (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
+                (nkeypoints, ndescriptors) = extractor.compute(ngray, nkeypoints)
 
-        else:
-            raise ImageFinderMethodError
+            else:
+                raise ImageFinderMethodError
+
+            # if less than minimum features, zoom in small images to detect more
+            #print len(nkeypoints), len(hkeypoints)
+            if len(nkeypoints) < 4:
+                logging.warning("Minimum 4 features are required while only %s from needle "\
+                                "were detected - zooming needle to increase them!", len(nkeypoints))
+                nmat = cv.fromarray(ngray)
+                nmat_zoomed = cv.CreateMat(nmat.rows * 2, nmat.cols * 2, cv.CV_8UC1)
+                #print nmat.rows, nmat.cols
+                cv.Resize(nmat, nmat_zoomed)
+                ngray = numpy.asarray(nmat_zoomed)
+            if len(hkeypoints) < 4:
+                logging.warning("Minimum 4 features are required while only %s from haystack "\
+                                "were detected - zooming haystack to increase them!", len(hkeypoints))
+                hmat = cv.fromarray(hgray)
+                hmat_zoomed = cv.CreateMat(hmat.rows * 2, hmat.cols * 2, cv.CV_8UC1)
+                #print hmat.rows, hmat.cols
+                cv.Resize(hmat, hmat_zoomed)
+                hgray = numpy.asarray(hmat_zoomed)
 
         return (hkeypoints, hdescriptors, nkeypoints, ndescriptors)
 
