@@ -298,8 +298,8 @@ class ImageFinder:
 
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
-        hkeypoints = []
-        nkeypoints = []
+        hkeypoints, nkeypoints = [], []
+        hfactor, nfactor = 1, 1
 
         # minimum 4 features are required for calculating the homography matrix
         while len(hkeypoints) < 4 or len(nkeypoints) < 4:
@@ -343,21 +343,31 @@ class ImageFinder:
             # if less than minimum features, zoom in small images to detect more
             #print len(nkeypoints), len(hkeypoints)
             if len(nkeypoints) < 4:
-                logging.warning("Minimum 4 features are required while only %s from needle "\
-                                "were detected - zooming needle to increase them!", len(nkeypoints))
                 nmat = cv.fromarray(ngray)
                 nmat_zoomed = cv.CreateMat(nmat.rows * 2, nmat.cols * 2, cv.CV_8UC1)
+                nfactor *= 2
+                logging.warning("Minimum 4 features are required while only %s from needle "\
+                                "were detected - zooming x%i needle to increase them!",
+                                len(nkeypoints), nfactor)
                 #print nmat.rows, nmat.cols
                 cv.Resize(nmat, nmat_zoomed)
                 ngray = numpy.asarray(nmat_zoomed)
             if len(hkeypoints) < 4:
-                logging.warning("Minimum 4 features are required while only %s from haystack "\
-                                "were detected - zooming haystack to increase them!", len(hkeypoints))
                 hmat = cv.fromarray(hgray)
                 hmat_zoomed = cv.CreateMat(hmat.rows * 2, hmat.cols * 2, cv.CV_8UC1)
+                hfactor *= 2
+                logging.warning("Minimum 4 features are required while only %s from haystack "\
+                                "were detected - zooming x%i haystack to increase them!",
+                                len(hkeypoints), hfactor)
                 #print hmat.rows, hmat.cols
                 cv.Resize(hmat, hmat_zoomed)
                 hgray = numpy.asarray(hmat_zoomed)
+
+        # reduce keypoint coordinates to the original image size
+        for hkeypoint in hkeypoints:
+            hkeypoint.pt = (hkeypoint.pt[0] / hfactor, hkeypoint.pt[1] / hfactor)
+        for nkeypoint in nkeypoints:
+            nkeypoint.pt = (nkeypoint.pt[0] / nfactor, nkeypoint.pt[1] / nfactor)
 
         return (hkeypoints, hdescriptors, nkeypoints, ndescriptors)
 
