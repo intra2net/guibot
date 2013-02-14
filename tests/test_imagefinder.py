@@ -212,6 +212,36 @@ class ImageTest(unittest.TestCase):
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "shape text")
 
+    def test_find_feature_text_basic(self):
+        needle = Image('word')
+        haystack = Image('sentence_sans')
+        self.draw_needle_features(needle, haystack)
+        self.draw_haystack_hotmap(haystack, needle, "sans")
+
+    def test_find_feature_text_bold(self):
+        needle = Image('word')
+        haystack = Image('sentence_bold')
+        self.draw_needle_features(needle, haystack)
+        self.draw_haystack_hotmap(haystack, needle, "bold")
+
+    def test_find_feature_text_italic(self):
+        needle = Image('word')
+        haystack = Image('sentence_italic')
+        self.draw_needle_features(needle, haystack)
+        self.draw_haystack_hotmap(haystack, needle, "italic")
+
+    def test_find_feature_text_larger(self):
+        needle = Image('word')
+        haystack = Image('sentence_larger')
+        self.draw_needle_features(needle, haystack)
+        self.draw_haystack_hotmap(haystack, needle, "larger")
+
+    def test_find_feature_text_font(self):
+        needle = Image('word')
+        haystack = Image('sentence_font')
+        self.draw_needle_features(needle, haystack)
+        self.draw_haystack_hotmap(haystack, needle, "font")
+
 if __name__ == '__main__':
     unittest.main()
 
