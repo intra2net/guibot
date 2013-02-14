@@ -104,9 +104,9 @@ class ImageTest(unittest.TestCase):
         self.assertGreaterEqual(len(nkp), len(mnkp), "The matched keypoints in the needle "\
                                 "should be fewer than all detected keypoints in the needle")
         self.assertGreaterEqual(len(mhkp), 4, "Minimum of 4 keypoints should be matched in "\
-                                "the haystack")
+                                "the haystack while %s were matched" % len(mhkp))
         self.assertGreaterEqual(len(mnkp), 4, "Minimum of 4 keypoints should be matched in "\
-                                "the needle")
+                                "the needle while %s were matched" % len(mnkp))
 
         # draw focus point as well as matched and unmatched features
         for kp in nkp:
@@ -129,6 +129,19 @@ class ImageTest(unittest.TestCase):
         #cv2.imshow("needle", opencv_needle)
         #cv2.waitKey(5000)
         #cv2.destroyAllWindows()
+
+    def test_find_feature_text(self):
+        needle = Image('shape_text')
+        haystack = Image('all_shapes')
+        self.draw_needle_features(needle, haystack)
+
+        finder = ImageFinder()
+        finder.image_logging = True
+        match = finder.find_features(haystack, needle, 0.0)
+        self.assertIsNotNone(match, "The viewport transformed image "\
+                             "should be matched in the screen.")
+        hotmap_file = os.path.join('last_hotmap.png')
+        self.show_image(hotmap_file, "basic viewport")
 
     def test_find_feature_basic_viewport(self):
         needle = Image('n_ibs')
