@@ -94,8 +94,8 @@ class ImageTest(unittest.TestCase):
         hkp, hdc, nkp, ndc = finder._detect_features(haystack, needle,
                                                      detect = self.algorithms[0],
                                                      extract = self.algorithms[1])
-        mhkp, hkp, mnkp, nkp = finder._match_features(hkp, hdc, nkp, ndc,
-                                                      0.0, match = self.algorithms[2])
+        mhkp, mnkp = finder._match_features(hkp, hdc, nkp, ndc,
+                                            match = self.algorithms[2])
         #print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
         #                                                            len(mnkp), len(nkp))
         self.assertEqual(len(mhkp), len(mnkp), "The matched keypoints in the haystack and "\
@@ -133,6 +133,7 @@ class ImageTest(unittest.TestCase):
     def draw_haystack_hotmap(self, haystack, needle, title, logging = 20):
         finder = ImageFinder()
         finder.image_logging = logging
+        #finder.match_features = "in-house"
         match = finder.find_features(haystack, needle, 0.0)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")

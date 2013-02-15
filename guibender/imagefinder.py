@@ -50,6 +50,16 @@ class ImageFinder:
 
         Starred methods are currently known to be buggy.
 
+        Equalizer of parameters:
+            detect filter - works for certain detectors and
+                determines how many initial features are
+                detected in an image (e.g. hessian threshold for
+                SURF detector)
+            match filter - determines what part of all matches
+                returned by feature matcher remain good matches
+            project filter - determines what part of the good
+                matches are considered inliers
+
         The image logging consists of saving the last hotmap.
 
         If the template matching method was used, the hotmap is
@@ -73,6 +83,9 @@ class ImageFinder:
         self.extract_features = "BRIEF"
         self.match_features = "BruteForce-Hamming"
 
+        self.equalizer = {"detect_filter" : 85,
+                          "match_filter" : -1,
+                          "project_filter" : 10.0}
         self._bitmapcache = {}
         # 0 NOTSET, 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
         self.image_logging = 20
@@ -140,6 +153,7 @@ class ImageFinder:
         """
         if self.match_template not in self.template_matchers:
             raise ImageFinderMethodError
+
         # autopy template matching for find_all is replaced by ccoeff_normed
         # since it is inefficient and returns match clouds
         if self.match_template == "autopy":
@@ -158,7 +172,8 @@ class ImageFinder:
             logging.debug('Found a match with:')
             #logging.debug('minVal: %s', str(minVal))
             #logging.debug('minLoc: %s', str(minLoc))
-            logging.debug('maxVal (similarity): %s (%s)', str(maxVal), similarity)
+            logging.debug('maxVal (similarity): %s (%s)',
+                          str(maxVal), similarity)
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
 
             maxima.append(Location(maxLoc[0], maxLoc[1]))
@@ -209,9 +224,9 @@ class ImageFinder:
         hkp, hdc, nkp, ndc = self._detect_features(haystack, needle,
                                                    detect = self.detect_features,
                                                    extract = self.extract_features)
-        mhkp, hkp, mnkp, nkp = self._match_features(hkp, hdc, nkp, ndc,
-                                                    similarity, self.match_features)
-        #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp))
+        mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc, self.match_features)
+
+        # plot the detected and matched features for image logging
         if self.image_logging <= 10:
             for kp in hkp:
                 if kp in mhkp:
@@ -222,35 +237,54 @@ class ImageFinder:
                 x, y = kp.pt
                 cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
 
-        if len(mhkp) > 4 or len(mnkp) > 4:
-            H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
-                                         numpy.array([kp.pt for kp in mhkp]),
-                                         cv2.RANSAC, 10.0)
-
-            (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
-            orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
-            #print orig_center_wrapped.shape, H.shape
-            match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
-            (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
-
-            if self.image_logging <= 10:
-                for kp in mhkp:
-                    # true matches are also inliers for the homography
-                    if mask[mhkp.index(kp)][0] == 1:
-                        color = (0, 255, 0)
-                        x, y = kp.pt
-                        cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
-            if self.image_logging <= 20:
-                cv2.circle(hotmap, (int(mcx),int(mcy)), 4, (255,0,0), -1)
-                cv2.imwrite("last_hotmap.png", hotmap)
-
-            return Location(int(mcx), int(mcy))
-
-        else:
+        # check for quality of the match
+        s = float(len(mnkp)) / float(len(nkp))
+        #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp)), "-> %f" % s
+        if s < similarity:
             if self.image_logging <= 10:
                 cv2.imwrite("last_hotmap.png", hotmap)
-
             return None
+
+        # calculate needle projection using random sample consensus
+        # homography and fundamental matrix as options - homography is considered only
+        # for rotation but currently gives better results than the fundamental matrix
+        H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
+                                     numpy.array([kp.pt for kp in mhkp]),
+                                     cv2.RANSAC, self.equalizer["project_filter"])
+        #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
+        #                                 numpy.array([kp.pt for kp in mhkp]),
+        #                                 method = cv2.RANSAC, param1 = 10.0,
+        #                                 param2 = 0.9)
+        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
+        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
+        #print orig_center_wrapped.shape, H.shape
+        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
+        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+
+        # measure total used features for the projected focus point
+        total_matches = 0
+        for kp in mhkp:
+            # true matches are also inliers for the homography
+            if mask[mhkp.index(kp)][0] == 1:
+                total_matches += 1
+                # plot the correctly projected features
+                if self.image_logging <= 10:
+                    color = (0, 255, 0)
+                    x, y = kp.pt
+                    cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+
+        # plot the focus point used for clicking and other operations
+        if self.image_logging <= 20:
+            cv2.circle(hotmap, (int(mcx),int(mcy)), 4, (255,0,0), -1)
+            cv2.imwrite("last_hotmap.png", hotmap)
+
+        # check for quality of the projection
+        s = float(total_matches) / float(len(mnkp))
+        #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % s
+        if s < similarity:
+            return None
+        else:
+            return Location(int(mcx), int(mcy))
 
     def benchmark_find(self, haystack, needle):
         """
@@ -308,7 +342,7 @@ class ImageFinder:
         while len(hkeypoints) < 4 or len(nkeypoints) < 4:
             if detect == "in-house":
                 # build the old surf feature detector
-                hessian_threshold = 85
+                hessian_threshold = self.equalizer["detect_filter"]
                 detector = cv2.SURF(hessian_threshold)
 
                 (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
@@ -375,7 +409,7 @@ class ImageFinder:
         return (hkeypoints, hdescriptors, nkeypoints, ndescriptors)
 
     def _match_features(self, hkeypoints, hdescriptors,
-                        nkeypoints, ndescriptors, similarity, match):
+                        nkeypoints, ndescriptors, match):
         if match == "in-house":
             # match the number of keypoints to their descriptor vectors
             # if a flat descriptor list is returned (old OpenCV descriptors)
@@ -419,13 +453,15 @@ class ImageFinder:
         # then extract matches above some similarity as done below
         match_hkeypoints = []
         match_nkeypoints = []
+        matches = sorted(matches, key = lambda x: x.distance)
+        matches = matches[:self.equalizer["match_filter"]]
+        #print [m.distance for m in matches]
         for match in matches:
             #print match.distance
-            if match.distance <= 100.0 - 100 * similarity:
-                match_hkeypoints.append(hkeypoints[match.trainIdx])
-                match_nkeypoints.append(nkeypoints[match.queryIdx])
+            match_hkeypoints.append(hkeypoints[match.trainIdx])
+            match_nkeypoints.append(nkeypoints[match.queryIdx])
 
-        return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
+        return (match_hkeypoints, match_nkeypoints)
 
     def _get_opencv_images(self, haystack, needle, gray = False):
         opencv_haystack = numpy.array(haystack.get_pil_image())
