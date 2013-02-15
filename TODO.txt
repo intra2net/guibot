@@ -1,20 +1,13 @@
 - Test Qt4 Gui's text input fields. Implement drag'n'drop (perhaps
   two lists views) and test it.
 
-- Currently detecting text via images depends heavily
-  on the font size. Test if feature based detection handles works
-  better for smaller / bigger font sizes. If yes, then we can talk
-  about adjust Image() to enable or disable feature based matching.
-
 - Similarity and tolerance - for the variety of algorithms, there are
   different scales that can basically be suggested by the developer - 
   add some benchmarking functions and method suggestion functions to
   image finder (the developer can then decide for the best method for
   each image! - or test for various image categories like text, button, etc.)
 
-- Need an advanced method to analyze if the matcher returned a meaningful
-  match to use for projecting the clicking point. Sometimes it returns a
-  bunch of unrelated features giving 100% match (matched all). A guess is
-  to analyse the mapping of features for continuity (Continuous functions in
-  discrete space and some real analysis). We could even improve our own
-  inhouse matcher with such ability.
+- Implement a function to calibrate the image finder equalizer for a given image
+  and return the calibrated parameters in order to save somewhere and use for
+  this specific image. There is one famous AI technique that I saw in Stanford's
+  online AI class, suggested by Sebastian Thrun.
