@@ -89,6 +89,9 @@ class ImageFinder:
         self._bitmapcache = {}
         # 0 NOTSET, 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
         self.image_logging = 20
+        # contains the last matched image as a numpy array, the matched
+        # similarity and the matched coordinates
+        self.hotmap = [None, -1.0, None]
 
     def find_image(self, haystack, needle, similarity, xpos, ypos,
                    width, height, nocolor = True):
@@ -124,6 +127,8 @@ class ImageFinder:
                                                       ((xpos, ypos), (width, height)))
 
                 if coord is not None:
+                    self.hotmap[1] = -1.0
+                    self.hotmap[2] = coord
                     return Location(coord[0], coord[1])
             return None
 
@@ -136,10 +141,27 @@ class ImageFinder:
             logging.debug('maxVal (similarity): %s (%s)',
                           str(maxVal), similarity)
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
+            # switch max and min for sqdiff and sqdiff_normed
+            if self.match_template in ("sqdiff", "sqdiff_normed"):
+                maxVal = minVal
+                maxLoc = minLoc
 
-            # TODO: Figure out how the threshold works
-            # need to read openCV documentation
+            # print a hotmap of the results for debugging purposes
+            if self.image_logging <= 20:
+                # currenly the image showing methods still don't work
+                # due to opencv bug
+                #cv2.startWindowThread()
+                #cv2.namedWindow("test", 1)
+                #cv2.imshow("test", match)
+
+                hotmap = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
+                cv.ConvertScale(cv.fromarray(result), hotmap, scale = 255.0)
+                self.hotmap[0] = numpy.asarray(hotmap)
+                cv2.imwrite("log.png", self.hotmap[0])
+
             if maxVal > similarity:
+                self.hotmap[1] = maxVal
+                self.hotmap[2] = maxLoc
                 return Location(maxLoc[0], maxLoc[1])
             return None
 
@@ -165,7 +187,12 @@ class ImageFinder:
         # extract maxima once for each needle size region
         maxima = []
         while True:
+
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+            # switch max and min for sqdiff and sqdiff_normed
+            if self.match_template in ("sqdiff", "sqdiff_normed"):
+                maxVal = minVal
+                maxLoc = minLoc
             if maxVal < similarity:
                 break
 
@@ -207,6 +234,15 @@ class ImageFinder:
             logging.debug("maxLoc was %s and is now %s", maxVal, result[maxLoc[1], maxLoc[0]])
         logging.info("%i matches found" % len(maxima))
 
+        # print a hotmap of the results for debugging purposes
+        if self.image_logging <= 20:
+            hotmap = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
+            cv.ConvertScale(cv.fromarray(result), hotmap, scale = 255.0)
+            self.hotmap[0] = numpy.asarray(hotmap)
+            cv2.imwrite("log.png", self.hotmap[0])
+        self.hotmap[1] = maxVal
+        self.hotmap[2] = maxLoc
+
         return maxima
 
     def find_features(self, haystack, needle, similarity, nocolor = True):
@@ -217,7 +253,9 @@ class ImageFinder:
         Available methods include a combination of feature detector,
         extractor, and matcher.
         """
-        hotmap, _ = self._get_opencv_images(haystack, needle)
+        self.hotmap[0], _ = self._get_opencv_images(haystack, needle)
+        self.hotmap[1] = -1.0
+        self.hotmap[2] = None
 
         # TODO: test all methods
         # TODO: multichannel matching using the color option
@@ -235,14 +273,14 @@ class ImageFinder:
                 else:
                     color = (0, 0, 255)
                 x, y = kp.pt
-                cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+                cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
 
         # check for quality of the match
         s = float(len(mnkp)) / float(len(nkp))
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp)), "-> %f" % s
         if s < similarity:
             if self.image_logging <= 10:
-                cv2.imwrite("last_hotmap.png", hotmap)
+                cv2.imwrite("log.png", self.hotmap[0])
             return None
 
         # calculate needle projection using random sample consensus
@@ -271,12 +309,14 @@ class ImageFinder:
                 if self.image_logging <= 10:
                     color = (0, 255, 0)
                     x, y = kp.pt
-                    cv2.circle(hotmap, (int(x),int(y)), 2, color, -1)
+                    cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
 
         # plot the focus point used for clicking and other operations
         if self.image_logging <= 20:
-            cv2.circle(hotmap, (int(mcx),int(mcy)), 4, (255,0,0), -1)
-            cv2.imwrite("last_hotmap.png", hotmap)
+            cv2.circle(self.hotmap[0], (int(mcx),int(mcy)), 4, (255,0,0), -1)
+            cv2.imwrite("log.png", self.hotmap[0])
+        self.hotmap[1] = float(total_matches) / float(len(mnkp))
+        self.hotmap[2] = (mcx, mcy)
 
         # check for quality of the projection
         s = float(total_matches) / float(len(mnkp))
@@ -304,9 +344,9 @@ class ImageFinder:
         find a given needle in a given haystack.
         """
         results = []
+
         # test all template matching methods
         for key in self.template_matchers:
-
             # autopy does not provide any similarity value therefore cannot be compared
             if key == "autopy":
                 continue
@@ -331,6 +371,7 @@ class ImageFinder:
                     location = maxLoc
 
                 results.append((method, success, location))
+
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate_find(self, haystack, needle):
@@ -502,18 +543,5 @@ class ImageFinder:
         else:
             opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
-
-        # print a hotmap of the results for debugging purposes
-        if self.image_logging <= 20:
-            # currenly the image showing methods still don't work
-            # due to opencv bug
-            #cv2.startWindowThread()
-            #cv2.namedWindow("test", 1)
-            #cv2.imshow("test", match)
-
-            hotmap = cv.CreateMat(len(match), len(match[0]), cv.CV_8UC1)
-            cv.ConvertScale(cv.fromarray(match), hotmap, scale = 255.0)
-            hotmap = numpy.asarray(hotmap)
-            cv2.imwrite("last_hotmap.png", hotmap)
 
         return match
