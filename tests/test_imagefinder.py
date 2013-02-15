@@ -199,7 +199,7 @@ class ImageTest(unittest.TestCase):
 
     def test_benchmark_find(self):
         haystack = Image('all_shapes')
-        needle = Image('shape_blue_circle')
+        needle = Image('all_shapes')
 
         finder = ImageFinder()
         results = finder.benchmark_find(haystack, needle)

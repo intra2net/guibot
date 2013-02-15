@@ -143,7 +143,7 @@ class ImageFinder:
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
             # switch max and min for sqdiff and sqdiff_normed
             if self.match_template in ("sqdiff", "sqdiff_normed"):
-                maxVal = minVal
+                maxVal = 1 - minVal
                 maxLoc = minLoc
 
             # print a hotmap of the results for debugging purposes
@@ -191,14 +191,13 @@ class ImageFinder:
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
             # switch max and min for sqdiff and sqdiff_normed
             if self.match_template in ("sqdiff", "sqdiff_normed"):
-                maxVal = minVal
+                # TODO: check whetehr find_all would work properly for sqdiff
+                maxVal = 1 - minVal
                 maxLoc = minLoc
             if maxVal < similarity:
                 break
 
             logging.debug('Found a match with:')
-            #logging.debug('minVal: %s', str(minVal))
-            #logging.debug('minLoc: %s', str(minLoc))
             logging.debug('maxVal (similarity): %s (%s)',
                           str(maxVal), similarity)
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
@@ -346,6 +345,7 @@ class ImageFinder:
         results = []
 
         # test all template matching methods
+        old_config = (self.match_template)
         for key in self.template_matchers:
             # autopy does not provide any similarity value therefore cannot be compared
             if key == "autopy":
@@ -359,19 +359,33 @@ class ImageFinder:
                     method = key
                     #match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[key])
 
-                match = self._match_template(haystack, needle, gray, key)
-                minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(match)
+                self.match_template = key
+                self.find_image(haystack, needle, 0.0, 0, 0,
+                                haystack.width, haystack.height, gray)
+                print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
+                results.append((method, self.hotmap[1], self.hotmap[2]))
+        self.match_template = old_config[0]
 
-                #print "%s,%s,%s,%s,%s,%s" % (needle.filename, method, minVal, maxVal, minLoc, maxLoc)
-                if key in ("sqdiff", "sqdiff_normed"):
-                    success = 1 - minVal
-                    location = minLoc
-                else:
-                    success = maxVal
-                    location = maxLoc
-
-                results.append((method, success, location))
-
+        # test all feature matching methods
+        old_config = (self.detect_features,
+                      self.extract_features,
+                      self.match_features)
+        for key_fd in self.feature_detectors:
+            # skip in-house because of opencv version bug
+            if key_fd == "in-house":
+                continue
+            for key_fe in self.feature_extractors:
+                for key_fm in self.feature_matchers:
+                    self.detect_features = key_fd
+                    self.extract_features = key_fe
+                    self.match_features = key_fm
+                    self.find_features(haystack, needle, 0.0)
+                    method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
+                    print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
+                    results.append((method, self.hotmap[1], self.hotmap[2]))
+        self.detect_features = old_config[0]
+        self.extract_features = old_config[1]
+        self.match_features = old_config[2]
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate_find(self, haystack, needle):
