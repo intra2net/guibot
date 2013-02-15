@@ -397,8 +397,7 @@ class ImageFinder:
             knn = cv2.KNearest()
             knn.train(samples,responses)
 
-            match_hkeypoints = []
-            match_nkeypoints = []
+            matches = []
             # retrieve index and value through enumeration
             for i, descriptor in enumerate(nrows):
                 descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
@@ -406,14 +405,7 @@ class ImageFinder:
                 retval, results, neigh_resp, dists = knn.find_nearest(descriptor, 1)
                 res, dist =  int(results[0][0]), dists[0][0]
                 #print res, dist
-
-                if dist <= 1.0 - similarity:
-                    match_hkeypoints.append(hkeypoints[res])
-                    match_nkeypoints.append(nkeypoints[i])
-                else:
-                    pass
-                    #print "no", dist
-            return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
+                matches.append(cv2.DMatch(i, res, dist))
 
         # include only methods tested for compatibility
         elif match in self.feature_matchers:
@@ -421,19 +413,19 @@ class ImageFinder:
             # build matcher and match feature vectors
             matches = matcher.match(ndescriptors, hdescriptors)
 
-            # then extract matches above some similarity as done below
-            match_hkeypoints = []
-            match_nkeypoints = []
-            for match in matches:
-                #print match.distance
-                if match.distance <= 100.0 - 100 * similarity:
-                    match_hkeypoints.append(hkeypoints[match.trainIdx])
-                    match_nkeypoints.append(nkeypoints[match.queryIdx])
-
-            return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
-
         else:
             raise ImageFinderMethodError
+
+        # then extract matches above some similarity as done below
+        match_hkeypoints = []
+        match_nkeypoints = []
+        for match in matches:
+            #print match.distance
+            if match.distance <= 100.0 - 100 * similarity:
+                match_hkeypoints.append(hkeypoints[match.trainIdx])
+                match_nkeypoints.append(nkeypoints[match.queryIdx])
+
+        return (match_hkeypoints, hkeypoints, match_nkeypoints, nkeypoints)
 
     def _get_opencv_images(self, haystack, needle, gray = False):
         opencv_haystack = numpy.array(haystack.get_pil_image())
@@ -483,4 +475,3 @@ class ImageFinder:
             cv2.imwrite("last_hotmap.png", hotmap)
 
         return match
-
