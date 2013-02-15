@@ -333,6 +333,12 @@ class ImageFinder:
                 results.append((method, success, location))
         return sorted(results, key = lambda x: x[1], reverse = True)
 
+    def calibrate_find(self, haystack, needle):
+        # TODO: Implement this function to calibrate the equalizer for a given image
+        # and return the calibrated parameters in order to save somewhere and use
+        # for this specific image.
+        pass
+
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
         hkeypoints, nkeypoints = [], []
