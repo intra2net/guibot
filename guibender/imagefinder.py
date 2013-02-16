@@ -261,6 +261,12 @@ class ImageFinder:
         hkp, hdc, nkp, ndc = self._detect_features(haystack, needle,
                                                    detect = self.detect_features,
                                                    extract = self.extract_features)
+        # check for quality of the detected features
+        if len(nkp) < 4 or len(hkp) < 4:
+            if self.image_logging <= 10:
+                cv2.imwrite("log.png", self.hotmap[0])
+            return None
+
         mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc, self.match_features)
 
         # plot the detected and matched features for image logging
@@ -277,7 +283,7 @@ class ImageFinder:
         # check for quality of the match
         s = float(len(mnkp)) / float(len(nkp))
         #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp)), "-> %f" % s
-        if s < similarity:
+        if s < similarity or len(mnkp) < 4:
             if self.image_logging <= 10:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
@@ -362,7 +368,7 @@ class ImageFinder:
                 self.match_template = key
                 self.find_image(haystack, needle, 0.0, 0, 0,
                                 haystack.width, haystack.height, gray)
-                print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
+                #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
                 results.append((method, self.hotmap[1], self.hotmap[2]))
         self.match_template = old_config[0]
 
@@ -381,7 +387,7 @@ class ImageFinder:
                     self.match_features = key_fm
                     self.find_features(haystack, needle, 0.0)
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
-                    print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
+                    #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
                     results.append((method, self.hotmap[1], self.hotmap[2]))
         self.detect_features = old_config[0]
         self.extract_features = old_config[1]
@@ -398,9 +404,12 @@ class ImageFinder:
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
         hkeypoints, nkeypoints = [], []
         hfactor, nfactor = 1, 1
+        i, maxzoom = 0, 5
 
         # minimum 4 features are required for calculating the homography matrix
-        while len(hkeypoints) < 4 or len(nkeypoints) < 4:
+        while len(hkeypoints) < 4 or len(nkeypoints) < 4 and i < maxzoom:
+            i += 1
+
             if detect == "in-house":
                 # build the old surf feature detector
                 hessian_threshold = self.equalizer["detect_filter"]
