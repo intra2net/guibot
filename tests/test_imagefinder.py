@@ -197,6 +197,16 @@ class ImageTest(unittest.TestCase):
                              "should be matched in the screen.")
         Region().hover(match)
 
+    def test_features_no_match(self):
+        needle = Image('n_ibs')
+        haystack = DesktopControl().capture_screen()
+
+        match = ImageFinder().find_features(haystack, needle, 0.5)
+        self.draw_haystack_hotmap(haystack, needle,
+                                  "screen + viewport", 10)
+        self.assertIsNone(match, "No transformed needle is present "\
+                          "and should be found in the haystack.")
+
     def test_benchmark(self):
         haystack = Image('all_shapes')
         needle = Image('all_shapes')
