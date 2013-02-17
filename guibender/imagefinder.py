@@ -93,8 +93,7 @@ class ImageFinder:
         # similarity and the matched coordinates
         self.hotmap = [None, -1.0, None]
 
-    def find_image(self, haystack, needle, similarity, xpos, ypos,
-                   width, height, nocolor = True):
+    def find_image(self, haystack, needle, similarity, nocolor = True):
         """
         Finds a needle image in a haystack image using template matching.
 
@@ -123,8 +122,7 @@ class ImageFinder:
                 # and fuzzy areas of matches are returned we need
                 # to ask autopy team for returning the matching rates
                 # as well
-                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance,
-                                                      ((xpos, ypos), (width, height)))
+                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
 
                 if coord is not None:
                     self.hotmap[1] = -1.0
@@ -165,8 +163,7 @@ class ImageFinder:
                 return Location(maxLoc[0], maxLoc[1])
             return None
 
-    def find_all(self, haystack, needle, similarity, xpos, ypos,
-                 width, height, nocolor = True):
+    def find_all(self, haystack, needle, similarity, nocolor = True):
         """
         Finds all needle images in a haystack image using template matching.
 
@@ -325,7 +322,7 @@ class ImageFinder:
 
         # check for quality of the projection
         s = float(total_matches) / float(len(mnkp))
-        #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % s
+        #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % s, "<?", similarity
         if s < similarity:
             return None
         else:
@@ -366,8 +363,7 @@ class ImageFinder:
                     #match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[key])
 
                 self.match_template = key
-                self.find_image(haystack, needle, 0.0, 0, 0,
-                                haystack.width, haystack.height, gray)
+                self.find_image(haystack, needle, 0.0, gray)
                 #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
                 results.append((method, self.hotmap[1], self.hotmap[2]))
         self.match_template = old_config[0]

@@ -200,10 +200,12 @@ class Region(object):
             screen_capture = self.desktop.capture_screen(self)
             similarity = image.get_similarity()
 
+            # TODO: implement cropping or preparation here but not in the
+            # image finder which concentrates solely on finding the image
+            # (only autopy supports this but is almost never used compared
+            # to the alternative methods)
             found_pic = self.imagefinder.find_image(screen_capture, image,
-                                                    similarity, 0, 0,
-                                                    self.width, self.height,
-                                                    nocolor)
+                                                    similarity, nocolor)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(),
                                               self.ypos + found_pic.get_y(), image)
@@ -229,9 +231,7 @@ class Region(object):
         while True:
             screen_capture = self.desktop.capture_screen(self)
             similarity = image.get_similarity()
-            # TODO: synchronize the different types of similarity
-            # currently requires 0.1 similarity
-            found_pic = self.imagefinder.find_features(screen_capture, image, 0.1)
+            found_pic = self.imagefinder.find_features(screen_capture, image, similarity)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(),
                                               self.ypos + found_pic.get_y(), image)
@@ -261,9 +261,7 @@ class Region(object):
             screen_capture = self.desktop.capture_screen(self)
             similarity = image.get_similarity()
             found_pics = self.imagefinder.find_all(screen_capture, image,
-                                                    similarity, 0, 0,
-                                                    self.width, self.height,
-                                                    nocolor)
+                                                   similarity, nocolor)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
