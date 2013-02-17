@@ -350,8 +350,9 @@ class ImageFinder:
         # test all template matching methods
         old_config = (self.match_template)
         for key in self.template_matchers:
-            # autopy does not provide any similarity value therefore cannot be compared
-            if key == "autopy":
+            # autopy does not provide any similarity value
+            # and only normed methods are comparable
+            if "_normed" not in key:
                 continue
 
             for gray in (True, False):
