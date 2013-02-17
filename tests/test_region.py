@@ -231,10 +231,10 @@ class RegionTest(unittest.TestCase):
 
         # Test hovering over projected location
         self.show_image('h_ibs_viewport')
-        # TODO: currently mismatch is still not ignored properly
-        # therefore do sleeping to wait for the window
-        time.sleep(4)
-        match = Region().find_features(Image('n_ibs'))
+        # TODO: currently the match similarity is very low although
+        # the image if matched properly - need to find a way to increase
+        # the similarity while preserving the robustness of the feature matching
+        match = Region().find_features(Image('n_ibs').similarity(0.2))
         Region().hover(match.get_target())
 
     def test_click(self):
