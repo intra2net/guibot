@@ -141,28 +141,28 @@ class ImageTest(unittest.TestCase):
         self.show_image(hotmap_file, title)
 
 
-    def test_find_feature_basic_viewport(self):
+    def test_features_viewport(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_viewport')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
                                   "basic viewport", 10)
 
-    def test_find_feature_rotation(self):
+    def test_features_rotation(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_rotated')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
                                   "rotated + viewport", 10)
 
-    def test_find_feature_scaling(self):
+    def test_features_scaling(self):
         needle = Image('n_ibs')
         haystack = Image('h_ibs_scaled')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
                                   "scaled + viewport", 10)
 
-    def test_viewport_template_match(self):
+    def test_template_viewport(self):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
         time.sleep(3)
@@ -175,7 +175,7 @@ class ImageTest(unittest.TestCase):
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 
-    def test_viewport_in_screen(self):
+    def test_features_screen(self):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
         time.sleep(3)
@@ -185,7 +185,7 @@ class ImageTest(unittest.TestCase):
         self.draw_haystack_hotmap(haystack, needle,
                                   "screen + viewport", 10)
 
-    def test_viewport_mouse_hover(self):
+    def test_features_mouse_hover(self):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
         time.sleep(3)
@@ -197,7 +197,7 @@ class ImageTest(unittest.TestCase):
                              "should be matched in the screen.")
         Region().hover(match)
 
-    def test_benchmark_find(self):
+    def test_benchmark(self):
         haystack = Image('all_shapes')
         needle = Image('all_shapes')
 
