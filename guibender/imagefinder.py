@@ -330,13 +330,14 @@ class ImageFinder:
 
     def benchmark_find(self, haystack, needle):
         """
-        Returns a list of (method, success, coordinates) tuples sorted in
-        descending order with all available image matching methods.
+        Returns a list of (method, success, coordinates) tuples with all available
+        image matching methods sorted according to similarity.
 
-        Keep in mind that the success is not scaled and methods that are
-        not normalized will be returned first.
+        Use this method to choose the best algorithm to find your specific image
+        (or image category). Use the "calibrate" method to find the best parameters
+        for your chosen algorithm.
 
-        Methods that are supported by OpenCV but currently don't worked are
+        Methods that are supported by OpenCV but currently don't work are
         excluded from the dictionary. The dictionary can thus also be used
         to assess what are the available methods and their success for a given
         needle and haystack.
