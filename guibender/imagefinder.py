@@ -84,7 +84,7 @@ class ImageFinder:
         self.match_features = "BruteForce-Hamming"
 
         self.equalizer = {"detect_filter" : 85,
-                          "match_filter" : -1,
+                          "match_filter" : 1.0,
                           "project_filter" : 10.0}
         self._bitmapcache = {}
         # 0 NOTSET, 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
@@ -524,7 +524,9 @@ class ImageFinder:
         match_hkeypoints = []
         match_nkeypoints = []
         matches = sorted(matches, key = lambda x: x.distance)
-        matches = matches[:self.equalizer["match_filter"]]
+        max_nkp = self.equalizer["match_filter"] * len(nkeypoints)
+        max_matches = min(int(max_nkp), len(matches))
+        matches = matches[:max_matches]
         #print [m.distance for m in matches]
         for match in matches:
             #print match.distance
