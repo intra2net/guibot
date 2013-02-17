@@ -215,37 +215,51 @@ class ImageTest(unittest.TestCase):
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
 
-    def test_find_feature_text_shapes(self):
+        haystack = Image('all_shapes')
+        needle = Image('shape_blue_circle')
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
+        haystack = Image('h_ibs_viewport')
+        needle = Image('n_ibs')
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
+    def test_feature_text_shapes(self):
         needle = Image('shape_text')
         haystack = Image('all_shapes')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "shape text")
 
-    def test_find_feature_text_basic(self):
+    def test_feature_text_basic(self):
         needle = Image('word')
         haystack = Image('sentence_sans')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "sans")
 
-    def test_find_feature_text_bold(self):
+    def test_feature_text_bold(self):
         needle = Image('word')
         haystack = Image('sentence_bold')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "bold")
 
-    def test_find_feature_text_italic(self):
+    def test_feature_text_italic(self):
         needle = Image('word')
         haystack = Image('sentence_italic')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "italic")
 
-    def test_find_feature_text_larger(self):
+    def test_feature_text_larger(self):
         needle = Image('word')
         haystack = Image('sentence_larger')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "larger")
 
-    def test_find_feature_text_font(self):
+    def test_feature_text_font(self):
         needle = Image('word')
         haystack = Image('sentence_font')
         self.draw_needle_features(needle, haystack)
