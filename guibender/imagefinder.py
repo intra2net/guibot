@@ -36,19 +36,20 @@ class ImageFinder:
             sqdiff_normed, *ccorr_normed, ccoeff_normed
 
         feature detectors:
-            FAST, STAR, SIFT, SURF, ORB, MSER,
-            GFTT, HARRIS, Dense, SimpleBlob
-            GridFAST, GridSTAR, ...
-            PyramidFAST, PyramidSTAR, ...
+            *FAST, *STAR, *SIFT, *SURF, ORB, *MSER,
+            *GFTT, *HARRIS, *Dense, *SimpleBlob
+            *GridFAST, *GridSTAR, ...
+            *PyramidFAST, *PyramidSTAR, ...
 
         feature extractors:
-            SIFT, SURF, ORB, BRIEF, FREAK, in-house
+            *SIFT, *SURF, ORB, BRIEF, FREAK
 
         feature matchers:
             BruteForce, BruteForce-L1, BruteForce-Hamming,
-            BruteForce-Hamming(2), FlannBased, in-house
+            BruteForce-Hamming(2), **FlannBased, in-house
 
         Starred methods are currently known to be buggy.
+        Double starred methods should be investigated further.
 
         Equalizer of parameters:
             detect filter - works for certain detectors and
@@ -74,9 +75,10 @@ class ImageFinder:
         # currently fully compatible methods
         self.template_matchers = ("autopy", "sqdiff", "ccorr", "ccoeff",
                                   "sqdiff_normed", "ccorr_normed", "ccoeff_normed")
-        self.feature_matchers = ("BruteForce-Hamming", "BruteForce-Hamming(2)", "in-house")
+        self.feature_matchers = ("BruteForce", "BruteForce-L1", "BruteForce-Hamming",
+                                 "BruteForce-Hamming(2)", "in-house")
         self.feature_detectors = ("ORB", "in-house")
-        self.feature_extractors = ("ORB", "BRIEF")
+        self.feature_extractors = ("ORB", "BRIEF", "FREAK")
 
         self.match_template = "ccoeff_normed"
         self.detect_features = "ORB"
