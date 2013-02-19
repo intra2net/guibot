@@ -250,7 +250,7 @@ class ImageFinder:
         extractor, and matcher.
         """
         self.hotmap[0], _ = self._get_opencv_images(haystack, needle)
-        self.hotmap[1] = -1.0
+        self.hotmap[1] = 0.0
         self.hotmap[2] = None
 
         # TODO: test all methods
@@ -451,9 +451,9 @@ class ImageFinder:
                 nmat = cv.fromarray(ngray)
                 nmat_zoomed = cv.CreateMat(nmat.rows * 2, nmat.cols * 2, cv.CV_8UC1)
                 nfactor *= 2
-                logging.warning("Minimum 4 features are required while only %s from needle "\
-                                "were detected - zooming x%i needle to increase them!",
-                                len(nkeypoints), nfactor)
+                logging.debug("Minimum 4 features are required while only %s from needle "\
+                              "were detected - zooming x%i needle to increase them!",
+                              len(nkeypoints), nfactor)
                 #print nmat.rows, nmat.cols
                 cv.Resize(nmat, nmat_zoomed)
                 ngray = numpy.asarray(nmat_zoomed)
