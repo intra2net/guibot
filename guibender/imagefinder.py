@@ -405,16 +405,66 @@ class ImageFinder:
             self.equalizer["detect_filter"] = params[0]
             self.equalizer["match_filter"] = params[1]
             self.equalizer["project_filter"] = params[2]
+
             self.find_features(haystack, needle, 0.0)
             error = 1.0 - self.hotmap[1]
             return error
+
+        def twiddle(full_params, run_function, tolerance, max_attempts):
+            """
+            Function to optimize a set of parameters for a minimal returned error.
+
+            @param parameters: a list of parameter triples of the form (min, start, max)
+            @param run_function: a function that accepts a list of tested parameters
+            and returns the error that should be minimized
+            @param tolerance: minimal parameter delta (uncertainty interval)
+            @param max_attempts: maximal number of refinements to reach the parameter
+            delta below the tolerance.
+
+            Special credits for this approach should be given to Prof. Sebastian Thrun,
+            who explained it in his Artificial Intelligence for Robotics class.
+            """
+            params = [p[1] for p in full_params]
+            # the min and max will be checked first with such deltas
+            deltas = [(abs(p[2]-p[0])) for p in full_params]
+
+            best_params = params
+            best_error = run_function(params)
+            #print best_params, best_error
+
+            n = 0
+            while sum(deltas) > tolerance and n < max_attempts and best_error > 0.0:
+                for i in range(len(params)):
+                    curr_param = params[i]
+
+                    params[i] = min(curr_param + deltas[i], full_params[i][2])
+                    error = run_function(params)
+                    if(error < best_error):
+                        best_params = params
+                        best_error = error
+                        deltas[i] *= 1.1
+                    else:
+
+                        params[i] = max(curr_param - deltas[i], full_params[i][0])
+                        error = run_function(params)
+                        if(error < best_error):
+                            best_params = params
+                            best_error = error
+                            deltas[i] *= 1.1
+                        else:
+                            params[i] = curr_param
+                            deltas[i] *= 0.9
+                #print best_params, best_error
+                n += 1
+
+            return (best_params, best_error)
 
         full_params = []
         full_params.append((0.0, self.equalizer["detect_filter"], 200.0))
         full_params.append((0.0, self.equalizer["match_filter"], 1.0))
         full_params.append((0.0, self.equalizer["project_filter"], 200.0))
 
-        best_params, error = self.twiddle(full_params, run, tolerance, refinements)
+        best_params, error = twiddle(full_params, run, tolerance, refinements)
         #print best_params, error
 
         self.equalizer["detect_filter"] = best_params[0]
@@ -422,55 +472,6 @@ class ImageFinder:
         self.equalizer["project_filter"] = best_params[2]
 
         return error
-
-    def twiddle(self, full_params, run_function, tolerance, max_attempts):
-        """
-        Function to optimize a set of parameters for a minimal returned error.
-
-        @param parameters: a list of parameter triples of the form (min, start, max)
-        @param run_function: a function that accepts a list of tested parameters
-        and returns the error that should be minimized
-        @param tolerance: minimal parameter delta (uncertainty interval)
-        @param max_attempts: maximal number of refinements to reach the parameter
-        delta below the tolerance.
-
-        Special credits for this approach should be given to Prof. Sebastian Thrun,
-        who explained it in his Artificial Intelligence for Robotics class.
-        """
-        params = [p[1] for p in full_params]
-        # the min and max will be checked first with such deltas
-        deltas = [(abs(p[2]-p[0])) for p in full_params]
-
-        best_params = params
-        best_error = run_function(params)
-        #print best_params, best_error
-
-        n = 0
-        while sum(deltas) > tolerance and n < max_attempts and best_error > 0.0:
-            for i in range(len(params)):
-                curr_param = params[i]
-
-                params[i] = min(curr_param + deltas[i], full_params[i][2])
-                error = run_function(params)
-                if(error < best_error):
-                    best_params = params
-                    best_error = error
-                    deltas[i] *= 1.1
-                else:
-
-                    params[i] = max(curr_param - deltas[i], full_params[i][0])
-                    error = run_function(params)
-                    if(error < best_error):
-                        best_params = params
-                        best_error = error
-                        deltas[i] *= 1.1
-                    else:
-                        params[i] = curr_param
-                        deltas[i] *= 0.9
-            #print best_params, best_error
-            n += 1
-
-        return (best_params, best_error)
 
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
