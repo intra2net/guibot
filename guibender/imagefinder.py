@@ -394,13 +394,36 @@ class ImageFinder:
         self.match_features = old_config[2]
         return sorted(results, key = lambda x: x[1], reverse = True)
 
-    def calibrate_find(self, haystack, needle):
-        # TODO: Implement this function to calibrate the equalizer for a given image
-        # and return the calibrated parameters in order to save somewhere and use
-        # for this specific image.
-        pass
+    def calibrate_find(self, haystack, needle, tolerance = 0.1, refinements = 200):
+        """
+        Calibrate the equalizer for a given needle and haystack.
 
-    def twiddle(self, parameters, run_function, tolerance = 0.1, max_attempts = 200):
+        Return the minimized error (in terms of similarity) for the given
+        number of refinements and tolerated best parameter range.
+        """
+        def run(params):
+            self.equalizer["detect_filter"] = params[0]
+            self.equalizer["match_filter"] = params[1]
+            self.equalizer["project_filter"] = params[2]
+            self.find_features(haystack, needle, 0.0)
+            error = 1.0 - self.hotmap[1]
+            return error
+
+        full_params = []
+        full_params.append((0.0, self.equalizer["detect_filter"], 200.0))
+        full_params.append((0.0, self.equalizer["match_filter"], 1.0))
+        full_params.append((0.0, self.equalizer["project_filter"], 200.0))
+
+        best_params, error = self.twiddle(full_params, run, tolerance, refinements)
+        #print best_params, error
+
+        self.equalizer["detect_filter"] = best_params[0]
+        self.equalizer["match_filter"] = best_params[1]
+        self.equalizer["project_filter"] = best_params[2]
+
+        return error
+
+    def twiddle(self, full_params, run_function, tolerance, max_attempts):
         """
         Function to optimize a set of parameters for a minimal returned error.
 
@@ -414,25 +437,28 @@ class ImageFinder:
         Special credits for this approach should be given to Prof. Sebastian Thrun,
         who explained it in his Artificial Intelligence for Robotics class.
         """
-        params = [p[1] for p in parameters]
+        params = [p[1] for p in full_params]
         # the min and max will be checked first with such deltas
-        deltas = [(abs(p[2]-p[0])) for p in parameters]
+        deltas = [(abs(p[2]-p[0])) for p in full_params]
 
         best_params = params
         best_error = run_function(params)
+        #print best_params, best_error
 
         n = 0
-        while sum(deltas) > tolerance and n < max_attempts:
+        while sum(deltas) > tolerance and n < max_attempts and best_error > 0.0:
             for i in range(len(params)):
                 curr_param = params[i]
-                params[i] = max(curr_param + deltas[i], parameters[i][2])
+
+                params[i] = min(curr_param + deltas[i], full_params[i][2])
                 error = run_function(params)
                 if(error < best_error):
                     best_params = params
                     best_error = error
                     deltas[i] *= 1.1
                 else:
-                    params[i] = min(curr_param - deltas[i], parameters[i][0])
+
+                    params[i] = max(curr_param - deltas[i], full_params[i][0])
                     error = run_function(params)
                     if(error < best_error):
                         best_params = params
@@ -441,7 +467,8 @@ class ImageFinder:
                     else:
                         params[i] = curr_param
                         deltas[i] *= 0.9
-                n += 1
+            #print best_params, best_error
+            n += 1
 
         return (best_params, best_error)
 
