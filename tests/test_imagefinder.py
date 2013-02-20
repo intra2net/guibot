@@ -84,9 +84,9 @@ class ImageTest(unittest.TestCase):
 
         self.shown_pictures = []
 
-    def draw_needle_features(self, needle, haystack):
+    def draw_needle_features(self, needle, haystack, logging = 20):
         finder = ImageFinder()
-        finder.image_logging = True
+        finder.image_logging = logging
         self.algorithms = (finder.detect_features, finder.extract_features, finder.match_features)
 
         # use private methods for unit testing to visualize internal structure
@@ -205,30 +205,6 @@ class ImageTest(unittest.TestCase):
         self.assertIsNone(match, "No transformed needle is present "\
                           "and should be found in the haystack.")
 
-    def test_benchmark(self):
-        haystack = Image('all_shapes')
-        needle = Image('all_shapes')
-
-        finder = ImageFinder()
-        results = finder.benchmark_find(haystack, needle)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
-        haystack = Image('all_shapes')
-        needle = Image('shape_blue_circle')
-        results = finder.benchmark_find(haystack, needle)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
-        haystack = Image('h_ibs_viewport')
-        needle = Image('n_ibs')
-        results = finder.benchmark_find(haystack, needle)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
     def test_feature_text_shapes(self):
         needle = Image('shape_text')
         haystack = Image('all_shapes')
@@ -264,6 +240,56 @@ class ImageTest(unittest.TestCase):
         haystack = Image('sentence_font')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "font")
+
+    def test_benchmark(self):
+        haystack = Image('all_shapes')
+        needle = Image('all_shapes')
+
+        finder = ImageFinder()
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
+        haystack = Image('all_shapes')
+        needle = Image('shape_blue_circle')
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
+        haystack = Image('h_ibs_viewport')
+        needle = Image('n_ibs')
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
+    def test_calibrate(self):
+        finder = ImageFinder()
+        finder.image_logging = 10
+
+        haystack = Image('h_ibs_viewport')
+        needle = Image('n_ibs')
+        error = finder.calibrate_find(haystack, needle)
+        self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
+                         "for this image')
+        self.assertEqual(finder.equalizer.values(), [0.09999999999999998, 85, 200.0])
+
+        haystack = Image('h_ibs_rotated')
+        needle = Image('n_ibs')
+        error = finder.calibrate_find(haystack, needle)
+        self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
+                         "for this image')
+        self.assertEqual(finder.equalizer.values(), [0.09999999999999998, 85, 200.0])
+
+        haystack = Image('h_ibs_scaled')
+        needle = Image('n_ibs')
+        error = finder.calibrate_find(haystack, needle)
+        self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
+                         "for this image')
+        self.assertEqual(finder.equalizer.values(), [0.09999999999999998, 85, 200.0])
+
 
 if __name__ == '__main__':
     unittest.main()
