@@ -330,14 +330,15 @@ class ImageFinder:
         else:
             return Location(int(mcx), int(mcy))
 
-    def benchmark_find(self, haystack, needle):
+    def benchmark_find(self, haystack, needle, tolerance = 0.1, refinements = 50):
         """
         Returns a list of (method, success, coordinates) tuples with all available
         image matching methods sorted according to similarity.
 
         Use this method to choose the best algorithm to find your specific image
         (or image category). Use the "calibrate" method to find the best parameters
-        for your chosen algorithm.
+        if you have already chosen the algorithm. This method already uses calibrate
+        internally to provide the best outcome for each compared method.
 
         Methods that are supported by OpenCV but currently don't work are
         excluded from the dictionary. The dictionary can thus also be used
@@ -361,11 +362,8 @@ class ImageFinder:
             for gray in (True, False):
                 if gray:
                     method = key + "_gray"
-                    #match = cv2.matchTemplate(gray_haystack, gray_needle, methods[key])
                 else:
                     method = key
-                    #match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[key])
-
                 self.match_template = key
                 self.find_image(haystack, needle, 0.0, gray)
                 #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
@@ -385,7 +383,7 @@ class ImageFinder:
                     self.detect_features = key_fd
                     self.extract_features = key_fe
                     self.match_features = key_fm
-                    self.find_features(haystack, needle, 0.0)
+                    self.calibrate_find(haystack, needle, tolerance, refinements)
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
                     results.append((method, self.hotmap[1], self.hotmap[2]))
@@ -394,7 +392,7 @@ class ImageFinder:
         self.match_features = old_config[2]
         return sorted(results, key = lambda x: x[1], reverse = True)
 
-    def calibrate_find(self, haystack, needle, tolerance = 0.1, refinements = 200):
+    def calibrate_find(self, haystack, needle, tolerance = 0.1, refinements = 50):
         """
         Calibrate the equalizer for a given needle and haystack.
 
@@ -536,7 +534,7 @@ class ImageFinder:
                 hmat = cv.fromarray(hgray)
                 hmat_zoomed = cv.CreateMat(hmat.rows * 2, hmat.cols * 2, cv.CV_8UC1)
                 hfactor *= 2
-                logging.warning("Minimum 4 features are required while only %s from haystack "\
+                logging.debug("Minimum 4 features are required while only %s from haystack "\
                                 "were detected - zooming x%i haystack to increase them!",
                                 len(hkeypoints), hfactor)
                 #print hmat.rows, hmat.cols

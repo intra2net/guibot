@@ -241,30 +241,6 @@ class ImageTest(unittest.TestCase):
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "font")
 
-    def test_benchmark(self):
-        haystack = Image('all_shapes')
-        needle = Image('all_shapes')
-
-        finder = ImageFinder()
-        results = finder.benchmark_find(haystack, needle)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
-        haystack = Image('all_shapes')
-        needle = Image('shape_blue_circle')
-        results = finder.benchmark_find(haystack, needle)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
-        haystack = Image('h_ibs_viewport')
-        needle = Image('n_ibs')
-        results = finder.benchmark_find(haystack, needle)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
     def test_calibrate(self):
         finder = ImageFinder()
         finder.image_logging = 10
@@ -289,6 +265,30 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
         self.assertEqual(finder.equalizer.values(), [0.09999999999999998, 85, 200.0])
+
+    def test_benchmark(self):
+        haystack = Image('all_shapes')
+        needle = Image('all_shapes')
+
+        finder = ImageFinder()
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
+        haystack = Image('all_shapes')
+        needle = Image('shape_blue_circle')
+        results = finder.benchmark_find(haystack, needle, 0.1, 2)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
+
+        haystack = Image('h_ibs_viewport')
+        needle = Image('n_ibs')
+        results = finder.benchmark_find(haystack, needle)
+        #print results
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
 
 
 if __name__ == '__main__':
