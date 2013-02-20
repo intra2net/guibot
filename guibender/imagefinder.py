@@ -400,6 +400,43 @@ class ImageFinder:
         # for this specific image.
         pass
 
+    def twiddle(self, run_function, tolerance = 0.1, max_attempts = 200):
+        """
+        Function to optimize a set of parameters for a minimal returned error.
+
+        The main parameter of twiddle is a run function that accepts a list of
+        tested parameters and returns the error that should be minimized.
+
+        Special credits for this approach should be given to Prof. Sebastian Thrun,
+        who explained it in his Artificial Intelligence for Robotics class.
+        """
+        # number of parameters, parameters, and parameter deltas
+        np = 3
+        parameters = [0 for row in range(np)]
+        deltas = [1 for row in range(np)]
+
+        best_error = run_function(parameters)
+        n = 0
+        while sum(deltas) > tolerance and n < max_attempts:
+            for i in range(len(parameters)):
+                parameters[i] += deltas[i]
+                error = run_function(parameters)
+                if(error < best_error):
+                    best_error = error
+                    deltas[i] *= 1.1
+                else:
+                    parameters[i] -= 2 * deltas[i]
+                    error = run_function(parameters)
+                    if(error < best_error):
+                        best_error = error
+                        deltas[i] *= 1.1
+                    else:
+                        parameters[i] += deltas[i]
+                        deltas[i] *= 0.9
+                n += 1
+
+        return best_error
+
     def _detect_features(self, haystack, needle, detect, extract):
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
         hkeypoints, nkeypoints = [], []
