@@ -683,7 +683,14 @@ class InHouseCV:
     """
 
     def __init__(self):
-        pass
+        """Initiate thee CV backend attributes."""
+        self.detector = cv2.FeatureDetector_create("ORB")
+        self.extractor = cv2.DescriptorExtractor_create("ORB")
+
+        self.ratio = 0.65
+        self.refineF = True
+        self.confidence = 0.99
+        self.distance = 3.0
 
     def detect_features(self, haystack, needle):
         """
@@ -713,29 +720,35 @@ class InHouseCV:
         keypoints and their descriptors and returning a list of DMatch
         objects.
         """
+        nmatches = self._match_knn(ndesc, hdesc, hkp)
+        hmatches = self._match_knn(hdesc, ndesc, nkp)
+
+        return nmatches
+
+    def _match_knn(self, desc1, desc2, kp2):
         # match the number of keypoints to their descriptor vectors
         # if a flat descriptor list is returned (old OpenCV descriptors)
         # e.g. needle row 5 is a descriptor vector for needle keypoint 5
-        rowsize = len(hdesc) / len(hkp)
+        rowsize = len(desc2) / len(kp2)
         if rowsize > 1:
-            hrows = numpy.array(hdesc, dtype = numpy.float32).reshape((-1, rowsize))
-            nrows = numpy.array(ndesc, dtype = numpy.float32).reshape((-1, rowsize))
-            #print hrows.shape, nrows.shape
+            rows1 = numpy.array(desc1, dtype = numpy.float32).reshape((-1, rowsize))
+            rows2 = numpy.array(desc2, dtype = numpy.float32).reshape((-1, rowsize))
+            #print rows1.shape, rows2.shape
         else:
-            hrows = numpy.array(hdesc, dtype = numpy.float32)
-            nrows = numpy.array(ndesc, dtype = numpy.float32)
-            rowsize = len(hrows[0])
+            rows2 = numpy.array(desc2, dtype = numpy.float32)
+            rows1 = numpy.array(desc1, dtype = numpy.float32)
+            rowsize = len(rows2[0])
 
-        # kNN training - learn mapping from hrow to hkeypoints index
-        samples = hrows
-        responses = numpy.arange(len(hkp), dtype = numpy.float32)
+        # kNN training - learn mapping from rows2 to kp2 index
+        samples = rows2
+        responses = numpy.arange(len(kp2), dtype = numpy.float32)
         #print len(samples), len(responses)
         knn = cv2.KNearest()
-        knn.train(samples,responses)
+        knn.train(samples, responses)
 
         matches = []
         # retrieve index and value through enumeration
-        for i, descriptor in enumerate(nrows):
+        for i, descriptor in enumerate(rows1):
             descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
             #print i, descriptor.shape, samples[0].shape
             retval, results, neigh_resp, dists = knn.find_nearest(descriptor, 1)
