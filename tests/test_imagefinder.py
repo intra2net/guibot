@@ -169,7 +169,7 @@ class ImageTest(unittest.TestCase):
         haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
-        match = ImageFinder().find_image(haystack, needle, 0.9, True)
+        match = ImageFinder().find_template(haystack, needle, 0.9, True)
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 
@@ -276,12 +276,12 @@ class ImageTest(unittest.TestCase):
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
 
-        haystack = Image('all_shapes')
-        needle = Image('shape_blue_circle')
-        results = finder.benchmark_find(haystack, needle, 0.1, 2)
+        #haystack = Image('all_shapes')
+        #needle = Image('shape_blue_circle')
+        #results = finder.benchmark_find(haystack, needle, 0.1, 1)
         #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
+        #self.assertGreater(len(results), 0, "The benchmarked methods "\
+        #                   "should be more than one for the blue circle")
 
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')

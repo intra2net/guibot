@@ -167,8 +167,14 @@ class Region(object):
     def get_last_match(self):
         return self.last_match
 
-    def configure_find(self, template_match = None, feature_match = None,
+    def configure_find(self, find_image = None,
+                       template_match = None, feature_match = None,
                        feature_detect = None, feature_extract = None):
+        if find_image != None:
+            if find_image not in self.imagefinder.find_methods:
+                raise ImageFinderMethodError
+            else:
+                self.imagefinder.find_image = find_image
         if template_match != None:
             if template_match not in self.imagefinder.template_matchers:
                 raise ImageFinderMethodError
@@ -204,34 +210,8 @@ class Region(object):
             # image finder which concentrates solely on finding the image
             # (only autopy supports this but is almost never used compared
             # to the alternative methods)
-            found_pic = self.imagefinder.find_image(screen_capture, image,
-                                                    similarity, nocolor)
-            if found_pic is not None:
-                self.last_match = match.Match(self.xpos + found_pic.get_x(),
-                                              self.ypos + found_pic.get_y(), image)
-                return self.last_match
-
-            elif time.time() > timeout_limit:
-                # TODO: Turn this into a setting / make it optional
-                screen_capture.save('/tmp/guibender_last_finderror.png')
-                image.save('/tmp/guibender_last_finderror_needle.png')
-                raise FindError()
-
-            else:
-                # don't hog the CPU
-                # TODO: Make 'rescan speed' configurable
-                time.sleep(0.2)
-
-    def find_features(self, image, timeout=10):
-        # Load image if needed
-        if isinstance(image, basestring):
-            image = Image(image)
-
-        timeout_limit = time.time() + timeout
-        while True:
-            screen_capture = self.desktop.capture_screen(self)
-            similarity = image.get_similarity()
-            found_pic = self.imagefinder.find_features(screen_capture, image, similarity)
+            found_pic = self.imagefinder.find(screen_capture, image,
+                                              similarity, nocolor)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(),
                                               self.ypos + found_pic.get_y(), image)

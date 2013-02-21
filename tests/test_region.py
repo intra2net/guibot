@@ -221,11 +221,12 @@ class RegionTest(unittest.TestCase):
     def test_hover(self):
         # Hover over Location
         self.show_image('all_shapes')
-        match = Region().find(Image('shape_blue_circle'))
+        region = Region()
+        match = region.find(Image('shape_blue_circle'))
         match.hover(match.get_target())
 
         # Hover over Image with 50% similarity
-        Region().hover(Image('shape_pink_box').similarity(0.5))
+        region.hover(Image('shape_pink_box').similarity(0.5))
 
         self.close_windows()
 
@@ -234,7 +235,8 @@ class RegionTest(unittest.TestCase):
         # TODO: currently the match similarity is very low although
         # the image if matched properly - need to find a way to increase
         # the similarity while preserving the robustness of the feature matching
-        match = Region().find_features(Image('n_ibs').similarity(0.2))
+        region.configure_find(find_image = "features")
+        match = region.find(Image('n_ibs').similarity(0.3))
         Region().hover(match.get_target())
 
     def test_click(self):

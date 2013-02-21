@@ -63,7 +63,7 @@ class ImagePathTest(unittest.TestCase):
         new_finder = ImagePath()
         self.assertEqual('images/qt4gui_button.png', new_finder.search('qt4gui_button'))
 
-    def test_find_image_error(self):
+    def test_search_image_error(self):
         try:
             image = self.imagepath.search('foobar_does_not_exist')
             self.fail('Exception not thrown')
