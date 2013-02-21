@@ -52,6 +52,7 @@ class ImageFinder:
                 *GFTT, *HARRIS, *Dense, *SimpleBlob
                 *GridFAST, *GridSTAR, ...
                 *PyramidFAST, *PyramidSTAR, ...
+                *oldSURF (OpenCV 2.2.3)
 
             feature extractors:
                 *SIFT, *SURF, ORB, BRIEF, FREAK
@@ -89,7 +90,7 @@ class ImageFinder:
                                   "sqdiff_normed", "ccorr_normed", "ccoeff_normed")
         self.feature_matchers = ("BruteForce", "BruteForce-L1", "BruteForce-Hamming",
                                  "BruteForce-Hamming(2)", "in-house")
-        self.feature_detectors = ("ORB", "in-house")
+        self.feature_detectors = ("ORB", "oldSURF")
         self.feature_extractors = ("ORB", "BRIEF", "FREAK")
 
         # default algorithms
@@ -425,7 +426,7 @@ class ImageFinder:
                       self.match_features)
         for key_fd in self.feature_detectors:
             # skip in-house because of opencv version bug
-            if key_fd == "in-house":
+            if key_fd == "oldSURF":
                 continue
             for key_fe in self.feature_extractors:
                 for key_fm in self.feature_matchers:
@@ -543,26 +544,13 @@ class ImageFinder:
         while len(hkeypoints) < 4 or len(nkeypoints) < 4 and i < maxzoom:
             i += 1
 
-            if detect == "in-house":
+            if detect == "oldSURF":
                 # build the old surf feature detector
                 hessian_threshold = self.equalizer["detect_filter"]
                 detector = cv2.SURF(hessian_threshold)
 
                 (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
                 (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
-
-                # TODO: this MSER blob feature detector is also available in
-                # version 2.2.3
-                """
-                detector = cv2.MSER()
-                hregions = detector.detect(hgray, None)
-                nregions = detector.detect(ngray, None)
-                hhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in hregions]
-                nhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in nregions]
-                # show on final result
-                cv2.polylines(opencv_haystack, hhulls, 1, (0, 255, 0))
-                cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
-                """
 
             # include only methods tested for compatibility
             elif detect in self.feature_detectors and extract in self.feature_extractors:
@@ -617,35 +605,9 @@ class ImageFinder:
         Match two sets of keypoints based on their descriptors.
         """
         if match == "in-house":
-            # match the number of keypoints to their descriptor vectors
-            # if a flat descriptor list is returned (old OpenCV descriptors)
-            # e.g. needle row 5 is a descriptor vector for needle keypoint 5
-            rowsize = len(hdescriptors) / len(hkeypoints)
-            if rowsize > 1:
-                hrows = numpy.array(hdescriptors, dtype = numpy.float32).reshape((-1, rowsize))
-                nrows = numpy.array(ndescriptors, dtype = numpy.float32).reshape((-1, rowsize))
-                #print hrows.shape, nrows.shape
-            else:
-                hrows = numpy.array(hdescriptors, dtype = numpy.float32)
-                nrows = numpy.array(ndescriptors, dtype = numpy.float32)
-                rowsize = len(hrows[0])
-
-            # kNN training - learn mapping from hrow to hkeypoints index
-            samples = hrows
-            responses = numpy.arange(len(hkeypoints), dtype = numpy.float32)
-            #print len(samples), len(responses)
-            knn = cv2.KNearest()
-            knn.train(samples,responses)
-
-            matches = []
-            # retrieve index and value through enumeration
-            for i, descriptor in enumerate(nrows):
-                descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
-                #print i, descriptor.shape, samples[0].shape
-                retval, results, neigh_resp, dists = knn.find_nearest(descriptor, 1)
-                res, dist =  int(results[0][0]), dists[0][0]
-                #print res, dist
-                matches.append(cv2.DMatch(i, res, dist))
+            matcher = InHouseCV()
+            matches = matcher.match_features(hkeypoints, hdescriptors,
+                                             nkeypoints, ndescriptors)
 
         # include only methods tested for compatibility
         elif match in self.feature_matchers:
@@ -713,3 +675,72 @@ class ImageFinder:
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         return match
+
+
+class InHouseCV:
+    """
+    ImageFinder backend with in-house CV algorithms.
+    """
+
+    def __init__(self):
+        pass
+
+    def detect_features(self, haystack, needle):
+        """
+        In-house feature detect algorithm - currently not fully implemented!
+
+        The current MSER might not be used in the actual implementation.
+        """
+        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
+        hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
+
+        # TODO: this MSER blob feature detector is also available in
+        # version 2.2.3 - implement if necessary
+        detector = cv2.MSER()
+        hregions = detector.detect(hgray, None)
+        nregions = detector.detect(ngray, None)
+        hhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in hregions]
+        nhulls = [cv2.convexHull(p.reshape(-1, 1, 2)) for p in nregions]
+        # show on final result
+        cv2.polylines(opencv_haystack, hhulls, 1, (0, 255, 0))
+        cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
+
+        return None
+
+    def match_features(self, hkp, hdesc, nkp, ndesc):
+        """
+        In-house feature matching algorithm taking needle and haystack
+        keypoints and their descriptors and returning a list of DMatch
+        objects.
+        """
+        # match the number of keypoints to their descriptor vectors
+        # if a flat descriptor list is returned (old OpenCV descriptors)
+        # e.g. needle row 5 is a descriptor vector for needle keypoint 5
+        rowsize = len(hdesc) / len(hkp)
+        if rowsize > 1:
+            hrows = numpy.array(hdesc, dtype = numpy.float32).reshape((-1, rowsize))
+            nrows = numpy.array(ndesc, dtype = numpy.float32).reshape((-1, rowsize))
+            #print hrows.shape, nrows.shape
+        else:
+            hrows = numpy.array(hdesc, dtype = numpy.float32)
+            nrows = numpy.array(ndesc, dtype = numpy.float32)
+            rowsize = len(hrows[0])
+
+        # kNN training - learn mapping from hrow to hkeypoints index
+        samples = hrows
+        responses = numpy.arange(len(hkp), dtype = numpy.float32)
+        #print len(samples), len(responses)
+        knn = cv2.KNearest()
+        knn.train(samples,responses)
+
+        matches = []
+        # retrieve index and value through enumeration
+        for i, descriptor in enumerate(nrows):
+            descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
+            #print i, descriptor.shape, samples[0].shape
+            retval, results, neigh_resp, dists = knn.find_nearest(descriptor, 1)
+            res, dist =  int(results[0][0]), dists[0][0]
+            #print res, dist
+            matches.append(cv2.DMatch(i, res, dist))
+
+        return matches
