@@ -26,32 +26,44 @@ import numpy
 
 
 class ImageFinder:
+    """
+    The image finder contains all image matching functionality.
+
+    It offers both template matching and feature matching algorithms
+    through autopy or through the OpenCV library. Besides the image
+    finding methods (general find, template and feature find, and
+    find all matches above similarity), it provides with a second
+    group of methods to facilitate and automate the selection of
+    algorithms and parameters that are most successful for a custom
+    image (benchmarking and calibration methods).
+    """
 
     def __init__(self):
         """
-        Initiate the image finder with default algorithm configuration.
+        Initiates the image finder with default algorithm configuration.
 
-        template matchers:
-            autopy, sqdiff, ccorr, ccoeff
-            sqdiff_normed, *ccorr_normed, ccoeff_normed
+        Available algorithms:
+            template matchers:
+                autopy, sqdiff, ccorr, ccoeff
+                sqdiff_normed, *ccorr_normed, ccoeff_normed
 
-        feature detectors:
-            *FAST, *STAR, *SIFT, *SURF, ORB, *MSER,
-            *GFTT, *HARRIS, *Dense, *SimpleBlob
-            *GridFAST, *GridSTAR, ...
-            *PyramidFAST, *PyramidSTAR, ...
+            feature detectors:
+                *FAST, *STAR, *SIFT, *SURF, ORB, *MSER,
+                *GFTT, *HARRIS, *Dense, *SimpleBlob
+                *GridFAST, *GridSTAR, ...
+                *PyramidFAST, *PyramidSTAR, ...
 
-        feature extractors:
-            *SIFT, *SURF, ORB, BRIEF, FREAK
+            feature extractors:
+                *SIFT, *SURF, ORB, BRIEF, FREAK
 
-        feature matchers:
-            BruteForce, BruteForce-L1, BruteForce-Hamming,
-            BruteForce-Hamming(2), **FlannBased, in-house
+            feature matchers:
+                BruteForce, BruteForce-L1, BruteForce-Hamming,
+                BruteForce-Hamming(2), **FlannBased, in-house
 
-        Starred methods are currently known to be buggy.
-        Double starred methods should be investigated further.
+            Starred methods are currently known to be buggy.
+            Double starred methods should be investigated further.
 
-        Equalizer of parameters:
+        Available parameters (equalizer):
             detect filter - works for certain detectors and
                 determines how many initial features are
                 detected in an image (e.g. hessian threshold for
@@ -61,16 +73,15 @@ class ImageFinder:
             project filter - determines what part of the good
                 matches are considered inliers
 
-        The image logging consists of saving the last hotmap.
-
-        If the template matching method was used, the hotmap is
-        a fingerprint of the matching in the entire haystack. Its
-        lighter areas are places where the needle was matched better.
-
-        If the feature matching method was used, the hotmap contains
-        the matched needle features in the haystack (green), the ones
-        that were not matched (red), and the calculated focus point
-        that would be used for clicking, hovering, etc. (blue).
+        Image logging:
+            The image logging consists of saving the last hotmap. If the
+            template matching method was used, the hotmap is a finger
+            print of the matching in the entire haystack. Its lighter
+            areas are places where the needle was matched better. If the
+            feature matching method was used, the hotmap contains the
+            matched needle features in the haystack (green), the ones
+            that were not matched (red), and the calculated focus point
+            that would be used for clicking, hovering, etc. (blue).
         """
         # currently fully compatible methods
         self.find_methods = ("template", "features")
@@ -81,15 +92,19 @@ class ImageFinder:
         self.feature_detectors = ("ORB", "in-house")
         self.feature_extractors = ("ORB", "BRIEF", "FREAK")
 
+        # default algorithms
         self.find_image = "template"
         self.match_template = "ccoeff_normed"
         self.detect_features = "ORB"
         self.extract_features = "BRIEF"
         self.match_features = "BruteForce-Hamming"
 
+        # default parameters
         self.equalizer = {"detect_filter" : 85,
                           "match_filter" : 1.0,
                           "project_filter" : 10.0}
+
+        # other attributes
         self._bitmapcache = {}
         # 0 NOTSET, 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL
         self.image_logging = 20
@@ -98,6 +113,18 @@ class ImageFinder:
         self.hotmap = [None, -1.0, None]
 
     def find(self, haystack, needle, similarity, nocolor = True):
+        """
+        Finds an image in another if above some similarity and returns a
+        Location() object or None using all default algorithms and parameters.
+
+        This is the most general find method.
+
+        @param haystack: an Image() to look in
+        @param needle: an Image() to look for
+        @param similarity: a float in the interval [0.0, 1.0] where 1.0
+        requires 100% match
+        @param nocolor: a bool defining whether to use grayscale images
+        """
         if self.find_image == "template":
             return self.find_template(haystack, needle, similarity, nocolor)
         elif self.find_image == "features":
@@ -110,7 +137,9 @@ class ImageFinder:
         Finds a needle image in a haystack image using template matching.
 
         Returns a Location object for the match or None in not found.
+
         Available template matching methods are: autopy, opencv
+        Available parameters are: None
         """
         if self.match_template not in self.template_matchers:
             raise ImageFinderMethodError
@@ -180,8 +209,10 @@ class ImageFinder:
         Finds a needle image in a haystack image using feature matching.
 
         Returns a Location object for the match or None in not found.
-        Available methods include a combination of feature detector,
-        extractor, and matcher.
+
+        Available methods are: a combination of feature detector,
+        extractor, and matcher
+        Available parameters are: detect_filter, match_filter, project_filter
         """
         self.hotmap[0], _ = self._get_opencv_images(haystack, needle)
         self.hotmap[1] = 0.0
@@ -267,7 +298,9 @@ class ImageFinder:
         Finds all needle images in a haystack image using template matching.
 
         Returns a list of Location objects for all matches or None in not found.
+
         Available template matching methods are: opencv
+        Available parameters are: None
         """
         if self.match_template not in self.template_matchers:
             raise ImageFinderMethodError
@@ -340,24 +373,30 @@ class ImageFinder:
 
         return maxima
 
-    def benchmark_find(self, haystack, needle, tolerance = 0.1, refinements = 50):
+    def benchmark_find(self, haystack, needle, calibration = True,
+                       tolerance = 0.1, refinements = 50):
         """
-        Returns a list of (method, success, coordinates) tuples with all available
-        image matching methods sorted according to similarity.
+        Performs benchmarking on all available algorithms and returns a list of
+        (method, success, coordinates) tuples sorted according to similarity (success).
 
         Use this method to choose the best algorithm to find your specific image
         (or image category). Use the "calibrate" method to find the best parameters
-        if you have already chosen the algorithm. This method already uses calibrate
-        internally to provide the best outcome for each compared method.
+        if you have already chosen the algorithm.
 
-        Methods that are supported by OpenCV but currently don't work are
+        Note: This method already uses calibrate internally to provide the best
+        outcome for each compared method (optimal success). You will not gain
+        the same result if you don't calibrate the parameters. To turn the calibration
+        off and benchmark with your selected parameters, change the "calibration"
+        function argument.
+
+        Note: Methods that are supported by OpenCV but currently don't work are
         excluded from the dictionary. The dictionary can thus also be used
-        to assess what are the available methods and their success for a given
-        needle and haystack.
+        to assess what are the available and working methods besides their success
+        for a given needle and haystack.
 
-        TODO: This method should soon be able to include feature matching methods
-        in the comparison. After all the idea is to benchmark ALL working ways to
-        find a given needle in a given haystack.
+        @param calibration: whether to use calibration
+        @param tolerance: tolerable deviation for all parameters
+        @param refinements: number of refinements allowed to improve calibration
         """
         results = []
 
@@ -393,7 +432,10 @@ class ImageFinder:
                     self.detect_features = key_fd
                     self.extract_features = key_fe
                     self.match_features = key_fm
-                    self.calibrate_find(haystack, needle, tolerance, refinements)
+                    if calibration:
+                        self.calibrate_find(haystack, needle, tolerance, refinements)
+                    else:
+                        self.find_features(haystack, needle, 0.0)
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
                     results.append((method, self.hotmap[1], self.hotmap[2]))
@@ -404,12 +446,16 @@ class ImageFinder:
 
     def calibrate_find(self, haystack, needle, tolerance = 0.1, refinements = 50):
         """
-        Calibrate the equalizer for a given needle and haystack.
+        Calibrates the available parameters (the equalizer) for a given
+        needle and haystack.
 
-        Return the minimized error (in terms of similarity) for the given
+        Returns the minimized error (in terms of similarity) for the given
         number of refinements and tolerated best parameter range.
         """
         def run(params):
+            """
+            Internal custom function to evaluate error for a given set of parameters.
+            """
             self.equalizer["detect_filter"] = params[0]
             self.equalizer["match_filter"] = params[1]
             self.equalizer["project_filter"] = params[2]
@@ -482,6 +528,12 @@ class ImageFinder:
         return error
 
     def _detect_features(self, haystack, needle, detect, extract):
+        """
+        Detect all keypoints and calculate their respective decriptors.
+
+        Perform zooming in the picture if the number of detected features
+        is too low to project later on.
+        """
         hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
         hkeypoints, nkeypoints = [], []
         hfactor, nfactor = 1, 1
@@ -561,6 +613,9 @@ class ImageFinder:
 
     def _match_features(self, hkeypoints, hdescriptors,
                         nkeypoints, ndescriptors, match):
+        """
+        Match two sets of keypoints based on their descriptors.
+        """
         if match == "in-house":
             # match the number of keypoints to their descriptor vectors
             # if a flat descriptor list is returned (old OpenCV descriptors)
@@ -617,6 +672,9 @@ class ImageFinder:
         return (match_hkeypoints, match_nkeypoints)
 
     def _get_opencv_images(self, haystack, needle, gray = False):
+        """
+        Convert the Image() objects into compatible numpy arrays.
+        """
         opencv_haystack = numpy.array(haystack.get_pil_image())
         # convert RGB to BGR
         opencv_haystack = opencv_haystack[:, :, ::-1].copy()
@@ -632,6 +690,10 @@ class ImageFinder:
         return (opencv_haystack, opencv_needle)
 
     def _match_template(self, haystack, needle, nocolor, match):
+        """
+        Match a color or grayscale needle image using the OpenCV
+        template matching methods.
+        """
         # Sanity check: Needle size must be smaller than haystack
         if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
             logging.warning("The size of the searched image is smaller than its region")
