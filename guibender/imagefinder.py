@@ -726,6 +726,16 @@ class InHouseCV:
         return nmatches
 
     def _match_knn(self, desc1, desc2, kp2):
+        """
+        Perform k-Nearest Neighbor matching and refine the matches with
+        a ratio test.
+
+        The ratio test checks the first and second best match. If their
+        ratio is close to 1.0, there are both good candidates for the
+        match and the probabilty of error when choosing one is greater.
+        Therefore these matches are ignored and thus only matches of
+        greater probabilty are returned.
+        """
         # match the number of keypoints to their descriptor vectors
         # if a flat descriptor list is returned (old OpenCV descriptors)
         # e.g. needle row 5 is a descriptor vector for needle keypoint 5
@@ -751,9 +761,18 @@ class InHouseCV:
         for i, descriptor in enumerate(rows1):
             descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
             #print i, descriptor.shape, samples[0].shape
-            retval, results, neigh_resp, dists = knn.find_nearest(descriptor, 1)
-            res, dist =  int(results[0][0]), dists[0][0]
-            #print res, dist
-            matches.append(cv2.DMatch(i, res, dist))
+            _, res_1nn, _, dists_1nn = knn.find_nearest(descriptor, 1)
+            _, res_2nn, _, dists_2nn = knn.find_nearest(descriptor, 2)
+            #print res_1nn, res_2nn, dists_1nn, dists_2nn
+            if res_1nn[0][0] != res_2nn[0][0]:
+                # smooth to make 0/0 case also defined as 1.0
+                smooth_dist1 = dists_2nn[0][0] + 0.0000001
+                smooth_dist2 = dists_2nn[0][1] + 0.0000001
+                # the ratio test
+                #print smooth_dist1 / smooth_dist2, self.ratio
+                if (smooth_dist1 / smooth_dist2 < self.ratio):
+                    matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))
+            else:
+                matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))
 
         return matches
