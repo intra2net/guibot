@@ -719,10 +719,26 @@ class InHouseCV:
         In-house feature matching algorithm taking needle and haystack
         keypoints and their descriptors and returning a list of DMatch
         objects.
+
+        Also refines the matches with a symmetry test which extracts
+        only the matches in agreement with both the haystack and needle
+        sets of keypoints. The two keypoints must be best feature
+        matching of each other to ensure the error by accepting the
+        match is not too large.
         """
         nmatches = self._match_knn(ndesc, hdesc, hkp)
         hmatches = self._match_knn(hdesc, ndesc, nkp)
 
+        matches = []
+        for nm in nmatches:
+            for hm in hmatches:
+                if nm.queryIdx == hm.trainIdx and nm.trainIdx == hm.queryIdx:
+                    m = cv2.DMatch(nm.queryIdx, nm.trainIdx, nm.distance)
+                    matches.append(m)
+                    break
+
+        # print the refinements as final\before-symmetry-test\before-ratio-test
+        #print "%i\%i\%i" % (len(matches), len(nmatches), len(nkp))
         return nmatches
 
     def _match_knn(self, desc1, desc2, kp2):
