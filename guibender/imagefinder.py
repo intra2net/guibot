@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import logging
+import logging, time
 import PIL.Image
 from tempfile import NamedTemporaryFile
 
@@ -415,9 +415,11 @@ class ImageFinder:
                 else:
                     method = key
                 self.match_template = key
+                start_time = time.time()
                 self.find_template(haystack, needle, 0.0, gray)
+                total_time = time.time() - start_time
                 #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
-                results.append((method, self.hotmap[1], self.hotmap[2]))
+                results.append((method, self.hotmap[1], self.hotmap[2], total_time))
         self.match_template = old_config[0]
 
         # test all feature matching methods
@@ -435,11 +437,12 @@ class ImageFinder:
                     self.match_features = key_fm
                     if calibration:
                         self.calibrate_find(haystack, needle, tolerance, refinements)
-                    else:
-                        self.find_features(haystack, needle, 0.0)
+                    start_time = time.time()
+                    self.find_features(haystack, needle, 0.0)
+                    total_time = time.time() - start_time
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, self.hotmap[1], self.hotmap[2])
-                    results.append((method, self.hotmap[1], self.hotmap[2]))
+                    results.append((method, self.hotmap[1], self.hotmap[2], total_time))
         self.detect_features = old_config[0]
         self.extract_features = old_config[1]
         self.match_features = old_config[2]
