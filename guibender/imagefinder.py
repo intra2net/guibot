@@ -102,8 +102,10 @@ class ImageFinder:
 
         # default parameters
         self.equalizer = {"detect_filter" : 85,
-                          "match_filter" : 1.0,
+                          "match_filter" : 0.65,
                           "project_filter" : 10.0}
+        self.ratio_test = False
+        self.symmetry_test = False
 
         # other attributes
         self._bitmapcache = {}
@@ -610,13 +612,31 @@ class ImageFinder:
         if match == "in-house":
             matcher = InHouseCV()
             matches = matcher.match_features(hkeypoints, hdescriptors,
-                                             nkeypoints, ndescriptors)
+                                             nkeypoints, ndescriptors,
+                                             self.ratio_test, self.symmetry_test)
 
         # include only methods tested for compatibility
         elif match in self.feature_matchers:
             matcher = cv2.DescriptorMatcher_create(match)
             # build matcher and match feature vectors
-            matches = matcher.match(ndescriptors, hdescriptors)
+            if self.ratio_test:
+                matches2 = matcher.knnMatch(ndescriptors, hdescriptors, 2)
+                matches = []
+                for m in matches2:
+                    if len(m) > 1:
+                        # smooth to make 0/0 case also defined as 1.0
+                        smooth_dist1 = m[0].distance + 0.0000001
+                        smooth_dist2 = m[1].distance + 0.0000001
+                        # the ratio test
+                        #print smooth_dist1 / smooth_dist2, self.ratio
+                        if (smooth_dist1 / smooth_dist2 < self.equalizer["match_filter"]):
+                            matches.append(m[0])
+                    else:
+                        matches.append(m[0])
+                print [m.distance for m in matches]
+                print "%i\%i\%i" % (len(matches), len(matches2), len(nkeypoints))
+            else:
+                matches = matcher.match(ndescriptors, hdescriptors)
 
         else:
             raise ImageFinderMethodError
@@ -625,10 +645,6 @@ class ImageFinder:
         match_hkeypoints = []
         match_nkeypoints = []
         matches = sorted(matches, key = lambda x: x.distance)
-        max_nkp = self.equalizer["match_filter"] * len(nkeypoints)
-        max_matches = min(int(max_nkp), len(matches))
-        matches = matches[:max_matches]
-        #print [m.distance for m in matches]
         for match in matches:
             #print match.distance
             match_hkeypoints.append(hkeypoints[match.trainIdx])
@@ -717,7 +733,7 @@ class InHouseCV:
 
         return None
 
-    def match_features(self, hkp, hdesc, nkp, ndesc):
+    def match_features(self, hkp, hdesc, nkp, ndesc, ratio, symmetry):
         """
         In-house feature matching algorithm taking needle and haystack
         keypoints and their descriptors and returning a list of DMatch
@@ -729,22 +745,25 @@ class InHouseCV:
         matching of each other to ensure the error by accepting the
         match is not too large.
         """
-        nmatches = self._match_knn(ndesc, hdesc, hkp)
-        hmatches = self._match_knn(hdesc, ndesc, nkp)
+        nmatches = self._match_knn(ndesc, hdesc, hkp, ratio)
+        hmatches = self._match_knn(hdesc, ndesc, nkp, ratio)
 
-        matches = []
-        for nm in nmatches:
-            for hm in hmatches:
-                if nm.queryIdx == hm.trainIdx and nm.trainIdx == hm.queryIdx:
-                    m = cv2.DMatch(nm.queryIdx, nm.trainIdx, nm.distance)
-                    matches.append(m)
-                    break
+        if symmetry:
+            matches = []
+            for nm in nmatches:
+                for hm in hmatches:
+                    if nm.queryIdx == hm.trainIdx and nm.trainIdx == hm.queryIdx:
+                        m = cv2.DMatch(nm.queryIdx, nm.trainIdx, nm.distance)
+                        matches.append(m)
+                        break
+        else:
+            matches = nmatches
 
         # print the refinements as final\before-symmetry-test\before-ratio-test
         #print "%i\%i\%i" % (len(matches), len(nmatches), len(nkp))
-        return nmatches
+        return matches
 
-    def _match_knn(self, desc1, desc2, kp2):
+    def _match_knn(self, desc1, desc2, kp2, ratio):
         """
         Perform k-Nearest Neighbor matching and refine the matches with
         a ratio test.
@@ -781,15 +800,18 @@ class InHouseCV:
             descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
             #print i, descriptor.shape, samples[0].shape
             _, res_1nn, _, dists_1nn = knn.find_nearest(descriptor, 1)
-            _, res_2nn, _, dists_2nn = knn.find_nearest(descriptor, 2)
-            #print res_1nn, res_2nn, dists_1nn, dists_2nn
-            if res_1nn[0][0] != res_2nn[0][0]:
-                # smooth to make 0/0 case also defined as 1.0
-                smooth_dist1 = dists_2nn[0][0] + 0.0000001
-                smooth_dist2 = dists_2nn[0][1] + 0.0000001
-                # the ratio test
-                #print smooth_dist1 / smooth_dist2, self.ratio
-                if (smooth_dist1 / smooth_dist2 < self.ratio):
+            if ratio:
+                _, res_2nn, _, dists_2nn = knn.find_nearest(descriptor, 2)
+                #print res_1nn, res_2nn, dists_1nn, dists_2nn
+                if res_1nn[0][0] != res_2nn[0][0]:
+                    # smooth to make 0/0 case also defined as 1.0
+                    smooth_dist1 = dists_2nn[0][0] + 0.0000001
+                    smooth_dist2 = dists_2nn[0][1] + 0.0000001
+                    # the ratio test
+                    #print smooth_dist1 / smooth_dist2, self.ratio
+                    if (smooth_dist1 / smooth_dist2 < self.ratio):
+                        matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))
+                else:
                     matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))
             else:
                 matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))

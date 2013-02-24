@@ -250,21 +250,21 @@ class ImageTest(unittest.TestCase):
         error = finder.calibrate_find(haystack, needle)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.equalizer.values(), [0.09999999999999998, 85, 200.0])
+        self.assertEqual(finder.equalizer.values(), [0.65, 85, 55.65799999999999])
 
         haystack = Image('h_ibs_rotated')
         needle = Image('n_ibs')
         error = finder.calibrate_find(haystack, needle)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.equalizer.values(), [0.09999999999999998, 85, 200.0])
+        self.assertEqual(finder.equalizer.values(), [0.65, 85, 200.0])
 
         haystack = Image('h_ibs_scaled')
         needle = Image('n_ibs')
         error = finder.calibrate_find(haystack, needle)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.equalizer.values(), [0.09999999999999998, 85, 200.0])
+        self.assertEqual(finder.equalizer.values(), [0.65, 85, 200.0])
 
     def test_benchmark(self):
         haystack = Image('all_shapes')
@@ -285,7 +285,7 @@ class ImageTest(unittest.TestCase):
 
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')
-        results = finder.benchmark_find(haystack, needle)
+        results = finder.benchmark_find(haystack, needle, calibration = False)
         #print results
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
