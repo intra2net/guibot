@@ -609,39 +609,83 @@ class ImageFinder:
         """
         Match two sets of keypoints based on their descriptors.
         """
+        def ratio_test(matches):
+            """
+            The ratio test checks the first and second best match. If their
+            ratio is close to 1.0, there are both good candidates for the
+            match and the probabilty of error when choosing one is greater.
+            Therefore these matches are ignored and thus only matches of
+            greater probabilty are returned.
+            """
+            matches2 = []
+            for m in matches:
+
+                if len(m) > 1:
+                    # smooth to make 0/0 case also defined as 1.0
+                    smooth_dist1 = m[0].distance + 0.0000001
+                    smooth_dist2 = m[1].distance + 0.0000001
+
+                    #print smooth_dist1 / smooth_dist2, self.ratio
+                    if (smooth_dist1 / smooth_dist2 < self.equalizer["match_filter"]):
+                        matches2.append(m[0])
+                else:
+                    matches2.append(m[0])
+
+            #print [m.distance for m in matches2]
+            print "%i\%i\%i" % (len(matches2), len(matches), len(nkeypoints))
+            return matches2
+
+        def symmetry_test(nmatches, hmatches):
+            """
+            Refines the matches with a symmetry test which extracts
+            only the matches in agreement with both the haystack and needle
+            sets of keypoints. The two keypoints must be best feature
+            matching of each other to ensure the error by accepting the
+            match is not too large.
+            """
+            matches2 = []
+            for nm in nmatches:
+                for hm in hmatches:
+
+                    if nm.queryIdx == hm.trainIdx and nm.trainIdx == hm.queryIdx:
+                        m = cv2.DMatch(nm.queryIdx, nm.trainIdx, nm.distance)
+                        matches2.append(m)
+                        break
+
+            return matches2
+
         if match == "in-house":
             matcher = InHouseCV()
-            matches = matcher.match_features(hkeypoints, hdescriptors,
-                                             nkeypoints, ndescriptors,
-                                             self.ratio_test, self.symmetry_test)
+            matches = matcher.match_features(ndescriptors, hdescriptors,
+                                             nkeypoints, hkeypoints)
+            if self.symmetry_test:
+                hmatches = matcher.match_features(hdescriptors, ndescriptors,
+                                                  hkeypoints, nkeypoints)
 
         # include only methods tested for compatibility
         elif match in self.feature_matchers:
-            matcher = cv2.DescriptorMatcher_create(match)
             # build matcher and match feature vectors
-            if self.ratio_test:
-                matches2 = matcher.knnMatch(ndescriptors, hdescriptors, 2)
-                matches = []
-                for m in matches2:
-                    if len(m) > 1:
-                        # smooth to make 0/0 case also defined as 1.0
-                        smooth_dist1 = m[0].distance + 0.0000001
-                        smooth_dist2 = m[1].distance + 0.0000001
-                        # the ratio test
-                        #print smooth_dist1 / smooth_dist2, self.ratio
-                        if (smooth_dist1 / smooth_dist2 < self.equalizer["match_filter"]):
-                            matches.append(m[0])
-                    else:
-                        matches.append(m[0])
-                print [m.distance for m in matches]
-                print "%i\%i\%i" % (len(matches), len(matches2), len(nkeypoints))
-            else:
-                matches = matcher.match(ndescriptors, hdescriptors)
+            matcher = cv2.DescriptorMatcher_create(match)
+            matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
+            if self.symmetry_test:
+                hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
 
         else:
             raise ImageFinderMethodError
 
-        # then extract matches above some similarity as done below
+        # filter matches through tests
+        if self.ratio_test:
+            matches = ratio_test(matches)
+            if self.symmetry_test:
+                hmatches = ratio_test(hmatches)
+            else:
+                hmatches = [hm[0] for hm in hmatches]
+        else:
+            matches = [m[0] for m in matches]
+        if self.symmetry_test:
+            matches = symmetry_test(matches, hmatches)
+
+        # prepare final matches
         match_hkeypoints = []
         match_nkeypoints = []
         matches = sorted(matches, key = lambda x: x.distance)
@@ -733,46 +777,13 @@ class InHouseCV:
 
         return None
 
-    def match_features(self, hkp, hdesc, nkp, ndesc, ratio, symmetry):
+    def match_features(self, desc1, desc2, kp1, kp2):
         """
         In-house feature matching algorithm taking needle and haystack
         keypoints and their descriptors and returning a list of DMatch
-        objects.
+        tuples (first and second best match).
 
-        Also refines the matches with a symmetry test which extracts
-        only the matches in agreement with both the haystack and needle
-        sets of keypoints. The two keypoints must be best feature
-        matching of each other to ensure the error by accepting the
-        match is not too large.
-        """
-        nmatches = self._match_knn(ndesc, hdesc, hkp, ratio)
-        hmatches = self._match_knn(hdesc, ndesc, nkp, ratio)
-
-        if symmetry:
-            matches = []
-            for nm in nmatches:
-                for hm in hmatches:
-                    if nm.queryIdx == hm.trainIdx and nm.trainIdx == hm.queryIdx:
-                        m = cv2.DMatch(nm.queryIdx, nm.trainIdx, nm.distance)
-                        matches.append(m)
-                        break
-        else:
-            matches = nmatches
-
-        # print the refinements as final\before-symmetry-test\before-ratio-test
-        #print "%i\%i\%i" % (len(matches), len(nmatches), len(nkp))
-        return matches
-
-    def _match_knn(self, desc1, desc2, kp2, ratio):
-        """
-        Perform k-Nearest Neighbor matching and refine the matches with
-        a ratio test.
-
-        The ratio test checks the first and second best match. If their
-        ratio is close to 1.0, there are both good candidates for the
-        match and the probabilty of error when choosing one is greater.
-        Therefore these matches are ignored and thus only matches of
-        greater probabilty are returned.
+        Performs k-Nearest Neighbor matching with k=2.
         """
         # match the number of keypoints to their descriptor vectors
         # if a flat descriptor list is returned (old OpenCV descriptors)
@@ -783,8 +794,8 @@ class InHouseCV:
             rows2 = numpy.array(desc2, dtype = numpy.float32).reshape((-1, rowsize))
             #print rows1.shape, rows2.shape
         else:
-            rows2 = numpy.array(desc2, dtype = numpy.float32)
             rows1 = numpy.array(desc1, dtype = numpy.float32)
+            rows2 = numpy.array(desc2, dtype = numpy.float32)
             rowsize = len(rows2[0])
 
         # kNN training - learn mapping from rows2 to kp2 index
@@ -800,20 +811,11 @@ class InHouseCV:
             descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
             #print i, descriptor.shape, samples[0].shape
             _, res_1nn, _, dists_1nn = knn.find_nearest(descriptor, 1)
-            if ratio:
-                _, res_2nn, _, dists_2nn = knn.find_nearest(descriptor, 2)
-                #print res_1nn, res_2nn, dists_1nn, dists_2nn
-                if res_1nn[0][0] != res_2nn[0][0]:
-                    # smooth to make 0/0 case also defined as 1.0
-                    smooth_dist1 = dists_2nn[0][0] + 0.0000001
-                    smooth_dist2 = dists_2nn[0][1] + 0.0000001
-                    # the ratio test
-                    #print smooth_dist1 / smooth_dist2, self.ratio
-                    if (smooth_dist1 / smooth_dist2 < self.ratio):
-                        matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))
-                else:
-                    matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))
-            else:
-                matches.append(cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]))
+            _, res_2nn, _, dists_2nn = knn.find_nearest(descriptor, 2)
+            #print res_1nn, res_2nn, dists_1nn, dists_2nn
+            assert(dists_1nn[0][0] == dists_2nn[0][0])
+            m = (cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]),
+                 cv2.DMatch(i, int(res_2nn[0][0]), dists_2nn[0][1]))
+            matches.append(m)
 
         return matches
