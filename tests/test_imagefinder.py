@@ -147,6 +147,7 @@ class ImageTest(unittest.TestCase):
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
                                   "basic viewport", 10)
+        time.sleep(2)
 
     def test_features_rotation(self):
         needle = Image('n_ibs')
@@ -154,6 +155,7 @@ class ImageTest(unittest.TestCase):
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
                                   "rotated + viewport", 10)
+        time.sleep(2)
 
     def test_features_scaling(self):
         needle = Image('n_ibs')
@@ -161,11 +163,12 @@ class ImageTest(unittest.TestCase):
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
                                   "scaled + viewport", 10)
+        time.sleep(2)
 
     def test_template_viewport(self):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
-        time.sleep(3)
+        time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
@@ -176,17 +179,18 @@ class ImageTest(unittest.TestCase):
     def test_features_screen(self):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
-        time.sleep(3)
+        time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
                                   "screen + viewport", 10)
+        time.sleep(2)
 
     def test_features_mouse_hover(self):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
-        time.sleep(3)
+        time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
         # test hovering over viewport needle
@@ -210,36 +214,42 @@ class ImageTest(unittest.TestCase):
         haystack = Image('all_shapes')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "shape text")
+        time.sleep(2)
 
     def test_feature_text_basic(self):
         needle = Image('word')
         haystack = Image('sentence_sans')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "sans")
+        time.sleep(2)
 
     def test_feature_text_bold(self):
         needle = Image('word')
         haystack = Image('sentence_bold')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "bold")
+        time.sleep(2)
 
     def test_feature_text_italic(self):
         needle = Image('word')
         haystack = Image('sentence_italic')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "italic")
+        time.sleep(2)
 
     def test_feature_text_larger(self):
         needle = Image('word')
         haystack = Image('sentence_larger')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "larger")
+        time.sleep(2)
 
     def test_feature_text_font(self):
         needle = Image('word')
         haystack = Image('sentence_font')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "font")
+        time.sleep(2)
 
     def test_calibrate(self):
         finder = ImageFinder()
@@ -276,12 +286,12 @@ class ImageTest(unittest.TestCase):
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
 
-        #haystack = Image('all_shapes')
-        #needle = Image('shape_blue_circle')
-        #results = finder.benchmark_find(haystack, needle, 0.1, 1)
+        haystack = Image('all_shapes')
+        needle = Image('shape_blue_circle')
+        results = finder.benchmark_find(haystack, needle, calibration = False)
         #print results
-        #self.assertGreater(len(results), 0, "The benchmarked methods "\
-        #                   "should be more than one for the blue circle")
+        self.assertGreater(len(results), 0, "The benchmarked methods "\
+                           "should be more than one for the blue circle")
 
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')

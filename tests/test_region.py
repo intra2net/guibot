@@ -232,11 +232,12 @@ class RegionTest(unittest.TestCase):
 
         # Test hovering over projected location
         self.show_image('h_ibs_viewport')
+        time.sleep(2)
         # TODO: currently the match similarity is very low although
         # the image if matched properly - need to find a way to increase
         # the similarity while preserving the robustness of the feature matching
         region.configure_find(find_image = "features")
-        match = region.find(Image('n_ibs').similarity(0.3))
+        match = region.find(Image('n_ibs').similarity(0.1))
         Region().hover(match.get_target())
 
     def test_click(self):
