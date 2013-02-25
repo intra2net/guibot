@@ -766,18 +766,21 @@ class InHouseCV:
 
         return None
 
-    def knnMatch(self, desc1, desc2, k, desc4kp = 1):
+    def knnMatch(self, desc1, desc2, k = 1, desc4kp = 1, autostop = 0.0):
         """
         In-house feature matching algorithm taking needle and haystack
         keypoints and their descriptors and returning a list of DMatch
         tuples (first and second best match).
 
-        Performs k-Nearest Neighbor matching with k=2.
+        Performs k-Nearest Neighbor matching.
 
         @param desc1, desc1: descriptors of the matched images
+        @param k: categorization up to k-th nearest neighbor
         @param desc4kp: legacy parameter for the old SURF() feature detector
         where desc4kp = len(desc2) / len(kp2) or analogically len(desc1) / len(kp1)
         i.e. needle row 5 is a descriptor vector for needle keypoint 5
+        @param autostop: stop automatically if the ratio (dist to k)/(dist to k+1)
+        is close to 0, i.e. the k+1-th neighbor is too far.
         """
         if desc4kp > 1:
             desc1 = numpy.array(desc1, dtype = numpy.float32).reshape((-1, desc4kp))
@@ -801,9 +804,23 @@ class InHouseCV:
             descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, desc_size))
             #print i, descriptor.shape, samples[0].shape
             kmatches = []
+            ratio = 1.0
+
             for ki in range(k):
                 _, res, _, dists = knn.find_nearest(descriptor, ki+1)
-                kmatches.append(cv2.DMatch(i, int(res[0][0]), dists[0][ki]))
                 #print res, dists
+
+                if len(dists[0]) > 1 and autostop > 0.0:
+
+                    # smooth to make 0/0 case also defined as 1.0
+                    dist1 = dists[0][-2] + 0.0000001
+                    dist2 = dists[0][-1] + 0.0000001
+                    ratio = dist1 / dist2
+                    #print ratio, autostop
+                    if ratio > autostop:
+                        break
+
+                kmatches.append(cv2.DMatch(i, int(res[0][0]), dists[0][-1]))
+
             matches.append(tuple(kmatches))
         return matches
