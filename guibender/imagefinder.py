@@ -631,8 +631,7 @@ class ImageFinder:
                 else:
                     matches2.append(m[0])
 
-            #print [m.distance for m in matches2]
-            print "%i\%i\%i" % (len(matches2), len(matches), len(nkeypoints))
+            #print "rt: %i\%i" % (len(matches2), len(matches))
             return matches2
 
         def symmetry_test(nmatches, hmatches):
@@ -652,37 +651,32 @@ class ImageFinder:
                         matches2.append(m)
                         break
 
+            #print "st: %i\%i" % (len(matches2), len(matches))
             return matches2
 
         if match == "in-house":
             matcher = InHouseCV()
-            matches = matcher.match_features(ndescriptors, hdescriptors,
-                                             nkeypoints, hkeypoints)
-            if self.symmetry_test:
-                hmatches = matcher.match_features(hdescriptors, ndescriptors,
-                                                  hkeypoints, nkeypoints)
-
         # include only methods tested for compatibility
         elif match in self.feature_matchers:
             # build matcher and match feature vectors
             matcher = cv2.DescriptorMatcher_create(match)
-            matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
-            if self.symmetry_test:
-                hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
-
         else:
             raise ImageFinderMethodError
 
-        # filter matches through tests
+        # find and filter matches through tests
         if self.ratio_test:
+            matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
             matches = ratio_test(matches)
-            if self.symmetry_test:
-                hmatches = ratio_test(hmatches)
-            else:
-                hmatches = [hm[0] for hm in hmatches]
         else:
+            matches = matcher.knnMatch(ndescriptors, hdescriptors, 1)
             matches = [m[0] for m in matches]
         if self.symmetry_test:
+            if self.ratio_test:
+                hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
+                hmatches = ratio_test(hmatches)
+            else:
+                hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 1)
+                hmatches = [hm[0] for hm in hmatches]
             matches = symmetry_test(matches, hmatches)
 
         # prepare final matches
@@ -750,11 +744,6 @@ class InHouseCV:
         self.detector = cv2.FeatureDetector_create("ORB")
         self.extractor = cv2.DescriptorExtractor_create("ORB")
 
-        self.ratio = 0.65
-        self.refineF = True
-        self.confidence = 0.99
-        self.distance = 3.0
-
     def detect_features(self, haystack, needle):
         """
         In-house feature detect algorithm - currently not fully implemented!
@@ -777,45 +766,44 @@ class InHouseCV:
 
         return None
 
-    def match_features(self, desc1, desc2, kp1, kp2):
+    def knnMatch(self, desc1, desc2, k, desc4kp = 1):
         """
         In-house feature matching algorithm taking needle and haystack
         keypoints and their descriptors and returning a list of DMatch
         tuples (first and second best match).
 
         Performs k-Nearest Neighbor matching with k=2.
+
+        @param desc1, desc1: descriptors of the matched images
+        @param desc4kp: legacy parameter for the old SURF() feature detector
+        where desc4kp = len(desc2) / len(kp2) or analogically len(desc1) / len(kp1)
+        i.e. needle row 5 is a descriptor vector for needle keypoint 5
         """
-        # match the number of keypoints to their descriptor vectors
-        # if a flat descriptor list is returned (old OpenCV descriptors)
-        # e.g. needle row 5 is a descriptor vector for needle keypoint 5
-        rowsize = len(desc2) / len(kp2)
-        if rowsize > 1:
-            rows1 = numpy.array(desc1, dtype = numpy.float32).reshape((-1, rowsize))
-            rows2 = numpy.array(desc2, dtype = numpy.float32).reshape((-1, rowsize))
-            #print rows1.shape, rows2.shape
+        if desc4kp > 1:
+            desc1 = numpy.array(desc1, dtype = numpy.float32).reshape((-1, desc4kp))
+            desc2 = numpy.array(desc2, dtype = numpy.float32).reshape((-1, desc4kp))
+            #print desc1.shape, desc2.shape
         else:
-            rows1 = numpy.array(desc1, dtype = numpy.float32)
-            rows2 = numpy.array(desc2, dtype = numpy.float32)
-            rowsize = len(rows2[0])
+            desc1 = numpy.array(desc1, dtype = numpy.float32)
+            desc2 = numpy.array(desc2, dtype = numpy.float32)
+        desc_size = desc2.shape[1]
 
         # kNN training - learn mapping from rows2 to kp2 index
-        samples = rows2
-        responses = numpy.arange(len(kp2), dtype = numpy.float32)
+        samples = desc2
+        responses = numpy.arange(int(len(desc2)/desc4kp), dtype = numpy.float32)
         #print len(samples), len(responses)
         knn = cv2.KNearest()
         knn.train(samples, responses)
 
         matches = []
         # retrieve index and value through enumeration
-        for i, descriptor in enumerate(rows1):
-            descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, rowsize))
+        for i, descriptor in enumerate(desc1):
+            descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, desc_size))
             #print i, descriptor.shape, samples[0].shape
-            _, res_1nn, _, dists_1nn = knn.find_nearest(descriptor, 1)
-            _, res_2nn, _, dists_2nn = knn.find_nearest(descriptor, 2)
-            #print res_1nn, res_2nn, dists_1nn, dists_2nn
-            assert(dists_1nn[0][0] == dists_2nn[0][0])
-            m = (cv2.DMatch(i, int(res_1nn[0][0]), dists_1nn[0][0]),
-                 cv2.DMatch(i, int(res_2nn[0][0]), dists_2nn[0][1]))
-            matches.append(m)
-
+            kmatches = []
+            for ki in range(k):
+                _, res, _, dists = knn.find_nearest(descriptor, ki+1)
+                kmatches.append(cv2.DMatch(i, int(res[0][0]), dists[0][ki]))
+                #print res, dists
+            matches.append(tuple(kmatches))
         return matches
