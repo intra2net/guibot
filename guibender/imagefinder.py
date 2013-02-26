@@ -656,6 +656,12 @@ class ImageFinder:
 
         if match == "in-house":
             matcher = InHouseCV()
+
+            # NOTE: the method below should currently be uncommented
+            # only for testing
+            #matcher.contextMatch(ndescriptors, hdescriptors,
+            #                     nkeypoints, hkeypoints)
+
         # include only methods tested for compatibility
         elif match in self.feature_matchers:
             # build matcher and match feature vectors
@@ -765,6 +771,25 @@ class InHouseCV:
         cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
 
         return None
+
+    def regionMatch(self, desc1, desc2, kp1, kp2):
+        """
+        Use location information to better decide on matched features.
+
+        TODO: Implement this method.
+        """
+        def ncoord(match):
+            return kp1[match.queryIdx].pt
+        def hcoord(match):
+            return kp2[match.trainIdx].pt
+        def match_quadrant():
+            pass
+
+        matches = self.knnMatch(desc1, desc2, 100, 1, 0.5)
+        for m in matches:
+            print len(m), ncoord(m[0]), hcoord(m[0])
+
+        return matches
 
     def knnMatch(self, desc1, desc2, k = 1, desc4kp = 1, autostop = 0.0):
         """
