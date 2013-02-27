@@ -351,7 +351,9 @@ class ImageFinder:
             elif (detect in self.eq.algorithms["feature_detectors"]
                   and extract in self.eq.algorithms["feature_extractors"]):
                 detector = cv2.FeatureDetector_create(detect)
+                detector = self.eq.sync_backend_to_params(detector, "fdetect")
                 extractor = cv2.DescriptorExtractor_create(extract)
+                extractor = self.eq.sync_backend_to_params(extractor, "fextract")
 
                 # keypoints
                 hkeypoints = detector.detect(hgray)
@@ -457,6 +459,7 @@ class ImageFinder:
         elif match in self.eq.algorithms["feature_matchers"]:
             # build matcher and match feature vectors
             matcher = cv2.DescriptorMatcher_create(match)
+            matcher = self.eq.sync_backend_to_params(matcher, "fmatch")
         else:
             raise ImageFinderMethodError
 
@@ -660,10 +663,12 @@ class CVEqualizer:
             new_backend = cv2.DescriptorExtractor_create(curr_new)
         elif category == "fmatch":
             if curr_new != "in-house":
+
                 # BUG: a bug of OpenCV leads to crash if parameters
                 # are extracted from the matcher interface although
-                # the API supports it
+                # the API supports it - skip fmatch for now
                 return
+
                 old_backend = cv2.DescriptorMatcher_create(curr_old)
                 new_backend = cv2.DescriptorMatcher_create(curr_new)
 
@@ -690,6 +695,41 @@ class CVEqualizer:
             self.parameters[category][param] = val
             #print param, "=", val
         #print self.parameters[category], "\n"
+
+    def sync_backend_to_params(self, opencv_backend, category):
+        """
+        Synchronize the inner OpenCV parameters of detectors, extractors,
+        and matchers with the equalizer.
+        """
+        if (category == "find" or category == "tmatch" or
+            (category == "fdetect" and self.current[category] == "oldSURF")):
+            return opencv_backend
+        elif category == "fmatch":
+            if self.current[category] == "in-house":
+                return opencv_backend
+
+            # BUG: a bug of OpenCV leads to crash if parameters
+            # are extracted from the matcher interface although
+            # the API supports it - skip fmatch for now
+            return opencv_backend
+
+        for param in opencv_backend.getParams():
+            if param in self.parameters[category]:
+                val = self.parameters[category][param]
+                ptype = opencv_backend.paramType(param)
+                if ptype == 0:
+                    opencv_backend.setInt(param, val)
+                elif ptype == 1:
+                    opencv_backend.setBool(param, val)
+                elif ptype == 2:
+                    opencv_backend.setDouble(param, val)
+                else:
+                    # designed to raise error so that the other ptypes are identified
+                    # currently unknown indices: setMat, setAlgorithm, setMatVector, setString
+                    #print "synced", param, "to", val
+                    val = opencv_backend.setAlgorithm(param, val)
+                self.parameters[category][param] = val
+        return opencv_backend
 
 
 class InHouseCV:
