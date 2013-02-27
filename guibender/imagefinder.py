@@ -352,6 +352,7 @@ class ImageFinder:
                   and extract in self.eq.algorithms["feature_extractors"]):
                 detector = cv2.FeatureDetector_create(detect)
                 extractor = cv2.DescriptorExtractor_create(extract)
+
                 # keypoints
                 hkeypoints = detector.detect(hgray)
                 nkeypoints = detector.detect(ngray)
@@ -580,19 +581,24 @@ class CVEqualizer:
                            "feature_detectors" : ("ORB", "oldSURF"),
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
-        # default algorithms
-        self.current = {"find" : "template",
-                        "tmatch" : "ccoeff_normed",
-                        "fmatch" : "BruteForce-Hamming",
-                        "fdetect" : "ORB",
-                        "fextract" : "BRIEF"}
-
         # default parameters
         self.parameters = {"detect_filter" : 85,
                            "match_filter" : 0.65,
                            "project_filter" : 10.0,
                            "ratio_test" : False,
                            "symmetry_test" : False}
+
+        # default algorithms
+        self.current = {"find" : "template",
+                        "tmatch" : "ccoeff_normed",
+                        "fdetect" : "ORB",
+                        "fextract" : "BRIEF",
+                        "fmatch" : "BruteForce-Hamming"}
+        self.configure_backend(find_image = self.current["find"],
+                               template_match = self.current["tmatch"],
+                               feature_detect = self.current["fdetect"],
+                               feature_extract = self.current["fextract"],
+                               feature_match = self.current["fmatch"])
 
     def configure_backend(self, find_image = None, template_match = None,
                           feature_detect = None, feature_extract = None,
@@ -605,27 +611,84 @@ class CVEqualizer:
             if find_image not in self.algorithms["find_methods"]:
                 raise ImageFinderMethodError
             else:
+                self._replace_params("find", self.current["find"],
+                                    find_image)
                 self.current["find"] = find_image
         if template_match != None:
             if template_match not in self.algorithms["template_matchers"]:
                 raise ImageFinderMethodError
             else:
+                self._replace_params("tmatch", self.current["tmatch"],
+                                    template_match)
                 self.current["tmatch"] = template_match
         if feature_detect != None:
             if feature_detect not in self.algorithms["feature_detectors"]:
                 raise ImageFinderMethodError
             else:
+                self._replace_params("fdetect", self.current["fdetect"],
+                                    feature_detect)
                 self.current["fdetect"] = feature_detect
         if feature_extract != None:
             if feature_extract not in self.algorithms["feature_extractors"]:
                 raise ImageFinderMethodError
             else:
+                self._replace_params("fextract", self.current["fextract"],
+                                    feature_extract)
                 self.current["fextract"] = feature_extract
         if feature_match != None:
             if feature_match not in self.algorithms["feature_matchers"]:
                 raise ImageFinderMethodError
             else:
+                self._replace_params("fmatch", self.current["fmatch"],
+                                    feature_match)
                 self.current["fmatch"] = feature_match
+
+    def _replace_params(self, category, curr_old, curr_new):
+        """Update the parameters dictionary according to a new backend algorithm."""
+        if category == "find":
+            return
+        elif category == "tmatch":
+            return
+        elif category == "fdetect":
+            if curr_new != "oldSURF":
+                old_backend = cv2.FeatureDetector_create(curr_old)
+                new_backend = cv2.FeatureDetector_create(curr_new)
+        elif category == "fextract":
+            old_backend = cv2.DescriptorExtractor_create(curr_old)
+            new_backend = cv2.DescriptorExtractor_create(curr_new)
+        elif category == "fmatch":
+            if curr_new != "in-house":
+                # BUG: a bug of OpenCV leads to crash if parameters
+                # are extracted from the matcher interface although
+                # the API supports it
+                return
+                old_backend = cv2.DescriptorMatcher_create(curr_old)
+                new_backend = cv2.DescriptorMatcher_create(curr_new)
+
+        # examine the interface of the OpenCV backend
+        #print old_backend, dir(old_backend)
+        #print new_backend, dir(new_backend)
+        for param in old_backend.getParams():
+            if self.parameters.has_key(param):
+                self.parameters.pop(param)
+        for param in new_backend.getParams():
+            #print new_backend.paramHelp(param)
+            ptype = new_backend.paramType(param)
+            if ptype == 0:
+                val = new_backend.getInt(param)
+            elif ptype == 1:
+                val = new_backend.getBool(param)
+            elif ptype == 2:
+                val = new_backend.getDouble(param)
+            else:
+                # designed to raise error so that the other ptypes are identified
+                # currently unknown indices: getMat, getAlgorithm, getMatVector, getString
+                #print param, ptype
+                val = new_backend.getAlgorithm(param)
+            self.parameters[param] = val
+            #print param, "=", val
+        #print self.parameters, "\n"
+
 
 class InHouseCV:
     """

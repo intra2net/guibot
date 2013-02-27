@@ -98,19 +98,29 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(region.imagefinder.eq.current["find"], "template")
         self.assertEqual(region.imagefinder.eq.current["tmatch"], "autopy")
 
+        # test that a parameter of BRIEF (the current and default extractor)
+        # is present in parameters while a parameter of FREAK is not present
+        self.assertTrue(region.imagefinder.eq.parameters.has_key("bytes"))
+        self.assertFalse(region.imagefinder.eq.parameters.has_key("nbOctave"))
+
         region.configure_find(find_image = "feature", feature_detect = "ORB",
-                              feature_extract = "BRIEF", feature_match = "BruteForce")
+                              feature_extract = "FREAK", feature_match = "BruteForce")
         self.assertEqual(region.imagefinder.eq.current["find"], "feature")
         self.assertEqual(region.imagefinder.eq.current["fdetect"], "ORB")
-        self.assertEqual(region.imagefinder.eq.current["fextract"], "BRIEF")
+        self.assertEqual(region.imagefinder.eq.current["fextract"], "FREAK")
         self.assertEqual(region.imagefinder.eq.current["fmatch"], "BruteForce")
+
+        # test that a parameter of FREAK (the new extractor) is now present
+        # while the parameter of BRIEF is not present anymore
+        self.assertTrue(region.imagefinder.eq.parameters.has_key("nbOctave"))
+        self.assertTrue(region.imagefinder.eq.parameters.has_key("nbOctave"))
 
         # check consistency of all unchanged options
         region.configure_find(find_image = None, template_match = "ccorr_normed")
         self.assertEqual(region.imagefinder.eq.current["find"], "feature")
         self.assertEqual(region.imagefinder.eq.current["tmatch"], "ccorr_normed")
         self.assertEqual(region.imagefinder.eq.current["fdetect"], "ORB")
-        self.assertEqual(region.imagefinder.eq.current["fextract"], "BRIEF")
+        self.assertEqual(region.imagefinder.eq.current["fextract"], "FREAK")
         self.assertEqual(region.imagefinder.eq.current["fmatch"], "BruteForce")
 
     def test_find(self):

@@ -264,21 +264,21 @@ class ImageTest(unittest.TestCase):
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.eq.parameters.values(), [0.65, False, 85, False, 55.65799999999999])
+        self.assertEqual(finder.eq.parameters["project_filter"], 55.65799999999999)
 
         haystack = Image('h_ibs_rotated')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.eq.parameters.values(), [0.65, False, 85, False, 200.0])
+        self.assertEqual(finder.eq.parameters["project_filter"], 200.0)
 
         haystack = Image('h_ibs_scaled')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.eq.parameters.values(), [0.65, False, 85, False, 200.0])
+        self.assertEqual(finder.eq.parameters["project_filter"], 200.0)
 
     def test_benchmark(self):
         haystack = Image('all_shapes')
