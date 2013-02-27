@@ -88,7 +88,9 @@ class ImageTest(unittest.TestCase):
     def draw_needle_features(self, needle, haystack, logging = 20):
         finder = ImageFinder()
         finder.image_logging = logging
-        self.algorithms = (finder.detect_features, finder.extract_features, finder.match_features)
+        self.algorithms = (finder.eq.current["fdetect"],
+                           finder.eq.current["fextract"],
+                           finder.eq.current["fmatch"])
 
         # use private methods for unit testing to visualize internal structure
         _, opencv_needle = finder._get_opencv_images(haystack, needle)
@@ -262,21 +264,21 @@ class ImageTest(unittest.TestCase):
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.equalizer.values(), [0.65, 85, 55.65799999999999])
+        self.assertEqual(finder.eq.parameters.values(), [0.65, False, 85, False, 55.65799999999999])
 
         haystack = Image('h_ibs_rotated')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.equalizer.values(), [0.65, 85, 200.0])
+        self.assertEqual(finder.eq.parameters.values(), [0.65, False, 85, False, 200.0])
 
         haystack = Image('h_ibs_scaled')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.equalizer.values(), [0.65, 85, 200.0])
+        self.assertEqual(finder.eq.parameters.values(), [0.65, False, 85, False, 200.0])
 
     def test_benchmark(self):
         haystack = Image('all_shapes')

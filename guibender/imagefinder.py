@@ -35,74 +35,23 @@ class ImageFinder:
     all matches above similarity find.
     """
 
-    def __init__(self):
+    def __init__(self, equalizer = None):
         """
-        Initiates the image finder with default algorithm configuration.
+        Initiates the image finder and its CV backend equalizer.
 
-        Available algorithms:
-            template matchers:
-                autopy, sqdiff, ccorr, ccoeff
-                sqdiff_normed, *ccorr_normed, ccoeff_normed
-
-            feature detectors:
-                *FAST, *STAR, *SIFT, *SURF, ORB, *MSER,
-                *GFTT, *HARRIS, *Dense, *SimpleBlob
-                *GridFAST, *GridSTAR, ...
-                *PyramidFAST, *PyramidSTAR, ...
-                *oldSURF (OpenCV 2.2.3)
-
-            feature extractors:
-                *SIFT, *SURF, ORB, BRIEF, FREAK
-
-            feature matchers:
-                BruteForce, BruteForce-L1, BruteForce-Hamming,
-                BruteForce-Hamming(2), **FlannBased, in-house
-
-            Starred methods are currently known to be buggy.
-            Double starred methods should be investigated further.
-
-        Available parameters (equalizer):
-            detect filter - works for certain detectors and
-                determines how many initial features are
-                detected in an image (e.g. hessian threshold for
-                SURF detector)
-            match filter - determines what part of all matches
-                returned by feature matcher remain good matches
-            project filter - determines what part of the good
-                matches are considered inliers
-
-        Image logging:
-            The image logging consists of saving the last hotmap. If the
-            template matching method was used, the hotmap is a finger
-            print of the matching in the entire haystack. Its lighter
-            areas are places where the needle was matched better. If the
-            feature matching method was used, the hotmap contains the
-            matched needle features in the haystack (green), the ones
-            that were not matched (red), and the calculated focus point
-            that would be used for clicking, hovering, etc. (blue).
+        The image logging consists of saving the last hotmap. If the
+        template matching method was used, the hotmap is a finger
+        print of the matching in the entire haystack. Its lighter
+        areas are places where the needle was matched better. If the
+        feature matching method was used, the hotmap contains the
+        matched needle features in the haystack (green), the ones
+        that were not matched (red), and the calculated focus point
+        that would be used for clicking, hovering, etc. (blue).
         """
-        # currently fully compatible methods
-        self.find_methods = ("template", "features")
-        self.template_matchers = ("autopy", "sqdiff", "ccorr", "ccoeff",
-                                  "sqdiff_normed", "ccorr_normed", "ccoeff_normed")
-        self.feature_matchers = ("BruteForce", "BruteForce-L1", "BruteForce-Hamming",
-                                 "BruteForce-Hamming(2)", "in-house")
-        self.feature_detectors = ("ORB", "oldSURF")
-        self.feature_extractors = ("ORB", "BRIEF", "FREAK")
-
-        # default algorithms
-        self.find_image = "template"
-        self.match_template = "ccoeff_normed"
-        self.detect_features = "ORB"
-        self.extract_features = "BRIEF"
-        self.match_features = "BruteForce-Hamming"
-
-        # default parameters
-        self.equalizer = {"detect_filter" : 85,
-                          "match_filter" : 0.65,
-                          "project_filter" : 10.0}
-        self.ratio_test = False
-        self.symmetry_test = False
+        if equalizer == None:
+            self.eq = CVEqualizer()
+        else:
+            self.eq = equalizer
 
         # other attributes
         self._bitmapcache = {}
@@ -125,9 +74,9 @@ class ImageFinder:
         requires 100% match
         @param nocolor: a bool defining whether to use grayscale images
         """
-        if self.find_image == "template":
+        if self.eq.current["find"] == "template":
             return self.find_template(haystack, needle, similarity, nocolor)
-        elif self.find_image == "features":
+        elif self.eq.current["find"] == "features":
             return self.find_features(haystack, needle, similarity)
         else:
             raise ImageFinderMethodError
@@ -141,10 +90,10 @@ class ImageFinder:
         Available template matching methods are: autopy, opencv
         Available parameters are: None
         """
-        if self.match_template not in self.template_matchers:
+        if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
 
-        elif self.match_template == "autopy":
+        elif self.eq.current["tmatch"] == "autopy":
             if needle.get_filename() in self._bitmapcache:
                 autopy_needle = self._bitmapcache[needle.get_filename()]
             else:
@@ -172,7 +121,7 @@ class ImageFinder:
             return None
 
         else:
-            result = self._match_template(haystack, needle, nocolor, self.match_template)
+            result = self._match_template(haystack, needle, nocolor, self.eq.current["tmatch"])
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
             logging.debug('minVal: %s', str(minVal))
@@ -181,7 +130,7 @@ class ImageFinder:
                           str(maxVal), similarity)
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
             # switch max and min for sqdiff and sqdiff_normed
-            if self.match_template in ("sqdiff", "sqdiff_normed"):
+            if self.eq.current["tmatch"] in ("sqdiff", "sqdiff_normed"):
                 maxVal = 1 - minVal
                 maxLoc = minLoc
 
@@ -221,15 +170,16 @@ class ImageFinder:
         # grayscale images have features of better invariance and therefore
         # are the type of images used in computer vision
         hkp, hdc, nkp, ndc = self._detect_features(haystack, needle,
-                                                   detect = self.detect_features,
-                                                   extract = self.extract_features)
+                                                   self.eq.current["fdetect"],
+                                                   self.eq.current["fextract"])
         # check for quality of the detected features
         if len(nkp) < 4 or len(hkp) < 4:
             if self.image_logging <= 10:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
 
-        mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc, self.match_features)
+        mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc,
+                                          self.eq.current["fmatch"])
 
         # plot the detected and matched features for image logging
         if self.image_logging <= 10:
@@ -255,7 +205,7 @@ class ImageFinder:
         # for rotation but currently gives better results than the fundamental matrix
         H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
                                      numpy.array([kp.pt for kp in mhkp]),
-                                     cv2.RANSAC, self.equalizer["project_filter"])
+                                     cv2.RANSAC, self.eq.parameters["project_filter"])
         #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
         #                                 numpy.array([kp.pt for kp in mhkp]),
         #                                 method = cv2.RANSAC, param1 = 10.0,
@@ -302,15 +252,15 @@ class ImageFinder:
         Available template matching methods are: opencv
         Available parameters are: None
         """
-        if self.match_template not in self.template_matchers:
+        if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
 
         # autopy template matching for find_all is replaced by ccoeff_normed
         # since it is inefficient and returns match clouds
-        if self.match_template == "autopy":
+        if self.eq.current["tmatch"] == "autopy":
             match_template = "ccoeff_normed"
         else:
-            match_template = self.match_template
+            match_template = self.eq.current["tmatch"]
         result = self._match_template(haystack, needle, nocolor, match_template)
 
         # extract maxima once for each needle size region
@@ -391,14 +341,15 @@ class ImageFinder:
 
             if detect == "oldSURF":
                 # build the old surf feature detector
-                hessian_threshold = self.equalizer["detect_filter"]
+                hessian_threshold = self.eq.parameters["detect_filter"]
                 detector = cv2.SURF(hessian_threshold)
 
                 (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
                 (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
 
             # include only methods tested for compatibility
-            elif detect in self.feature_detectors and extract in self.feature_extractors:
+            elif (detect in self.eq.algorithms["feature_detectors"]
+                  and extract in self.eq.algorithms["feature_extractors"]):
                 detector = cv2.FeatureDetector_create(detect)
                 extractor = cv2.DescriptorExtractor_create(extract)
 
@@ -466,7 +417,7 @@ class ImageFinder:
                     smooth_dist2 = m[1].distance + 0.0000001
 
                     #print smooth_dist1 / smooth_dist2, self.ratio
-                    if (smooth_dist1 / smooth_dist2 < self.equalizer["match_filter"]):
+                    if (smooth_dist1 / smooth_dist2 < self.eq.parameters["match_filter"]):
                         matches2.append(m[0])
                 else:
                     matches2.append(m[0])
@@ -503,21 +454,21 @@ class ImageFinder:
             #                     nkeypoints, hkeypoints)
 
         # include only methods tested for compatibility
-        elif match in self.feature_matchers:
+        elif match in self.eq.algorithms["feature_matchers"]:
             # build matcher and match feature vectors
             matcher = cv2.DescriptorMatcher_create(match)
         else:
             raise ImageFinderMethodError
 
         # find and filter matches through tests
-        if self.ratio_test:
+        if self.eq.parameters["ratio_test"]:
             matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
             matches = ratio_test(matches)
         else:
             matches = matcher.knnMatch(ndescriptors, hdescriptors, 1)
             matches = [m[0] for m in matches]
-        if self.symmetry_test:
-            if self.ratio_test:
+        if self.eq.parameters["symmetry_test"]:
+            if self.eq.parameters["ratio_test"]:
                 hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
                 hmatches = ratio_test(hmatches)
             else:
@@ -578,6 +529,71 @@ class ImageFinder:
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         return match
+
+
+class CVEqualizer:
+    def __init__(self):
+        """
+        Initiates the CV equalizer with default algorithm configuration.
+
+        Available algorithms:
+            template matchers:
+                autopy, sqdiff, ccorr, ccoeff
+                sqdiff_normed, *ccorr_normed, ccoeff_normed
+
+            feature detectors:
+                *FAST, *STAR, *SIFT, *SURF, ORB, *MSER,
+                *GFTT, *HARRIS, *Dense, *SimpleBlob
+                *GridFAST, *GridSTAR, ...
+                *PyramidFAST, *PyramidSTAR, ...
+                *oldSURF (OpenCV 2.2.3)
+
+            feature extractors:
+                *SIFT, *SURF, ORB, BRIEF, FREAK
+
+            feature matchers:
+                BruteForce, BruteForce-L1, BruteForce-Hamming,
+                BruteForce-Hamming(2), **FlannBased, in-house
+
+            Starred methods are currently known to be buggy.
+            Double starred methods should be investigated further.
+
+        Available parameters:
+            detect filter - works for certain detectors and
+                determines how many initial features are
+                detected in an image (e.g. hessian threshold for
+                SURF detector)
+            match filter - determines what part of all matches
+                returned by feature matcher remain good matches
+            project filter - determines what part of the good
+                matches are considered inliers
+            ratio test - boolean for whether to perform a ratio test
+            symmetry test - boolean for whether to perform a symmetry test
+        """
+        # currently fully compatible methods
+        self.algorithms = {"find_methods" : ("template", "features"),
+                           "template_matchers" : ("autopy", "sqdiff", "ccorr",
+                                                  "ccoeff", "sqdiff_normed",
+                                                  "ccorr_normed", "ccoeff_normed"),
+                           "feature_matchers" : ("BruteForce", "BruteForce-L1",
+                                                 "BruteForce-Hamming",
+                                                 "BruteForce-Hamming(2)", "in-house"),
+                           "feature_detectors" : ("ORB", "oldSURF"),
+                           "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
+
+        # default algorithms
+        self.current = {"find" : "template",
+                        "tmatch" : "ccoeff_normed",
+                        "fmatch" : "BruteForce-Hamming",
+                        "fdetect" : "ORB",
+                        "fextract" : "BRIEF"}
+
+        # default parameters
+        self.parameters = {"detect_filter" : 85,
+                           "match_filter" : 0.65,
+                           "project_filter" : 10.0,
+                           "ratio_test" : False,
+                           "symmetry_test" : False}
 
 
 class InHouseCV:

@@ -55,8 +55,8 @@ class Calibrator:
         results = []
 
         # test all template matching methods
-        old_config = (imagefinder.match_template)
-        for key in imagefinder.template_matchers:
+        old_config = (imagefinder.eq.current["tmatch"])
+        for key in imagefinder.eq.algorithms["template_matchers"]:
             # autopy does not provide any similarity value
             # and only normed methods are comparable
             if "_normed" not in key:
@@ -67,27 +67,27 @@ class Calibrator:
                     method = key + "_gray"
                 else:
                     method = key
-                imagefinder.match_template = key
+                imagefinder.eq.current["tmatch"] = key
                 start_time = time.time()
                 imagefinder.find_template(haystack, needle, 0.0, gray)
                 total_time = time.time() - start_time
                 #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
-        imagefinder.match_template = old_config[0]
+        imagefinder.eq.current["tmatch"] = old_config[0]
 
         # test all feature matching methods
-        old_config = (imagefinder.detect_features,
-                      imagefinder.extract_features,
-                      imagefinder.match_features)
-        for key_fd in imagefinder.feature_detectors:
+        old_config = (imagefinder.eq.current["fdetect"],
+                      imagefinder.eq.current["fextract"],
+                      imagefinder.eq.current["fmatch"])
+        for key_fd in imagefinder.eq.algorithms["feature_detectors"]:
             # skip in-house because of opencv version bug
             if key_fd == "oldSURF":
                 continue
-            for key_fe in imagefinder.feature_extractors:
-                for key_fm in imagefinder.feature_matchers:
-                    imagefinder.detect_features = key_fd
-                    imagefinder.extract_features = key_fe
-                    imagefinder.match_features = key_fm
+            for key_fe in imagefinder.eq.algorithms["feature_extractors"]:
+                for key_fm in imagefinder.eq.algorithms["feature_matchers"]:
+                    imagefinder.eq.current["fdetect"] = key_fd
+                    imagefinder.eq.current["fextract"] = key_fe
+                    imagefinder.eq.current["fmatch"] = key_fm
                     if calibration:
                         self.calibrate(haystack, needle, imagefinder, tolerance, refinements)
                     start_time = time.time()
@@ -96,9 +96,9 @@ class Calibrator:
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                     results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
-        imagefinder.detect_features = old_config[0]
-        imagefinder.extract_features = old_config[1]
-        imagefinder.match_features = old_config[2]
+        imagefinder.eq.current["fdetect"] = old_config[0]
+        imagefinder.eq.current["fextract"] = old_config[1]
+        imagefinder.eq.current["fmatch"] = old_config[2]
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate(self, haystack, needle, imagefinder,
@@ -114,73 +114,74 @@ class Calibrator:
             """
             Internal custom function to evaluate error for a given set of parameters.
             """
-            imagefinder.equalizer["detect_filter"] = params[0]
-            imagefinder.equalizer["match_filter"] = params[1]
-            imagefinder.equalizer["project_filter"] = params[2]
+            imagefinder.eq.parameters["detect_filter"] = params[0]
+            imagefinder.eq.parameters["match_filter"] = params[1]
+            imagefinder.eq.parameters["project_filter"] = params[2]
 
             imagefinder.find_features(haystack, needle, 0.0)
             error = 1.0 - imagefinder.hotmap[1]
             return error
 
-        def twiddle(full_params, run_function, tolerance, max_attempts):
-            """
-            Function to optimize a set of parameters for a minimal returned error.
 
-            @param parameters: a list of parameter triples of the form (min, start, max)
-            @param run_function: a function that accepts a list of tested parameters
-            and returns the error that should be minimized
-            @param tolerance: minimal parameter delta (uncertainty interval)
-            @param max_attempts: maximal number of refinements to reach the parameter
-            delta below the tolerance.
+        full_params = []
+        full_params.append((0.0, imagefinder.eq.parameters["detect_filter"], 200.0))
+        full_params.append((0.0, imagefinder.eq.parameters["match_filter"], 1.0))
+        full_params.append((0.0, imagefinder.eq.parameters["project_filter"], 200.0))
 
-            Special credits for this approach should be given to Prof. Sebastian Thrun,
-            who explained it in his Artificial Intelligence for Robotics class.
-            """
-            params = [p[1] for p in full_params]
-            # the min and max will be checked first with such deltas
-            deltas = [(abs(p[2]-p[0])) for p in full_params]
+        best_params, error = self.twiddle(full_params, run, tolerance, refinements)
+        #print best_params, error
 
-            best_params = params
-            best_error = run_function(params)
-            #print best_params, best_error
+        imagefinder.eq.parameters["detect_filter"] = best_params[0]
+        imagefinder.eq.parameters["match_filter"] = best_params[1]
+        imagefinder.eq.parameters["project_filter"] = best_params[2]
 
-            n = 0
-            while sum(deltas) > tolerance and n < max_attempts and best_error > 0.0:
-                for i in range(len(params)):
-                    curr_param = params[i]
+        return error
 
-                    params[i] = min(curr_param + deltas[i], full_params[i][2])
+    def twiddle(self, full_params, run_function, tolerance, max_attempts):
+        """
+        Function to optimize a set of parameters for a minimal returned error.
+
+        @param parameters: a list of parameter triples of the form (min, start, max)
+        @param run_function: a function that accepts a list of tested parameters
+        and returns the error that should be minimized
+        @param tolerance: minimal parameter delta (uncertainty interval)
+        @param max_attempts: maximal number of refinements to reach the parameter
+        delta below the tolerance.
+
+        Special credits for this approach should be given to Prof. Sebastian Thrun,
+        who explained it in his Artificial Intelligence for Robotics class.
+        """
+        params = [p[1] for p in full_params]
+        # the min and max will be checked first with such deltas
+        deltas = [(abs(p[2]-p[0])) for p in full_params]
+
+        best_params = params
+        best_error = run_function(params)
+        #print best_params, best_error
+
+        n = 0
+        while sum(deltas) > tolerance and n < max_attempts and best_error > 0.0:
+            for i in range(len(params)):
+                curr_param = params[i]
+
+                params[i] = min(curr_param + deltas[i], full_params[i][2])
+                error = run_function(params)
+                if(error < best_error):
+                    best_params = params
+                    best_error = error
+                    deltas[i] *= 1.1
+                else:
+
+                    params[i] = max(curr_param - deltas[i], full_params[i][0])
                     error = run_function(params)
                     if(error < best_error):
                         best_params = params
                         best_error = error
                         deltas[i] *= 1.1
                     else:
+                        params[i] = curr_param
+                        deltas[i] *= 0.9
+            #print best_params, best_error
+            n += 1
 
-                        params[i] = max(curr_param - deltas[i], full_params[i][0])
-                        error = run_function(params)
-                        if(error < best_error):
-                            best_params = params
-                            best_error = error
-                            deltas[i] *= 1.1
-                        else:
-                            params[i] = curr_param
-                            deltas[i] *= 0.9
-                #print best_params, best_error
-                n += 1
-
-            return (best_params, best_error)
-
-        full_params = []
-        full_params.append((0.0, imagefinder.equalizer["detect_filter"], 200.0))
-        full_params.append((0.0, imagefinder.equalizer["match_filter"], 1.0))
-        full_params.append((0.0, imagefinder.equalizer["project_filter"], 200.0))
-
-        best_params, error = twiddle(full_params, run, tolerance, refinements)
-        #print best_params, error
-
-        imagefinder.equalizer["detect_filter"] = best_params[0]
-        imagefinder.equalizer["match_filter"] = best_params[1]
-        imagefinder.equalizer["project_filter"] = best_params[2]
-
-        return error
+        return (best_params, best_error)
