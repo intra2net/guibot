@@ -114,9 +114,8 @@ class Calibrator:
             """
             Internal custom function to evaluate error for a given set of parameters.
             """
-            imagefinder.eq.parameters["detect_filter"] = params[0]
-            imagefinder.eq.parameters["match_filter"] = params[1]
-            imagefinder.eq.parameters["project_filter"] = params[2]
+            imagefinder.eq.parameters["fmatch"]["ratioThreshold"] = params[0]
+            imagefinder.eq.parameters["find"]["ransacReprojThreshold"] = params[1]
 
             imagefinder.find_features(haystack, needle, 0.0)
             error = 1.0 - imagefinder.hotmap[1]
@@ -124,16 +123,14 @@ class Calibrator:
 
 
         full_params = []
-        full_params.append((0.0, imagefinder.eq.parameters["detect_filter"], 200.0))
-        full_params.append((0.0, imagefinder.eq.parameters["match_filter"], 1.0))
-        full_params.append((0.0, imagefinder.eq.parameters["project_filter"], 200.0))
+        full_params.append((0.0, imagefinder.eq.parameters["fmatch"]["ratioThreshold"], 1.0))
+        full_params.append((0.0, imagefinder.eq.parameters["find"]["ransacReprojThreshold"], 200.0))
 
         best_params, error = self.twiddle(full_params, run, tolerance, refinements)
         #print best_params, error
 
-        imagefinder.eq.parameters["detect_filter"] = best_params[0]
-        imagefinder.eq.parameters["match_filter"] = best_params[1]
-        imagefinder.eq.parameters["project_filter"] = best_params[2]
+        imagefinder.eq.parameters["fmatch"]["ratioThreshold"] = best_params[0]
+        imagefinder.eq.parameters["find"]["ransacReprojThreshold"] = best_params[1]
 
         return error
 

@@ -100,8 +100,8 @@ class RegionTest(unittest.TestCase):
 
         # test that a parameter of BRIEF (the current and default extractor)
         # is present in parameters while a parameter of FREAK is not present
-        self.assertTrue(region.imagefinder.eq.parameters.has_key("bytes"))
-        self.assertFalse(region.imagefinder.eq.parameters.has_key("nbOctave"))
+        self.assertTrue(region.imagefinder.eq.parameters["fextract"].has_key("bytes"))
+        self.assertFalse(region.imagefinder.eq.parameters["fextract"].has_key("nbOctave"))
 
         region.configure_find(find_image = "feature", feature_detect = "ORB",
                               feature_extract = "FREAK", feature_match = "BruteForce")
@@ -112,8 +112,8 @@ class RegionTest(unittest.TestCase):
 
         # test that a parameter of FREAK (the new extractor) is now present
         # while the parameter of BRIEF is not present anymore
-        self.assertTrue(region.imagefinder.eq.parameters.has_key("nbOctave"))
-        self.assertTrue(region.imagefinder.eq.parameters.has_key("nbOctave"))
+        self.assertTrue(region.imagefinder.eq.parameters["fextract"].has_key("nbOctave"))
+        self.assertTrue(region.imagefinder.eq.parameters["fextract"].has_key("nbOctave"))
 
         # check consistency of all unchanged options
         region.configure_find(find_image = None, template_match = "ccorr_normed")

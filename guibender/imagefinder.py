@@ -161,7 +161,7 @@ class ImageFinder:
 
         Available methods are: a combination of feature detector,
         extractor, and matcher
-        Available parameters are: detect_filter, match_filter, project_filter
+        Available parameters are: oldSURFdetect, ratioThreshold, ransacReprojThreshold
         """
         self.hotmap[0], _ = self._get_opencv_images(haystack, needle)
         self.hotmap[1] = 0.0
@@ -204,8 +204,8 @@ class ImageFinder:
         # homography and fundamental matrix as options - homography is considered only
         # for rotation but currently gives better results than the fundamental matrix
         H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
-                                     numpy.array([kp.pt for kp in mhkp]),
-                                     cv2.RANSAC, self.eq.parameters["project_filter"])
+                                     numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
+                                     self.eq.parameters["find"]["ransacReprojThreshold"])
         #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
         #                                 numpy.array([kp.pt for kp in mhkp]),
         #                                 method = cv2.RANSAC, param1 = 10.0,
@@ -341,7 +341,7 @@ class ImageFinder:
 
             if detect == "oldSURF":
                 # build the old surf feature detector
-                hessian_threshold = self.eq.parameters["detect_filter"]
+                hessian_threshold = self.eq.parameters["fdetect"]["oldSURFdetect"]
                 detector = cv2.SURF(hessian_threshold)
 
                 (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
@@ -417,7 +417,7 @@ class ImageFinder:
                     smooth_dist2 = m[1].distance + 0.0000001
 
                     #print smooth_dist1 / smooth_dist2, self.ratio
-                    if (smooth_dist1 / smooth_dist2 < self.eq.parameters["match_filter"]):
+                    if (smooth_dist1 / smooth_dist2 < self.eq.parameters["fmatch"]["ratioThreshold"]):
                         matches2.append(m[0])
                 else:
                     matches2.append(m[0])
@@ -461,14 +461,14 @@ class ImageFinder:
             raise ImageFinderMethodError
 
         # find and filter matches through tests
-        if self.eq.parameters["ratio_test"]:
+        if self.eq.parameters["fmatch"]["ratioTest"]:
             matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
             matches = ratio_test(matches)
         else:
             matches = matcher.knnMatch(ndescriptors, hdescriptors, 1)
             matches = [m[0] for m in matches]
-        if self.eq.parameters["symmetry_test"]:
-            if self.eq.parameters["ratio_test"]:
+        if self.eq.parameters["fmatch"]["symmetryTest"]:
+            if self.eq.parameters["fmatch"]["ratioTest"]:
                 hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
                 hmatches = ratio_test(hmatches)
             else:
@@ -582,11 +582,11 @@ class CVEqualizer:
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
         # default parameters
-        self.parameters = {"detect_filter" : 85,
-                           "match_filter" : 0.65,
-                           "project_filter" : 10.0,
-                           "ratio_test" : False,
-                           "symmetry_test" : False}
+        self.parameters = {"find" : {"ransacReprojThreshold" : 10.0},
+                           "tmatch" : {}, "fdetect" : {}, "fextract" : {},
+                           "fmatch" : {"ratioThreshold" : 0.65,
+                                       "ratioTest" : False,
+                                       "symmetryTest" : False}}
 
         # default algorithms
         self.current = {"find" : "template",
@@ -650,7 +650,9 @@ class CVEqualizer:
         elif category == "tmatch":
             return
         elif category == "fdetect":
-            if curr_new != "oldSURF":
+            if curr_new == "oldSURF":
+                self.parameters[category]["oldSURFdetect"] = 85
+            else:
                 old_backend = cv2.FeatureDetector_create(curr_old)
                 new_backend = cv2.FeatureDetector_create(curr_new)
         elif category == "fextract":
@@ -669,8 +671,8 @@ class CVEqualizer:
         #print old_backend, dir(old_backend)
         #print new_backend, dir(new_backend)
         for param in old_backend.getParams():
-            if self.parameters.has_key(param):
-                self.parameters.pop(param)
+            if self.parameters[category].has_key(param):
+                self.parameters[category].pop(param)
         for param in new_backend.getParams():
             #print new_backend.paramHelp(param)
             ptype = new_backend.paramType(param)
@@ -685,9 +687,9 @@ class CVEqualizer:
                 # currently unknown indices: getMat, getAlgorithm, getMatVector, getString
                 #print param, ptype
                 val = new_backend.getAlgorithm(param)
-            self.parameters[param] = val
+            self.parameters[category][param] = val
             #print param, "=", val
-        #print self.parameters, "\n"
+        #print self.parameters[category], "\n"
 
 
 class InHouseCV:
