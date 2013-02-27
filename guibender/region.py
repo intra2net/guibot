@@ -167,34 +167,12 @@ class Region(object):
     def get_last_match(self):
         return self.last_match
 
-    def configure_find(self, find_image = None,
-                       template_match = None, feature_match = None,
-                       feature_detect = None, feature_extract = None):
-        if find_image != None:
-            if find_image not in self.imagefinder.find_methods:
-                raise ImageFinderMethodError
-            else:
-                self.imagefinder.find_image = find_image
-        if template_match != None:
-            if template_match not in self.imagefinder.template_matchers:
-                raise ImageFinderMethodError
-            else:
-                self.imagefinder.template_match = template_match
-        if feature_match != None:
-            if feature_match not in self.imagefinder.feature_matchers:
-                raise ImageFinderMethodError
-            else:
-                self.imagefinder.feature_match = feature_match
-        if feature_detect != None:
-            if feature_detect not in self.imagefinder.feature_detectors:
-                raise ImageFinderMethodError
-            else:
-                self.imagefinder.feature_detect = feature_detect
-        if feature_extract != None:
-            if feature_extract not in self.imagefinder.feature_extractors:
-                raise ImageFinderMethodError
-            else:
-                self.imagefinder.feature_extract = feature_extract
+    def configure_find(self, find_image = None, template_match = None,
+                       feature_detect = None, feature_extract = None,
+                       feature_match = None):
+        self.imagefinder.eq.configure_backend(find_image, template_match,
+                                              feature_detect, feature_extract,
+                                              feature_match)
 
     def find(self, image, timeout=10, nocolor=False):
         # Load image if needed

@@ -76,7 +76,7 @@ class ImageFinder:
         """
         if self.eq.current["find"] == "template":
             return self.find_template(haystack, needle, similarity, nocolor)
-        elif self.eq.current["find"] == "features":
+        elif self.eq.current["find"] == "feature":
             return self.find_features(haystack, needle, similarity)
         else:
             raise ImageFinderMethodError
@@ -269,7 +269,7 @@ class ImageFinder:
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
             # switch max and min for sqdiff and sqdiff_normed
-            if self.match_template in ("sqdiff", "sqdiff_normed"):
+            if self.eq.current["tmatch"] in ("sqdiff", "sqdiff_normed"):
                 # TODO: check whetehr find_all would work properly for sqdiff
                 maxVal = 1 - minVal
                 maxLoc = minLoc
@@ -352,7 +352,6 @@ class ImageFinder:
                   and extract in self.eq.algorithms["feature_extractors"]):
                 detector = cv2.FeatureDetector_create(detect)
                 extractor = cv2.DescriptorExtractor_create(extract)
-
                 # keypoints
                 hkeypoints = detector.detect(hgray)
                 nkeypoints = detector.detect(ngray)
@@ -571,7 +570,7 @@ class CVEqualizer:
             symmetry test - boolean for whether to perform a symmetry test
         """
         # currently fully compatible methods
-        self.algorithms = {"find_methods" : ("template", "features"),
+        self.algorithms = {"find_methods" : ("template", "feature"),
                            "template_matchers" : ("autopy", "sqdiff", "ccorr",
                                                   "ccoeff", "sqdiff_normed",
                                                   "ccorr_normed", "ccoeff_normed"),
@@ -595,6 +594,38 @@ class CVEqualizer:
                            "ratio_test" : False,
                            "symmetry_test" : False}
 
+    def configure_backend(self, find_image = None, template_match = None,
+                          feature_detect = None, feature_extract = None,
+                          feature_match = None):
+        """
+        Change some or all of the algorithms used as backend for the
+        image finder.
+        """
+        if find_image != None:
+            if find_image not in self.algorithms["find_methods"]:
+                raise ImageFinderMethodError
+            else:
+                self.current["find"] = find_image
+        if template_match != None:
+            if template_match not in self.algorithms["template_matchers"]:
+                raise ImageFinderMethodError
+            else:
+                self.current["tmatch"] = template_match
+        if feature_detect != None:
+            if feature_detect not in self.algorithms["feature_detectors"]:
+                raise ImageFinderMethodError
+            else:
+                self.current["fdetect"] = feature_detect
+        if feature_extract != None:
+            if feature_extract not in self.algorithms["feature_extractors"]:
+                raise ImageFinderMethodError
+            else:
+                self.current["fextract"] = feature_extract
+        if feature_match != None:
+            if feature_match not in self.algorithms["feature_matchers"]:
+                raise ImageFinderMethodError
+            else:
+                self.current["fmatch"] = feature_match
 
 class InHouseCV:
     """

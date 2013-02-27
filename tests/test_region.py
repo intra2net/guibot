@@ -89,6 +89,30 @@ class RegionTest(unittest.TestCase):
             # Hack to make sure app is really closed
             time.sleep(0.5)
 
+    def test_configure_find(self):
+        region = Region()
+        region.configure_find(find_image = "feature")
+        self.assertEqual(region.imagefinder.eq.current["find"], "feature")
+
+        region.configure_find(find_image = "template", template_match = "autopy")
+        self.assertEqual(region.imagefinder.eq.current["find"], "template")
+        self.assertEqual(region.imagefinder.eq.current["tmatch"], "autopy")
+
+        region.configure_find(find_image = "feature", feature_detect = "ORB",
+                              feature_extract = "BRIEF", feature_match = "BruteForce")
+        self.assertEqual(region.imagefinder.eq.current["find"], "feature")
+        self.assertEqual(region.imagefinder.eq.current["fdetect"], "ORB")
+        self.assertEqual(region.imagefinder.eq.current["fextract"], "BRIEF")
+        self.assertEqual(region.imagefinder.eq.current["fmatch"], "BruteForce")
+
+        # check consistency of all unchanged options
+        region.configure_find(find_image = None, template_match = "ccorr_normed")
+        self.assertEqual(region.imagefinder.eq.current["find"], "feature")
+        self.assertEqual(region.imagefinder.eq.current["tmatch"], "ccorr_normed")
+        self.assertEqual(region.imagefinder.eq.current["fdetect"], "ORB")
+        self.assertEqual(region.imagefinder.eq.current["fextract"], "BRIEF")
+        self.assertEqual(region.imagefinder.eq.current["fmatch"], "BruteForce")
+
     def test_find(self):
         self.show_image('all_shapes')
 
@@ -236,7 +260,7 @@ class RegionTest(unittest.TestCase):
         # TODO: currently the match similarity is very low although
         # the image if matched properly - need to find a way to increase
         # the similarity while preserving the robustness of the feature matching
-        region.configure_find(find_image = "features")
+        region.configure_find(find_image = "feature")
         match = region.find(Image('n_ibs').similarity(0.1))
         Region().hover(match.get_target())
 
