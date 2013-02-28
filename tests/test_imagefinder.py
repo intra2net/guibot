@@ -93,8 +93,10 @@ class ImageTest(unittest.TestCase):
                            finder.eq.current["fmatch"])
 
         # use private methods for unit testing to visualize internal structure
-        _, opencv_needle = finder._get_opencv_images(haystack, needle)
-        hkp, hdc, nkp, ndc = finder._detect_features(haystack, needle,
+        hgray = finder._prepare_image(haystack, gray = True)
+        ngray = finder._prepare_image(needle, gray = True)
+        opencv_needle = finder._prepare_image(needle)
+        hkp, hdc, nkp, ndc = finder._detect_features(hgray, ngray,
                                                      detect = self.algorithms[0],
                                                      extract = self.algorithms[1])
         mhkp, mnkp = finder._match_features(hkp, hdc, nkp, ndc,
@@ -136,7 +138,7 @@ class ImageTest(unittest.TestCase):
     def draw_haystack_hotmap(self, haystack, needle, title, logging = 20):
         finder = ImageFinder()
         finder.image_logging = logging
-        #finder.match_features = "in-house"
+        #finder.eq.configure_backend(feature_detect = "oldSURF")
         match = finder.find_features(haystack, needle, 0.0)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")

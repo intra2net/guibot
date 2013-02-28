@@ -164,13 +164,16 @@ class ImageFinder:
         extractor, and matcher
         Available parameters are: oldSURFdetect, ratioThreshold, ransacReprojThreshold
         """
-        self.hotmap[0], _ = self._get_opencv_images(haystack, needle)
+        hgray = self._prepare_image(haystack, gray = True)
+        ngray = self._prepare_image(needle, gray = True)
+
+        self.hotmap[0] = self._prepare_image(haystack)
         self.hotmap[1] = 0.0
         self.hotmap[2] = None
 
         # grayscale images have features of better invariance and therefore
         # are the type of images used in computer vision
-        hkp, hdc, nkp, ndc = self._detect_features(haystack, needle,
+        hkp, hdc, nkp, ndc = self._detect_features(hgray, ngray,
                                                    self.eq.current["fdetect"],
                                                    self.eq.current["fextract"])
         # check for quality of the detected features
@@ -324,14 +327,13 @@ class ImageFinder:
 
         return maxima
 
-    def _detect_features(self, haystack, needle, detect, extract):
+    def _detect_features(self, hgray, ngray, detect, extract):
         """
         Detect all keypoints and calculate their respective decriptors.
 
         Perform zooming in the picture if the number of detected features
         is too low to project later on.
         """
-        hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
         hkeypoints, nkeypoints = [], []
         hfactor, nfactor = 1, 1
         i, maxzoom = 0, 5
@@ -491,23 +493,19 @@ class ImageFinder:
 
         return (match_hkeypoints, match_nkeypoints)
 
-    def _get_opencv_images(self, haystack, needle, gray = False):
+    def _prepare_image(self, image, gray = False):
         """
-        Convert the Image() objects into compatible numpy arrays.
+        Convert the Image() object into compatible numpy array
+        and into grayscale if the gray parameter is True.
         """
-        opencv_haystack = numpy.array(haystack.get_pil_image())
+        searchable_image = numpy.array(image.get_pil_image())
         # convert RGB to BGR
-        opencv_haystack = opencv_haystack[:, :, ::-1].copy()
+        searchable_image = searchable_image[:, :, ::-1].copy()
  
-        opencv_needle = numpy.array(needle.get_pil_image())
-        # convert RGB to BGR
-        opencv_needle = opencv_needle[:, :, ::-1].copy()
-
         if gray:
-            opencv_haystack = cv2.cvtColor(opencv_haystack, cv2.COLOR_BGR2GRAY)
-            opencv_needle = cv2.cvtColor(opencv_needle, cv2.COLOR_BGR2GRAY)
+            searchable_image = cv2.cvtColor(searchable_image, cv2.COLOR_BGR2GRAY)
 
-        return (opencv_haystack, opencv_needle)
+        return searchable_image
 
     def _match_template(self, haystack, needle, nocolor, match):
         """
@@ -526,10 +524,12 @@ class ImageFinder:
             raise ImageFinderMethodError
 
         if nocolor:
-            gray_haystack, gray_needle = self._get_opencv_images(haystack, needle, gray = True)
+            gray_haystack = self._prepare_image(haystack, gray = True)
+            gray_needle = self._prepare_image(needle, gray = True)
             match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
         else:
-            opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle, gray = False)
+            opencv_haystack = self._prepare_image(haystack, gray = False)
+            opencv_needle = self._prepare_image(needle, gray = False)
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         return match
@@ -551,8 +551,10 @@ class InHouseCV:
 
         The current MSER might not be used in the actual implementation.
         """
-        opencv_haystack, opencv_needle = self._get_opencv_images(haystack, needle)
-        hgray, ngray = self._get_opencv_images(haystack, needle, gray = True)
+        opencv_haystack = self._prepare_image(haystack)
+        opencv_needle = self._prepare_image(needle)
+        hgray = self._prepare_image(haystack, gray = True)
+        ngray = self._prepare_image(needle, gray = True)
 
         # TODO: this MSER blob feature detector is also available in
         # version 2.2.3 - implement if necessary
