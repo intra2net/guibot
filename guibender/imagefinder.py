@@ -89,7 +89,6 @@ class ImageFinder:
         Returns a Location object for the match or None in not found.
 
         Available template matching methods are: autopy, opencv
-        Available parameters are: None
         """
         if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
@@ -162,7 +161,6 @@ class ImageFinder:
 
         Available methods are: a combination of feature detector,
         extractor, and matcher
-        Available parameters are: oldSURFdetect, ratioThreshold, ransacReprojThreshold
         """
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
@@ -171,81 +169,31 @@ class ImageFinder:
         self.hotmap[1] = 0.0
         self.hotmap[2] = None
 
-        # grayscale images have features of better invariance and therefore
-        # are the type of images used in computer vision
         hkp, hdc, nkp, ndc = self._detect_features(hgray, ngray,
                                                    self.eq.current["fdetect"],
                                                    self.eq.current["fextract"])
-        # check for quality of the detected features
+
         if len(nkp) < 4 or len(hkp) < 4:
-            if self.image_logging <= 10:
+            if self.image_logging <= 40:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
 
         mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc,
                                           self.eq.current["fmatch"])
 
-        # plot the detected and matched features for image logging
-        if self.image_logging <= 10:
-            for kp in hkp:
-                if kp in mhkp:
-                    # these matches are half the way to being good
-                    color = (0, 255, 255)
-                else:
-                    color = (0, 0, 255)
-                x, y = kp.pt
-                cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
-
-        # check for quality of the match
-        s = float(len(mnkp)) / float(len(nkp))
-        #print "%s\\%s" % (len(mhkp), len(hkp)), "%s\\%s" % (len(mnkp), len(nkp)), "-> %f" % s
-        if s < similarity or len(mnkp) < 4:
-            if self.image_logging <= 10:
+        if self.hotmap[1] < similarity or len(mnkp) < 4:
+            if self.image_logging <= 40:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
 
-        # calculate needle projection using random sample consensus
-        # homography and fundamental matrix as options - homography is considered only
-        # for rotation but currently gives better results than the fundamental matrix
-        H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
-                                     numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
-                                     self.eq.parameters["find"]["ransacReprojThreshold"])
-        #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
-        #                                 numpy.array([kp.pt for kp in mhkp]),
-        #                                 method = cv2.RANSAC, param1 = 10.0,
-        #                                 param2 = 0.9)
-        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
-        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
-        #print orig_center_wrapped.shape, H.shape
-        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
-        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+        self._project_needle_center(needle, mnkp, mhkp)
 
-        # measure total used features for the projected focus point
-        total_matches = 0
-        for kp in mhkp:
-            # true matches are also inliers for the homography
-            if mask[mhkp.index(kp)][0] == 1:
-                total_matches += 1
-                # plot the correctly projected features
-                if self.image_logging <= 10:
-                    color = (0, 255, 0)
-                    x, y = kp.pt
-                    cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
-
-        # plot the focus point used for clicking and other operations
-        if self.image_logging <= 20:
-            cv2.circle(self.hotmap[0], (int(mcx),int(mcy)), 4, (255,0,0), -1)
+        if self.image_logging <= 40:
             cv2.imwrite("log.png", self.hotmap[0])
-        self.hotmap[1] = float(total_matches) / float(len(mnkp))
-        self.hotmap[2] = (mcx, mcy)
-
-        # check for quality of the projection
-        s = float(total_matches) / float(len(mnkp))
-        #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % s, "<?", similarity
-        if s < similarity:
+        if self.hotmap[1] < similarity:
             return None
         else:
-            return Location(int(mcx), int(mcy))
+            return Location(*self.hotmap[2])
 
     def find_all(self, haystack, needle, similarity, nocolor = True):
         """
@@ -254,7 +202,6 @@ class ImageFinder:
         Returns a list of Location objects for all matches or None in not found.
 
         Available template matching methods are: opencv
-        Available parameters are: None
         """
         if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
@@ -398,6 +345,13 @@ class ImageFinder:
         for nkeypoint in nkeypoints:
             nkeypoint.pt = (nkeypoint.pt[0] / nfactor, nkeypoint.pt[1] / nfactor)
 
+        # plot the detected features for image logging
+        if self.image_logging <= 10:
+            for hkp in hkeypoints:
+                color = (0, 0, 255)
+                x, y = hkp.pt
+                cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
+
         return (hkeypoints, hdescriptors, nkeypoints, ndescriptors)
 
     def _match_features(self, hkeypoints, hdescriptors,
@@ -491,7 +445,70 @@ class ImageFinder:
             match_hkeypoints.append(hkeypoints[match.trainIdx])
             match_nkeypoints.append(nkeypoints[match.queryIdx])
 
+        # plot the matched features for image logging
+        if self.image_logging <= 20:
+            for mhkp in match_hkeypoints:
+                # these matches are half the way to being good
+                color = (0, 255, 255)
+                x, y = mhkp.pt
+                cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
+
+        # update the current achieved similarity
+        self.hotmap[1] = float(len(match_nkeypoints)) / float(len(nkeypoints))
+        #print "%s\\%s" % (len(mnkp), len(nkp)), "-> %f" % self.hotmap[1]
+
         return (match_hkeypoints, match_nkeypoints)
+
+    def _project_needle_center(self, needle, mnkp, mhkp):
+        """
+        Calculate the needle projection using random sample consensus
+        and the matched keypoints between the needle and the haystack.
+
+        @param needle: the original needle image
+        @param mnkp: matched needle keypoints
+        @param mhkp: matched haystack keypoints
+        """
+        # check matches consistency
+        assert(len(mnkp) == len(mhkp))
+
+        # homography and fundamental matrix as options - homography is considered only
+        # for rotation but currently gives better results than the fundamental matrix
+        H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
+                                     numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
+                                     self.eq.parameters["find"]["ransacReprojThreshold"])
+        #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
+        #                                 numpy.array([kp.pt for kp in mhkp]),
+        #                                 method = cv2.RANSAC, param1 = 10.0,
+        #                                 param2 = 0.9)
+
+        # measure total used features for the projected focus point
+        total_matches = 0
+        for kp in mhkp:
+            # true matches are also inliers for the homography
+            if mask[mhkp.index(kp)][0] == 1:
+                total_matches += 1
+                # plot the correctly projected features
+                if self.image_logging <= 30:
+                    color = (0, 255, 0)
+                    x, y = kp.pt
+                    cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
+
+        # calculate and project center coordinates
+        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
+        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
+        #print orig_center_wrapped.shape, H.shape
+        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
+        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+
+        # plot the focus point used for clicking and other operations
+        if self.image_logging <= 40:
+            cv2.circle(self.hotmap[0], (int(mcx),int(mcy)), 4, (255,0,0), -1)
+
+        self.hotmap[1] = float(total_matches) / float(len(mnkp))
+        #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % self.hotmap[1]
+        self.hotmap[2] = (int(mcx), int(mcy))
+
+        return H
 
     def _prepare_image(self, image, gray = False):
         """
