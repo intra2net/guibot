@@ -140,6 +140,7 @@ class CVEqualizer:
         elif category == "fdetect":
             if curr_new == "oldSURF":
                 self.parameters[category]["oldSURFdetect"] = 85
+                return
             else:
                 old_backend = cv2.FeatureDetector_create(curr_old)
                 new_backend = cv2.FeatureDetector_create(curr_new)
