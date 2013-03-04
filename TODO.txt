@@ -5,8 +5,17 @@
   keypoints through each feature matching filter. In case of successful matching
   the calibrate method thus optimizes the last ratio (matched / RANSAC inlier
   points) which is not always the best case according to the image logging.
+  It is not important how many are the final matches, but how credible they are.
+  The final homography only requires 4 matches (fundamental matrix requires 8).
+  Figure out a similarity parameter that reflects this reliability.
 
-- Improve the in-house matching algorithm to perform ratio and symmetry test to
-  increase the reliability of all matches with respect to the current provided
-  BruteForce matchers. Our own matching algorithm will also be better suited to
-  our matching needs which include homography and projection of match coordinates.
+- Implement a RigidMatcher that uses information on location in order to better
+  select reliable matches. By restricting the kinds of possible transformations,
+  all features can be selected based on their position relative to each other.
+  This is a solution of the "spaghetti monster" problem of some feature matching
+  where the final matches rely solely on descriptor similarity.
+
+- Improve the twiddle() method of the calibrator to work with various parameter
+  types. It has to guess the possible ranges of any parameter. Thus it should be
+  able to calibrate all internal OpenCV parameters as well. Finally, twiddle()
+  has to handle timing performance, i.e. convert slower results into errors.
