@@ -266,8 +266,7 @@ class ImageTest(unittest.TestCase):
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
                          "for this image')
-        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"],
-                         55.65799999999999)
+        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"], 10.0)
 
         haystack = Image('h_ibs_rotated')
         needle = Image('n_ibs')

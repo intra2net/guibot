@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import time
+import time, math
 
 class Calibrator:
     """
@@ -115,32 +115,42 @@ class Calibrator:
             """
             Internal custom function to evaluate error for a given set of parameters.
             """
-            imagefinder.eq.parameters["fmatch"]["ratioThreshold"] = params[0]
-            imagefinder.eq.parameters["find"]["ransacReprojThreshold"] = params[1]
+            imagefinder.eq.parameters = params
 
             start_time = time.time()
-            imagefinder.find_features(haystack, needle, 0.0)
+            try:
+                imagefinder.find_features(haystack, needle, 0.0)
+            except:
+                #print "out of range"
+                imagefinder.hotmap[1] = 0.0
             total_time = time.time() - start_time
 
             error = 1.0 - imagefinder.hotmap[1]
             error += max(total_time - max_exec_time, 0)
             return error
 
+        # limit the possible values of parameters that are known
+        ranges = {}
+        ranges["fmatch"], ranges["find"] = {}, {}
+        ranges["fmatch"]["ratioThreshold"] = (0.0, 1.0)
+        ranges["find"]["ransacReprojThreshold"] = (0.0, 200.0)
 
-        full_params = []
-        full_params.append((0.0, imagefinder.eq.parameters["fmatch"]["ratioThreshold"], 1.0))
-        full_params.append((0.0, imagefinder.eq.parameters["find"]["ransacReprojThreshold"], 200.0))
+        # limit the possible values of parameters that are buggy
+        if imagefinder.eq.parameters["fdetect"].has_key("firstLevel"):
+            ranges["fdetect"] = {}
+            ranges["fdetect"]["firstLevel"] = (0, 100)
+        if imagefinder.eq.parameters["fdetect"].has_key("WTA_K"):
+            ranges["fdetect"]["WTA_K"] = (2, 4)
+        if imagefinder.eq.parameters["fdetect"].has_key("scaleFactor"):
+            ranges["fdetect"]["scaleFactor"] = (1.01, 2.0)
 
-        best_params, error = self.twiddle(full_params, run, tolerance, refinements)
-        #print best_params, error
-
-        # currently available categories of parameters
-        imagefinder.eq.parameters["fmatch"]["ratioThreshold"] = best_params[0]
-        imagefinder.eq.parameters["find"]["ransacReprojThreshold"] = best_params[1]
+        best_params, error = self.twiddle(imagefinder.eq.parameters, run,
+                                          ranges, tolerance, refinements)
+        imagefinder.eq.parameters = best_params
 
         return error
 
-    def twiddle(self, full_params, run_function, tolerance, max_attempts):
+    def twiddle(self, params, run_function, ranges, tolerance, max_attempts):
         """
         Function to optimize a set of parameters for a minimal returned error.
 
@@ -154,36 +164,89 @@ class Calibrator:
         Special credits for this approach should be given to Prof. Sebastian Thrun,
         who explained it in his Artificial Intelligence for Robotics class.
         """
-        params = [p[1] for p in full_params]
-        # the min and max will be checked first with such deltas
-        deltas = [(abs(p[2]-p[0])) for p in full_params]
+        deltas = {}
+        for category in params.keys():
+            deltas[category] = {}
+            for key in params[category].keys():
+                deltas[category][key] = 1.0
 
         best_params = params
         best_error = run_function(params)
         #print best_params, best_error
 
         n = 0
-        while sum(deltas) > tolerance and n < max_attempts and best_error > 0.0:
-            for i in range(len(params)):
-                curr_param = params[i]
+        while (sum(sum(deltas[cat].values()) for cat in deltas.keys()) > tolerance
+               and n < max_attempts and best_error > 0.0):
+            for category in params.keys():
+                for key in params[category].keys():
+                    curr_param = params[category][key]
 
-                params[i] = min(curr_param + deltas[i], full_params[i][2])
-                error = run_function(params)
-                if(error < best_error):
-                    best_params = params
-                    best_error = error
-                    deltas[i] *= 1.1
-                else:
+                    # add the delta to the current parameter
+                    if type(params[category][key]) == float:
+                        if ranges.has_key(category) and ranges[category].has_key(key):
+                            params[category][key] = min(curr_param + deltas[category][key],
+                                                        ranges[category][key][1])
+                            if params[category][key] ==  curr_param:
+                                continue
+                        else:
+                            params[category][key] = curr_param + deltas[category][key]
+                    elif type(params[category][key]) == int:
+                        intdelta = int(math.ceil((deltas[category][key])))
+                        if ranges.has_key(category) and ranges[category].has_key(key):
+                            params[category][key] = min(curr_param + intdelta,
+                                                        ranges[category][key][1])
+                            if params[category][key] ==  curr_param:
+                                continue
+                        else:
+                            params[category][key] = curr_param + intdelta
+                    elif type(params[category][key] == bool):
+                        if params[category][key]:
+                            params[category][key] = False
+                        else:
+                            params[category][key] = True
+                    else:
+                        continue
+                    #print "+", params, ranges
 
-                    params[i] = max(curr_param - deltas[i], full_params[i][0])
                     error = run_function(params)
                     if(error < best_error):
                         best_params = params
                         best_error = error
-                        deltas[i] *= 1.1
+                        deltas[category][key] *= 1.1
                     else:
-                        params[i] = curr_param
-                        deltas[i] *= 0.9
+
+                        if type(params[category][key]) == float:
+                            if ranges.has_key(category) and ranges[category].has_key(key):
+                                params[category][key] = max(curr_param - deltas[category][key],
+                                                            ranges[category][key][0])
+                                if params[category][key] ==  curr_param:
+                                    continue
+                            else:
+                                params[category][key] = curr_param - deltas[category][key]
+                        elif type(params[category][key]) == int:
+                            intdelta = int(math.ceil((deltas[category][key])))
+                            if ranges.has_key(category) and ranges[category].has_key(key):
+                                params[category][key] = max(curr_param - intdelta,
+                                                            ranges[category][key][0])
+                                if params[category][key] ==  curr_param:
+                                    continue
+                            else:
+                                params[category][key] = curr_param - intdelta
+                        elif type(params[category][key] == bool):
+                            # the default boolean value was already checked
+                            params[category][key] = curr_param
+                            continue
+                        #print "-", params, ranges
+
+                        error = run_function(params)
+                        if(error < best_error):
+                            best_params = params
+                            best_error = error
+                            deltas[category][key] *= 1.1
+                        else:
+                            params[category][key] = curr_param
+                            deltas[category][key] *= 0.9
+
             #print best_params, best_error
             n += 1
 
