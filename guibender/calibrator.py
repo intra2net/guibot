@@ -102,13 +102,14 @@ class Calibrator:
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate(self, haystack, needle, imagefinder,
-                  tolerance = 0.1, refinements = 50):
+                  max_exec_time = 0.5, tolerance = 0.1, refinements = 50):
         """
         Calibrates the available parameters (the equalizer) of an image
         finder for a given needle and haystack.
 
         Returns the minimized error (in terms of similarity) for the given
-        number of refinements and tolerated best parameter range.
+        maximal execution time (in seconds), number of refinements and
+        tolerated best parameter range.
         """
         def run(params):
             """
@@ -117,8 +118,12 @@ class Calibrator:
             imagefinder.eq.parameters["fmatch"]["ratioThreshold"] = params[0]
             imagefinder.eq.parameters["find"]["ransacReprojThreshold"] = params[1]
 
+            start_time = time.time()
             imagefinder.find_features(haystack, needle, 0.0)
+            total_time = time.time() - start_time
+
             error = 1.0 - imagefinder.hotmap[1]
+            error += max(total_time - max_exec_time, 0)
             return error
 
 
@@ -129,6 +134,7 @@ class Calibrator:
         best_params, error = self.twiddle(full_params, run, tolerance, refinements)
         #print best_params, error
 
+        # currently available categories of parameters
         imagefinder.eq.parameters["fmatch"]["ratioThreshold"] = best_params[0]
         imagefinder.eq.parameters["find"]["ransacReprojThreshold"] = best_params[1]
 
