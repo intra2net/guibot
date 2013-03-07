@@ -1,3 +1,8 @@
+- Implement global Settings() class that acts
+  as a Singleton for all configuration settings.
+
+  Move all hardcoded config values to this class.
+
 - Test Qt4 Gui's text input fields. Implement drag'n'drop (perhaps
   two lists views) and test it.
 
