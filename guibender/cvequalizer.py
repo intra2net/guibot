@@ -70,11 +70,11 @@ class CVEqualizer:
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
         # default parameters
-        self.parameters = {"find" : {"ransacReprojThreshold" : 10.0},
+        self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0)},
                            "tmatch" : {}, "fdetect" : {}, "fextract" : {},
-                           "fmatch" : {"ratioThreshold" : 0.65,
-                                       "ratioTest" : False,
-                                       "symmetryTest" : False}}
+                           "fmatch" : {"ratioThreshold" : CVParameter(0.65, 0.0, 1.0, 0.1),
+                                       "ratioTest" : CVParameter(False),
+                                       "symmetryTest" : CVParameter(False)}}
 
         # default algorithms
         self.current = {"find" : "template",
@@ -139,7 +139,7 @@ class CVEqualizer:
             return
         elif category == "fdetect":
             if curr_new == "oldSURF":
-                self.parameters[category]["oldSURFdetect"] = 85
+                self.parameters[category]["oldSURFdetect"] = CVParameter(85)
                 return
             else:
                 old_backend = cv2.FeatureDetector_create(curr_old)
@@ -178,9 +178,24 @@ class CVEqualizer:
                 # currently unknown indices: getMat, getAlgorithm, getMatVector, getString
                 #print param, ptype
                 val = new_backend.getAlgorithm(param)
-            self.parameters[category][param] = val
+
+            # give more information about some better known parameters
+            if category in ("fdetect", "fextract") and param == "firstLevel":
+                self.parameters[category][param] = CVParameter(val, 0, 100)
+            elif category in ("fdetect", "fextract") and param == "nFeatures":
+                self.parameters[category][param] = CVParameter(val, delta = 100)
+            elif category in ("fdetect", "fextract") and param == "WTA_K":
+                self.parameters[category][param] = CVParameter(val, 2, 4)
+            elif category in ("fdetect", "fextract") and param == "scaleFactor":
+                self.parameters[category][param] = CVParameter(val, 1.01, 2.0)
+            elif category == "fextract" and param == "bytes":
+                self.parameters[category][param] = CVParameter(val, fixed = True)
+            else:
+                self.parameters[category][param] = CVParameter(val)
             #print param, "=", val
-        #print self.parameters[category], "\n"
+
+        #print category, self.parameters[category], "\n"
+        return
 
     def sync_backend_to_params(self, opencv_backend, category):
         """
@@ -201,7 +216,7 @@ class CVEqualizer:
 
         for param in opencv_backend.getParams():
             if param in self.parameters[category]:
-                val = self.parameters[category][param]
+                val = self.parameters[category][param].value
                 ptype = opencv_backend.paramType(param)
                 if ptype == 0:
                     opencv_backend.setInt(param, val)
@@ -214,6 +229,24 @@ class CVEqualizer:
                     # currently unknown indices: setMat, setAlgorithm, setMatVector, setString
                     #print "synced", param, "to", val
                     val = opencv_backend.setAlgorithm(param, val)
-                self.parameters[category][param] = val
+                self.parameters[category][param].value = val
         return opencv_backend
 
+
+class CVParameter:
+    """A class for a single parameter from the equalizer."""
+
+    def __init__(self, value, min = None, max = None,
+                 delta = 1.0, fixed = False):
+        self.value = value
+
+        if min != None:
+            assert(value >= min)
+        if max != None:
+            assert(value <= max)
+        self.range = (min, max)
+
+        self.fixed = fixed
+
+    def __repr__(self):
+        return "<CVParam %s>" % self.value

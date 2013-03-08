@@ -264,23 +264,23 @@ class ImageTest(unittest.TestCase):
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
-        self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
-                         "for this image')
-        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"], 10.0)
+        self.assertLessEqual(error, 0.5, 'Match error after calibration must be "\
+                         "less than 0.5 for this image')
+        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"].value, 10.0)
 
         haystack = Image('h_ibs_rotated')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
-        self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
-                         "for this image')
-        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"], 200.0)
+        self.assertLessEqual(error, 0.5, 'Match error after calibration must be "\
+                             "less than 0.5 for this image')
+        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"].value, 13.31)
 
         haystack = Image('h_ibs_scaled')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
-        self.assertEqual(error, 0.0, 'Match error after calibration is 0 "\
-                         "for this image')
-        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"], 200.0)
+        self.assertLessEqual(error, 0.5, 'Match error after calibration must be "\
+                             "less than 0.5 for this image')
+        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"].value, 13.31)
 
     def test_benchmark(self):
         haystack = Image('all_shapes')

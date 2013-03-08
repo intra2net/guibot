@@ -398,7 +398,7 @@ class ImageFinder:
 
             if detect == "oldSURF":
                 # build the old surf feature detector
-                hessian_threshold = self.eq.parameters["fdetect"]["oldSURFdetect"]
+                hessian_threshold = self.eq.parameters["fdetect"]["oldSURFdetect"].value
                 detector = cv2.SURF(hessian_threshold)
 
                 (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
@@ -483,7 +483,7 @@ class ImageFinder:
                     smooth_dist2 = m[1].distance + 0.0000001
 
                     #print smooth_dist1 / smooth_dist2, self.ratio
-                    if (smooth_dist1 / smooth_dist2 < self.eq.parameters["fmatch"]["ratioThreshold"]):
+                    if (smooth_dist1 / smooth_dist2 < self.eq.parameters["fmatch"]["ratioThreshold"].value):
                         matches2.append(m[0])
                 else:
                     matches2.append(m[0])
@@ -528,14 +528,14 @@ class ImageFinder:
             raise ImageFinderMethodError
 
         # find and filter matches through tests
-        if self.eq.parameters["fmatch"]["ratioTest"]:
+        if self.eq.parameters["fmatch"]["ratioTest"].value:
             matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
             matches = ratio_test(matches)
         else:
             matches = matcher.knnMatch(ndescriptors, hdescriptors, 1)
             matches = [m[0] for m in matches]
-        if self.eq.parameters["fmatch"]["symmetryTest"]:
-            if self.eq.parameters["fmatch"]["ratioTest"]:
+        if self.eq.parameters["fmatch"]["symmetryTest"].value:
+            if self.eq.parameters["fmatch"]["ratioTest"].value:
                 hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
                 hmatches = ratio_test(hmatches)
             else:
@@ -582,7 +582,7 @@ class ImageFinder:
         # for rotation but currently gives better results than the fundamental matrix
         H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
                                      numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
-                                     self.eq.parameters["find"]["ransacReprojThreshold"])
+                                     self.eq.parameters["find"]["ransacReprojThreshold"].value)
         #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
         #                                 numpy.array([kp.pt for kp in mhkp]),
         #                                 method = cv2.RANSAC, param1 = 10.0,

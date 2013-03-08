@@ -129,28 +129,13 @@ class Calibrator:
             error += max(total_time - max_exec_time, 0)
             return error
 
-        # limit the possible values of parameters that are known
-        ranges = {}
-        ranges["fmatch"], ranges["find"] = {}, {}
-        ranges["fmatch"]["ratioThreshold"] = (0.0, 1.0)
-        ranges["find"]["ransacReprojThreshold"] = (0.0, 200.0)
-
-        # limit the possible values of parameters that are buggy
-        if imagefinder.eq.parameters["fdetect"].has_key("firstLevel"):
-            ranges["fdetect"] = {}
-            ranges["fdetect"]["firstLevel"] = (0, 100)
-        if imagefinder.eq.parameters["fdetect"].has_key("WTA_K"):
-            ranges["fdetect"]["WTA_K"] = (2, 4)
-        if imagefinder.eq.parameters["fdetect"].has_key("scaleFactor"):
-            ranges["fdetect"]["scaleFactor"] = (1.01, 2.0)
-
         best_params, error = self.twiddle(imagefinder.eq.parameters, run,
-                                          ranges, tolerance, refinements)
+                                          tolerance, refinements)
         imagefinder.eq.parameters = best_params
 
         return error
 
-    def twiddle(self, params, run_function, ranges, tolerance, max_attempts):
+    def twiddle(self, params, run_function, tolerance, max_attempts):
         """
         Function to optimize a set of parameters for a minimal returned error.
 
@@ -179,34 +164,37 @@ class Calibrator:
                and n < max_attempts and best_error > 0.0):
             for category in params.keys():
                 for key in params[category].keys():
-                    curr_param = params[category][key]
+                    if params[category][key].fixed:
+                        continue
+                    else:
+                        start_value = params[category][key].value
 
                     # add the delta to the current parameter
-                    if type(params[category][key]) == float:
-                        if ranges.has_key(category) and ranges[category].has_key(key):
-                            params[category][key] = min(curr_param + deltas[category][key],
-                                                        ranges[category][key][1])
-                            if params[category][key] ==  curr_param:
+                    if type(params[category][key].value) == float:
+                        if params[category][key].range[1] != None:
+                            params[category][key].value = min(start_value + deltas[category][key],
+                                                              params[category][key].range[1])
+                            if params[category][key].value ==  start_value:
                                 continue
                         else:
-                            params[category][key] = curr_param + deltas[category][key]
-                    elif type(params[category][key]) == int:
+                            params[category][key].value = start_value + deltas[category][key]
+                    elif type(params[category][key].value) == int:
                         intdelta = int(math.ceil((deltas[category][key])))
-                        if ranges.has_key(category) and ranges[category].has_key(key):
-                            params[category][key] = min(curr_param + intdelta,
-                                                        ranges[category][key][1])
-                            if params[category][key] ==  curr_param:
+                        if params[category][key].range[1] != None:
+                            params[category][key].value = min(start_value + intdelta,
+                                                              params[category][key].range[1])
+                            if params[category][key].value ==  start_value:
                                 continue
                         else:
-                            params[category][key] = curr_param + intdelta
-                    elif type(params[category][key] == bool):
-                        if params[category][key]:
-                            params[category][key] = False
+                            params[category][key].value = start_value + intdelta
+                    elif type(params[category][key].value == bool):
+                        if params[category][key].value:
+                            params[category][key].value = False
                         else:
-                            params[category][key] = True
+                            params[category][key].value = True
                     else:
                         continue
-                    #print "+", params, ranges
+                    #print "+", params, deltas
 
                     error = run_function(params)
                     if(error < best_error):
@@ -215,28 +203,28 @@ class Calibrator:
                         deltas[category][key] *= 1.1
                     else:
 
-                        if type(params[category][key]) == float:
-                            if ranges.has_key(category) and ranges[category].has_key(key):
-                                params[category][key] = max(curr_param - deltas[category][key],
-                                                            ranges[category][key][0])
-                                if params[category][key] ==  curr_param:
+                        if type(params[category][key].value) == float:
+                            if params[category][key].range[0] != None:
+                                params[category][key].value = max(start_value - deltas[category][key],
+                                                                  params[category][key].range[0])
+                                if params[category][key].value ==  start_value:
                                     continue
                             else:
-                                params[category][key] = curr_param - deltas[category][key]
-                        elif type(params[category][key]) == int:
+                                params[category][key].value = start_value - deltas[category][key]
+                        elif type(params[category][key].value) == int:
                             intdelta = int(math.ceil((deltas[category][key])))
-                            if ranges.has_key(category) and ranges[category].has_key(key):
-                                params[category][key] = max(curr_param - intdelta,
-                                                            ranges[category][key][0])
-                                if params[category][key] ==  curr_param:
+                            if params[category][key].range[0] != None:
+                                params[category][key].value = max(start_value - intdelta,
+                                                                  params[category][key].range[0])
+                                if params[category][key].value ==  start_value:
                                     continue
                             else:
-                                params[category][key] = curr_param - intdelta
-                        elif type(params[category][key] == bool):
+                                params[category][key].value = start_value - intdelta
+                        elif type(params[category][key].value) == bool:
                             # the default boolean value was already checked
-                            params[category][key] = curr_param
+                            params[category][key].value = start_value
                             continue
-                        #print "-", params, ranges
+                        #print "-", params, deltas
 
                         error = run_function(params)
                         if(error < best_error):
@@ -244,7 +232,7 @@ class Calibrator:
                             best_error = error
                             deltas[category][key] *= 1.1
                         else:
-                            params[category][key] = curr_param
+                            params[category][key].value = start_value
                             deltas[category][key] *= 0.9
 
             #print best_params, best_error
