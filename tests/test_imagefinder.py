@@ -259,6 +259,7 @@ class ImageTest(unittest.TestCase):
     def test_calibrate(self):
         finder = ImageFinder()
         finder.image_logging = 10
+        finder.eq.mark_calibration(True, "fdetect")
         calibrator = Calibrator()
 
         haystack = Image('h_ibs_viewport')
@@ -273,14 +274,14 @@ class ImageTest(unittest.TestCase):
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertLessEqual(error, 0.5, 'Match error after calibration must be "\
                              "less than 0.5 for this image')
-        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"].value, 13.31)
+        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"].value, 31.0)
 
         haystack = Image('h_ibs_scaled')
         needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
         self.assertLessEqual(error, 0.5, 'Match error after calibration must be "\
                              "less than 0.5 for this image')
-        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"].value, 13.31)
+        self.assertEqual(finder.eq.parameters["find"]["ransacReprojThreshold"].value, 52.0)
 
     def test_benchmark(self):
         haystack = Image('all_shapes')
@@ -288,7 +289,7 @@ class ImageTest(unittest.TestCase):
 
         finder = ImageFinder()
         calibrator = Calibrator()
-        results = calibrator.benchmark(haystack, needle, finder)
+        results = calibrator.benchmark(haystack, needle, finder, calibration = False)
         #print results
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")

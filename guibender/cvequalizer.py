@@ -232,6 +232,22 @@ class CVEqualizer:
                 self.parameters[category][param].value = val
         return opencv_backend
 
+    def mark_calibration(self, mark, category):
+        """
+        Use this method to fix the parameters for a given
+        backend algorithm, i.e. disallow the calibrator to
+        change them.
+
+        @param mark: boolean for whether to mark for calibration
+        @param category: the backend algorithm category whose parameters
+        are marked
+        """
+        if category not in self.parameters:
+            raise ImageFinderMethodError
+
+        for param in self.parameters[category].values():
+            param.fixed = mark
+
 
 class CVParameter:
     """A class for a single parameter from the equalizer."""

@@ -165,6 +165,7 @@ class Calibrator:
             for category in params.keys():
                 for key in params[category].keys():
                     if params[category][key].fixed:
+                        #print "fixed:", category, key
                         continue
                     else:
                         start_value = params[category][key].value
