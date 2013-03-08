@@ -239,6 +239,7 @@ class CVParameter:
     def __init__(self, value, min = None, max = None,
                  delta = 1.0, fixed = False):
         self.value = value
+        self.delta = delta
 
         if min != None:
             assert(value >= min)

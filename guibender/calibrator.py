@@ -102,7 +102,7 @@ class Calibrator:
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate(self, haystack, needle, imagefinder,
-                  max_exec_time = 0.5, tolerance = 0.1, refinements = 50):
+                  max_exec_time = 0.5, tolerance = 0.1, refinements = 10):
         """
         Calibrates the available parameters (the equalizer) of an image
         finder for a given needle and haystack.
@@ -153,7 +153,7 @@ class Calibrator:
         for category in params.keys():
             deltas[category] = {}
             for key in params[category].keys():
-                deltas[category][key] = 1.0
+                deltas[category][key] = params[category][key].delta
 
         best_params = params
         best_error = run_function(params)
