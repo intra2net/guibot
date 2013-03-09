@@ -16,12 +16,11 @@
 #
 import os
 import unittest
+import pprint
 
 import cv, cv2
 
 import common_test
-
-
 from imagefinder import ImageFinder
 from calibrator import Calibrator
 from imagepath import ImagePath
@@ -36,60 +35,93 @@ class CalibratorTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
         self.imagepath.add_path(".")
 
-        self.script_show_picture = os.path.join(common_test.unittest_dir, 'show_picture.py')
-
-    def test_calibrate(self):
+    def calibration_setUp(self, needle, haystack, calibrate_backends):
         finder = ImageFinder()
         finder.image_logging = 10
-        finder.eq.can_calibrate(True, "find")
-        finder.eq.can_calibrate(True, "fmatch")
+        for category in calibrate_backends:
+            finder.eq.can_calibrate(True, category)
         calibrator = Calibrator()
 
-        haystack = Image('h_ibs_viewport')
-        needle = Image('n_ibs')
-        error = calibrator.calibrate(haystack, needle, finder)
-        #print error
-        self.assertLessEqual(error, 0.1, 'Match error after calibration must be "\
-                         "less than 0.1 for this image')
+        haystack = Image(haystack)
+        needle = Image(needle)
 
-        haystack = Image('h_ibs_rotated')
-        needle = Image('n_ibs')
         error = calibrator.calibrate(haystack, needle, finder)
-        #print error
-        self.assertLessEqual(error, 0.4, 'Match error after calibration must be "\
-                             "less than 0.4 for this image')
+        #print os.path.basename(needle.filename), os.path.basename(haystack.filename), error
+        return error
 
-        haystack = Image('h_ibs_scaled')
-        needle = Image('n_ibs')
-        error = calibrator.calibrate(haystack, needle, finder)
-        #print error
-        self.assertLessEqual(error, 0.1, 'Match error after calibration must be "\
-                             "less than 0.1 for this image')
+    def test_calibrate_viewport(self):
+        raw_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
+        cal_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
+                                       ["find", "fmatch"])
 
-    def test_benchmark(self):
+        self.assertLessEqual(cal_error, raw_error,
+                             "Match error after calibration must be "\
+                             "less than the error before calibration")
+
+    def test_calibrate_rotation(self):
+        raw_error = self.calibration_setUp('n_ibs', 'h_ibs_rotated', [])
+        cal_error = self.calibration_setUp('n_ibs', 'h_ibs_rotated',
+                                           ["find", "fmatch"])
+
+        self.assertLessEqual(cal_error, raw_error,
+                             "Match error after calibration must be "\
+                             "less than the error before calibration")
+
+    def test_calibrate_scaling(self):
+        raw_error = self.calibration_setUp('n_ibs', 'h_ibs_scaled', [])
+        cal_error = self.calibration_setUp('n_ibs', 'h_ibs_scaled',
+                                           ["find", "fmatch"])
+
+        self.assertLessEqual(cal_error, raw_error,
+                             "Match error after calibration must be "\
+                             "less than the error before calibration")
+
+    def test_benchmark_full_match(self):
         haystack = Image('all_shapes')
         needle = Image('all_shapes')
 
         finder = ImageFinder()
         calibrator = Calibrator()
+
         results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #print results
+        #pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
+        for result in results:
+            self.assertGreaterEqual(result[1], 0.9,
+                                    "Minimum similarity for full match is 0.9")
 
+    def test_benchmark_feature_poor_image(self):
         haystack = Image('all_shapes')
         needle = Image('shape_blue_circle')
+
+        finder = ImageFinder()
+        calibrator = Calibrator()
+
         results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #print results
+        #pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
+        top_results = results[:6]
+        for result in top_results:
+            self.assertRegexpMatches(result[0], "\w+_\w+[_gray]?",
+                                     "Template matching methods should be on the top")
 
+    def test_benchmark_viewport_image(self):
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')
+
+        finder = ImageFinder()
+        calibrator = Calibrator()
+
         results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #print results
+        #pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
+        top_results = results[:5]
+        for result in top_results:
+            self.assertRegexpMatches(result[0], "\w+-\w+-\w+",
+                                     "Feature matching methods should be on the top")
 
 
 if __name__ == '__main__':
