@@ -1,6 +1,5 @@
 - Implement global Settings() class that acts
   as a Singleton for all configuration settings.
-
   Move all hardcoded config values to this class.
 
 - Test Qt4 Gui's text input fields. Implement drag'n'drop (perhaps
@@ -20,7 +19,5 @@
   This is a solution of the "spaghetti monster" problem of some feature matching
   where the final matches rely solely on descriptor similarity.
 
-- Improve the twiddle() method of the calibrator to work with various parameter
-  types. It has to guess the possible ranges of any parameter. Thus it should be
-  able to calibrate all internal OpenCV parameters as well. Finally, twiddle()
-  has to handle timing performance, i.e. convert slower results into errors.
+- Decide on whether to return needle center as done currently in the feature
+  matching or the (0,0) needle location as done in the template matching.
