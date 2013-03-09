@@ -26,8 +26,7 @@ class Calibrator:
     """
 
     def benchmark(self, haystack, needle, imagefinder,
-                  calibration = True, tolerance = 0.1,
-                  refinements = 50):
+                  calibration = True, refinements = 10):
         """
         Performs benchmarking on all available algorithms and returns a list of
         (method, success, coordinates, time) tuples sorted according to
@@ -48,8 +47,8 @@ class Calibrator:
         to assess what are the available and working methods besides their success
         for a given needle and haystack.
 
+        @param imagefinder: the ImageFinder instance to use for the benchmarking
         @param calibration: whether to use calibration
-        @param tolerance: tolerable deviation for all parameters
         @param refinements: number of refinements allowed to improve calibration
         """
         results = []
@@ -89,27 +88,28 @@ class Calibrator:
                     imagefinder.eq.current["fextract"] = key_fe
                     imagefinder.eq.current["fmatch"] = key_fm
                     if calibration:
-                        self.calibrate(haystack, needle, imagefinder, tolerance, refinements)
+                        self.calibrate(haystack, needle, imagefinder,
+                                       refinements = refinements)
                     start_time = time.time()
                     imagefinder.find_features(haystack, needle, 0.0)
                     total_time = time.time() - start_time
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
-                    results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
+                    results.append((method, imagefinder.hotmap[1],
+                                    imagefinder.hotmap[2], total_time))
         imagefinder.eq.current["fdetect"] = old_config[0]
         imagefinder.eq.current["fextract"] = old_config[1]
         imagefinder.eq.current["fmatch"] = old_config[2]
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate(self, haystack, needle, imagefinder,
-                  max_exec_time = 0.5, tolerance = 0.1, refinements = 10):
+                  refinements = 10, max_exec_time = 0.5):
         """
         Calibrates the available parameters (the equalizer) of an image
         finder for a given needle and haystack.
 
         Returns the minimized error (in terms of similarity) for the given
-        maximal execution time (in seconds), number of refinements and
-        tolerated best parameter range.
+        maximal execution time (in seconds) and number of refinements.
         """
         def run(params):
             """
@@ -129,13 +129,13 @@ class Calibrator:
             error += max(total_time - max_exec_time, 0)
             return error
 
-        best_params, error = self.twiddle(imagefinder.eq.parameters, run,
-                                          tolerance, refinements)
+        best_params, error = self.twiddle(imagefinder.eq.parameters,
+                                          run, refinements)
         imagefinder.eq.parameters = best_params
 
         return error
 
-    def twiddle(self, params, run_function, tolerance, max_attempts):
+    def twiddle(self, params, run_function, max_attempts):
         """
         Function to optimize a set of parameters for a minimal returned error.
 
@@ -153,15 +153,28 @@ class Calibrator:
         for category in params.keys():
             deltas[category] = {}
             for key in params[category].keys():
-                deltas[category][key] = params[category][key].delta
+                if not params[category][key].fixed:
+                    deltas[category][key] = params[category][key].delta
 
         best_params = params
         best_error = run_function(params)
         #print best_params, best_error
 
         n = 0
-        while (sum(sum(deltas[cat].values()) for cat in deltas.keys()) > tolerance
-               and n < max_attempts and best_error > 0.0):
+        while n < max_attempts and best_error > 0.0:
+
+            # check whether the parameters have all deltas below their tolerance parameters
+            all_tolerable = True
+            for category in deltas:
+                for key in deltas[category]:
+                    if deltas[category][key] > params[category][key].tolerance:
+                        #print category, key, params[category][key].value
+                        #print deltas[category][key], params[category][key].tolerance
+                        all_tolerable = False
+                        break
+            if all_tolerable:
+                break
+
             for category in params.keys():
                 for key in params[category].keys():
                     if params[category][key].fixed:
@@ -175,8 +188,6 @@ class Calibrator:
                         if params[category][key].range[1] != None:
                             params[category][key].value = min(start_value + deltas[category][key],
                                                               params[category][key].range[1])
-                            if params[category][key].value ==  start_value:
-                                continue
                         else:
                             params[category][key].value = start_value + deltas[category][key]
                     elif type(params[category][key].value) == int:
@@ -184,8 +195,6 @@ class Calibrator:
                         if params[category][key].range[1] != None:
                             params[category][key].value = min(start_value + intdelta,
                                                               params[category][key].range[1])
-                            if params[category][key].value ==  start_value:
-                                continue
                         else:
                             params[category][key].value = start_value + intdelta
                     elif type(params[category][key].value == bool):
@@ -208,8 +217,6 @@ class Calibrator:
                             if params[category][key].range[0] != None:
                                 params[category][key].value = max(start_value - deltas[category][key],
                                                                   params[category][key].range[0])
-                                if params[category][key].value ==  start_value:
-                                    continue
                             else:
                                 params[category][key].value = start_value - deltas[category][key]
                         elif type(params[category][key].value) == int:
@@ -217,8 +224,6 @@ class Calibrator:
                             if params[category][key].range[0] != None:
                                 params[category][key].value = max(start_value - intdelta,
                                                                   params[category][key].range[0])
-                                if params[category][key].value ==  start_value:
-                                    continue
                             else:
                                 params[category][key].value = start_value - intdelta
                         elif type(params[category][key].value) == bool:

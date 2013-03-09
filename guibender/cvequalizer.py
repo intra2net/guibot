@@ -70,7 +70,7 @@ class CVEqualizer:
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
         # default parameters
-        self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0)},
+        self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0)},
                            "tmatch" : {}, "fdetect" : {}, "fextract" : {},
                            "fmatch" : {"ratioThreshold" : CVParameter(0.65, 0.0, 1.0, 0.1),
                                        "ratioTest" : CVParameter(False),
@@ -252,10 +252,22 @@ class CVEqualizer:
 class CVParameter:
     """A class for a single parameter from the equalizer."""
 
-    def __init__(self, value, min = None, max = None,
-                 delta = 1.0, fixed = False):
+    def __init__(self, value,
+                 min = None, max = None,
+                 delta = 1.0, tolerance = 0.1,
+                 fixed = False):
         self.value = value
         self.delta = delta
+        self.tolerance = tolerance
+
+        # force specific tolerance and delta for bool and
+        # int parameters
+        if type(value) == bool:
+            self.delta = 0.0
+            self.tolerance = 1.0
+        elif type(value) == int:
+            self.delta = 1
+            self.tolerance = 0.9
 
         if min != None:
             assert(value >= min)
