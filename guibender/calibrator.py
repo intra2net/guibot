@@ -110,6 +110,11 @@ class Calibrator:
 
         Returns the minimized error (in terms of similarity) for the given
         maximal execution time (in seconds) and number of refinements.
+
+        Note: This method calibrates only parameters that are not protected
+        from calibration, i.e. that have "fixed" attribute set to False.
+        In order to set all parameters of a background algorithm for calibration
+        use the "can_calibrate" method of the equalizer first.
         """
         def run(params):
             """
