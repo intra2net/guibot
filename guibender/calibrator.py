@@ -181,27 +181,28 @@ class Calibrator:
                         #print "fixed:", category, key
                         continue
                     else:
-                        start_value = params[category][key].value
+                        param = params[category][key]
+                        start_value = param.value
 
                     # add the delta to the current parameter
-                    if type(params[category][key].value) == float:
-                        if params[category][key].range[1] != None:
-                            params[category][key].value = min(start_value + deltas[category][key],
-                                                              params[category][key].range[1])
+                    if type(param.value) == float:
+                        if param.range[1] != None:
+                            param.value = min(start_value + deltas[category][key],
+                                              param.range[1])
                         else:
-                            params[category][key].value = start_value + deltas[category][key]
-                    elif type(params[category][key].value) == int:
+                            param.value = start_value + deltas[category][key]
+                    elif type(param.value) == int:
                         intdelta = int(math.ceil((deltas[category][key])))
-                        if params[category][key].range[1] != None:
-                            params[category][key].value = min(start_value + intdelta,
-                                                              params[category][key].range[1])
+                        if param.range[1] != None:
+                            param.value = min(start_value + intdelta,
+                                                              param.range[1])
                         else:
-                            params[category][key].value = start_value + intdelta
-                    elif type(params[category][key].value == bool):
-                        if params[category][key].value:
-                            params[category][key].value = False
+                            param.value = start_value + intdelta
+                    elif type(param.value == bool):
+                        if param.value:
+                            param.value = False
                         else:
-                            params[category][key].value = True
+                            param.value = True
                     else:
                         continue
                     #print "+", params, deltas
@@ -213,22 +214,22 @@ class Calibrator:
                         deltas[category][key] *= 1.1
                     else:
 
-                        if type(params[category][key].value) == float:
-                            if params[category][key].range[0] != None:
-                                params[category][key].value = max(start_value - deltas[category][key],
-                                                                  params[category][key].range[0])
+                        if type(param.value) == float:
+                            if param.range[0] != None:
+                                param.value = max(start_value - deltas[category][key],
+                                                  param.range[0])
                             else:
-                                params[category][key].value = start_value - deltas[category][key]
-                        elif type(params[category][key].value) == int:
+                                param.value = start_value - deltas[category][key]
+                        elif type(param.value) == int:
                             intdelta = int(math.ceil((deltas[category][key])))
-                            if params[category][key].range[0] != None:
-                                params[category][key].value = max(start_value - intdelta,
-                                                                  params[category][key].range[0])
+                            if param.range[0] != None:
+                                param.value = max(start_value - intdelta,
+                                                  param.range[0])
                             else:
-                                params[category][key].value = start_value - intdelta
-                        elif type(params[category][key].value) == bool:
+                                param.value = start_value - intdelta
+                        elif type(param.value) == bool:
                             # the default boolean value was already checked
-                            params[category][key].value = start_value
+                            param.value = start_value
                             continue
                         #print "-", params, deltas
 
@@ -238,7 +239,7 @@ class Calibrator:
                             best_error = error
                             deltas[category][key] *= 1.1
                         else:
-                            params[category][key].value = start_value
+                            param.value = start_value
                             deltas[category][key] *= 0.9
 
             #print best_params, best_error
