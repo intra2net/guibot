@@ -188,8 +188,6 @@ class CVEqualizer:
                 self.parameters[category][param] = CVParameter(val, 2, 4)
             elif category in ("fdetect", "fextract") and param == "scaleFactor":
                 self.parameters[category][param] = CVParameter(val, 1.01, 2.0)
-            elif category == "fextract" and param == "bytes":
-                self.parameters[category][param] = CVParameter(val, fixed = True)
             else:
                 self.parameters[category][param] = CVParameter(val)
             #print param, "=", val
@@ -232,7 +230,7 @@ class CVEqualizer:
                 self.parameters[category][param].value = val
         return opencv_backend
 
-    def mark_calibration(self, mark, category):
+    def can_calibrate(self, mark, category):
         """
         Use this method to fix the parameters for a given
         backend algorithm, i.e. disallow the calibrator to
@@ -246,7 +244,11 @@ class CVEqualizer:
             raise ImageFinderMethodError
 
         for param in self.parameters[category].values():
-            param.fixed = mark
+            # BUG: force fix parameters that have internal bugs
+            if category == "fextract" and param == "bytes":
+                param.fixed = True
+            else:
+                param.fixed = not mark
 
 
 class CVParameter:
@@ -255,7 +257,7 @@ class CVParameter:
     def __init__(self, value,
                  min = None, max = None,
                  delta = 1.0, tolerance = 0.1,
-                 fixed = False):
+                 fixed = True):
         self.value = value
         self.delta = delta
         self.tolerance = tolerance

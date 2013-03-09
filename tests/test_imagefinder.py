@@ -259,7 +259,8 @@ class ImageTest(unittest.TestCase):
     def test_calibrate(self):
         finder = ImageFinder()
         finder.image_logging = 10
-        finder.eq.mark_calibration(True, "fdetect")
+        finder.eq.can_calibrate(True, "find")
+        finder.eq.can_calibrate(True, "fmatch")
         calibrator = Calibrator()
 
         haystack = Image('h_ibs_viewport')
