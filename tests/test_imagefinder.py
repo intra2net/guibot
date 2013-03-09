@@ -18,11 +18,11 @@ import os
 import unittest
 import time
 import subprocess
-import common_test
 
 import cv, cv2
 from tempfile import NamedTemporaryFile
 
+import common_test
 from imagefinder import ImageFinder
 from calibrator import Calibrator
 from imagepath import ImagePath
@@ -33,7 +33,7 @@ from desktopcontrol import DesktopControl
 from image import Image
 from errors import *
 
-class ImageTest(unittest.TestCase):
+class ImageFinderTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.imagepath = ImagePath()
@@ -255,59 +255,6 @@ class ImageTest(unittest.TestCase):
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle, "font")
         time.sleep(2)
-
-    def test_calibrate(self):
-        finder = ImageFinder()
-        finder.image_logging = 10
-        finder.eq.can_calibrate(True, "find")
-        finder.eq.can_calibrate(True, "fmatch")
-        calibrator = Calibrator()
-
-        haystack = Image('h_ibs_viewport')
-        needle = Image('n_ibs')
-        error = calibrator.calibrate(haystack, needle, finder)
-        #print error
-        self.assertLessEqual(error, 0.1, 'Match error after calibration must be "\
-                         "less than 0.1 for this image')
-
-        haystack = Image('h_ibs_rotated')
-        needle = Image('n_ibs')
-        error = calibrator.calibrate(haystack, needle, finder)
-        #print error
-        self.assertLessEqual(error, 0.4, 'Match error after calibration must be "\
-                             "less than 0.4 for this image')
-
-        haystack = Image('h_ibs_scaled')
-        needle = Image('n_ibs')
-        error = calibrator.calibrate(haystack, needle, finder)
-        #print error
-        self.assertLessEqual(error, 0.1, 'Match error after calibration must be "\
-                             "less than 0.1 for this image')
-
-    def test_benchmark(self):
-        haystack = Image('all_shapes')
-        needle = Image('all_shapes')
-
-        finder = ImageFinder()
-        calibrator = Calibrator()
-        results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
-        haystack = Image('all_shapes')
-        needle = Image('shape_blue_circle')
-        results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
-
-        haystack = Image('h_ibs_viewport')
-        needle = Image('n_ibs')
-        results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #print results
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
-                           "should be more than one for the blue circle")
 
 
 if __name__ == '__main__':
