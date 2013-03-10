@@ -514,11 +514,6 @@ class ImageFinder:
         if match == "in-house":
             matcher = InHouseCV()
 
-            # NOTE: the method below should currently be uncommented
-            # only for testing
-            #matcher.contextMatch(ndescriptors, hdescriptors,
-            #                     nkeypoints, hkeypoints)
-
         # include only methods tested for compatibility
         elif match in self.eq.algorithms["feature_matchers"]:
             # build matcher and match feature vectors
@@ -526,6 +521,12 @@ class ImageFinder:
             matcher = self.eq.sync_backend_to_params(matcher, "fmatch")
         else:
             raise ImageFinderMethodError
+
+        # NOTE: comment the next block and uncomment this block currently
+        # only for testing purposes (all comment chars are intentional!)
+        #matches = matcher.regionMatch(ndescriptors, hdescriptors,
+        #                              nkeypoints, hkeypoints)
+        ##matches = [m[0] for m in matcher.knnMatch(ndescriptors, hdescriptors, 1)]
 
         # find and filter matches through tests
         if self.eq.parameters["fmatch"]["ratioTest"].value:
@@ -697,18 +698,132 @@ class InHouseCV:
         """
         Use location information to better decide on matched features.
 
+        The knn distance is now only a heuristic for the search of best
+        matched set.
+
         TODO: Implement this method.
         """
         def ncoord(match):
             return kp1[match.queryIdx].pt
+
         def hcoord(match):
             return kp2[match.trainIdx].pt
-        def match_quadrant():
-            pass
 
-        matches = self.knnMatch(desc1, desc2, 100, 1, 0.5)
-        for m in matches:
-            print len(m), ncoord(m[0]), hcoord(m[0])
+        def rcoord(origin, target):
+            # True is right/up or coinciding, False is left/down
+            coord = [0, 0]
+            if target[0] < origin[0]:
+                coord[0] = -1
+            elif target[0] > origin[0]:
+                coord[0] = 1
+            if target[1] < origin[1]:
+                coord[1] = -1
+            elif target[1] > origin[1]:
+                coord[1] = 1
+            #print origin, ":", target, "=", coord
+            return coord
+
+        def compare_pos(match1, match2):
+            hc = rcoord(hcoord(match1), hcoord(match2))
+            nc = rcoord(ncoord(match1), ncoord(match2))
+
+            valid_positioning = True
+            if hc[0] != nc[0] and hc[0] != 0 and nc[0] != 0:
+                valid_positioning = False
+            if hc[1] != nc[1] and hc[1] != 0 and nc[1] != 0:
+                valid_positioning = False
+
+            #print "p1:p2 = %s in haystack and %s in needle" % (hc, nc)
+            #print "is their relative positioning valid? %s" % valid_positioning
+
+            return valid_positioning
+
+        def match_cost(matches, new_match):
+            if len(matches) == 0:
+                return 0.0
+
+            nominator = sum(float(not compare_pos(match, new_match)) for match in matches)
+            denominator = float(len(matches))
+            ratio = nominator / denominator
+            #print "model <-> match = %i disagreeing / %i total matches" % (nominator, denominator)
+
+            # avoid 0 mapping, i.e. giving 0 positional
+            # conflict to 0 distance matches or 0 distance
+            # to matches with 0 positional conflict
+            if ratio == 0.0 and new_match.distance != 0.0:
+                ratio = 0.001
+            elif new_match.distance == 0.0 and ratio != 0.0:
+                new_match.distance = 0.001
+
+            cost = ratio * new_match.distance
+            #print "would be + %f cost" % cost
+            #print "match reduction: ", cost / max(sum(m.distance for m in matches), 1)
+
+            return cost
+
+        """
+        TODO: cache repeating categorization (no need to analyse at larger difference if same index)
+        TODO: disable kernel mapping (multiple needle feature mapped to a single haystack feature)
+        TODO: the sycophant problem (most important atm) and berry picking solution
+        """
+
+        results = self.knnMatch(desc1, desc2, 100, 1, 0.9)
+        matches = [variants[0] for variants in results]
+        ratings = [None for _ in matches]
+        #print "%i matches in needle to start with" % len(matches)
+
+        refinements = max(1, 200)
+        recalc_interval = 20
+        for i in range(refinements):
+
+            # recalculate all ratings on some interval to save performance
+            if i % recalc_interval == 0:
+                for j in range(len(matches)):
+                    # ratings forced to 0.0 cannot be improved
+                    # because there are not better variants to use
+                    if ratings[j] != 0.0:
+                        ratings[j] = match_cost(matches, matches[j])
+                #print "recalculated quality:", sum(ratings)
+
+            outlier_index = ratings.index(max(ratings))
+            outlier = matches[outlier_index]
+            variants = results[outlier_index]
+            #print "outlier m%i with rating %i" % (outlier_index, max(ratings))
+            #print "%i match variants for needle match %i" % (len(variants), outlier_index)
+
+            # add the match variant with a minimal cost
+            variant_costs = []
+            curr_cost_index = variants.index(outlier)
+            for j, variant in enumerate(variants):
+
+                # speed up using some heuristics
+                if j > 0:
+                    # cheap assertion paid for with the speedup
+                    assert(variants[j].queryIdx == variants[j-1].queryIdx)
+                    if variants[j].trainIdx == variants[j-1].trainIdx:
+                        continue
+
+                #print "variant %i is m%i/%i in n/h" % (j, variant.queryIdx, variant.trainIdx)
+                #print "variant %i coord in n/h" % j, ncoord(variant), "/", hcoord(variant)
+                #print "variant distance:", variant.distance
+
+                matches[outlier_index] = variant
+                variant_costs.append((j, match_cost(matches, variant)))
+
+            min_cost_index, min_cost = min(variant_costs, key = lambda x: x[1])
+            min_cost_variant = variants[min_cost_index]
+            #if variant_costs.index(min(variant_costs)) != 0:
+            #print variant_costs, ">", min_cost, "i.e. variant", min_cost_index
+            matches[outlier_index] = min_cost_variant
+            ratings[outlier_index] = min_cost
+
+            # when the best variant is the selected for improvement
+            if min_cost_index == curr_cost_index:
+                ratings[outlier_index] = 0.0
+
+            # 0.0 is best quality
+            #print "overall quality:", sum(ratings)
+            #print "reduction: ", sum(ratings) / max(sum(m.distance for m in matches), 1)
 
         return matches
 
@@ -742,7 +857,7 @@ class InHouseCV:
         responses = numpy.arange(int(len(desc2)/desc4kp), dtype = numpy.float32)
         #print len(samples), len(responses)
         knn = cv2.KNearest()
-        knn.train(samples, responses)
+        knn.train(samples, responses, maxK = k)
 
         matches = []
         # retrieve index and value through enumeration
@@ -754,16 +869,16 @@ class InHouseCV:
 
             for ki in range(k):
                 _, res, _, dists = knn.find_nearest(descriptor, ki+1)
-                #print res, dists
-
+                #print ki, res, dists
                 if len(dists[0]) > 1 and autostop > 0.0:
 
+                    # TODO: perhaps ratio from first to last ki?
                     # smooth to make 0/0 case also defined as 1.0
                     dist1 = dists[0][-2] + 0.0000001
                     dist2 = dists[0][-1] + 0.0000001
                     ratio = dist1 / dist2
                     #print ratio, autostop
-                    if ratio > autostop:
+                    if ratio < autostop:
                         break
 
                 kmatches.append(cv2.DMatch(i, int(res[0][0]), dists[0][-1]))
