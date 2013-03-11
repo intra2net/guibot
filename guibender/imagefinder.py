@@ -694,14 +694,24 @@ class InHouseCV:
 
         return None
 
-    def regionMatch(self, desc1, desc2, kp1, kp2):
+    def regionMatch(self, desc1, desc2, kp1, kp2,
+                    refinements = 100, recalc_interval = 10,
+                    variants_k = 100, variants_ratio = 0.5):
         """
         Use location information to better decide on matched features.
 
         The knn distance is now only a heuristic for the search of best
-        matched set.
+        matched set as is information on relative location with regard
+        to the other matches.
 
-        TODO: Implement this method.
+        @param refinements: number of points to relocate
+        @param recalc_interval: recalculation on a number of refinements
+        @param variants_k: kNN parameter for to limit the alternative variants
+            of a badly positioned feature
+        @param variants_ratio: internal ratio test for knnMatch autostop (see below)
+
+        TODO: handle a subset of matches (ignoring some matches if not all features are detected)
+        TODO: disable kernel mapping (multiple needle feature mapped to a single haystack feature)
         """
         def ncoord(match):
             return kp1[match.queryIdx].pt
@@ -761,19 +771,14 @@ class InHouseCV:
 
             return cost
 
-        """
-        TODO: cache repeating categorization (no need to analyse at larger difference if same index)
-        TODO: disable kernel mapping (multiple needle feature mapped to a single haystack feature)
-        TODO: the sycophant problem (most important atm) and berry picking solution
-        """
-
-        results = self.knnMatch(desc1, desc2, 100, 1, 0.9)
+        results = self.knnMatch(desc1, desc2, variants_k,
+                                1, variants_ratio)
         matches = [variants[0] for variants in results]
         ratings = [None for _ in matches]
         #print "%i matches in needle to start with" % len(matches)
 
-        refinements = max(1, 200)
-        recalc_interval = 20
+        # minimum one refinement is needed
+        refinements = max(1, refinements)
         for i in range(refinements):
 
             # recalculate all ratings on some interval to save performance
@@ -783,7 +788,11 @@ class InHouseCV:
                     # because there are not better variants to use
                     if ratings[j] != 0.0:
                         ratings[j] = match_cost(matches, matches[j])
-                #print "recalculated quality:", sum(ratings)
+                quality = sum(ratings)
+                #print "recalculated quality:", quality
+                # nothing to improve if quality is perfect
+                if quality == 0.0:
+                    break
 
             outlier_index = ratings.index(max(ratings))
             outlier = matches[outlier_index]
