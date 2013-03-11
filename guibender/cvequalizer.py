@@ -158,6 +158,9 @@ class CVEqualizer:
                 old_backend = cv2.DescriptorMatcher_create(curr_old)
                 new_backend = cv2.DescriptorMatcher_create(curr_new)
 
+            else:
+                return
+
         # examine the interface of the OpenCV backend
         #print old_backend, dir(old_backend)
         #print new_backend, dir(new_backend)
