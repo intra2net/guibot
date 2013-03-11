@@ -13,11 +13,5 @@
   The final homography only requires 4 matches (fundamental matrix requires 8).
   Figure out a similarity parameter that reflects this reliability.
 
-- Implement a RigidMatcher that uses information on location in order to better
-  select reliable matches. By restricting the kinds of possible transformations,
-  all features can be selected based on their position relative to each other.
-  This is a solution of the "spaghetti monster" problem of some feature matching
-  where the final matches rely solely on descriptor similarity.
-
 - Decide on whether to return needle center as done currently in the feature
   matching or the (0,0) needle location as done in the template matching.
