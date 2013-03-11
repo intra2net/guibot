@@ -41,12 +41,13 @@ class CVEqualizer:
 
             feature matchers:
                 BruteForce, BruteForce-L1, BruteForce-Hamming,
-                BruteForce-Hamming(2), **FlannBased, in-house
+                BruteForce-Hamming(2), **FlannBased,
+                in-house-raw, in-house-region
 
             Starred methods are currently known to be buggy.
             Double starred methods should be investigated further.
 
-        Available parameters:
+        External (image finder) parameters:
             detect filter - works for certain detectors and
                 determines how many initial features are
                 detected in an image (e.g. hessian threshold for
@@ -57,6 +58,13 @@ class CVEqualizer:
                 matches are considered inliers
             ratio test - boolean for whether to perform a ratio test
             symmetry test - boolean for whether to perform a symmetry test
+
+        Note: "in-house-raw" performs regular knn matching, but "in-house-region"
+            performs a special filtering and replacement of matches based on
+            positional information (it does not have ratio and symmetry tests
+            and assumes that the needle is transformed preserving the relative
+            positions of each pair of matches, i.e. no rotation is allowed,
+            but scaling for example is supported)
         """
         # currently fully compatible methods
         self.algorithms = {"find_methods" : ("template", "feature"),
@@ -65,16 +73,14 @@ class CVEqualizer:
                                                   "ccorr_normed", "ccoeff_normed"),
                            "feature_matchers" : ("BruteForce", "BruteForce-L1",
                                                  "BruteForce-Hamming",
-                                                 "BruteForce-Hamming(2)", "in-house"),
+                                                 "BruteForce-Hamming(2)",
+                                                 "in-house-raw", "in-house-region"),
                            "feature_detectors" : ("ORB", "oldSURF"),
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
         # default parameters
         self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0)},
-                           "tmatch" : {}, "fdetect" : {}, "fextract" : {},
-                           "fmatch" : {"ratioThreshold" : CVParameter(0.65, 0.0, 1.0, 0.1),
-                                       "ratioTest" : CVParameter(False),
-                                       "symmetryTest" : CVParameter(False)}}
+                           "tmatch" : {}, "fdetect" : {}, "fextract" : {}, "fmatch" : {}}
 
         # default algorithms
         self.current = {"find" : "template",
@@ -148,18 +154,29 @@ class CVEqualizer:
             old_backend = cv2.DescriptorExtractor_create(curr_old)
             new_backend = cv2.DescriptorExtractor_create(curr_new)
         elif category == "fmatch":
-            if curr_new != "in-house":
-
-                # BUG: a bug of OpenCV leads to crash if parameters
-                # are extracted from the matcher interface although
-                # the API supports it - skip fmatch for now
+            if curr_new == "in-house-region":
+                self.parameters[category]["refinements"] = CVParameter(50, 1, None)
+                self.parameters[category]["recalc_interval"] = CVParameter(10, 1, None)
+                self.parameters[category]["variants_k"] = CVParameter(100, 1, None)
+                self.parameters[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0)
                 return
-
-                old_backend = cv2.DescriptorMatcher_create(curr_old)
-                new_backend = cv2.DescriptorMatcher_create(curr_new)
-
             else:
-                return
+                self.parameters[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1)
+                self.parameters[category]["ratioTest"] = CVParameter(False)
+                self.parameters[category]["symmetryTest"] = CVParameter(False)
+
+                # no other parameters are used for the in-house-raw matching
+                if curr_new == "in-house-raw":
+                    return
+                else:
+
+                    # BUG: a bug of OpenCV leads to crash if parameters
+                    # are extracted from the matcher interface although
+                    # the API supports it - skip fmatch for now
+                    return
+
+                    old_backend = cv2.DescriptorMatcher_create(curr_old)
+                    new_backend = cv2.DescriptorMatcher_create(curr_new)
 
         # examine the interface of the OpenCV backend
         #print old_backend, dir(old_backend)
@@ -207,13 +224,15 @@ class CVEqualizer:
             (category == "fdetect" and self.current[category] == "oldSURF")):
             return opencv_backend
         elif category == "fmatch":
-            if self.current[category] == "in-house":
+            # no internal OpenCV parameters to sync with
+            if self.current[category] in ("in-house-raw", "in-house-region"):
                 return opencv_backend
 
             # BUG: a bug of OpenCV leads to crash if parameters
             # are extracted from the matcher interface although
             # the API supports it - skip fmatch for now
-            return opencv_backend
+            else:
+                return opencv_backend
 
         for param in opencv_backend.getParams():
             if param in self.parameters[category]:

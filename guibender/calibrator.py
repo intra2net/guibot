@@ -66,13 +66,13 @@ class Calibrator:
                     method = key + "_gray"
                 else:
                     method = key
-                imagefinder.eq.current["tmatch"] = key
+                imagefinder.eq.configure_backend(template_match = key)
                 start_time = time.time()
                 imagefinder.find_template(haystack, needle, 0.0, gray)
                 total_time = time.time() - start_time
                 #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
-        imagefinder.eq.current["tmatch"] = old_config[0]
+        imagefinder.eq.configure_backend(template_match = old_config)
 
         # test all feature matching methods
         old_config = (imagefinder.eq.current["fdetect"],
@@ -84,9 +84,9 @@ class Calibrator:
                 continue
             for key_fe in imagefinder.eq.algorithms["feature_extractors"]:
                 for key_fm in imagefinder.eq.algorithms["feature_matchers"]:
-                    imagefinder.eq.current["fdetect"] = key_fd
-                    imagefinder.eq.current["fextract"] = key_fe
-                    imagefinder.eq.current["fmatch"] = key_fm
+                    imagefinder.eq.configure_backend(feature_detect = key_fd,
+                                                     feature_extract = key_fe,
+                                                     feature_match = key_fm)
                     if calibration:
                         self.calibrate(haystack, needle, imagefinder,
                                        refinements = refinements)
@@ -97,9 +97,9 @@ class Calibrator:
                     #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                     results.append((method, imagefinder.hotmap[1],
                                     imagefinder.hotmap[2], total_time))
-        imagefinder.eq.current["fdetect"] = old_config[0]
-        imagefinder.eq.current["fextract"] = old_config[1]
-        imagefinder.eq.current["fmatch"] = old_config[2]
+        imagefinder.eq.configure_backend(feature_detect = old_config[0],
+                                         feature_extract = old_config[1],
+                                         feature_match = old_config[2])
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate(self, haystack, needle, imagefinder,

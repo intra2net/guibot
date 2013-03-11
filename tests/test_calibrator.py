@@ -102,7 +102,7 @@ class CalibratorTest(unittest.TestCase):
         #pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
-        top_results = results[:6]
+        top_results = results[:3]
         for result in top_results:
             self.assertRegexpMatches(result[0], "\w+_\w+[_gray]?",
                                      "Template matching methods should be on the top")
@@ -118,7 +118,7 @@ class CalibratorTest(unittest.TestCase):
         #pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
-        top_results = results[:5]
+        top_results = results[:3]
         for result in top_results:
             self.assertRegexpMatches(result[0], "\w+-\w+-\w+",
                                      "Feature matching methods should be on the top")

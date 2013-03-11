@@ -511,9 +511,9 @@ class ImageFinder:
             #print "st: %i\%i" % (len(matches2), len(matches))
             return matches2
 
-        if match == "in-house":
+        # build matchers
+        if match in ("in-house-raw", "in-house-region"):
             matcher = InHouseCV()
-
         # include only methods tested for compatibility
         elif match in self.eq.algorithms["feature_matchers"]:
             # build matcher and match feature vectors
@@ -522,27 +522,29 @@ class ImageFinder:
         else:
             raise ImageFinderMethodError
 
-        # NOTE: comment the next block and uncomment this block currently
-        # only for testing purposes (all comment chars are intentional!)
-        #matches = matcher.regionMatch(ndescriptors, hdescriptors,
-        #                              nkeypoints, hkeypoints)
-        ##matches = [m[0] for m in matcher.knnMatch(ndescriptors, hdescriptors, 1)]
-
         # find and filter matches through tests
-        if self.eq.parameters["fmatch"]["ratioTest"].value:
-            matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
-            matches = ratio_test(matches)
+        if match == "in-house-region":
+            matches = matcher.regionMatch(ndescriptors, hdescriptors,
+                                          nkeypoints, hkeypoints,
+                                          self.eq.parameters["fmatch"]["refinements"].value,
+                                          self.eq.parameters["fmatch"]["recalc_interval"].value,
+                                          self.eq.parameters["fmatch"]["variants_k"].value,
+                                          self.eq.parameters["fmatch"]["variants_ratio"].value)
         else:
-            matches = matcher.knnMatch(ndescriptors, hdescriptors, 1)
-            matches = [m[0] for m in matches]
-        if self.eq.parameters["fmatch"]["symmetryTest"].value:
             if self.eq.parameters["fmatch"]["ratioTest"].value:
-                hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
-                hmatches = ratio_test(hmatches)
+                matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
+                matches = ratio_test(matches)
             else:
-                hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 1)
-                hmatches = [hm[0] for hm in hmatches]
-            matches = symmetry_test(matches, hmatches)
+                matches = matcher.knnMatch(ndescriptors, hdescriptors, 1)
+                matches = [m[0] for m in matches]
+            if self.eq.parameters["fmatch"]["symmetryTest"].value:
+                if self.eq.parameters["fmatch"]["ratioTest"].value:
+                    hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
+                    hmatches = ratio_test(hmatches)
+                else:
+                    hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 1)
+                    hmatches = [hm[0] for hm in hmatches]
+                matches = symmetry_test(matches, hmatches)
 
         # prepare final matches
         match_hkeypoints = []
@@ -695,8 +697,8 @@ class InHouseCV:
         return None
 
     def regionMatch(self, desc1, desc2, kp1, kp2,
-                    refinements = 100, recalc_interval = 10,
-                    variants_k = 100, variants_ratio = 0.5):
+                    refinements = 50, recalc_interval = 10,
+                    variants_k = 100, variants_ratio = 0.33):
         """
         Use location information to better decide on matched features.
 
