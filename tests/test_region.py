@@ -237,20 +237,26 @@ class RegionTest(unittest.TestCase):
         match = Region().exists(Image('shape_blue_circle'))
         self.assertEqual(None, match)
 
+        # TODO: it is not clear what the following two lines do
+        # since windows should already be closed?
         self.close_windows()
 
-        # TODO: Own unit test for wait_vanish()
         self.assertTrue(Region().wait_vanish('all_shapes'))
+
+    def test_wait(self):
+        self.show_image('all_shapes')
+        match = Region().wait(Image('shape_blue_circle'), timeout = 5)
+        self.assertTrue(isinstance(match, Match))
+
+        self.close_windows()
 
     def test_wait_vanish(self):
         self.show_image('all_shapes')
-        time.sleep(5)
+        time.sleep(3)
         self.assertFalse(Region().wait_vanish('all_shapes', timeout = 5))
 
         self.close_windows()
         self.assertTrue(Region().wait_vanish('all_shapes', timeout = 10))
-
-        self.close_windows()
 
     def test_hover(self):
         # Hover over Location
@@ -320,11 +326,7 @@ class RegionTest(unittest.TestCase):
         self.assertTrue(pos.get_x() > 25 and pos.get_x() < 35)
         self.assertTrue(pos.get_y() > 15 and pos.get_y() < 25)
 
-# TODO: Write tests for:
-# wait()
-# wait_vanish()
-#
-# PyQt GUI based:
+# TODO: Write PyQt GUI tests for:
 # drag_drop()
 # drag()
 # drop()
