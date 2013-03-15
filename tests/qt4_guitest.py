@@ -34,6 +34,10 @@ class ControlsWithLayout(QtGui.QWidget):
         button_click.setStyleSheet('QPushButton { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
         self.connect(button_click, QtCore.SIGNAL('clicked()'), QtGui.qApp.quit)
 
+        text_type = QtGui.QLineEdit('type "quit"')
+        text_type.setFixedSize(100, 20)
+        self.connect(text_type, QtCore.SIGNAL('textEdited(const QString &)'), self.quit_on_type)
+
         list_view = QtGui.QListWidget()
         list_view.addItem('Double click')
         list_view.setFixedSize(80, 100)
@@ -53,20 +57,30 @@ class ControlsWithLayout(QtGui.QWidget):
         right_click_view.addAction(quit_action)
         quit_action.triggered.connect(QtGui.qApp.quit)
 
+        vbox = QtGui.QVBoxLayout()
+        vbox.addStretch(1)
+        vbox.addWidget(button_click)
+        #vbox.setAlignment(button_click, QtCore.Qt.AlignVCenter)
+        vbox.addWidget(text_type)
+        #vbox.setAlignment(text_type, QtCore.Qt.AlignVCenter)
+
         hbox = QtGui.QHBoxLayout()
         hbox.addStretch(1)
-        hbox.addWidget(button_click)
+        hbox.addLayout(vbox)
         hbox.addWidget(list_view)
         hbox.addWidget(right_click_view)
 
-        vbox = QtGui.QVBoxLayout()
-        vbox.addStretch(1)
-        vbox.addLayout(hbox)
-
-        self.setLayout(vbox)
+        self.setLayout(hbox)
         self.resize(300, 100)
 
         QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('cleanlooks'))
+
+    def quit_on_type(self):
+        sender = self.sender()
+        #print sender, sender.text()
+        if sender.text() == "quit":
+            self.close()
+
 
 some_controls = ControlsWithLayout()
 some_controls.show()
