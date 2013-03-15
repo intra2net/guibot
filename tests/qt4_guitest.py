@@ -32,8 +32,7 @@ class ControlsWithLayout(QtGui.QWidget):
         button_click = QtGui.QPushButton("Close on click()")
         button_click.setFixedSize(100, 20)
         button_click.setStyleSheet('QPushButton { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
-        self.connect(button_click, QtCore.SIGNAL('clicked()'),
-            QtGui.qApp, QtCore.SLOT('quit()'))
+        self.connect(button_click, QtCore.SIGNAL('clicked()'), QtGui.qApp.quit)
 
         list_view = QtGui.QListWidget()
         list_view.addItem('Double click')
