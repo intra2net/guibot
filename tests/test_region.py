@@ -319,6 +319,11 @@ class RegionTest(unittest.TestCase):
         Region().press(Key.ESC)
         self.assertEqual(0, self.wait_end(child_pipe))
 
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        time.sleep(1)
+        Region().press([Key.ALT, Key.F4])
+        self.assertEqual(0, self.wait_end(child_pipe))
+
     def test_press_at(self):
         # TODO: test whether the image would work on different Linux platforms at least
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
