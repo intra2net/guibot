@@ -327,34 +327,34 @@ class RegionTest(unittest.TestCase):
     def test_press_at(self):
         # TODO: test whether the image would work on different Linux platforms at least
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-        Region().press_at(Image('qt4gui_text_type'), keys=[Key.ENTER])
+        Region().press_at(Image('qt4gui_lineedit2'), keys=[Key.ENTER])
 
-        Region().wait_vanish('qt4gui_text_type')
+        Region().wait_vanish('qt4gui_lineedit2')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_type_text(self):
         # TODO: test whether the image would work on different Linux platforms at least
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-        Region().click(Image('qt4gui_text_type'))
+        Region().click(Image('qt4gui_lineedit'))
         time.sleep(0.2)
         Region().type_text('quit')
 
-        Region().wait_vanish('qt4gui_text_type')
+        Region().wait_vanish('qt4gui_lineedit')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_type_at(self):
         # TODO: test whether the image would work on different Linux platforms at least
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-        Region().type_at(Image('qt4gui_text_type'), text='quit')
+        Region().type_at(Image('qt4gui_lineedit'), text='quit')
 
-        Region().wait_vanish('qt4gui_text_type')
+        Region().wait_vanish('qt4gui_lineedit')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_drag_drop(self):
         # TODO: test whether the image would work on different Linux platforms at least
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().drag_drop(Image('qt4gui_textedit'), Image('qt4gui_text_type'))
+        Region().drag_drop(Image('qt4gui_textedit'), Image('qt4gui_lineedit'))
 
         Region().wait_vanish('qt4gui_textedit')
         self.assertEqual(0, self.wait_end(child_pipe))
