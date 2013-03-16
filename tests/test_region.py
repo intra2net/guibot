@@ -371,8 +371,6 @@ class RegionTest(unittest.TestCase):
 # drop()
 # mouse_down()
 # mouse_up()
-# type_text()
-# press()
 
 if __name__ == '__main__':
     unittest.main()
