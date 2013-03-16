@@ -315,8 +315,9 @@ class Region(object):
         match = self.hover(image_or_location)
 
         time.sleep(0.2)
-        self.desktop.keys_toggle(modifiers, True)
-        #self.desktop.keys_toggle(["Ctrl"], True)
+        if modifiers != None:
+            self.desktop.keys_toggle(modifiers, True)
+            #self.desktop.keys_toggle(["Ctrl"], True)
 
         self.desktop.mouse_down(self.LEFT_BUTTON)
         # TODO: Make delay after drag configurable
@@ -333,8 +334,9 @@ class Region(object):
         self.desktop.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
-        self.desktop.keys_toggle(modifiers, False)
-        #self.desktop.keys_toggle(["Ctrl"], False)
+        if modifiers != None:
+            self.desktop.keys_toggle(modifiers, False)
+            #self.desktop.keys_toggle(["Ctrl"], False)
 
         return match
 
