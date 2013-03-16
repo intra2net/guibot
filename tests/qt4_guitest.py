@@ -82,6 +82,10 @@ class ControlsWithLayout(QtGui.QWidget):
         if sender.text() == "quit":
             self.close()
 
+    def keyPressEvent(self, e):
+        if e.key() == QtCore.Qt.Key_Escape:
+            self.close()
+
 
 some_controls = ControlsWithLayout()
 some_controls.show()

@@ -27,6 +27,7 @@ from region import Region
 from match import Match
 from desktopcontrol import DesktopControl
 from image import Image
+from key import Key
 from errors import *
 
 class RegionTest(unittest.TestCase):
@@ -309,6 +310,13 @@ class RegionTest(unittest.TestCase):
 
         Region().double_click(Image('qt4gui_double_click').target_offset(0,-10))
 
+        self.assertEqual(0, self.wait_end(child_pipe))
+
+    def test_press(self):
+        # TODO: test whether the image would work on different Linux platforms at least
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        time.sleep(1)
+        Region().press(Key.ESC)
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_type_text(self):
