@@ -38,6 +38,7 @@ class ControlsWithLayout(QtGui.QWidget):
         text_type.setPlaceholderText('type "quit"')
         text_type.setFixedSize(100, 20)
         self.connect(text_type, QtCore.SIGNAL('textEdited(const QString &)'), self.quit_on_type)
+        self.connect(text_type, QtCore.SIGNAL('editingFinished()'), QtGui.qApp.quit)
 
         list_view = QtGui.QListWidget()
         list_view.addItem('Double click')
