@@ -36,9 +36,18 @@ class ControlsWithLayout(QtGui.QWidget):
 
         text_type = QtGui.QLineEdit()
         text_type.setPlaceholderText('type "quit"')
+        #text_type.setAcceptDrops(True)
         text_type.setFixedSize(100, 20)
         self.connect(text_type, QtCore.SIGNAL('textEdited(const QString &)'), self.quit_on_type)
         self.connect(text_type, QtCore.SIGNAL('editingFinished()'), QtGui.qApp.quit)
+
+        text_edit = QtGui.QTextEdit('quit')
+        cursor = text_edit.textCursor()
+        cursor.setPosition(0)
+        cursor.setPosition(4, QtGui.QTextCursor.KeepAnchor)
+        text_edit.setTextCursor(cursor)
+        text_edit.setFixedSize(100, 50)
+        text_edit.setAcceptDrops(True)
 
         list_view = QtGui.QListWidget()
         list_view.addItem('Double click')
@@ -65,6 +74,7 @@ class ControlsWithLayout(QtGui.QWidget):
         #vbox.setAlignment(button_click, QtCore.Qt.AlignVCenter)
         vbox.addWidget(text_type)
         #vbox.setAlignment(text_type, QtCore.Qt.AlignVCenter)
+        vbox.addWidget(text_edit)
 
         hbox = QtGui.QHBoxLayout()
         hbox.addStretch(1)

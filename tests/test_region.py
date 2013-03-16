@@ -350,6 +350,15 @@ class RegionTest(unittest.TestCase):
         Region().wait_vanish('qt4gui_text_type')
         self.assertEqual(0, self.wait_end(child_pipe))
 
+    def test_drag_drop(self):
+        # TODO: test whether the image would work on different Linux platforms at least
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+
+        Region().drag_drop(Image('qt4gui_textedit'), Image('qt4gui_text_type'))
+
+        Region().wait_vanish('qt4gui_textedit')
+        self.assertEqual(0, self.wait_end(child_pipe))
+
     def test_get_mouse_location(self):
         Region().hover(Location(0,0))
 
