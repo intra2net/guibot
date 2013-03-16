@@ -34,7 +34,8 @@ class ControlsWithLayout(QtGui.QWidget):
         button_click.setStyleSheet('QPushButton { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
         self.connect(button_click, QtCore.SIGNAL('clicked()'), QtGui.qApp.quit)
 
-        text_type = QtGui.QLineEdit('type "quit"')
+        text_type = QtGui.QLineEdit()
+        text_type.setPlaceholderText('type "quit"')
         text_type.setFixedSize(100, 20)
         self.connect(text_type, QtCore.SIGNAL('textEdited(const QString &)'), self.quit_on_type)
 
