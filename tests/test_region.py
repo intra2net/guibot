@@ -417,12 +417,6 @@ class RegionTest(unittest.TestCase):
         self.assertTrue(pos.get_x() > 25 and pos.get_x() < 35)
         self.assertTrue(pos.get_y() > 15 and pos.get_y() < 25)
 
-# TODO: Write PyQt GUI tests for:
-# drag_drop()
-# drag()
-# drop()
-# mouse_down()
-# mouse_up()
 
 if __name__ == '__main__':
     unittest.main()

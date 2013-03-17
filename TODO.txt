@@ -2,9 +2,6 @@
   as a Singleton for all configuration settings.
   Move all hardcoded config values to this class.
 
-- Test Qt4 Gui's text input fields. Implement drag'n'drop (perhaps
-  two lists views) and test it.
-
 - Make feature similarity more reliable. Currently it is defined as the ratio of
   keypoints through each feature matching filter. In case of successful matching
   the calibrate method thus optimizes the last ratio (matched / RANSAC inlier
