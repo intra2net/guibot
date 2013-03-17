@@ -359,6 +359,49 @@ class RegionTest(unittest.TestCase):
         Region().wait_vanish('qt4gui_textedit')
         self.assertEqual(0, self.wait_end(child_pipe))
 
+    def test_drag(self):
+        # TODO: test whether the image would work on different Linux platforms at least
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+
+        Region().drag(Image('qt4gui_textedit'))
+        Region().hover(Image('qt4gui_label1'))
+
+        Region().wait_vanish('qt4gui_label1')
+        self.assertEqual(0, self.wait_end(child_pipe))
+
+    def test_drop_at(self):
+        # TODO: test whether the image would work on different Linux platforms at least
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+
+        Region().drag(Image('qt4gui_textedit'))
+        Region().hover(Image('qt4gui_label2'))
+        self.assertFalse(Region().wait_vanish(Image('qt4gui_label2'), timeout=3))
+
+        Region().drop_at(Image('qt4gui_label2'))
+
+        Region().wait_vanish('qt4gui_label2')
+        self.assertEqual(0, self.wait_end(child_pipe))
+
+    def test_mouse_down(self):
+        # TODO: test whether the image would work on different Linux platforms at least
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+
+        Region().mouse_down(Image('qt4gui_label3'))
+
+        Region().wait_vanish('qt4gui_label3')
+        self.assertEqual(0, self.wait_end(child_pipe))
+
+    def test_mouse_up(self):
+        # TODO: test whether the image would work on different Linux platforms at least
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+
+        Region().mouse_down(Image('qt4gui_label4'))
+        self.assertFalse(Region().wait_vanish(Image('qt4gui_label4'), timeout=3))
+
+        Region().mouse_up(Image('qt4gui_label4'))
+
+        self.assertEqual(0, self.wait_end(child_pipe))
+
     def test_get_mouse_location(self):
         Region().hover(Location(0,0))
 

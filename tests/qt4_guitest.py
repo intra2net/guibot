@@ -36,13 +36,11 @@ class ControlsWithLayout(QtGui.QWidget):
 
         line_edit = QtGui.QLineEdit()
         line_edit.setPlaceholderText('type "quit"')
-        #line_edit.setAcceptDrops(True)
         line_edit.setFixedSize(100, 20)
         self.connect(line_edit, QtCore.SIGNAL('textEdited(const QString &)'), self.quit_on_type)
 
         line_edit2 = QtGui.QLineEdit()
         line_edit2.setPlaceholderText('type anything')
-        #line_edit2.setAcceptDrops(True)
         line_edit2.setFixedSize(100, 20)
         self.connect(line_edit2, QtCore.SIGNAL('editingFinished()'), QtGui.qApp.quit)
 
@@ -73,6 +71,19 @@ class ControlsWithLayout(QtGui.QWidget):
         right_click_view.addAction(quit_action)
         quit_action.triggered.connect(QtGui.qApp.quit)
 
+        label1 = DragQuitLabel("Drag to close", self)
+        label1.setFixedSize(100, 20)
+        label1.setStyleSheet('QLabel { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
+        label2 = DropQuitLabel("Drop to close", self)
+        label2.setFixedSize(100, 20)
+        label2.setStyleSheet('QLabel { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
+        label3 = MouseDownQuitLabel("Mouse down", self)
+        label3.setFixedSize(100, 20)
+        label3.setStyleSheet('QLabel { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
+        label4 = MouseUpQuitLabel("Mouse up", self)
+        label4.setFixedSize(100, 20)
+        label4.setStyleSheet('QLabel { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
+
         vbox = QtGui.QVBoxLayout()
         vbox.addStretch(1)
         vbox.addWidget(button_click)
@@ -80,14 +91,22 @@ class ControlsWithLayout(QtGui.QWidget):
         vbox.addWidget(line_edit2)
         vbox.addWidget(text_edit)
 
+        vbox2 = QtGui.QVBoxLayout()
+        vbox2.addStretch(1)
+        vbox2.addWidget(label1)
+        vbox2.addWidget(label2)
+        vbox2.addWidget(label3)
+        vbox2.addWidget(label4)
+
         hbox = QtGui.QHBoxLayout()
         hbox.addStretch(1)
         hbox.addLayout(vbox)
         hbox.addWidget(list_view)
         hbox.addWidget(right_click_view)
+        hbox.addLayout(vbox2)
 
         self.setLayout(hbox)
-        self.resize(300, 100)
+        self.resize(400, 100)
 
         QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('cleanlooks'))
 
@@ -100,6 +119,44 @@ class ControlsWithLayout(QtGui.QWidget):
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
+
+
+class DragQuitLabel(QtGui.QLabel):
+    def __init__(self, title, parent):
+        super(DragQuitLabel, self).__init__(title, parent)
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, e):
+        self.parent().close()
+
+class DropQuitLabel(QtGui.QLabel):
+    def __init__(self, title, parent):
+        super(DropQuitLabel, self).__init__(title, parent)
+        self.setAcceptDrops(True)
+
+    def dragEnterEvent(self, e):
+        if e.mimeData().hasFormat('text/plain'):
+            e.accept()
+        else:
+            e.ignore()
+
+    def dropEvent(self, e):
+        self.parent().close()
+
+class MouseDownQuitLabel(QtGui.QLabel):
+    def __init__(self, title, parent):
+        super(MouseDownQuitLabel, self).__init__(title, parent)
+
+    def mousePressEvent(self, e):
+        self.parent().close()
+
+class MouseUpQuitLabel(QtGui.QLabel):
+    def __init__(self, title, parent):
+        super(MouseUpQuitLabel, self).__init__(title, parent)
+        #self.setAcceptDrops(True)
+
+    def mouseReleaseEvent(self, e):
+        self.parent().close()
 
 
 some_controls = ControlsWithLayout()
