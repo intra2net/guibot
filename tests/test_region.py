@@ -366,6 +366,9 @@ class RegionTest(unittest.TestCase):
         Region().drag(Image('qt4gui_textedit'))
         Region().hover(Image('qt4gui_label1'))
 
+        # toggled buttons cleanup
+        Region().desktop.mouse_up()
+
         Region().wait_vanish('qt4gui_label1')
         self.assertEqual(0, self.wait_end(child_pipe))
 
@@ -387,6 +390,9 @@ class RegionTest(unittest.TestCase):
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         Region().mouse_down(Image('qt4gui_label3'))
+
+        # toggled buttons cleanup
+        Region().desktop.mouse_up()
 
         Region().wait_vanish('qt4gui_label3')
         self.assertEqual(0, self.wait_end(child_pipe))
