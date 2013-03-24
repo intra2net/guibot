@@ -165,37 +165,10 @@ class ImageFinder:
         """
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
-
-        self.hotmap[0] = self._prepare_image(haystack)
-        self.hotmap[1] = 0.0
-        self.hotmap[2] = None
-
-        hkp, hdc, nkp, ndc = self._detect_features(hgray, ngray,
-                                                   self.eq.current["fdetect"],
-                                                   self.eq.current["fextract"])
-
-        if len(nkp) < 4 or len(hkp) < 4:
-            if self.image_logging <= 40:
-                cv2.imwrite("log.png", self.hotmap[0])
-            return None
-
-        mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc,
-                                          self.eq.current["fmatch"])
-
-        if self.hotmap[1] < similarity or len(mnkp) < 4:
-            if self.image_logging <= 40:
-                cv2.imwrite("log.png", self.hotmap[0])
-            return None
+        hcanvas = self._prepare_image(haystack, gray = False)
 
         needle_center = (needle.get_width() / 2, needle.get_height() / 2)
-        self._project_location(needle_center, mnkp, mhkp)
-
-        if self.image_logging <= 40:
-            cv2.imwrite("log.png", self.hotmap[0])
-        if self.hotmap[1] < similarity:
-            return None
-        else:
-            return Location(*self.hotmap[2])
+        return self._project_features(needle_center, hgray, ngray, similarity, hcanvas)
 
     def find_all(self, haystack, needle, similarity, nocolor = True):
         """
@@ -276,14 +249,69 @@ class ImageFinder:
 
         return maxima
 
-    def find_hybrid(self, haystack, needle, similarity,
-                    x = 1000, y = 1000, dx = 100, dy = 100):
+    def find_hybrid(self, haystack, needle, similarity, similarity2 = 0.4):
         """
+        Use template matching to deal with feature dense regions
+        and guide a final feature matching.
+
+        Feature matching is robust at small regions not too abundant
+        of features where template matching is too picky. Template
+        matching is good at large feature abundant regions and can be
+        used as a heuristic for the feature matching.
+
+        Hopefully this might work...
+        """
+        maxima = self.find_all(haystack, needle, similarity2)
+        hotmaps = []
+
+        hgray = self._prepare_image(haystack, gray = True)
+        ngray = self._prepare_image(needle, gray = True)
+        hcanvas = self._prepare_image(haystack, gray = False)
+        needle_center = (needle.get_width() / 2, needle.get_height() / 2)
+
+        for upleft in maxima:
+            up = upleft.get_y()
+            down = min(haystack.height, up + needle.get_height())
+            left = upleft.get_x()
+            right = min(haystack.width, left + needle.get_width())
+            #print "up-down:", (up, down), "left-right:", (left, right)
+
+            haystack_region = hgray[up:down, left:right]
+            haystack_region = haystack_region.copy()
+            hotmap_region = hcanvas[up:down, left:right]
+            hotmap_region = hotmap_region.copy()
+
+            res = self._project_features(needle_center, haystack_region, ngray,
+                                         similarity, hotmap_region)
+            if res != None:
+                location = (left + self.hotmap[2][0], up + self.hotmap[2][1])
+                hotmaps.append((self.hotmap[0], self.hotmap[1], location))
+            #else:
+            #    hotmaps.append((None, None, (up, left)))
+
+        if self.image_logging <= 30:
+            for i, hotmap in enumerate(hotmaps):
+                #print len(maxima), i, hotmap[1]
+                cv2.imwrite("log%i.png" % i, hotmap[0])
+
+        if len(hotmaps) == 0:
+            return None
+        else:
+            self.hotmap = max(hotmaps, key = lambda x: x[1])
+            return Location(self.hotmap[2][0], self.hotmap[2][1])
+
+    def find_2to1hybrid(self, haystack, needle, similarity,
+                        x = 1000, y = 1000, dx = 100, dy = 100):
+        """
+        Two thirds feature matching and one third template matching.
         Divide the haystack into x,y subregions and perform feature
         matching once for each dx,dy translation of each subregion.
 
         This method uses advantages of both template and feature
         matching in order to locate the needle.
+
+        Warning: If this search is intensive (you use small frequent
+        subregions) please disable or reduce the image logging.
 
         Note: Currently this method is dangerous due to a possible
         memory leak. Therefore avoid getting closer to a more normal
@@ -293,19 +321,17 @@ class ImageFinder:
         Examples:
             1) Normal template matching:
 
-                find_hybrid(n, h, s, n.width, n.height, 1, 1)
+                find_2to1hybrid(n, h, s, n.width, n.height, 1, 1)
 
             2) Divide the screen into four quadrants and jump with distance
             halves of these quadrants:
 
-                find_hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
+                find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
         """
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
-
-        # stop image logging since the this search is intensive
-        logging = self.image_logging
-        self.image_logging = 50
+        hcanvas = self._prepare_image(haystack, gray = False)
+        needle_center = (needle.get_width() / 2, needle.get_height() / 2)
 
         # the translation distance cannot be larger than the haystack
         dx = min(dx, haystack.width)
@@ -315,10 +341,6 @@ class ImageFinder:
         #print "dividing haystack into %ix%i pieces" % (nx, ny)
         result = numpy.zeros((ny, nx))
 
-        self.hotmap[0] = None
-        self.hotmap[1] = 0.0
-        self.hotmap[2] = None
-
         locations = {}
         for i in range(nx):
             for j in range(ny):
@@ -327,13 +349,10 @@ class ImageFinder:
                 up = j * dy
                 down = min(haystack.height, j * dy + y)
                 #print "up-down:", (up, down), "left-right:", (left, right)
-                hregion = hgray[up:down, left:right]
-                hregion = hregion.copy()
-
-                # uncomment this block in order to perform image logging
-                # for the current haystack subregion into the hotmap
-                #self.hotmap[0] = self._prepare_image(haystack)[up:down, left:right]
-                #self.image_logging = 10
+                haystack_region = hgray[up:down, left:right]
+                haystack_region = haystack_region.copy()
+                hotmap_region = hcanvas[up:down, left:right]
+                hotmap_region = hotmap_region.copy()
 
                 # uncomment this block in order to view the filling of the results
                 # (marked with 1.0 when filled) and the different ndarray shapes
@@ -341,46 +360,58 @@ class ImageFinder:
                 #print result
                 #print hregion.shape, hgray.shape, ngray.shape, result.shape, "\n"
 
-                hkp, hdc, nkp, ndc = self._detect_features(hregion, ngray,
-                                                           self.eq.current["fdetect"],
-                                                           self.eq.current["fextract"])
-
-                if len(nkp) < 4 or len(hkp) < 4:
-                    result[j][i] = 0.0
-                    continue
-
-                mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc,
-                                                  self.eq.current["fmatch"])
-
-                if self.hotmap[1] < similarity or len(mnkp) < 4:
-                    result[j][i] = self.hotmap[1]
-                    continue
-
-                self._project_needle_center(needle, mnkp, mhkp)
-
+                res = self._project_features(needle_center, haystack_region, ngray,
+                                             similarity, hotmap_region)
                 result[j][i] = self.hotmap[1]
-                if self.hotmap[1] < similarity:
+                if self.image_logging <= 30:
+                    cv2.imwrite("log%i.png" % (i*ny+j), self.hotmap[0])
+
+                if res == None:
                     continue
                 else:
                     locations[(j, i)] = (left + self.hotmap[2][0],
                                          up + self.hotmap[2][1])
                     #print "(x,y):", locations[(j, i)]
 
-                # uncomment this block in order to have a 30 sec window
-                # to view the feature matching image logging (log.png)
-                #cv2.imwrite("log.png", self.hotmap[0])
-                #import time
-                #time.sleep(30)
-
-        # restore image logging
-        self.image_logging = logging
         if self.image_logging <= 40:
-            hotmap = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
-            cv.ConvertScale(cv.fromarray(result), hotmap, scale = 255.0)
-            self.hotmap[0] = numpy.asarray(hotmap)
-            cv2.imwrite("log.png", self.hotmap[0])
-
+            cv2.imwrite("log.png", result)
         return result, locations
+
+    def _project_features(self, location_in_needle, hgray, ngray,
+                          similarity, hotmap_canvas = None):
+        """
+        Wrapper for the internal feature detection, matching and location
+        projection used by all public feature matching functions.
+        """
+        self.hotmap[0] = hotmap_canvas
+        self.hotmap[1] = 0.0
+        self.hotmap[2] = None
+
+        hkp, hdc, nkp, ndc = self._detect_features(hgray, ngray,
+                                                   self.eq.current["fdetect"],
+                                                   self.eq.current["fextract"])
+
+        if len(nkp) < 4 or len(hkp) < 4:
+            if self.image_logging <= 40 and self.hotmap[0] != None:
+                cv2.imwrite("log.png", self.hotmap[0])
+            return None
+
+        mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc,
+                                          self.eq.current["fmatch"])
+
+        if self.hotmap[1] < similarity or len(mnkp) < 4:
+            if self.image_logging <= 40 and self.hotmap[0] != None:
+                cv2.imwrite("log.png", self.hotmap[0])
+            return None
+
+        self._project_location(location_in_needle, mnkp, mhkp)
+
+        if self.image_logging <= 40 and self.hotmap[0] != None:
+            cv2.imwrite("log.png", self.hotmap[0])
+        if self.hotmap[1] < similarity:
+            return None
+        else:
+            return Location(*self.hotmap[2])
 
     def _detect_features(self, hgray, ngray, detect, extract):
         """
