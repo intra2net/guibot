@@ -30,8 +30,8 @@ class CVEqualizer:
                 sqdiff_normed, *ccorr_normed, ccoeff_normed
 
             feature detectors:
-                *FAST, *STAR, *SIFT, *SURF, ORB, *MSER,
-                *GFTT, *HARRIS, *Dense, *SimpleBlob
+                FAST, STAR, *SIFT, *SURF, ORB, *MSER,
+                GFTT, HARRIS, Dense, *SimpleBlob
                 *GridFAST, *GridSTAR, ...
                 *PyramidFAST, *PyramidSTAR, ...
                 *oldSURF (OpenCV 2.2.3)
@@ -75,7 +75,8 @@ class CVEqualizer:
                                                  "BruteForce-Hamming",
                                                  "BruteForce-Hamming(2)",
                                                  "in-house-raw", "in-house-region"),
-                           "feature_detectors" : ("ORB", "oldSURF"),
+                           "feature_detectors" : ("ORB", "FAST", "STAR", "GFTT",
+                                                  "HARRIS", "Dense", "oldSURF"),
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
         # default parameters
