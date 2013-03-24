@@ -167,8 +167,12 @@ class ImageFinder:
         ngray = self._prepare_image(needle, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
 
-        needle_center = (needle.get_width() / 2, needle.get_height() / 2)
-        return self._project_features(needle_center, hgray, ngray, similarity, hcanvas)
+        # project more points for debugging purposes and image logging
+        frame_points = []
+        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
+        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
+                             (needle.get_width(), needle.get_height())])
+        return self._project_features(frame_points, hgray, ngray, similarity, hcanvas)
 
     def find_all(self, haystack, needle, similarity, nocolor = True):
         """
@@ -267,7 +271,10 @@ class ImageFinder:
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
-        needle_center = (needle.get_width() / 2, needle.get_height() / 2)
+        frame_points = []
+        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
+        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
+                             (needle.get_width(), needle.get_height())])
 
         for upleft in maxima:
             up = upleft.get_y()
@@ -281,7 +288,7 @@ class ImageFinder:
             hotmap_region = hcanvas[up:down, left:right]
             hotmap_region = hotmap_region.copy()
 
-            res = self._project_features(needle_center, haystack_region, ngray,
+            res = self._project_features(frame_points, haystack_region, ngray,
                                          similarity, hotmap_region)
             if res != None:
                 location = (left + self.hotmap[2][0], up + self.hotmap[2][1])
@@ -331,7 +338,10 @@ class ImageFinder:
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
-        needle_center = (needle.get_width() / 2, needle.get_height() / 2)
+        frame_points = []
+        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
+        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
+                             (needle.get_width(), needle.get_height())])
 
         # the translation distance cannot be larger than the haystack
         dx = min(dx, haystack.width)
@@ -360,7 +370,7 @@ class ImageFinder:
                 #print result
                 #print hregion.shape, hgray.shape, ngray.shape, result.shape, "\n"
 
-                res = self._project_features(needle_center, haystack_region, ngray,
+                res = self._project_features(frame_points, haystack_region, ngray,
                                              similarity, hotmap_region)
                 result[j][i] = self.hotmap[1]
                 if self.image_logging <= 30:
@@ -377,7 +387,7 @@ class ImageFinder:
             cv2.imwrite("log.png", result)
         return result, locations
 
-    def _project_features(self, location_in_needle, hgray, ngray,
+    def _project_features(self, locations_in_needle, hgray, ngray,
                           similarity, hotmap_canvas = None):
         """
         Wrapper for the internal feature detection, matching and location
@@ -404,7 +414,7 @@ class ImageFinder:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
 
-        self._project_location(location_in_needle, mnkp, mhkp)
+        self._project_locations(locations_in_needle, mnkp, mhkp)
 
         if self.image_logging <= 40 and self.hotmap[0] != None:
             cv2.imwrite("log.png", self.hotmap[0])
@@ -601,20 +611,33 @@ class ImageFinder:
 
         return (match_hkeypoints, match_nkeypoints)
 
-    def _project_location(self, location_in_needle, mnkp, mhkp):
+    def _project_locations(self, locations_in_needle, mnkp, mhkp):
         """
-        Calculate the projection of a point from the needle in the
+        Calculate the projection of points from the needle in the
         haystack using random sample consensus and the matched
         keypoints between the needle and the haystack.
 
-        Returns an (x,y) tuple of the location in the haystack.
+        Returns a list of (x,y) tuples of the respective locations
+        in the haystack.
 
-        @param location_in_needle: (x,y) tuple for the point
+        Also sets the final similarity and returned location in
+        the hotmap.
+
+        Warning: The returned location is always the projected
+        point at (0,0) needle coordinates as in template matching,
+        i.e. the upper left corner of the image. In case of wild
+        transformations of the needle in the haystack this has to
+        be reconsidered and the needle center becomes obligatory.
+
+        @param locations_in_needle: (x,y) tuples for each point
         @param mnkp: matched needle keypoints
         @param mhkp: matched haystack keypoints
         """
         # check matches consistency
         assert(len(mnkp) == len(mhkp))
+
+        # the match coordinates to be returned
+        locations_in_needle.append((0,0))
 
         # homography and fundamental matrix as options - homography is considered only
         # for rotation but currently gives better results than the fundamental matrix
@@ -638,22 +661,25 @@ class ImageFinder:
                     x, y = kp.pt
                     cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
 
-        # calculate and project the point coordinates in the needle
-        (ox, oy) = (location_in_needle[0], location_in_needle[1])
-        orig_center_wrapped = numpy.array([[[ox, oy]]], dtype = numpy.float32)
-        #print orig_center_wrapped.shape, H.shape
-        match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
-        (mx, my) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+        # calculate and project all point coordinates in the needle
+        projected = []
+        for location in locations_in_needle:
+            (ox, oy) = (location[0], location[1])
+            orig_center_wrapped = numpy.array([[[ox, oy]]], dtype = numpy.float32)
+            #print orig_center_wrapped.shape, H.shape
+            match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
+            (mx, my) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
-        # plot the focus point used for clicking and other operations
-        if self.image_logging <= 40:
-            cv2.circle(self.hotmap[0], (int(mx),int(my)), 4, (255,0,0), -1)
+            # plot the focus point used for clicking and other operations
+            if self.image_logging <= 40:
+                cv2.circle(self.hotmap[0], (int(mx),int(my)), 4, (255,0,0), -1)
+            projected.append((int(mx), int(my)))
 
         self.hotmap[1] = float(total_matches) / float(len(mnkp))
         #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % self.hotmap[1]
-        self.hotmap[2] = (int(mx), int(my))
+        self.hotmap[2] = locations_in_needle.pop()
 
-        return H
+        return projected
 
     def _prepare_image(self, image, gray = False):
         """

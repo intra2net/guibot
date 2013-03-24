@@ -9,6 +9,3 @@
   It is not important how many are the final matches, but how credible they are.
   The final homography only requires 4 matches (fundamental matrix requires 8).
   Figure out a similarity parameter that reflects this reliability.
-
-- Decide on whether to return needle center as done currently in the feature
-  matching or the (0,0) needle location as done in the template matching.
