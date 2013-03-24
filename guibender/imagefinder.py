@@ -187,7 +187,8 @@ class ImageFinder:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
 
-        self._project_needle_center(needle, mnkp, mhkp)
+        needle_center = (needle.get_width() / 2, needle.get_height() / 2)
+        self._project_location(needle_center, mnkp, mhkp)
 
         if self.image_logging <= 40:
             cv2.imwrite("log.png", self.hotmap[0])
@@ -569,12 +570,15 @@ class ImageFinder:
 
         return (match_hkeypoints, match_nkeypoints)
 
-    def _project_needle_center(self, needle, mnkp, mhkp):
+    def _project_location(self, location_in_needle, mnkp, mhkp):
         """
-        Calculate the needle projection using random sample consensus
-        and the matched keypoints between the needle and the haystack.
+        Calculate the projection of a point from the needle in the
+        haystack using random sample consensus and the matched
+        keypoints between the needle and the haystack.
 
-        @param needle: the original needle image
+        Returns an (x,y) tuple of the location in the haystack.
+
+        @param location_in_needle: (x,y) tuple for the point
         @param mnkp: matched needle keypoints
         @param mhkp: matched haystack keypoints
         """
@@ -603,20 +607,20 @@ class ImageFinder:
                     x, y = kp.pt
                     cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
 
-        # calculate and project center coordinates
-        (ocx, ocy) = (needle.get_width() / 2, needle.get_height() / 2)
-        orig_center_wrapped = numpy.array([[[ocx, ocy]]], dtype = numpy.float32)
+        # calculate and project the point coordinates in the needle
+        (ox, oy) = (location_in_needle[0], location_in_needle[1])
+        orig_center_wrapped = numpy.array([[[ox, oy]]], dtype = numpy.float32)
         #print orig_center_wrapped.shape, H.shape
         match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
-        (mcx, mcy) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
+        (mx, my) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
         # plot the focus point used for clicking and other operations
         if self.image_logging <= 40:
-            cv2.circle(self.hotmap[0], (int(mcx),int(mcy)), 4, (255,0,0), -1)
+            cv2.circle(self.hotmap[0], (int(mx),int(my)), 4, (255,0,0), -1)
 
         self.hotmap[1] = float(total_matches) / float(len(mnkp))
         #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % self.hotmap[1]
-        self.hotmap[2] = (int(mcx), int(mcy))
+        self.hotmap[2] = (int(mx), int(my))
 
         return H
 
