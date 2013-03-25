@@ -1,6 +1,5 @@
-- Implement global Settings() class that acts
-  as a Singleton for all configuration settings.
-  Move all hardcoded config values to this class.
+- Implement global Settings() class that acts as a Singleton for all
+  configuration settings. Move all hardcoded config values to this class.
 
 - Make feature similarity more reliable. Currently it is defined as the ratio of
   keypoints through each feature matching filter. In case of successful matching
@@ -9,3 +8,10 @@
   It is not important how many are the final matches, but how credible they are.
   The final homography only requires 4 matches (fundamental matrix requires 8).
   Figure out a similarity parameter that reflects this reliability.
+
+- Make CVEqualizer specific for each image, thus extending similarity with all
+  settings helping to better match that particular image.
+
+- Still reconsider whether to return the (0,0) needle point or its center since
+  wild transformations are possible and defining the clicking point as (+n,+n)
+  is not as consistent.
