@@ -80,7 +80,8 @@ class CVEqualizer:
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
         # default parameters
-        self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0)},
+        self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0),
+                                     "similarity": CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)},
                            "tmatch" : {}, "fextract" : {}, "fmatch" : {},
                            "fdetect" : {"nzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0),
                                         "hzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)}}

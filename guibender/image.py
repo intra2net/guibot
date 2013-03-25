@@ -20,6 +20,7 @@ import PIL.Image
 
 from location import Location
 from imagepath import ImagePath
+from cvequalizer import CVEqualizer
 
 class Image:
     DEFAULT_SIMILARITY = 0.8
@@ -28,7 +29,8 @@ class Image:
 
     def __init__(self, image_filename=None, similarity=DEFAULT_SIMILARITY, pil_image=None):
         self.filename = image_filename
-        self.img_similarity = similarity
+        self.match_settings = CVEqualizer()
+        self.match_settings.parameters["find"]["similarity"].value = similarity
         self.pil_image = pil_image
 
         self.width = 0
@@ -67,12 +69,12 @@ class Image:
         return self.pil_image
 
     def get_similarity(self):
-        return self.img_similarity
+        return self.match_settings.parameters["find"]["similarity"].value
 
     def similarity(self, new_similarity):
         new_image = self.copy()
 
-        new_image.img_similarity = new_similarity
+        new_image.match_settings.parameters["find"]["similarity"].value = new_similarity
         return new_image
 
     def exact(self):

@@ -55,6 +55,8 @@ class Calibrator:
 
         # test all template matching methods
         old_config = (imagefinder.eq.current["tmatch"])
+        old_similarity = needle.match_settings.parameters["find"]["similarity"].value
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         for key in imagefinder.eq.algorithms["template_matchers"]:
             # autopy does not provide any similarity value
             # and only normed methods are comparable
@@ -68,7 +70,7 @@ class Calibrator:
                     method = key
                 imagefinder.eq.configure_backend(template_match = key)
                 start_time = time.time()
-                imagefinder.template_find(haystack, needle, 0.0, gray)
+                imagefinder.template_find(haystack, needle, gray)
                 total_time = time.time() - start_time
                 #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
@@ -91,15 +93,17 @@ class Calibrator:
                         self.calibrate(haystack, needle, imagefinder,
                                        refinements = refinements)
                     start_time = time.time()
-                    imagefinder.feature_find(haystack, needle, 0.0)
+                    imagefinder.feature_find(haystack, needle)
                     total_time = time.time() - start_time
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                     results.append((method, imagefinder.hotmap[1],
                                     imagefinder.hotmap[2], total_time))
+
         imagefinder.eq.configure_backend(feature_detect = old_config[0],
                                          feature_extract = old_config[1],
                                          feature_match = old_config[2])
+        needle.match_settings.parameters["find"]["similarity"].value = old_similarity
         return sorted(results, key = lambda x: x[1], reverse = True)
 
     def calibrate(self, haystack, needle, imagefinder,
@@ -124,7 +128,7 @@ class Calibrator:
 
             start_time = time.time()
             try:
-                imagefinder.feature_find(haystack, needle, 0.0)
+                imagefinder.feature_find(haystack, needle)
             except:
                 #print "out of range"
                 imagefinder.hotmap[1] = 0.0
@@ -134,9 +138,12 @@ class Calibrator:
             error += max(total_time - max_exec_time, 0)
             return error
 
+        old_similarity = needle.match_settings.parameters["find"]["similarity"].value
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         best_params, error = self.twiddle(imagefinder.eq.parameters,
                                           run, refinements)
         imagefinder.eq.parameters = best_params
+        needle.match_settings.parameters["find"]["similarity"].value = old_similarity
 
         return error
 

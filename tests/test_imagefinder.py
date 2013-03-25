@@ -145,7 +145,7 @@ class ImageFinderTest(unittest.TestCase):
         if match_settings != None:
             finder.eq = match_settings
         #finder.eq.configure_backend(feature_detect = "oldSURF")
-        match = finder.feature_find(haystack, needle, 0.0)
+        match = finder.feature_find(haystack, needle)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
         hotmap_file = os.path.join('log.png')
@@ -154,6 +154,7 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_viewport(self):
         needle = Image('n_ibs')
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_viewport')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
@@ -163,6 +164,7 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_rotation(self):
         needle = Image('n_ibs')
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_rotated')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
@@ -172,6 +174,7 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_scaling(self):
         needle = Image('n_ibs')
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_scaled')
         self.draw_needle_features(needle, haystack)
         self.draw_haystack_hotmap(haystack, needle,
@@ -181,17 +184,19 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_template_viewport(self):
         needle = Image('n_ibs')
+        needle.match_settings.parameters["find"]["similarity"].value = 0.9
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
-        match = ImageFinder().template_find(haystack, needle, 0.9, True)
+        match = ImageFinder().template_find(haystack, needle, True)
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 
     def test_features_screen(self):
         needle = Image('n_ibs')
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
@@ -204,21 +209,24 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_mouse_hover(self):
         needle = Image('n_ibs')
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
         # test hovering over viewport needle
-        match = ImageFinder().feature_find(haystack, needle, 0.0)
+        match = ImageFinder().feature_find(haystack, needle)
         self.assertIsNotNone(match, "The viewport transformed image "\
                              "should be matched in the screen.")
         Region().hover(match)
 
     def test_features_no_match(self):
         needle = Image('n_ibs')
+        needle.match_settings.parameters["find"]["similarity"].value = 0.5
         haystack = DesktopControl().capture_screen()
 
-        match = ImageFinder().feature_find(haystack, needle, 0.5)
+        match = ImageFinder().feature_find(haystack, needle)
+        needle.match_settings.parameters["find"]["similarity"].value = 0.0
         self.draw_haystack_hotmap(haystack, needle,
                                   "screen + viewport",
                                   logging = 10)
@@ -227,61 +235,85 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_feature_text_shapes(self):
         needle = Image('shape_text')
-        match_settings = ImageFinder().eq
-        match_settings.parameters["fdetect"]["nzoom"].value = 4.0
         haystack = Image('all_shapes')
-        self.draw_needle_features(needle, haystack, match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "shape text", match_settings)
+
+        settings = needle.match_settings
+        settings.parameters["find"]["similarity"].value = 0.0
+        settings.parameters["fdetect"]["nzoom"].value = 4.0
+
+        self.draw_needle_features(needle, haystack, settings)
+        self.draw_haystack_hotmap(haystack, needle, "shape text", settings)
+        # sleet to see image log better
         time.sleep(2)
 
     def test_feature_text_basic(self):
         needle = Image('word')
         haystack = Image('sentence_sans')
-        match_settings = ImageFinder().eq
-        match_settings.parameters["fdetect"]["nzoom"].value = 4.0
-        match_settings.parameters["fdetect"]["hzoom"].value = 4.0
-        self.draw_needle_features(needle, haystack, match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "sans", match_settings)
+
+        settings = needle.match_settings
+        settings.parameters["find"]["similarity"].value = 0.0
+        settings.parameters["fdetect"]["nzoom"].value = 4.0
+        settings.parameters["fdetect"]["hzoom"].value = 4.0
+
+        self.draw_needle_features(needle, haystack, settings)
+        self.draw_haystack_hotmap(haystack, needle, "sans", settings)
+        # sleet to see image log better
         time.sleep(2)
 
     def test_feature_text_bold(self):
         needle = Image('word')
         haystack = Image('sentence_bold')
-        match_settings = ImageFinder().eq
-        match_settings.parameters["fdetect"]["nzoom"].value = 4.0
-        match_settings.parameters["fdetect"]["hzoom"].value = 4.0
-        self.draw_needle_features(needle, haystack, match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "bold", match_settings)
+
+        settings = needle.match_settings
+        settings.parameters["find"]["similarity"].value = 0.0
+        settings.parameters["fdetect"]["nzoom"].value = 4.0
+        settings.parameters["fdetect"]["hzoom"].value = 4.0
+
+        self.draw_needle_features(needle, haystack, settings)
+        self.draw_haystack_hotmap(haystack, needle, "bold", settings)
+        # sleet to see image log better
         time.sleep(2)
 
     def test_feature_text_italic(self):
         needle = Image('word')
         haystack = Image('sentence_italic')
-        match_settings = ImageFinder().eq
-        match_settings.parameters["fdetect"]["nzoom"].value = 4.0
-        match_settings.parameters["fdetect"]["hzoom"].value = 4.0
-        self.draw_needle_features(needle, haystack, match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "italic", match_settings)
+
+        settings = needle.match_settings
+        settings.parameters["find"]["similarity"].value = 0.0
+        settings.parameters["fdetect"]["nzoom"].value = 4.0
+        settings.parameters["fdetect"]["hzoom"].value = 4.0
+
+        self.draw_needle_features(needle, haystack, settings)
+        self.draw_haystack_hotmap(haystack, needle, "italic", settings)
+        # sleet to see image log better
         time.sleep(2)
 
     def test_feature_text_larger(self):
         needle = Image('word')
         haystack = Image('sentence_larger')
-        match_settings = ImageFinder().eq
-        match_settings.parameters["fdetect"]["nzoom"].value = 4.0
-        match_settings.parameters["fdetect"]["hzoom"].value = 4.0
-        self.draw_needle_features(needle, haystack, match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "larger", match_settings)
+
+        settings = needle.match_settings
+        settings.parameters["find"]["similarity"].value = 0.0
+        settings.parameters["fdetect"]["nzoom"].value = 4.0
+        settings.parameters["fdetect"]["hzoom"].value = 4.0
+
+        self.draw_needle_features(needle, haystack, settings)
+        self.draw_haystack_hotmap(haystack, needle, "larger", settings)
+        # sleet to see image log better
         time.sleep(2)
 
     def test_feature_text_font(self):
         needle = Image('word')
         haystack = Image('sentence_font')
-        match_settings = ImageFinder().eq
-        match_settings.parameters["fdetect"]["nzoom"].value = 4.0
-        match_settings.parameters["fdetect"]["hzoom"].value = 4.0
-        self.draw_needle_features(needle, haystack, match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "font", match_settings)
+
+        settings = needle.match_settings
+        settings.parameters["find"]["similarity"].value = 0.0
+        settings.parameters["fdetect"]["nzoom"].value = 4.0
+        settings.parameters["fdetect"]["hzoom"].value = 4.0
+
+        self.draw_needle_features(needle, haystack, settings)
+        self.draw_haystack_hotmap(haystack, needle, "font", settings)
+        # sleet to see image log better
         time.sleep(2)
 
 

@@ -182,14 +182,12 @@ class Region(object):
         timeout_limit = time.time() + timeout
         while True:
             screen_capture = self.desktop.capture_screen(self)
-            similarity = image.get_similarity()
 
             # TODO: implement cropping or preparation here but not in the
             # image finder which concentrates solely on finding the image
             # (only autopy supports this but is almost never used compared
             # to the alternative methods)
-            found_pic = self.imagefinder.find(screen_capture, image,
-                                              similarity, nocolor)
+            found_pic = self.imagefinder.find(screen_capture, image, nocolor)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(),
                                               self.ypos + found_pic.get_y(), image)
@@ -215,11 +213,9 @@ class Region(object):
         last_matches = []
         timeout_limit = time.time() + timeout
         while True:
-
             screen_capture = self.desktop.capture_screen(self)
-            similarity = image.get_similarity()
-            found_pics = self.imagefinder.find_all(screen_capture, image,
-                                                   similarity, nocolor)
+
+            found_pics = self.imagefinder.find_all(screen_capture, image, nocolor)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
