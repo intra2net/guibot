@@ -144,8 +144,8 @@ class ImageFinderTest(unittest.TestCase):
         finder.image_logging = logging
         if match_settings != None:
             finder.eq = match_settings
-        #finder.eq.configure_backend(feature_detect = "oldSURF")
-        match = finder.feature_find(haystack, needle)
+        finder.eq.configure_backend(find_image = "feature")
+        match = finder.find(haystack, needle)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
         hotmap_file = os.path.join('log.png')
@@ -190,7 +190,9 @@ class ImageFinderTest(unittest.TestCase):
         haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
-        match = ImageFinder().template_find(haystack, needle)
+        finder = ImageFinder()
+        finder.eq.configure_backend(find_image = "template")
+        match = finder.find(haystack, needle)
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 
@@ -215,7 +217,9 @@ class ImageFinderTest(unittest.TestCase):
         haystack = DesktopControl().capture_screen()
 
         # test hovering over viewport needle
-        match = ImageFinder().feature_find(haystack, needle)
+        finder = ImageFinder()
+        finder.eq.configure_backend(find_image = "feature")
+        match = finder.find(haystack, needle)
         self.assertIsNotNone(match, "The viewport transformed image "\
                              "should be matched in the screen.")
         Region().hover(match)
@@ -225,7 +229,9 @@ class ImageFinderTest(unittest.TestCase):
         needle.match_settings.p["find"]["similarity"].value = 0.5
         haystack = DesktopControl().capture_screen()
 
-        match = ImageFinder().feature_find(haystack, needle)
+        finder = ImageFinder()
+        finder.eq.configure_backend(find_image = "feature")
+        match = finder.find(haystack, needle)
         needle.match_settings.p["find"]["similarity"].value = 0.0
         self.draw_haystack_hotmap(haystack, needle,
                                   "screen + viewport",

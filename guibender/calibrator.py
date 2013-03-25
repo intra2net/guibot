@@ -54,7 +54,8 @@ class Calibrator:
         results = []
 
         # test all template matching methods
-        old_config = (imagefinder.eq.current["tmatch"])
+        old_config = (imagefinder.eq.current["find"],
+                      imagefinder.eq.current["tmatch"])
         old_gray = imagefinder.eq.p["find"]["nocolor"].value
         old_similarity = needle.match_settings.p["find"]["similarity"].value
         needle.match_settings.p["find"]["similarity"].value = 0.0
@@ -69,18 +70,21 @@ class Calibrator:
                     method = key + "_gray"
                 else:
                     method = key
-                imagefinder.eq.configure_backend(template_match = key)
+                imagefinder.eq.configure_backend(find_image = "template",
+                                                 template_match = key)
                 imagefinder.eq.p["find"]["nocolor"].value = gray
                 start_time = time.time()
-                imagefinder.template_find(haystack, needle)
+                imagefinder.find(haystack, needle)
                 total_time = time.time() - start_time
                 #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
-        imagefinder.eq.configure_backend(template_match = old_config)
+        imagefinder.eq.configure_backend(find_image = old_config[0],
+                                         template_match = old_config[1])
         imagefinder.eq.p["find"]["nocolor"].value = old_gray
 
         # test all feature matching methods
-        old_config = (imagefinder.eq.current["fdetect"],
+        old_config = (imagefinder.eq.current["find"],
+                      imagefinder.eq.current["fdetect"],
                       imagefinder.eq.current["fextract"],
                       imagefinder.eq.current["fmatch"])
         for key_fd in imagefinder.eq.algorithms["feature_detectors"]:
@@ -89,23 +93,25 @@ class Calibrator:
                 continue
             for key_fe in imagefinder.eq.algorithms["feature_extractors"]:
                 for key_fm in imagefinder.eq.algorithms["feature_matchers"]:
-                    imagefinder.eq.configure_backend(feature_detect = key_fd,
+                    imagefinder.eq.configure_backend(find_image = "feature",
+                                                     feature_detect = key_fd,
                                                      feature_extract = key_fe,
                                                      feature_match = key_fm)
                     if calibration:
                         self.calibrate(haystack, needle, imagefinder,
                                        refinements = refinements)
                     start_time = time.time()
-                    imagefinder.feature_find(haystack, needle)
+                    imagefinder.find(haystack, needle)
                     total_time = time.time() - start_time
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                     results.append((method, imagefinder.hotmap[1],
                                     imagefinder.hotmap[2], total_time))
 
-        imagefinder.eq.configure_backend(feature_detect = old_config[0],
-                                         feature_extract = old_config[1],
-                                         feature_match = old_config[2])
+        imagefinder.eq.configure_backend(find_image = old_config[0],
+                                         feature_detect = old_config[1],
+                                         feature_extract = old_config[2],
+                                         feature_match = old_config[3])
         needle.match_settings.p["find"]["similarity"].value = old_similarity
         return sorted(results, key = lambda x: x[1], reverse = True)
 
@@ -131,7 +137,7 @@ class Calibrator:
 
             start_time = time.time()
             try:
-                imagefinder.feature_find(haystack, needle)
+                imagefinder.find(haystack, needle)
             except:
                 #print "out of range"
                 imagefinder.hotmap[1] = 0.0

@@ -76,9 +76,11 @@ class ImageFinder:
         requires 100% match
         """
         if self.eq.current["find"] == "template":
-            return self.template_find(haystack, needle)
+            return self._template_find(haystack, needle)
         elif self.eq.current["find"] == "feature":
-            return self.feature_find(haystack, needle)
+            return self._feature_find(haystack, needle)
+        elif self.eq.current["find"] == "hybrid":
+            return self._hybrid_find(haystack, needle)
         else:
             raise ImageFinderMethodError
 
@@ -164,7 +166,8 @@ class ImageFinder:
 
         return maxima
 
-    def template_find(self, haystack, needle):
+
+    def _template_find(self, haystack, needle):
         """
         Finds a needle image in a haystack image using template matching.
 
@@ -238,7 +241,7 @@ class ImageFinder:
                 return Location(maxLoc[0], maxLoc[1])
             return None
 
-    def feature_find(self, haystack, needle):
+    def _feature_find(self, haystack, needle):
         """
         Finds a needle image in a haystack image using feature matching.
 
@@ -260,7 +263,7 @@ class ImageFinder:
 
         return self._project_features(frame_points, hgray, ngray, similarity, hcanvas)
 
-    def hybrid_find(self, haystack, needle):
+    def _hybrid_find(self, haystack, needle):
         """
         Use template matching to deal with feature dense regions
         and guide a final feature matching.
@@ -323,7 +326,7 @@ class ImageFinder:
             self.hotmap = max(hotmaps, key = lambda x: x[1])
             return Location(self.hotmap[2][0], self.hotmap[2][1])
 
-    def hybrid2to1_find(self, haystack, needle):
+    def _hybrid2to1_find(self, haystack, needle):
         """
         Two thirds feature matching and one third template matching.
         Divide the haystack into x,y subregions and perform feature
@@ -408,6 +411,7 @@ class ImageFinder:
         if self.image_logging <= 40:
             cv2.imwrite("log.png", result)
         return result, locations
+
 
     def _project_features(self, locations_in_needle, hgray, ngray,
                           similarity, hotmap_canvas = None):
