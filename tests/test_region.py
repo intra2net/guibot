@@ -283,38 +283,62 @@ class RegionTest(unittest.TestCase):
         Region().hover(match.get_target())
 
     def test_click(self):
-        # TODO: Fix openCV image finder first
-        return
-
+        # TODO: accept method
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().click('qt4gui_button')
-        Region().wait_vanish('qt4gui_button')
+        region = Region()
 
-        self.assertEqual(0, self.wait_end(child_pipe))
+        # method 1: SUCCESS with 0.8
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
 
-    def test_right_click(self):
-        # TODO: Fix openCV image finder first
-        return
+        # method 2: SUCCESS with 0.5
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+        # or: Image('qt4gui_button').similarity(0.5)
 
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
-        Region().right_click('qt4gui_contextmenu_label').nearby(200).click('qt4gui_contextmenu_quit')
+        region.click('qt4gui_button')
+        region.wait_vanish('qt4gui_button')
 
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_double_click(self):
-        # TODO: Fix openCV image finder first
-        return
-
+        # TODO: accept method
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().double_click(Image('qt4gui_double_click').target_offset(0,-10))
+        region = Region()
+
+        # method 1: SUCCESS with 0.8
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+
+        # method 2: FAIL
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.4
+
+        region.double_click('qt4gui_double_click')
+
+        self.assertEqual(0, self.wait_end(child_pipe))
+
+    def test_right_click(self):
+        # TODO: solve
+        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+
+        region = Region()
+
+        # method 1: FAIL on Quit with 0.8
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+
+        # method 2: FAIL on Quit with 0.5
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+
+        region.right_click('qt4gui_contextmenu_label').nearby(200).click('qt4gui_contextmenu_quit')
 
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_press(self):
-        # TODO: test whether the image would work on different Linux platforms at least
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
         time.sleep(1)
         Region().press(Key.ESC)
@@ -326,42 +350,88 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_press_at(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: accept method
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-        Region().press_at(Image('qt4gui_lineedit2'), keys=[Key.ENTER])
+
+        region = Region()
+
+        # method 1: SUCCESS with 0.8
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+
+        # method 2: FAIL
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+
+        region.press_at('qt4gui_lineedit2', keys=[Key.ENTER])
 
         Region().wait_vanish('qt4gui_lineedit2')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_type_text(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: accept method
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-        Region().click(Image('qt4gui_lineedit'))
+
+        region = Region()
+
+        # method 1: SUCCESS with 0.8
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+
+        # method 2: SUCCESS with 0.5
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+
+        region.click('qt4gui_lineedit')
         time.sleep(0.2)
         Region().type_text('quit')
 
+        # TODO: solve this and all wait vanish or remove them since they
+        # don't test anything
         Region().wait_vanish('qt4gui_lineedit')
+        #Region().wait_vanish(Image('qt4gui_lineedit').similarity(0.5))
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_type_at(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: accept method
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-        Region().type_at(Image('qt4gui_lineedit'), text='quit')
+
+        region = Region()
+
+        # method 1: SUCCESS with 0.8
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+
+        # method 2: SUCCESS with 0.5
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+
+        region.type_at('qt4gui_lineedit', text='quit')
 
         Region().wait_vanish('qt4gui_lineedit')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_drag_drop(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: solve
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().drag_drop(Image('qt4gui_textedit'), Image('qt4gui_lineedit'))
+        region = Region()
+
+        # method 1: FAIL (0 features in haystack)
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 10.0
+
+        # method 2: FAIL
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+
+        region.drag_drop(Image('qt4gui_textedit'), Image('qt4gui_lineedit'))
 
         Region().wait_vanish('qt4gui_textedit')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_drag(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: solve drag_drop
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         Region().drag(Image('qt4gui_textedit'))
@@ -374,7 +444,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_drop_at(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: solve drag_drop
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         Region().drag(Image('qt4gui_textedit'))
@@ -387,10 +457,20 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_mouse_down(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: analyse partial solution
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().mouse_down(Image('qt4gui_label3'))
+        region = Region()
+
+        # method 1: PARTIAL SUCCESS (when no other mouse_down labels) with 0.8
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+
+        # method 2: FAIL (on cleaner background with 0.4)
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.4
+
+        region.mouse_down(Image('qt4gui_label3'))
 
         # toggled buttons cleanup
         Region().desktop.mouse_up()
@@ -399,13 +479,23 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_mouse_up(self):
-        # TODO: test whether the image would work on different Linux platforms at least
+        # TODO: solve
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().mouse_down(Image('qt4gui_label4'))
-        self.assertFalse(Region().wait_vanish(Image('qt4gui_label4'), timeout=3))
+        region = Region()
 
-        Region().mouse_up(Image('qt4gui_label4'))
+        # method 1: FAIL (on cleaner background with 0.8)
+        region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
+        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+
+        # method 2: FAIL (on cleaner background with 0.5)
+        #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+
+        region.mouse_down('qt4gui_label4')
+        self.assertFalse(region.wait_vanish('qt4gui_label4', timeout=3))
+        region.mouse_up('qt4gui_label4')
+        self.assertTrue(region.wait_vanish('qt4gui_label4', timeout=3))
 
         self.assertEqual(0, self.wait_end(child_pipe))
 
