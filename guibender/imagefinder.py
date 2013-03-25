@@ -281,8 +281,9 @@ class ImageFinder:
         # use a different lower similarity for the template matching
         template_similarity = self.eq.p["find"]["front_similarity"].value
         feature_similarity = self.eq.p["find"]["similarity"].value
+        #print template_similarity, feature_similarity
         self.eq.p["find"]["similarity"].value = template_similarity
-        maxima = self.find_all(haystack, needle)
+        maxima = self.find_all(needle, haystack)
         self.eq.p["find"]["similarity"].value = feature_similarity
 
         ngray = self._prepare_image(needle, gray = True)

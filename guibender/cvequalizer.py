@@ -67,7 +67,7 @@ class CVEqualizer:
             but scaling for example is supported)
         """
         # currently fully compatible methods
-        self.algorithms = {"find_methods" : ("template", "feature"),
+        self.algorithms = {"find_methods" : ("template", "feature", "hybrid"),
                            "template_matchers" : ("autopy", "sqdiff", "ccorr",
                                                   "ccoeff", "sqdiff_normed",
                                                   "ccorr_normed", "ccoeff_normed"),
