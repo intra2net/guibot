@@ -190,7 +190,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
-        match = ImageFinder().template_find(haystack, needle, True)
+        match = ImageFinder().template_find(haystack, needle)
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 

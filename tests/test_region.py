@@ -219,7 +219,8 @@ class RegionTest(unittest.TestCase):
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
-        matches = region.find_all(Image('shape_pink_box'), nocolor = True)
+        region.imagefinder.eq.parameters["find"]["nocolor"].value = True
+        matches = region.find_all(Image('shape_pink_box'))
         self.assertEqual(len(matches), 3)
         for match in matches:
             region.hover(match)

@@ -63,7 +63,7 @@ class ImageFinder:
         # similarity and the matched coordinates
         self.hotmap = [None, -1.0, None]
 
-    def find(self, haystack, needle, nocolor = True):
+    def find(self, haystack, needle):
         """
         Finds an image in another if above some similarity and returns a
         Location() object or None using all default algorithms and parameters.
@@ -74,16 +74,15 @@ class ImageFinder:
         @param needle: an Image() to look for
         @param similarity: a float in the interval [0.0, 1.0] where 1.0
         requires 100% match
-        @param nocolor: a bool defining whether to use grayscale images
         """
         if self.eq.current["find"] == "template":
-            return self.template_find(haystack, needle, nocolor)
+            return self.template_find(haystack, needle)
         elif self.eq.current["find"] == "feature":
             return self.feature_find(haystack, needle)
         else:
             raise ImageFinderMethodError
 
-    def find_all(self, haystack, needle, nocolor = True):
+    def find_all(self, haystack, needle):
         """
         Finds all needle images in a haystack image using template matching.
 
@@ -100,7 +99,9 @@ class ImageFinder:
             match_template = "ccoeff_normed"
         else:
             match_template = self.eq.current["tmatch"]
-        result = self._match_template(haystack, needle, nocolor, match_template)
+        result = self._match_template(haystack, needle,
+                                      self.eq.parameters["find"]["nocolor"].value,
+                                      match_template)
         similarity = needle.match_settings.parameters["find"]["similarity"].value
 
         # extract maxima once for each needle size region
@@ -163,7 +164,7 @@ class ImageFinder:
 
         return maxima
 
-    def template_find(self, haystack, needle, nocolor = True):
+    def template_find(self, haystack, needle):
         """
         Finds a needle image in a haystack image using template matching.
 
@@ -203,7 +204,9 @@ class ImageFinder:
             return None
 
         else:
-            result = self._match_template(haystack, needle, nocolor, self.eq.current["tmatch"])
+            result = self._match_template(haystack, needle,
+                                          self.eq.parameters["find"]["nocolor"].value,
+                                          self.eq.current["tmatch"])
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
             logging.debug('minVal: %s', str(minVal))
@@ -257,7 +260,7 @@ class ImageFinder:
 
         return self._project_features(frame_points, hgray, ngray, similarity, hcanvas)
 
-    def hybrid_find(self, haystack, needle, similarity2 = 0.4):
+    def hybrid_find(self, haystack, needle):
         """
         Use template matching to deal with feature dense regions
         and guide a final feature matching.
@@ -269,10 +272,13 @@ class ImageFinder:
 
         Hopefully this might work...
         """
+        # use a different lower similarity for the template matching
+        template_similarity = self.eq.parameters["find"]["front_similarity"].value
+        feature_similarity = needle.match_settings.parameters["find"]["similarity"].value
+        needle.match_settings.parameters["find"]["similarity"].value = template_similarity
         maxima = self.find_all(haystack, needle)
-        hotmaps = []
+        needle.match_settings.parameters["find"]["similarity"].value = feature_similarity
 
-        similarity = needle.match_settings.parameters["find"]["similarity"].value
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
@@ -282,6 +288,7 @@ class ImageFinder:
         frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
                              (needle.get_width(), needle.get_height())])
 
+        hotmaps = []
         for upleft in maxima:
             up = upleft.get_y()
             down = min(haystack.height, up + needle.get_height())
@@ -295,7 +302,7 @@ class ImageFinder:
             hotmap_region = hotmap_region.copy()
 
             res = self._project_features(frame_points, haystack_region, ngray,
-                                         similarity, hotmap_region)
+                                         feature_similarity, hotmap_region)
             if res != None:
                 # take the template matching location rather than the feature one
                 # for stability (they should ultimately be the same)
@@ -316,8 +323,7 @@ class ImageFinder:
             self.hotmap = max(hotmaps, key = lambda x: x[1])
             return Location(self.hotmap[2][0], self.hotmap[2][1])
 
-    def hybrid2to1_find(self, haystack, needle,
-                        x = 1000, y = 1000, dx = 100, dy = 100):
+    def hybrid2to1_find(self, haystack, needle):
         """
         Two thirds feature matching and one third template matching.
         Divide the haystack into x,y subregions and perform feature
@@ -345,6 +351,11 @@ class ImageFinder:
                 find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
         """
         similarity = needle.match_settings.parameters["find"]["similarity"].value
+        x = self.eq.parameters["find"]["x"].value
+        y = self.eq.parameters["find"]["y"].value
+        dx = self.eq.parameters["find"]["dx"].value
+        dy = self.eq.parameters["find"]["dy"].value
+
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)

@@ -45,11 +45,11 @@ def add_image_path(directory):
 def remove_image_path(directory):
     guibender.remove_image_path(directory)
 
-def find(image, timeout=10, nocolor=False):
-    return guibender.find(image, timeout, nocolor)
+def find(image, timeout=10):
+    return guibender.find(image, timeout)
 
-def find_all(image, timeout=10, nocolor=False, allow_zero=False):
-    return guibender.find_all(image, timeout, nocolor, allow_zero)
+def find_all(image, timeout=10, allow_zero=False):
+    return guibender.find_all(image, timeout, allow_zero)
 
 def exists(image, timeout=0):
     return guibender.exists(image, timeout)

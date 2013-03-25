@@ -174,7 +174,7 @@ class Region(object):
                                               feature_detect, feature_extract,
                                               feature_match)
 
-    def find(self, image, timeout=10, nocolor=False):
+    def find(self, image, timeout=10):
         # Load image if needed
         if isinstance(image, basestring):
             image = Image(image)
@@ -187,7 +187,7 @@ class Region(object):
             # image finder which concentrates solely on finding the image
             # (only autopy supports this but is almost never used compared
             # to the alternative methods)
-            found_pic = self.imagefinder.find(screen_capture, image, nocolor)
+            found_pic = self.imagefinder.find(screen_capture, image)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(),
                                               self.ypos + found_pic.get_y(), image)
@@ -204,7 +204,7 @@ class Region(object):
                 # TODO: Make 'rescan speed' configurable
                 time.sleep(0.2)
 
-    def find_all(self, image, timeout=10, nocolor=False, allow_zero = False):
+    def find_all(self, image, timeout=10, allow_zero = False):
         # Load image if needed
         if isinstance(image, basestring):
             image = Image(image)
@@ -215,7 +215,7 @@ class Region(object):
         while True:
             screen_capture = self.desktop.capture_screen(self)
 
-            found_pics = self.imagefinder.find_all(screen_capture, image, nocolor)
+            found_pics = self.imagefinder.find_all(screen_capture, image)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:

@@ -77,6 +77,15 @@ class Image:
         new_image.match_settings.parameters["find"]["similarity"].value = new_similarity
         return new_image
 
+    def get_gray(self):
+        return self.match_settings.parameters["find"]["nocolor"].value
+
+    def gray(self, new_nocolor):
+        new_image = self.copy()
+
+        new_image.match_settings.parameters["find"]["nocolor"].value = new_nocolor
+        return new_image
+
     def exact(self):
         return self.similarity(1.0)
 

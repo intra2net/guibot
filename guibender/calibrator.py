@@ -55,6 +55,7 @@ class Calibrator:
 
         # test all template matching methods
         old_config = (imagefinder.eq.current["tmatch"])
+        old_gray = imagefinder.eq.parameters["find"]["nocolor"].value
         old_similarity = needle.match_settings.parameters["find"]["similarity"].value
         needle.match_settings.parameters["find"]["similarity"].value = 0.0
         for key in imagefinder.eq.algorithms["template_matchers"]:
@@ -69,12 +70,14 @@ class Calibrator:
                 else:
                     method = key
                 imagefinder.eq.configure_backend(template_match = key)
+                imagefinder.eq.parameters["find"]["nocolor"].value = gray
                 start_time = time.time()
-                imagefinder.template_find(haystack, needle, gray)
+                imagefinder.template_find(haystack, needle)
                 total_time = time.time() - start_time
                 #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
         imagefinder.eq.configure_backend(template_match = old_config)
+        imagefinder.eq.parameters["find"]["nocolor"].value = old_gray
 
         # test all feature matching methods
         old_config = (imagefinder.eq.current["fdetect"],
