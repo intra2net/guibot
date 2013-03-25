@@ -81,7 +81,9 @@ class CVEqualizer:
 
         # default parameters
         self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0)},
-                           "tmatch" : {}, "fdetect" : {}, "fextract" : {}, "fmatch" : {}}
+                           "tmatch" : {}, "fextract" : {}, "fmatch" : {},
+                           "fdetect" : {"nzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0),
+                                        "hzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)}}
 
         # default algorithms
         self.current = {"find" : "template",

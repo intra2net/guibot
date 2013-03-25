@@ -431,68 +431,60 @@ class ImageFinder:
         is too low to project later on.
         """
         hkeypoints, nkeypoints = [], []
-        hfactor, nfactor = 1, 1
-        i, maxzoom = 0, 5
+        hfactor = self.eq.parameters["fdetect"]["hzoom"].value
+        nfactor = self.eq.parameters["fdetect"]["nzoom"].value
 
-        # minimum 4 features are required for calculating the homography matrix
-        while len(hkeypoints) < 4 or len(nkeypoints) < 4 and i < maxzoom:
-            i += 1
+        # zoom in if explicitly set
+        if hfactor > 1.0:
+            hmat = cv.fromarray(hgray)
+            hmat_zoomed = cv.CreateMat(int(hmat.rows * hfactor), int(hmat.cols * hfactor), cv.CV_8UC1)
+            #print "Zooming x%i haystack" % hfactor
+            #print hmat.rows, hmat.cols, "->", hmat_zoomed.rows, hmat_zoomed.cols
+            cv.Resize(hmat, hmat_zoomed)
+            hgray = numpy.asarray(hmat_zoomed)
+        if nfactor > 1.0:
+            nmat = cv.fromarray(ngray)
+            nmat_zoomed = cv.CreateMat(int(nmat.rows * nfactor), int(nmat.cols * nfactor), cv.CV_8UC1)
+            #print "Zooming x%i needle" % nfactor
+            #print nmat.rows, nmat.cols, "->", nmat_zoomed.rows, nmat_zoomed.cols
+            cv.Resize(nmat, nmat_zoomed)
+            ngray = numpy.asarray(nmat_zoomed)
 
-            if detect == "oldSURF":
-                # build the old surf feature detector
-                hessian_threshold = self.eq.parameters["fdetect"]["oldSURFdetect"].value
-                detector = cv2.SURF(hessian_threshold)
+        if detect == "oldSURF":
+            # build the old surf feature detector
+            hessian_threshold = self.eq.parameters["fdetect"]["oldSURFdetect"].value
+            detector = cv2.SURF(hessian_threshold)
 
-                (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
-                (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
+            (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
+            (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
 
-            # include only methods tested for compatibility
-            elif (detect in self.eq.algorithms["feature_detectors"]
-                  and extract in self.eq.algorithms["feature_extractors"]):
-                detector = cv2.FeatureDetector_create(detect)
-                detector = self.eq.sync_backend_to_params(detector, "fdetect")
-                extractor = cv2.DescriptorExtractor_create(extract)
-                extractor = self.eq.sync_backend_to_params(extractor, "fextract")
+        # include only methods tested for compatibility
+        elif (detect in self.eq.algorithms["feature_detectors"]
+              and extract in self.eq.algorithms["feature_extractors"]):
+            detector = cv2.FeatureDetector_create(detect)
+            detector = self.eq.sync_backend_to_params(detector, "fdetect")
+            extractor = cv2.DescriptorExtractor_create(extract)
+            extractor = self.eq.sync_backend_to_params(extractor, "fextract")
 
-                # keypoints
-                hkeypoints = detector.detect(hgray)
-                nkeypoints = detector.detect(ngray)
-
-                # feature vectors (descriptors)
-                (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
-                (nkeypoints, ndescriptors) = extractor.compute(ngray, nkeypoints)
-
-            else:
-                raise ImageFinderMethodError
-
-            # if less than minimum features, zoom in small images to detect more
+            # keypoints
+            hkeypoints = detector.detect(hgray)
+            nkeypoints = detector.detect(ngray)
             #print len(nkeypoints), len(hkeypoints)
-            if len(nkeypoints) < 4:
-                nmat = cv.fromarray(ngray)
-                nmat_zoomed = cv.CreateMat(nmat.rows * 2, nmat.cols * 2, cv.CV_8UC1)
-                nfactor *= 2
-                logging.debug("Minimum 4 features are required while only %s from needle "\
-                              "were detected - zooming x%i needle to increase them!",
-                              len(nkeypoints), nfactor)
-                #print nmat.rows, nmat.cols
-                cv.Resize(nmat, nmat_zoomed)
-                ngray = numpy.asarray(nmat_zoomed)
-            if len(hkeypoints) < 4:
-                hmat = cv.fromarray(hgray)
-                hmat_zoomed = cv.CreateMat(hmat.rows * 2, hmat.cols * 2, cv.CV_8UC1)
-                hfactor *= 2
-                logging.debug("Minimum 4 features are required while only %s from haystack "\
-                                "were detected - zooming x%i haystack to increase them!",
-                                len(hkeypoints), hfactor)
-                #print hmat.rows, hmat.cols
-                cv.Resize(hmat, hmat_zoomed)
-                hgray = numpy.asarray(hmat_zoomed)
+
+            # feature vectors (descriptors)
+            (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
+            (nkeypoints, ndescriptors) = extractor.compute(ngray, nkeypoints)
+
+        else:
+            raise ImageFinderMethodError
 
         # reduce keypoint coordinates to the original image size
         for hkeypoint in hkeypoints:
-            hkeypoint.pt = (hkeypoint.pt[0] / hfactor, hkeypoint.pt[1] / hfactor)
+            hkeypoint.pt = (int(hkeypoint.pt[0] / hfactor),
+                            int(hkeypoint.pt[1] / hfactor))
         for nkeypoint in nkeypoints:
-            nkeypoint.pt = (nkeypoint.pt[0] / nfactor, nkeypoint.pt[1] / nfactor)
+            nkeypoint.pt = (int(nkeypoint.pt[0] / nfactor),
+                            int(nkeypoint.pt[1] / nfactor))
 
         # plot the detected features for image logging
         if self.image_logging <= 10:
