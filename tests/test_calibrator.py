@@ -84,10 +84,11 @@ class CalibratorTest(unittest.TestCase):
         calibrator = Calibrator()
 
         results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #pprint.pprint(results)
+        pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "\
                            "should be more than one for the blue circle")
         for result in results:
+            print result[1]
             self.assertGreaterEqual(result[1], 0.9,
                                     "Minimum similarity for full match is 0.9")
 

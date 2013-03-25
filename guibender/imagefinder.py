@@ -100,9 +100,9 @@ class ImageFinder:
         else:
             match_template = self.eq.current["tmatch"]
         result = self._match_template(haystack, needle,
-                                      self.eq.parameters["find"]["nocolor"].value,
+                                      self.eq.p["find"]["nocolor"].value,
                                       match_template)
-        similarity = needle.match_settings.parameters["find"]["similarity"].value
+        similarity = needle.match_settings.p["find"]["similarity"].value
 
         # extract maxima once for each needle size region
         maxima = []
@@ -172,7 +172,7 @@ class ImageFinder:
 
         Available template matching methods are: autopy, opencv
         """
-        similarity = needle.match_settings.parameters["find"]["similarity"].value
+        similarity = needle.match_settings.p["find"]["similarity"].value
         if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
 
@@ -205,7 +205,7 @@ class ImageFinder:
 
         else:
             result = self._match_template(haystack, needle,
-                                          self.eq.parameters["find"]["nocolor"].value,
+                                          self.eq.p["find"]["nocolor"].value,
                                           self.eq.current["tmatch"])
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
@@ -247,7 +247,7 @@ class ImageFinder:
         Available methods are: a combination of feature detector,
         extractor, and matcher
         """
-        similarity = needle.match_settings.parameters["find"]["similarity"].value
+        similarity = needle.match_settings.p["find"]["similarity"].value
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
@@ -273,11 +273,11 @@ class ImageFinder:
         Hopefully this might work...
         """
         # use a different lower similarity for the template matching
-        template_similarity = self.eq.parameters["find"]["front_similarity"].value
-        feature_similarity = needle.match_settings.parameters["find"]["similarity"].value
-        needle.match_settings.parameters["find"]["similarity"].value = template_similarity
+        template_similarity = self.eq.p["find"]["front_similarity"].value
+        feature_similarity = needle.match_settings.p["find"]["similarity"].value
+        needle.match_settings.p["find"]["similarity"].value = template_similarity
         maxima = self.find_all(haystack, needle)
-        needle.match_settings.parameters["find"]["similarity"].value = feature_similarity
+        needle.match_settings.p["find"]["similarity"].value = feature_similarity
 
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
@@ -350,11 +350,11 @@ class ImageFinder:
 
                 find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
         """
-        similarity = needle.match_settings.parameters["find"]["similarity"].value
-        x = self.eq.parameters["find"]["x"].value
-        y = self.eq.parameters["find"]["y"].value
-        dx = self.eq.parameters["find"]["dx"].value
-        dy = self.eq.parameters["find"]["dy"].value
+        similarity = needle.match_settings.p["find"]["similarity"].value
+        x = self.eq.p["find"]["x"].value
+        y = self.eq.p["find"]["y"].value
+        dx = self.eq.p["find"]["dx"].value
+        dy = self.eq.p["find"]["dy"].value
 
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
@@ -456,8 +456,8 @@ class ImageFinder:
         is too low to project later on.
         """
         hkeypoints, nkeypoints = [], []
-        hfactor = self.eq.parameters["fdetect"]["hzoom"].value
-        nfactor = self.eq.parameters["fdetect"]["nzoom"].value
+        hfactor = self.eq.p["fdetect"]["hzoom"].value
+        nfactor = self.eq.p["fdetect"]["nzoom"].value
 
         # zoom in if explicitly set
         if hfactor > 1.0:
@@ -477,7 +477,7 @@ class ImageFinder:
 
         if detect == "oldSURF":
             # build the old surf feature detector
-            hessian_threshold = self.eq.parameters["fdetect"]["oldSURFdetect"].value
+            hessian_threshold = self.eq.p["fdetect"]["oldSURFdetect"].value
             detector = cv2.SURF(hessian_threshold)
 
             (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
@@ -542,7 +542,7 @@ class ImageFinder:
                     smooth_dist2 = m[1].distance + 0.0000001
 
                     #print smooth_dist1 / smooth_dist2, self.ratio
-                    if (smooth_dist1 / smooth_dist2 < self.eq.parameters["fmatch"]["ratioThreshold"].value):
+                    if (smooth_dist1 / smooth_dist2 < self.eq.p["fmatch"]["ratioThreshold"].value):
                         matches2.append(m[0])
                 else:
                     matches2.append(m[0])
@@ -585,19 +585,19 @@ class ImageFinder:
         if match == "in-house-region":
             matches = matcher.regionMatch(ndescriptors, hdescriptors,
                                           nkeypoints, hkeypoints,
-                                          self.eq.parameters["fmatch"]["refinements"].value,
-                                          self.eq.parameters["fmatch"]["recalc_interval"].value,
-                                          self.eq.parameters["fmatch"]["variants_k"].value,
-                                          self.eq.parameters["fmatch"]["variants_ratio"].value)
+                                          self.eq.p["fmatch"]["refinements"].value,
+                                          self.eq.p["fmatch"]["recalc_interval"].value,
+                                          self.eq.p["fmatch"]["variants_k"].value,
+                                          self.eq.p["fmatch"]["variants_ratio"].value)
         else:
-            if self.eq.parameters["fmatch"]["ratioTest"].value:
+            if self.eq.p["fmatch"]["ratioTest"].value:
                 matches = matcher.knnMatch(ndescriptors, hdescriptors, 2)
                 matches = ratio_test(matches)
             else:
                 matches = matcher.knnMatch(ndescriptors, hdescriptors, 1)
                 matches = [m[0] for m in matches]
-            if self.eq.parameters["fmatch"]["symmetryTest"].value:
-                if self.eq.parameters["fmatch"]["ratioTest"].value:
+            if self.eq.p["fmatch"]["symmetryTest"].value:
+                if self.eq.p["fmatch"]["ratioTest"].value:
                     hmatches = matcher.knnMatch(hdescriptors, ndescriptors, 2)
                     hmatches = ratio_test(hmatches)
                 else:
@@ -660,7 +660,7 @@ class ImageFinder:
         # for rotation but currently gives better results than the fundamental matrix
         H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
                                      numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
-                                     self.eq.parameters["find"]["ransacReprojThreshold"].value)
+                                     self.eq.p["find"]["ransacReprojThreshold"].value)
         #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
         #                                 numpy.array([kp.pt for kp in mhkp]),
         #                                 method = cv2.RANSAC, param1 = 10.0,

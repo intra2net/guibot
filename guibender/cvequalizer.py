@@ -153,7 +153,7 @@ class CVEqualizer:
             return
         elif category == "fdetect":
             if curr_new == "oldSURF":
-                self.parameters[category]["oldSURFdetect"] = CVParameter(85)
+                self.p[category]["oldSURFdetect"] = CVParameter(85)
                 return
             else:
                 old_backend = cv2.FeatureDetector_create(curr_old)
@@ -163,15 +163,15 @@ class CVEqualizer:
             new_backend = cv2.DescriptorExtractor_create(curr_new)
         elif category == "fmatch":
             if curr_new == "in-house-region":
-                self.parameters[category]["refinements"] = CVParameter(50, 1, None)
-                self.parameters[category]["recalc_interval"] = CVParameter(10, 1, None)
-                self.parameters[category]["variants_k"] = CVParameter(100, 1, None)
-                self.parameters[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0)
+                self.p[category]["refinements"] = CVParameter(50, 1, None)
+                self.p[category]["recalc_interval"] = CVParameter(10, 1, None)
+                self.p[category]["variants_k"] = CVParameter(100, 1, None)
+                self.p[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0)
                 return
             else:
-                self.parameters[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1)
-                self.parameters[category]["ratioTest"] = CVParameter(False)
-                self.parameters[category]["symmetryTest"] = CVParameter(False)
+                self.p[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1)
+                self.p[category]["ratioTest"] = CVParameter(False)
+                self.p[category]["symmetryTest"] = CVParameter(False)
 
                 # no other parameters are used for the in-house-raw matching
                 if curr_new == "in-house-raw":
@@ -190,8 +190,8 @@ class CVEqualizer:
         #print old_backend, dir(old_backend)
         #print new_backend, dir(new_backend)
         for param in old_backend.getParams():
-            if self.parameters[category].has_key(param):
-                self.parameters[category].pop(param)
+            if self.p[category].has_key(param):
+                self.p[category].pop(param)
         for param in new_backend.getParams():
             #print new_backend.paramHelp(param)
             ptype = new_backend.paramType(param)
@@ -209,18 +209,18 @@ class CVEqualizer:
 
             # give more information about some better known parameters
             if category in ("fdetect", "fextract") and param == "firstLevel":
-                self.parameters[category][param] = CVParameter(val, 0, 100)
+                self.p[category][param] = CVParameter(val, 0, 100)
             elif category in ("fdetect", "fextract") and param == "nFeatures":
-                self.parameters[category][param] = CVParameter(val, delta = 100)
+                self.p[category][param] = CVParameter(val, delta = 100)
             elif category in ("fdetect", "fextract") and param == "WTA_K":
-                self.parameters[category][param] = CVParameter(val, 2, 4)
+                self.p[category][param] = CVParameter(val, 2, 4)
             elif category in ("fdetect", "fextract") and param == "scaleFactor":
-                self.parameters[category][param] = CVParameter(val, 1.01, 2.0)
+                self.p[category][param] = CVParameter(val, 1.01, 2.0)
             else:
-                self.parameters[category][param] = CVParameter(val)
+                self.p[category][param] = CVParameter(val)
             #print param, "=", val
 
-        #print category, self.parameters[category], "\n"
+        #print category, self.p[category], "\n"
         return
 
     def sync_backend_to_params(self, opencv_backend, category):
@@ -243,8 +243,8 @@ class CVEqualizer:
                 return opencv_backend
 
         for param in opencv_backend.getParams():
-            if param in self.parameters[category]:
-                val = self.parameters[category][param].value
+            if param in self.p[category]:
+                val = self.p[category][param].value
                 ptype = opencv_backend.paramType(param)
                 if ptype == 0:
                     opencv_backend.setInt(param, val)
@@ -257,7 +257,7 @@ class CVEqualizer:
                     # currently unknown indices: setMat, setAlgorithm, setMatVector, setString
                     #print "synced", param, "to", val
                     val = opencv_backend.setAlgorithm(param, val)
-                self.parameters[category][param].value = val
+                self.p[category][param].value = val
         return opencv_backend
 
     def can_calibrate(self, mark, category):
@@ -273,7 +273,7 @@ class CVEqualizer:
         if category not in self.parameters:
             raise ImageFinderMethodError
 
-        for param in self.parameters[category].values():
+        for param in self.p[category].values():
             # BUG: force fix parameters that have internal bugs
             if category == "fextract" and param == "bytes":
                 param.fixed = True

@@ -30,7 +30,7 @@ class Image:
     def __init__(self, image_filename=None, similarity=DEFAULT_SIMILARITY, pil_image=None):
         self.filename = image_filename
         self.match_settings = CVEqualizer()
-        self.match_settings.parameters["find"]["similarity"].value = similarity
+        self.match_settings.p["find"]["similarity"].value = similarity
         self.pil_image = pil_image
 
         self.width = 0
@@ -69,21 +69,21 @@ class Image:
         return self.pil_image
 
     def get_similarity(self):
-        return self.match_settings.parameters["find"]["similarity"].value
+        return self.match_settings.p["find"]["similarity"].value
 
     def similarity(self, new_similarity):
         new_image = self.copy()
 
-        new_image.match_settings.parameters["find"]["similarity"].value = new_similarity
+        new_image.match_settings.p["find"]["similarity"].value = new_similarity
         return new_image
 
     def get_gray(self):
-        return self.match_settings.parameters["find"]["nocolor"].value
+        return self.match_settings.p["find"]["nocolor"].value
 
     def gray(self, new_nocolor):
         new_image = self.copy()
 
-        new_image.match_settings.parameters["find"]["nocolor"].value = new_nocolor
+        new_image.match_settings.p["find"]["nocolor"].value = new_nocolor
         return new_image
 
     def exact(self):

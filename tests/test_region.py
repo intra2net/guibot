@@ -101,8 +101,8 @@ class RegionTest(unittest.TestCase):
 
         # test that a parameter of BRIEF (the current and default extractor)
         # is present in parameters while a parameter of FREAK is not present
-        self.assertTrue(region.imagefinder.eq.parameters["fextract"].has_key("bytes"))
-        self.assertFalse(region.imagefinder.eq.parameters["fextract"].has_key("nbOctave"))
+        self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("bytes"))
+        self.assertFalse(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
 
         region.configure_find(find_image = "feature", feature_detect = "ORB",
                               feature_extract = "FREAK", feature_match = "BruteForce")
@@ -113,8 +113,8 @@ class RegionTest(unittest.TestCase):
 
         # test that a parameter of FREAK (the new extractor) is now present
         # while the parameter of BRIEF is not present anymore
-        self.assertTrue(region.imagefinder.eq.parameters["fextract"].has_key("nbOctave"))
-        self.assertTrue(region.imagefinder.eq.parameters["fextract"].has_key("nbOctave"))
+        self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
+        self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
 
         # check consistency of all unchanged options
         region.configure_find(find_image = None, template_match = "ccorr_normed")
@@ -219,7 +219,7 @@ class RegionTest(unittest.TestCase):
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
-        region.imagefinder.eq.parameters["find"]["nocolor"].value = True
+        region.imagefinder.eq.p["find"]["nocolor"].value = True
         matches = region.find_all(Image('shape_pink_box'))
         self.assertEqual(len(matches), 3)
         for match in matches:
