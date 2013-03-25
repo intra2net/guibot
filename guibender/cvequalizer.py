@@ -79,16 +79,8 @@ class CVEqualizer:
                                                   "HARRIS", "Dense", "oldSURF"),
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
-        # default parameters
-        self.p = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0),
-                            "similarity": CVParameter(0.8, 0.0, 1.0, 0.1, 0.1),
-                            "nocolor": CVParameter(False),
-                            "front_similarity" : CVParameter(0.4, 0.0, 1.0, 0.1, 0.1),
-                            "x" : CVParameter(1000, 1, None), "y" : CVParameter(1000, 1, None),
-                            "dx" : CVParameter(100, 1, None), "dy" : CVParameter(100, 1, None)},
-                  "tmatch" : {}, "fextract" : {}, "fmatch" : {},
-                  "fdetect" : {"nzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0),
-                               "hzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)}}
+        # parameters registry
+        self.p = {"find" : {}, "tmatch" : {}, "fextract" : {}, "fmatch" : {}, "fdetect" : {}}
 
         # default algorithms
         self.current = {"find" : "template",
@@ -113,56 +105,67 @@ class CVEqualizer:
             if find_image not in self.algorithms["find_methods"]:
                 raise ImageFinderMethodError
             else:
-                self._replace_params("find", self.current["find"],
-                                    find_image)
+                self._new_params("find", find_image)
                 self.current["find"] = find_image
         if template_match != None:
             if template_match not in self.algorithms["template_matchers"]:
                 raise ImageFinderMethodError
             else:
-                self._replace_params("tmatch", self.current["tmatch"],
-                                    template_match)
+                self._new_params("tmatch", template_match)
                 self.current["tmatch"] = template_match
         if feature_detect != None:
             if feature_detect not in self.algorithms["feature_detectors"]:
                 raise ImageFinderMethodError
             else:
-                self._replace_params("fdetect", self.current["fdetect"],
-                                    feature_detect)
+                self._new_params("fdetect", feature_detect)
                 self.current["fdetect"] = feature_detect
         if feature_extract != None:
             if feature_extract not in self.algorithms["feature_extractors"]:
                 raise ImageFinderMethodError
             else:
-                self._replace_params("fextract", self.current["fextract"],
-                                    feature_extract)
+                self._new_params("fextract", feature_extract)
                 self.current["fextract"] = feature_extract
         if feature_match != None:
             if feature_match not in self.algorithms["feature_matchers"]:
                 raise ImageFinderMethodError
             else:
-                self._replace_params("fmatch", self.current["fmatch"],
-                                    feature_match)
+                self._new_params("fmatch", feature_match)
                 self.current["fmatch"] = feature_match
 
-    def _replace_params(self, category, curr_old, curr_new):
+    def _new_params(self, category, new):
         """Update the parameters dictionary according to a new backend algorithm."""
+        self.p[category] = {}
         if category == "find":
+            self.p[category]["similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
+            if new in ("feature", "hybrid"):
+                self.p[category]["ransacReprojThreshold"] = CVParameter(10.0, 0.0, 200.0, 10.0, 1.0)
+            if new in ("template", "hybrid"):
+                self.p[category]["nocolor"] = CVParameter(False)
+            if new == "hybrid":
+                self.p[category]["front_similarity"] = CVParameter(0.4, 0.0, 1.0, 0.1, 0.1)
+            # although it is currently not available
+            elif new == "2to1hybrid":
+                self.p[category]["x"] = CVParameter(1000, 1, None)
+                self.p[category]["y"] = CVParameter(1000, 1, None)
+                self.p[category]["dx"] = CVParameter(100, 1, None)
+                self.p[category]["dy"] = CVParameter(100, 1, None)
             return
         elif category == "tmatch":
             return
         elif category == "fdetect":
-            if curr_new == "oldSURF":
+            self.p[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
+            self.p[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
+
+            if new == "oldSURF":
                 self.p[category]["oldSURFdetect"] = CVParameter(85)
                 return
             else:
-                old_backend = cv2.FeatureDetector_create(curr_old)
-                new_backend = cv2.FeatureDetector_create(curr_new)
+                new_backend = cv2.FeatureDetector_create(new)
+
         elif category == "fextract":
-            old_backend = cv2.DescriptorExtractor_create(curr_old)
-            new_backend = cv2.DescriptorExtractor_create(curr_new)
+            new_backend = cv2.DescriptorExtractor_create(new)
         elif category == "fmatch":
-            if curr_new == "in-house-region":
+            if new == "in-house-region":
                 self.p[category]["refinements"] = CVParameter(50, 1, None)
                 self.p[category]["recalc_interval"] = CVParameter(10, 1, None)
                 self.p[category]["variants_k"] = CVParameter(100, 1, None)
@@ -174,7 +177,7 @@ class CVEqualizer:
                 self.p[category]["symmetryTest"] = CVParameter(False)
 
                 # no other parameters are used for the in-house-raw matching
-                if curr_new == "in-house-raw":
+                if new == "in-house-raw":
                     return
                 else:
 
@@ -183,15 +186,11 @@ class CVEqualizer:
                     # the API supports it - skip fmatch for now
                     return
 
-                    old_backend = cv2.DescriptorMatcher_create(curr_old)
-                    new_backend = cv2.DescriptorMatcher_create(curr_new)
+                    new_backend = cv2.DescriptorMatcher_create(new)
 
         # examine the interface of the OpenCV backend
         #print old_backend, dir(old_backend)
         #print new_backend, dir(new_backend)
-        for param in old_backend.getParams():
-            if self.p[category].has_key(param):
-                self.p[category].pop(param)
         for param in new_backend.getParams():
             #print new_backend.paramHelp(param)
             ptype = new_backend.paramType(param)

@@ -144,7 +144,6 @@ class ImageFinderTest(unittest.TestCase):
         finder.image_logging = logging
         if match_settings != None:
             finder.eq = match_settings
-        finder.eq.configure_backend(find_image = "feature")
         match = finder.find(haystack, needle)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
@@ -154,71 +153,76 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_viewport(self):
         needle = Image('n_ibs')
+        needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_viewport')
-        self.draw_needle_features(needle, haystack)
-        self.draw_haystack_hotmap(haystack, needle,
-                                  "basic viewport",
-                                  logging = 10)
+        self.draw_needle_features(needle, haystack, needle.match_settings)
+        self.draw_haystack_hotmap(haystack, needle, "basic viewport",
+                                  needle.match_settings, 10)
         time.sleep(2)
 
     def test_features_rotation(self):
         needle = Image('n_ibs')
+        needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_rotated')
-        self.draw_needle_features(needle, haystack)
-        self.draw_haystack_hotmap(haystack, needle,
-                                  "rotated + viewport",
-                                  logging = 10)
+        self.draw_needle_features(needle, haystack, needle.match_settings)
+        self.draw_haystack_hotmap(haystack, needle, "rotated + viewport",
+                                  needle.match_settings, 10)
         time.sleep(2)
 
     def test_features_scaling(self):
         needle = Image('n_ibs')
+        needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_scaled')
-        self.draw_needle_features(needle, haystack)
-        self.draw_haystack_hotmap(haystack, needle,
-                                  "scaled + viewport",
-                                  logging = 10)
+        self.draw_needle_features(needle, haystack, needle.match_settings)
+        self.draw_haystack_hotmap(haystack, needle, "scaled + viewport",
+                                  needle.match_settings, 10)
         time.sleep(2)
 
     def test_template_viewport(self):
         needle = Image('n_ibs')
+        needle.match_settings.configure_backend(find_image = "template")
         needle.match_settings.p["find"]["similarity"].value = 0.9
+
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
         finder = ImageFinder()
-        finder.eq.configure_backend(find_image = "template")
+        finder.eq = needle.match_settings
         match = finder.find(haystack, needle)
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 
     def test_features_screen(self):
         needle = Image('n_ibs')
+        needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
+
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
-        self.draw_needle_features(needle, haystack)
-        self.draw_haystack_hotmap(haystack, needle,
-                                  "screen + viewport",
-                                  logging = 10)
+        self.draw_needle_features(needle, haystack, needle.match_settings)
+        self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
+                                  needle.match_settings, 10)
         time.sleep(2)
 
     def test_features_mouse_hover(self):
         needle = Image('n_ibs')
+        needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
+
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
         # test hovering over viewport needle
         finder = ImageFinder()
-        finder.eq.configure_backend(find_image = "feature")
+        finder.eq = needle.match_settings
         match = finder.find(haystack, needle)
         self.assertIsNotNone(match, "The viewport transformed image "\
                              "should be matched in the screen.")
@@ -226,16 +230,17 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_no_match(self):
         needle = Image('n_ibs')
+        needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.5
+
         haystack = DesktopControl().capture_screen()
 
         finder = ImageFinder()
-        finder.eq.configure_backend(find_image = "feature")
+        finder.eq = needle.match_settings
         match = finder.find(haystack, needle)
         needle.match_settings.p["find"]["similarity"].value = 0.0
-        self.draw_haystack_hotmap(haystack, needle,
-                                  "screen + viewport",
-                                  logging = 10)
+        self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
+                                  needle.match_settings, 10)
         self.assertIsNone(match, "No transformed needle is present "\
                           "and should be found in the haystack.")
 
@@ -244,6 +249,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('all_shapes')
 
         settings = needle.match_settings
+        settings.configure_backend(find_image = "feature")
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
 
@@ -257,6 +263,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_sans')
 
         settings = needle.match_settings
+        settings.configure_backend(find_image = "feature")
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
@@ -271,6 +278,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_bold')
 
         settings = needle.match_settings
+        settings.configure_backend(find_image = "feature")
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
@@ -285,6 +293,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_italic')
 
         settings = needle.match_settings
+        settings.configure_backend(find_image = "feature")
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
@@ -299,6 +308,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_larger')
 
         settings = needle.match_settings
+        settings.configure_backend(find_image = "feature")
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
@@ -313,6 +323,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_font')
 
         settings = needle.match_settings
+        settings.configure_backend(find_image = "feature")
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
