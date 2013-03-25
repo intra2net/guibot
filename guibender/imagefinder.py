@@ -32,9 +32,15 @@ class ImageFinder:
     The image finder contains all image matching functionality.
 
     It offers both template matching and feature matching algorithms
-    through autopy or through the OpenCV library. The image finding
-    methods include: general find, template and feature find, and
-    all matches above similarity find.
+    through autopy or through the OpenCV library as well as a hybrid
+    approach. The image finding methods include finding of one or
+    all matches above the similarity defined as:
+
+        self.eq.p["find"]["similarity"]
+
+    There are many more parameters that could contribute for a good
+    match in this "find" category or in other categories. They can
+    all be manually adjusted or automatically calibrated.
     """
 
     def __init__(self, equalizer = None):
@@ -47,8 +53,9 @@ class ImageFinder:
         areas are places where the needle was matched better. If the
         feature matching method was used, the hotmap contains the
         matched needle features in the haystack (green), the ones
-        that were not matched (red), and the calculated focus point
-        that would be used for clicking, hovering, etc. (blue).
+        that were not matched (red), and the points in needle projected
+        to the haystack that could be used for clicking, hovering,
+        etc. (blue).
         """
         if equalizer == None:
             self.eq = CVEqualizer()
@@ -65,15 +72,12 @@ class ImageFinder:
 
     def find(self, haystack, needle):
         """
-        Finds an image in another if above some similarity and returns a
-        Location() object or None using all default algorithms and parameters.
-
-        This is the most general find method.
+        Finds an image in another and returns a Location() object
+        or None using the backend algorithms and parameters
+        defined in the "find" category.
 
         @param haystack: an Image() to look in
         @param needle: an Image() to look for
-        @param similarity: a float in the interval [0.0, 1.0] where 1.0
-        requires 100% match
         """
         if self.eq.current["find"] == "template":
             return self._template_find(haystack, needle)
@@ -86,11 +90,12 @@ class ImageFinder:
 
     def find_all(self, haystack, needle):
         """
-        Finds all needle images in a haystack image using template matching.
+        Finds all needle images in a haystack image.
+
+        The only available backend group for this is template matching.
+        The only available template matching methods are: opencv
 
         Returns a list of Location objects for all matches or None in not found.
-
-        Available template matching methods are: opencv
         """
         if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
@@ -455,9 +460,6 @@ class ImageFinder:
     def _detect_features(self, hgray, ngray, detect, extract):
         """
         Detect all keypoints and calculate their respective decriptors.
-
-        Perform zooming in the picture if the number of detected features
-        is too low to project later on.
         """
         hkeypoints, nkeypoints = [], []
         hfactor = self.eq.p["fdetect"]["hzoom"].value
@@ -498,7 +500,6 @@ class ImageFinder:
             # keypoints
             hkeypoints = detector.detect(hgray)
             nkeypoints = detector.detect(ngray)
-            #print len(nkeypoints), len(hkeypoints)
 
             # feature vectors (descriptors)
             (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
@@ -515,6 +516,7 @@ class ImageFinder:
             nkeypoint.pt = (int(nkeypoint.pt[0] / nfactor),
                             int(nkeypoint.pt[1] / nfactor))
 
+        #print len(nkeypoints), len(hkeypoints)
         # plot the detected features for image logging
         if self.image_logging <= 10:
             for hkp in hkeypoints:
