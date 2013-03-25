@@ -80,15 +80,15 @@ class CVEqualizer:
                            "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
 
         # default parameters
-        self.parameters = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0),
-                                     "similarity": CVParameter(0.8, 0.0, 1.0, 0.1, 0.1),
-                                     "nocolor": CVParameter(False),
-                                     "front_similarity" : CVParameter(0.4, 0.0, 1.0, 0.1, 0.1),
-                                     "x" : CVParameter(1000, 1, None), "y" : CVParameter(1000, 1, None),
-                                     "dx" : CVParameter(100, 1, None), "dy" : CVParameter(100, 1, None)},
-                           "tmatch" : {}, "fextract" : {}, "fmatch" : {},
-                           "fdetect" : {"nzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0),
-                                        "hzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)}}
+        self.p = {"find" : {"ransacReprojThreshold" : CVParameter(10.0, 0.0, 200.0, 10.0, 1.0),
+                            "similarity": CVParameter(0.8, 0.0, 1.0, 0.1, 0.1),
+                            "nocolor": CVParameter(False),
+                            "front_similarity" : CVParameter(0.4, 0.0, 1.0, 0.1, 0.1),
+                            "x" : CVParameter(1000, 1, None), "y" : CVParameter(1000, 1, None),
+                            "dx" : CVParameter(100, 1, None), "dy" : CVParameter(100, 1, None)},
+                  "tmatch" : {}, "fextract" : {}, "fmatch" : {},
+                  "fdetect" : {"nzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0),
+                               "hzoom" : CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)}}
 
         # default algorithms
         self.current = {"find" : "template",
