@@ -145,7 +145,7 @@ class ImageFinderTest(unittest.TestCase):
         if match_settings != None:
             finder.eq = match_settings
         #finder.eq.configure_backend(feature_detect = "oldSURF")
-        match = finder.find_features(haystack, needle, 0.0)
+        match = finder.feature_find(haystack, needle, 0.0)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
         hotmap_file = os.path.join('log.png')
@@ -186,7 +186,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = DesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
-        match = ImageFinder().find_template(haystack, needle, 0.9, True)
+        match = ImageFinder().template_find(haystack, needle, 0.9, True)
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 
@@ -209,7 +209,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = DesktopControl().capture_screen()
 
         # test hovering over viewport needle
-        match = ImageFinder().find_features(haystack, needle, 0.0)
+        match = ImageFinder().feature_find(haystack, needle, 0.0)
         self.assertIsNotNone(match, "The viewport transformed image "\
                              "should be matched in the screen.")
         Region().hover(match)
@@ -218,7 +218,7 @@ class ImageFinderTest(unittest.TestCase):
         needle = Image('n_ibs')
         haystack = DesktopControl().capture_screen()
 
-        match = ImageFinder().find_features(haystack, needle, 0.5)
+        match = ImageFinder().feature_find(haystack, needle, 0.5)
         self.draw_haystack_hotmap(haystack, needle,
                                   "screen + viewport",
                                   logging = 10)

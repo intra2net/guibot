@@ -77,102 +77,11 @@ class ImageFinder:
         @param nocolor: a bool defining whether to use grayscale images
         """
         if self.eq.current["find"] == "template":
-            return self.find_template(haystack, needle, similarity, nocolor)
+            return self.template_find(haystack, needle, similarity, nocolor)
         elif self.eq.current["find"] == "feature":
-            return self.find_features(haystack, needle, similarity)
+            return self.feature_find(haystack, needle, similarity)
         else:
             raise ImageFinderMethodError
-
-    def find_template(self, haystack, needle, similarity, nocolor = True):
-        """
-        Finds a needle image in a haystack image using template matching.
-
-        Returns a Location object for the match or None in not found.
-
-        Available template matching methods are: autopy, opencv
-        """
-        if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
-            raise ImageFinderMethodError
-
-        elif self.eq.current["tmatch"] == "autopy":
-            if needle.get_filename() in self._bitmapcache:
-                autopy_needle = self._bitmapcache[needle.get_filename()]
-            else:
-                # load and cache it
-                # TODO: Use in-memory conversion
-                autopy_needle = bitmap.Bitmap.open(needle.get_filename())
-                self._bitmapcache[needle.get_filename()] = autopy_needle
-
-            # TODO: Use in-memory conversion
-            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-                haystack.save(f.name)
-                autopy_screenshot = bitmap.Bitmap.open(f.name)
-
-                autopy_tolerance = 1.0 - similarity
-                # TODO: since only the coordinates are available
-                # and fuzzy areas of matches are returned we need
-                # to ask autopy team for returning the matching rates
-                # as well
-                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
-
-                if coord is not None:
-                    self.hotmap[1] = -1.0
-                    self.hotmap[2] = coord
-                    return Location(coord[0], coord[1])
-            return None
-
-        else:
-            result = self._match_template(haystack, needle, nocolor, self.eq.current["tmatch"])
-
-            minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
-            logging.debug('minVal: %s', str(minVal))
-            logging.debug('minLoc: %s', str(minLoc))
-            logging.debug('maxVal (similarity): %s (%s)',
-                          str(maxVal), similarity)
-            logging.debug('maxLoc (x,y): %s', str(maxLoc))
-            # switch max and min for sqdiff and sqdiff_normed
-            if self.eq.current["tmatch"] in ("sqdiff", "sqdiff_normed"):
-                maxVal = 1 - minVal
-                maxLoc = minLoc
-
-            # print a hotmap of the results for debugging purposes
-            if self.image_logging <= 40:
-                # currenly the image showing methods still don't work
-                # due to opencv bug
-                #cv2.startWindowThread()
-                #cv2.namedWindow("test", 1)
-                #cv2.imshow("test", match)
-
-                hotmap = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
-                cv.ConvertScale(cv.fromarray(result), hotmap, scale = 255.0)
-                self.hotmap[0] = numpy.asarray(hotmap)
-                cv2.imwrite("log.png", self.hotmap[0])
-
-            if maxVal > similarity:
-                self.hotmap[1] = maxVal
-                self.hotmap[2] = maxLoc
-                return Location(maxLoc[0], maxLoc[1])
-            return None
-
-    def find_features(self, haystack, needle, similarity):
-        """
-        Finds a needle image in a haystack image using feature matching.
-
-        Returns a Location object for the match or None in not found.
-
-        Available methods are: a combination of feature detector,
-        extractor, and matcher
-        """
-        hgray = self._prepare_image(haystack, gray = True)
-        ngray = self._prepare_image(needle, gray = True)
-        hcanvas = self._prepare_image(haystack, gray = False)
-
-        # project more points for debugging purposes and image logging
-        frame_points = []
-        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
-        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
-                             (needle.get_width(), needle.get_height())])
-        return self._project_features(frame_points, hgray, ngray, similarity, hcanvas)
 
     def find_all(self, haystack, needle, similarity, nocolor = True):
         """
@@ -253,7 +162,98 @@ class ImageFinder:
 
         return maxima
 
-    def find_hybrid(self, haystack, needle, similarity, similarity2 = 0.4):
+    def template_find(self, haystack, needle, similarity, nocolor = True):
+        """
+        Finds a needle image in a haystack image using template matching.
+
+        Returns a Location object for the match or None in not found.
+
+        Available template matching methods are: autopy, opencv
+        """
+        if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
+            raise ImageFinderMethodError
+
+        elif self.eq.current["tmatch"] == "autopy":
+            if needle.get_filename() in self._bitmapcache:
+                autopy_needle = self._bitmapcache[needle.get_filename()]
+            else:
+                # load and cache it
+                # TODO: Use in-memory conversion
+                autopy_needle = bitmap.Bitmap.open(needle.get_filename())
+                self._bitmapcache[needle.get_filename()] = autopy_needle
+
+            # TODO: Use in-memory conversion
+            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+                haystack.save(f.name)
+                autopy_screenshot = bitmap.Bitmap.open(f.name)
+
+                autopy_tolerance = 1.0 - similarity
+                # TODO: since only the coordinates are available
+                # and fuzzy areas of matches are returned we need
+                # to ask autopy team for returning the matching rates
+                # as well
+                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
+
+                if coord is not None:
+                    self.hotmap[1] = -1.0
+                    self.hotmap[2] = coord
+                    return Location(coord[0], coord[1])
+            return None
+
+        else:
+            result = self._match_template(haystack, needle, nocolor, self.eq.current["tmatch"])
+
+            minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+            logging.debug('minVal: %s', str(minVal))
+            logging.debug('minLoc: %s', str(minLoc))
+            logging.debug('maxVal (similarity): %s (%s)',
+                          str(maxVal), similarity)
+            logging.debug('maxLoc (x,y): %s', str(maxLoc))
+            # switch max and min for sqdiff and sqdiff_normed
+            if self.eq.current["tmatch"] in ("sqdiff", "sqdiff_normed"):
+                maxVal = 1 - minVal
+                maxLoc = minLoc
+
+            # print a hotmap of the results for debugging purposes
+            if self.image_logging <= 40:
+                # currenly the image showing methods still don't work
+                # due to opencv bug
+                #cv2.startWindowThread()
+                #cv2.namedWindow("test", 1)
+                #cv2.imshow("test", match)
+
+                hotmap = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
+                cv.ConvertScale(cv.fromarray(result), hotmap, scale = 255.0)
+                self.hotmap[0] = numpy.asarray(hotmap)
+                cv2.imwrite("log.png", self.hotmap[0])
+
+            if maxVal > similarity:
+                self.hotmap[1] = maxVal
+                self.hotmap[2] = maxLoc
+                return Location(maxLoc[0], maxLoc[1])
+            return None
+
+    def feature_find(self, haystack, needle, similarity):
+        """
+        Finds a needle image in a haystack image using feature matching.
+
+        Returns a Location object for the match or None in not found.
+
+        Available methods are: a combination of feature detector,
+        extractor, and matcher
+        """
+        hgray = self._prepare_image(haystack, gray = True)
+        ngray = self._prepare_image(needle, gray = True)
+        hcanvas = self._prepare_image(haystack, gray = False)
+
+        # project more points for debugging purposes and image logging
+        frame_points = []
+        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
+        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
+                             (needle.get_width(), needle.get_height())])
+        return self._project_features(frame_points, hgray, ngray, similarity, hcanvas)
+
+    def hybrid_find(self, haystack, needle, similarity, similarity2 = 0.4):
         """
         Use template matching to deal with feature dense regions
         and guide a final feature matching.
@@ -310,7 +310,7 @@ class ImageFinder:
             self.hotmap = max(hotmaps, key = lambda x: x[1])
             return Location(self.hotmap[2][0], self.hotmap[2][1])
 
-    def find_2to1hybrid(self, haystack, needle, similarity,
+    def hybrid2to1_find(self, haystack, needle, similarity,
                         x = 1000, y = 1000, dx = 100, dy = 100):
         """
         Two thirds feature matching and one third template matching.
