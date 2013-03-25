@@ -70,7 +70,7 @@ class ImageFinder:
         # similarity and the matched coordinates
         self.hotmap = [None, -1.0, None]
 
-    def find(self, haystack, needle):
+    def find(self, needle, haystack):
         """
         Finds an image in another and returns a Location() object
         or None using the backend algorithms and parameters
@@ -80,15 +80,15 @@ class ImageFinder:
         @param needle: an Image() to look for
         """
         if self.eq.current["find"] == "template":
-            return self._template_find(haystack, needle)
+            return self._template_find(needle, haystack)
         elif self.eq.current["find"] == "feature":
-            return self._feature_find(haystack, needle)
+            return self._feature_find(needle, haystack)
         elif self.eq.current["find"] == "hybrid":
-            return self._hybrid_find(haystack, needle)
+            return self._hybrid_find(needle, haystack)
         else:
             raise ImageFinderMethodError
 
-    def find_all(self, haystack, needle):
+    def find_all(self, needle, haystack):
         """
         Finds all needle images in a haystack image.
 
@@ -106,7 +106,7 @@ class ImageFinder:
             match_template = "ccoeff_normed"
         else:
             match_template = self.eq.current["tmatch"]
-        result = self._match_template(haystack, needle,
+        result = self._match_template(needle, haystack,
                                       self.eq.p["find"]["nocolor"].value,
                                       match_template)
 
@@ -171,7 +171,7 @@ class ImageFinder:
         return maxima
 
 
-    def _template_find(self, haystack, needle):
+    def _template_find(self, needle, haystack):
         """
         Finds a needle image in a haystack image using template matching.
 
@@ -210,7 +210,7 @@ class ImageFinder:
             return None
 
         else:
-            result = self._match_template(haystack, needle,
+            result = self._match_template(needle, haystack,
                                           self.eq.p["find"]["nocolor"].value,
                                           self.eq.current["tmatch"])
 
@@ -244,7 +244,7 @@ class ImageFinder:
                 return Location(maxLoc[0], maxLoc[1])
             return None
 
-    def _feature_find(self, haystack, needle):
+    def _feature_find(self, needle, haystack):
         """
         Finds a needle image in a haystack image using feature matching.
 
@@ -253,8 +253,8 @@ class ImageFinder:
         Available methods are: a combination of feature detector,
         extractor, and matcher
         """
-        hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
+        hgray = self._prepare_image(haystack, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
 
         # project more points for debugging purposes and image logging
@@ -263,10 +263,10 @@ class ImageFinder:
         frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
                              (needle.get_width(), needle.get_height())])
 
-        return self._project_features(frame_points, hgray, ngray,
+        return self._project_features(frame_points, ngray, hgray,
                                       self.eq.p["find"]["similarity"].value, hcanvas)
 
-    def _hybrid_find(self, haystack, needle):
+    def _hybrid_find(self, needle, haystack):
         """
         Use template matching to deal with feature dense regions
         and guide a final feature matching.
@@ -285,8 +285,8 @@ class ImageFinder:
         maxima = self.find_all(haystack, needle)
         self.eq.p["find"]["similarity"].value = feature_similarity
 
-        hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
+        hgray = self._prepare_image(haystack, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
 
         frame_points = []
@@ -307,7 +307,7 @@ class ImageFinder:
             hotmap_region = hcanvas[up:down, left:right]
             hotmap_region = hotmap_region.copy()
 
-            res = self._project_features(frame_points, haystack_region, ngray,
+            res = self._project_features(frame_points, ngray, haystack_region,
                                          feature_similarity, hotmap_region)
             if res != None:
                 # take the template matching location rather than the feature one
@@ -329,7 +329,7 @@ class ImageFinder:
             self.hotmap = max(hotmaps, key = lambda x: x[1])
             return Location(self.hotmap[2][0], self.hotmap[2][1])
 
-    def _hybrid2to1_find(self, haystack, needle):
+    def _hybrid2to1_find(self, needle, haystack):
         """
         Two thirds feature matching and one third template matching.
         Divide the haystack into x,y subregions and perform feature
@@ -361,8 +361,8 @@ class ImageFinder:
         dx = self.eq.p["find"]["dx"].value
         dy = self.eq.p["find"]["dy"].value
 
-        hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
+        hgray = self._prepare_image(haystack, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
 
         frame_points = []
@@ -397,7 +397,7 @@ class ImageFinder:
                 #print result
                 #print hregion.shape, hgray.shape, ngray.shape, result.shape, "\n"
 
-                res = self._project_features(frame_points, haystack_region, ngray,
+                res = self._project_features(frame_points, ngray, haystack_region,
                                              self.eq.p["find"]["similarity"].value,
                                              hotmap_region)
                 result[j][i] = self.hotmap[1]
@@ -416,7 +416,7 @@ class ImageFinder:
         return result, locations
 
 
-    def _project_features(self, locations_in_needle, hgray, ngray,
+    def _project_features(self, locations_in_needle, ngray, hgray,
                           similarity, hotmap_canvas = None):
         """
         Wrapper for the internal feature detection, matching and location
@@ -426,7 +426,7 @@ class ImageFinder:
         self.hotmap[1] = 0.0
         self.hotmap[2] = None
 
-        hkp, hdc, nkp, ndc = self._detect_features(hgray, ngray,
+        nkp, ndc, hkp, hdc = self._detect_features(ngray, hgray,
                                                    self.eq.current["fdetect"],
                                                    self.eq.current["fextract"])
 
@@ -436,7 +436,7 @@ class ImageFinder:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
 
-        mhkp, mnkp = self._match_features(hkp, hdc, nkp, ndc,
+        mnkp, mhkp = self._match_features(nkp, ndc, hkp, hdc,
                                           self.eq.current["fmatch"])
 
         if self.hotmap[1] < similarity or len(mnkp) < 4:
@@ -455,22 +455,15 @@ class ImageFinder:
         else:
             return Location(*self.hotmap[2])
 
-    def _detect_features(self, hgray, ngray, detect, extract):
+    def _detect_features(self, ngray, hgray, detect, extract):
         """
         Detect all keypoints and calculate their respective decriptors.
         """
-        hkeypoints, nkeypoints = [], []
-        hfactor = self.eq.p["fdetect"]["hzoom"].value
+        nkeypoints, hkeypoints = [], []
         nfactor = self.eq.p["fdetect"]["nzoom"].value
+        hfactor = self.eq.p["fdetect"]["hzoom"].value
 
         # zoom in if explicitly set
-        if hfactor > 1.0:
-            hmat = cv.fromarray(hgray)
-            hmat_zoomed = cv.CreateMat(int(hmat.rows * hfactor), int(hmat.cols * hfactor), cv.CV_8UC1)
-            #print "Zooming x%i haystack" % hfactor
-            #print hmat.rows, hmat.cols, "->", hmat_zoomed.rows, hmat_zoomed.cols
-            cv.Resize(hmat, hmat_zoomed)
-            hgray = numpy.asarray(hmat_zoomed)
         if nfactor > 1.0:
             nmat = cv.fromarray(ngray)
             nmat_zoomed = cv.CreateMat(int(nmat.rows * nfactor), int(nmat.cols * nfactor), cv.CV_8UC1)
@@ -478,14 +471,21 @@ class ImageFinder:
             #print nmat.rows, nmat.cols, "->", nmat_zoomed.rows, nmat_zoomed.cols
             cv.Resize(nmat, nmat_zoomed)
             ngray = numpy.asarray(nmat_zoomed)
+        if hfactor > 1.0:
+            hmat = cv.fromarray(hgray)
+            hmat_zoomed = cv.CreateMat(int(hmat.rows * hfactor), int(hmat.cols * hfactor), cv.CV_8UC1)
+            #print "Zooming x%i haystack" % hfactor
+            #print hmat.rows, hmat.cols, "->", hmat_zoomed.rows, hmat_zoomed.cols
+            cv.Resize(hmat, hmat_zoomed)
+            hgray = numpy.asarray(hmat_zoomed)
 
         if detect == "oldSURF":
             # build the old surf feature detector
             hessian_threshold = self.eq.p["fdetect"]["oldSURFdetect"].value
             detector = cv2.SURF(hessian_threshold)
 
-            (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
             (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
+            (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
 
         # include only methods tested for compatibility
         elif (detect in self.eq.algorithms["feature_detectors"]
@@ -496,23 +496,23 @@ class ImageFinder:
             extractor = self.eq.sync_backend_to_params(extractor, "fextract")
 
             # keypoints
-            hkeypoints = detector.detect(hgray)
             nkeypoints = detector.detect(ngray)
+            hkeypoints = detector.detect(hgray)
 
             # feature vectors (descriptors)
-            (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
             (nkeypoints, ndescriptors) = extractor.compute(ngray, nkeypoints)
+            (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
 
         else:
             raise ImageFinderMethodError
 
         # reduce keypoint coordinates to the original image size
-        for hkeypoint in hkeypoints:
-            hkeypoint.pt = (int(hkeypoint.pt[0] / hfactor),
-                            int(hkeypoint.pt[1] / hfactor))
         for nkeypoint in nkeypoints:
             nkeypoint.pt = (int(nkeypoint.pt[0] / nfactor),
                             int(nkeypoint.pt[1] / nfactor))
+        for hkeypoint in hkeypoints:
+            hkeypoint.pt = (int(hkeypoint.pt[0] / hfactor),
+                            int(hkeypoint.pt[1] / hfactor))
 
         #print len(nkeypoints), len(hkeypoints)
         # plot the detected features for image logging
@@ -522,10 +522,10 @@ class ImageFinder:
                 x, y = hkp.pt
                 cv2.circle(self.hotmap[0], (int(x),int(y)), 2, color, -1)
 
-        return (hkeypoints, hdescriptors, nkeypoints, ndescriptors)
+        return (nkeypoints, ndescriptors, hkeypoints, hdescriptors)
 
-    def _match_features(self, hkeypoints, hdescriptors,
-                        nkeypoints, ndescriptors, match):
+    def _match_features(self, nkeypoints, ndescriptors,
+                        hkeypoints, hdescriptors, match):
         """
         Match two sets of keypoints based on their descriptors.
         """
@@ -610,13 +610,13 @@ class ImageFinder:
                 matches = symmetry_test(matches, hmatches)
 
         # prepare final matches
-        match_hkeypoints = []
         match_nkeypoints = []
+        match_hkeypoints = []
         matches = sorted(matches, key = lambda x: x.distance)
         for match in matches:
             #print match.distance
-            match_hkeypoints.append(hkeypoints[match.trainIdx])
             match_nkeypoints.append(nkeypoints[match.queryIdx])
+            match_hkeypoints.append(hkeypoints[match.trainIdx])
 
         # plot the matched features for image logging
         if self.image_logging <= 20:
@@ -630,7 +630,7 @@ class ImageFinder:
         self.hotmap[1] = float(len(match_nkeypoints)) / float(len(nkeypoints))
         #print "%s\\%s" % (len(mnkp), len(nkp)), "-> %f" % self.hotmap[1]
 
-        return (match_hkeypoints, match_nkeypoints)
+        return (match_nkeypoints, match_hkeypoints)
 
     def _project_locations(self, locations_in_needle, mnkp, mhkp):
         """
@@ -716,7 +716,7 @@ class ImageFinder:
 
         return searchable_image
 
-    def _match_template(self, haystack, needle, nocolor, match):
+    def _match_template(self, needle, haystack, nocolor, match):
         """
         Match a color or grayscale needle image using the OpenCV
         template matching methods.
@@ -733,12 +733,12 @@ class ImageFinder:
             raise ImageFinderMethodError
 
         if nocolor:
-            gray_haystack = self._prepare_image(haystack, gray = True)
             gray_needle = self._prepare_image(needle, gray = True)
+            gray_haystack = self._prepare_image(haystack, gray = True)
             match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
         else:
-            opencv_haystack = self._prepare_image(haystack, gray = False)
             opencv_needle = self._prepare_image(needle, gray = False)
+            opencv_haystack = self._prepare_image(haystack, gray = False)
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         return match
@@ -754,7 +754,7 @@ class InHouseCV:
         self.detector = cv2.FeatureDetector_create("ORB")
         self.extractor = cv2.DescriptorExtractor_create("ORB")
 
-    def detect_features(self, haystack, needle):
+    def detect_features(self, needle, haystack):
         """
         In-house feature detect algorithm - currently not fully implemented!
 

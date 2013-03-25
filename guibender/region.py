@@ -187,7 +187,7 @@ class Region(object):
             # image finder which concentrates solely on finding the image
             # (only autopy supports this but is almost never used compared
             # to the alternative methods)
-            found_pic = self.imagefinder.find(screen_capture, image)
+            found_pic = self.imagefinder.find(image, screen_capture)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(),
                                               self.ypos + found_pic.get_y(), image)

@@ -74,7 +74,7 @@ class Calibrator:
                                                  template_match = key)
                 imagefinder.eq.p["find"]["nocolor"].value = gray
                 start_time = time.time()
-                imagefinder.find(haystack, needle)
+                imagefinder.find(needle, haystack)
                 total_time = time.time() - start_time
                 #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
@@ -101,7 +101,7 @@ class Calibrator:
                         self.calibrate(haystack, needle, imagefinder,
                                        refinements = refinements)
                     start_time = time.time()
-                    imagefinder.find(haystack, needle)
+                    imagefinder.find(needle, haystack)
                     total_time = time.time() - start_time
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
@@ -137,7 +137,7 @@ class Calibrator:
 
             start_time = time.time()
             try:
-                imagefinder.find(haystack, needle)
+                imagefinder.find(needle, haystack)
             except:
                 #print "out of range"
                 imagefinder.hotmap[1] = 0.0

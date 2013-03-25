@@ -96,13 +96,13 @@ class ImageFinderTest(unittest.TestCase):
                            finder.eq.current["fmatch"])
 
         # use private methods for unit testing to visualize internal structure
-        hgray = finder._prepare_image(haystack, gray = True)
         ngray = finder._prepare_image(needle, gray = True)
+        hgray = finder._prepare_image(haystack, gray = True)
         opencv_needle = finder._prepare_image(needle)
-        hkp, hdc, nkp, ndc = finder._detect_features(hgray, ngray,
+        nkp, ndc, hkp, hdc = finder._detect_features(ngray, hgray,
                                                      detect = self.algorithms[0],
                                                      extract = self.algorithms[1])
-        mhkp, mnkp = finder._match_features(hkp, hdc, nkp, ndc,
+        mnkp, mhkp = finder._match_features(nkp, ndc, hkp, hdc,
                                             match = self.algorithms[2])
         #print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
         #                                                            len(mnkp), len(nkp))
@@ -144,7 +144,7 @@ class ImageFinderTest(unittest.TestCase):
         finder.image_logging = logging
         if match_settings != None:
             finder.eq = match_settings
-        match = finder.find(haystack, needle)
+        match = finder.find(needle, haystack)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
         hotmap_file = os.path.join('log.png')
@@ -193,7 +193,7 @@ class ImageFinderTest(unittest.TestCase):
         # test template matching failure to validate needle difficulty
         finder = ImageFinder()
         finder.eq = needle.match_settings
-        match = finder.find(haystack, needle)
+        match = finder.find(needle, haystack)
         self.assertIsNone(match, "Template matching should fail finding "\
                           "viewport transformed image.")
 
@@ -223,7 +223,7 @@ class ImageFinderTest(unittest.TestCase):
         # test hovering over viewport needle
         finder = ImageFinder()
         finder.eq = needle.match_settings
-        match = finder.find(haystack, needle)
+        match = finder.find(needle, haystack)
         self.assertIsNotNone(match, "The viewport transformed image "\
                              "should be matched in the screen.")
         Region().hover(match)
@@ -237,7 +237,7 @@ class ImageFinderTest(unittest.TestCase):
 
         finder = ImageFinder()
         finder.eq = needle.match_settings
-        match = finder.find(haystack, needle)
+        match = finder.find(needle, haystack)
         needle.match_settings.p["find"]["similarity"].value = 0.0
         self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
                                   needle.match_settings, 10)
