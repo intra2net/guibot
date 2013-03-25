@@ -291,6 +291,9 @@ class ImageFinder:
             res = self._project_features(frame_points, haystack_region, ngray,
                                          similarity, hotmap_region)
             if res != None:
+                # take the template matching location rather than the feature one
+                # for stability (they should ultimately be the same)
+                #location = (left, up)
                 location = (left + self.hotmap[2][0], up + self.hotmap[2][1])
                 hotmaps.append((self.hotmap[0], self.hotmap[1], location))
             #else:
@@ -402,6 +405,7 @@ class ImageFinder:
                                                    self.eq.current["fextract"])
 
         if len(nkp) < 4 or len(hkp) < 4:
+            #print "F0:", len(nkp), len(hkp)
             if self.image_logging <= 40 and self.hotmap[0] != None:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
@@ -410,6 +414,7 @@ class ImageFinder:
                                           self.eq.current["fmatch"])
 
         if self.hotmap[1] < similarity or len(mnkp) < 4:
+            #print "F1:", self.hotmap[1], similarity
             if self.image_logging <= 40 and self.hotmap[0] != None:
                 cv2.imwrite("log.png", self.hotmap[0])
             return None
@@ -419,6 +424,7 @@ class ImageFinder:
         if self.image_logging <= 40 and self.hotmap[0] != None:
             cv2.imwrite("log.png", self.hotmap[0])
         if self.hotmap[1] < similarity:
+            #print "F2:", self.hotmap[1], similarity
             return None
         else:
             return Location(*self.hotmap[2])
