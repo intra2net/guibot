@@ -54,7 +54,10 @@ class Image:
             self.height = self.pil_image.size[1]
 
     def copy(self):
-        return copy.copy(self)
+        copy_settings = copy.deepcopy(self.match_settings)
+        selfcopy = copy.copy(self)
+        selfcopy.match_settings = copy_settings
+        return selfcopy
 
     def get_filename(self):
         return self.filename;
@@ -73,7 +76,6 @@ class Image:
 
     def similarity(self, new_similarity):
         new_image = self.copy()
-
         new_image.match_settings.p["find"]["similarity"].value = new_similarity
         return new_image
 

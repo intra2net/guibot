@@ -70,13 +70,17 @@ class Calibrator:
                     method = key + "_gray"
                 else:
                     method = key
+                #print "%s with %s:" % (needle.filename, method)
+
                 imagefinder.eq.configure_backend(find_image = "template",
                                                  template_match = key)
                 imagefinder.eq.p["find"]["nocolor"].value = gray
+
                 start_time = time.time()
                 imagefinder.find(needle, haystack)
                 total_time = time.time() - start_time
-                #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
+                #print "%s at %s in %s" % (imagefinder.hotmap[1], imagefinder.hotmap[2], total_time)
+
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
         imagefinder.eq.configure_backend(find_image = old_config[0],
                                          template_match = old_config[1])
@@ -88,11 +92,20 @@ class Calibrator:
                       imagefinder.eq.current["fextract"],
                       imagefinder.eq.current["fmatch"])
         for key_fd in imagefinder.eq.algorithms["feature_detectors"]:
+
             # skip in-house because of opencv version bug
             if key_fd == "oldSURF":
                 continue
+            # Dense feature detection and in-house-region feature matching
+            # are too much performance overhead
+            if key_fd == "Dense" and key_fm == "in-house-region":
+                continue
+
             for key_fe in imagefinder.eq.algorithms["feature_extractors"]:
                 for key_fm in imagefinder.eq.algorithms["feature_matchers"]:
+                    method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
+                    #print "%s with %s:" % (needle.filename, method)
+
                     imagefinder.eq.configure_backend(find_image = "feature",
                                                      feature_detect = key_fd,
                                                      feature_extract = key_fe,
@@ -100,11 +113,12 @@ class Calibrator:
                     if calibration:
                         self.calibrate(haystack, needle, imagefinder,
                                        refinements = refinements)
+
                     start_time = time.time()
                     imagefinder.find(needle, haystack)
                     total_time = time.time() - start_time
-                    method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
-                    #print "%s,%s,%s,%s" % (needle.filename, method, imagefinder.hotmap[1], imagefinder.hotmap[2])
+                    #print "%s at %s in %s" % (imagefinder.hotmap[1], imagefinder.hotmap[2], total_time)
+
                     results.append((method, imagefinder.hotmap[1],
                                     imagefinder.hotmap[2], total_time))
 
@@ -149,8 +163,7 @@ class Calibrator:
 
         old_similarity = needle.match_settings.p["find"]["similarity"].value
         needle.match_settings.p["find"]["similarity"].value = 0.0
-        best_params, error = self.twiddle(imagefinder.eq.parameters,
-                                          run, refinements)
+        best_params, error = self.twiddle(imagefinder.eq.p, run, refinements)
         imagefinder.eq.parameters = best_params
         needle.match_settings.p["find"]["similarity"].value = old_similarity
 

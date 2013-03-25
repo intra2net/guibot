@@ -40,8 +40,9 @@ class ImageTest(unittest.TestCase):
         image = Image(self.file_all_shapes)
 
         my_copy = image.copy()
+        self.assertNotEqual(image.match_settings, my_copy.match_settings)
         self.assertEqual(image.filename, my_copy.filename)
-        self.assertEqual(image.img_similarity, my_copy.img_similarity)
+        self.assertEqual(image.get_similarity(), my_copy.get_similarity())
         self.assertEqual(image.pil_image, my_copy.pil_image)
         self.assertEqual(image.width, my_copy.width)
         self.assertEqual(image.height, my_copy.height)
@@ -56,7 +57,7 @@ class ImageTest(unittest.TestCase):
 
         new_image = image.target_offset(100, 30)
         self.assertEqual(image.filename, new_image.filename)
-        self.assertEqual(image.img_similarity, new_image.img_similarity)
+        self.assertEqual(image.get_similarity(), new_image.get_similarity())
         self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
@@ -79,7 +80,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(Image.DEFAULT_SIMILARITY, image.get_similarity())
 
         self.assertEqual(image.filename, new_image.filename)
-        self.assertNotEqual(image.img_similarity, new_image.img_similarity)
+        self.assertNotEqual(image.get_similarity(), new_image.get_similarity())
         self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)

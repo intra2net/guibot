@@ -215,7 +215,7 @@ class Region(object):
         while True:
             screen_capture = self.desktop.capture_screen(self)
 
-            found_pics = self.imagefinder.find_all(screen_capture, image)
+            found_pics = self.imagefinder.find_all(image, screen_capture)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
@@ -240,7 +240,7 @@ class Region(object):
     def exists(self, image, timeout=0):
         try:
             return self.find(image, timeout)
-        except:
+        except FindError:
             pass
 
         return None

@@ -315,7 +315,7 @@ class ImageFinder:
                 # for stability (they should ultimately be the same)
                 #location = (left, up)
                 location = (left + self.hotmap[2][0], up + self.hotmap[2][1])
-                hotmaps.append((self.hotmap[0], self.hotmap[1], location))
+                hotmaps.append([self.hotmap[0], self.hotmap[1], location])
             #else:
             #    hotmaps.append((None, None, (up, left)))
 

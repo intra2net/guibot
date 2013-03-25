@@ -194,12 +194,12 @@ class RegionTest(unittest.TestCase):
         # at developer's platform
         #region.imagefinder = ImageFinder()
 
-        matches = region.find_all(Image('shape_green_box'))
+        matches = region.find_all('shape_green_box')
         self.assertEqual(len(matches), 1)
         self.assertEqual(67, matches[0].get_width())
         self.assertEqual(52, matches[0].get_height())
 
-        matches = region.find_all(Image('shape_red_box'))
+        matches = region.find_all('shape_red_box')
         self.assertEqual(len(matches), 3)
         for match in matches:
             region.hover(match)
@@ -209,7 +209,8 @@ class RegionTest(unittest.TestCase):
 
         # pink is similar to red, so the best fuzzy matches are
         # the three red boxes when considering color
-        matches = region.find_all(Image('shape_pink_box').similarity(0.5))
+        region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+        matches = region.find_all('shape_pink_box')
         self.assertEqual(len(matches), 4)
         for match in matches:
             region.hover(match)
@@ -219,8 +220,9 @@ class RegionTest(unittest.TestCase):
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
+        region.imagefinder.eq.p["find"]["similarity"].value = 0.8
         region.imagefinder.eq.p["find"]["nocolor"].value = True
-        matches = region.find_all(Image('shape_pink_box'))
+        matches = region.find_all('shape_pink_box')
         self.assertEqual(len(matches), 3)
         for match in matches:
             region.hover(match)
@@ -268,7 +270,8 @@ class RegionTest(unittest.TestCase):
         match.hover(match.get_target())
 
         # Hover over Image with 50% similarity
-        region.hover(Image('shape_pink_box').similarity(0.5))
+        region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+        region.hover(Image('shape_pink_box'))
 
         self.close_windows()
 
@@ -279,7 +282,8 @@ class RegionTest(unittest.TestCase):
         # the image if matched properly - need to find a way to increase
         # the similarity while preserving the robustness of the feature matching
         region.configure_find(find_image = "feature")
-        match = region.find(Image('n_ibs').similarity(0.1))
+        region.imagefinder.eq.p["find"]["similarity"].value = 0.1
+        match = region.find(Image('n_ibs'))
         Region().hover(match.get_target())
 
     def test_click(self):
@@ -493,7 +497,8 @@ class RegionTest(unittest.TestCase):
         #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
 
         region.mouse_down('qt4gui_label4')
-        self.assertFalse(region.wait_vanish('qt4gui_label4', timeout=3))
+        # cannot use label 4 since the cursor is already on top of it
+        self.assertFalse(region.wait_vanish('qt4gui_label3', timeout=3))
         region.mouse_up('qt4gui_label4')
         self.assertTrue(region.wait_vanish('qt4gui_label4', timeout=3))
 

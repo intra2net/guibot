@@ -269,7 +269,7 @@ class CVEqualizer:
         @param category: the backend algorithm category whose parameters
         are marked
         """
-        if category not in self.parameters:
+        if category not in self.p:
             raise ImageFinderMethodError
 
         for param in self.p[category].values():
