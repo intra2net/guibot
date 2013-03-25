@@ -109,7 +109,6 @@ class ImageFinder:
         result = self._match_template(haystack, needle,
                                       self.eq.p["find"]["nocolor"].value,
                                       match_template)
-        similarity = needle.match_settings.p["find"]["similarity"].value
 
         # extract maxima once for each needle size region
         maxima = []
@@ -121,12 +120,12 @@ class ImageFinder:
                 # TODO: check whetehr find_all would work properly for sqdiff
                 maxVal = 1 - minVal
                 maxLoc = minLoc
-            if maxVal < similarity:
+            if maxVal < self.eq.p["find"]["similarity"].value:
                 break
 
             logging.debug('Found a match with:')
             logging.debug('maxVal (similarity): %s (%s)',
-                          str(maxVal), similarity)
+                          str(maxVal), self.eq.p["find"]["similarity"].value)
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
 
             maxima.append(Location(maxLoc[0], maxLoc[1]))
@@ -180,7 +179,6 @@ class ImageFinder:
 
         Available template matching methods are: autopy, opencv
         """
-        similarity = needle.match_settings.p["find"]["similarity"].value
         if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
 
@@ -198,7 +196,7 @@ class ImageFinder:
                 haystack.save(f.name)
                 autopy_screenshot = bitmap.Bitmap.open(f.name)
 
-                autopy_tolerance = 1.0 - similarity
+                autopy_tolerance = 1.0 - self.eq.p["find"]["similarity"].value
                 # TODO: since only the coordinates are available
                 # and fuzzy areas of matches are returned we need
                 # to ask autopy team for returning the matching rates
@@ -220,7 +218,7 @@ class ImageFinder:
             logging.debug('minVal: %s', str(minVal))
             logging.debug('minLoc: %s', str(minLoc))
             logging.debug('maxVal (similarity): %s (%s)',
-                          str(maxVal), similarity)
+                          str(maxVal), self.eq.p["find"]["similarity"].value)
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
             # switch max and min for sqdiff and sqdiff_normed
             if self.eq.current["tmatch"] in ("sqdiff", "sqdiff_normed"):
@@ -240,7 +238,7 @@ class ImageFinder:
                 self.hotmap[0] = numpy.asarray(hotmap)
                 cv2.imwrite("log.png", self.hotmap[0])
 
-            if maxVal > similarity:
+            if maxVal > self.eq.p["find"]["similarity"].value:
                 self.hotmap[1] = maxVal
                 self.hotmap[2] = maxLoc
                 return Location(maxLoc[0], maxLoc[1])
@@ -255,7 +253,6 @@ class ImageFinder:
         Available methods are: a combination of feature detector,
         extractor, and matcher
         """
-        similarity = needle.match_settings.p["find"]["similarity"].value
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
@@ -266,7 +263,8 @@ class ImageFinder:
         frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
                              (needle.get_width(), needle.get_height())])
 
-        return self._project_features(frame_points, hgray, ngray, similarity, hcanvas)
+        return self._project_features(frame_points, hgray, ngray,
+                                      self.eq.p["find"]["similarity"].value, hcanvas)
 
     def _hybrid_find(self, haystack, needle):
         """
@@ -282,10 +280,10 @@ class ImageFinder:
         """
         # use a different lower similarity for the template matching
         template_similarity = self.eq.p["find"]["front_similarity"].value
-        feature_similarity = needle.match_settings.p["find"]["similarity"].value
-        needle.match_settings.p["find"]["similarity"].value = template_similarity
+        feature_similarity = self.eq.p["find"]["similarity"].value
+        self.eq.p["find"]["similarity"].value = template_similarity
         maxima = self.find_all(haystack, needle)
-        needle.match_settings.p["find"]["similarity"].value = feature_similarity
+        self.eq.p["find"]["similarity"].value = feature_similarity
 
         hgray = self._prepare_image(haystack, gray = True)
         ngray = self._prepare_image(needle, gray = True)
@@ -358,7 +356,6 @@ class ImageFinder:
 
                 find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
         """
-        similarity = needle.match_settings.p["find"]["similarity"].value
         x = self.eq.p["find"]["x"].value
         y = self.eq.p["find"]["y"].value
         dx = self.eq.p["find"]["dx"].value
@@ -401,7 +398,8 @@ class ImageFinder:
                 #print hregion.shape, hgray.shape, ngray.shape, result.shape, "\n"
 
                 res = self._project_features(frame_points, haystack_region, ngray,
-                                             similarity, hotmap_region)
+                                             self.eq.p["find"]["similarity"].value,
+                                             hotmap_region)
                 result[j][i] = self.hotmap[1]
                 if self.image_logging <= 30:
                     cv2.imwrite("log%i.png" % (i*ny+j), self.hotmap[0])
