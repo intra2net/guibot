@@ -31,6 +31,7 @@ class Image:
         self.filename = image_filename
         self.match_settings = CVEqualizer()
         self.match_settings.p["find"]["similarity"].value = similarity
+        self.use_own_settings = False
         self.pil_image = pil_image
 
         self.width = 0

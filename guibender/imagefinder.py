@@ -79,14 +79,22 @@ class ImageFinder:
         @param haystack: an Image() to look in
         @param needle: an Image() to look for
         """
+        if needle.use_own_settings:
+            general_settings = self.eq
+            self.eq = needle.match_settings
+
         if self.eq.current["find"] == "template":
-            return self._template_find(needle, haystack)
+            match = self._template_find(needle, haystack)
         elif self.eq.current["find"] == "feature":
-            return self._feature_find(needle, haystack)
+            match = self._feature_find(needle, haystack)
         elif self.eq.current["find"] == "hybrid":
-            return self._hybrid_find(needle, haystack)
+            match = self._hybrid_find(needle, haystack)
         else:
             raise ImageFinderMethodError
+
+        if needle.use_own_settings:
+            self.eq = general_settings
+        return match
 
     def find_all(self, needle, haystack):
         """
@@ -99,6 +107,9 @@ class ImageFinder:
         """
         if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
+        if needle.use_own_settings:
+            general_settings = self.eq
+            self.eq = needle.match_settings
 
         # autopy template matching for find_all is replaced by ccoeff_normed
         # since it is inefficient and returns match clouds
@@ -168,6 +179,8 @@ class ImageFinder:
         self.hotmap[1] = maxVal
         self.hotmap[2] = maxLoc
 
+        if needle.use_own_settings:
+            self.eq = general_settings
         return maxima
 
 
