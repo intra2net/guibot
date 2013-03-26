@@ -325,20 +325,38 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_right_click(self):
-        # TODO: solve
+        # TODO: reduce solution
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         region = Region()
 
-        # method 1: FAIL on Quit with 0.8
-        region.configure_find(find_image = "hybrid")
-        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
-        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
+        # method 1: SUCCESS with 0.8
+        cm_label = Image('qt4gui_contextmenu_label')
+        cm_label.use_own_settings = True
+        cm_label.match_settings.configure_backend(find_image = "hybrid")
+        cm_label.match_settings.p["find"]["front_similarity"].value = 0.5
+        cm_label.match_settings.p["find"]["nocolor"].value = True
+        #cm_label.match_settings.p["fdetect"]["nFeatures"].value = 4000
+        cm_label.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        cm_label.match_settings.p["fdetect"]["hzoom"].value = 4.0
+
+        cm_quit = Image('qt4gui_contextmenu_quit')
+        cm_quit.use_own_settings = True
+        cm_quit.match_settings.configure_backend(find_image = "hybrid")
+        cm_quit.match_settings.p["find"]["front_similarity"].value = 0.55
+        cm_quit.match_settings.p["find"]["similarity"].value = 0.9
+        cm_quit.match_settings.p["find"]["nocolor"].value = True
+        cm_quit.match_settings.p["fdetect"]["nFeatures"].value = 5000
+        cm_quit.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        cm_quit.match_settings.p["fdetect"]["hzoom"].value = 4.0
+        cm_quit.match_settings.p["find"]["ransacReprojThreshold"].value = 5.0
+        #cm_quit.match_settings.p["fmatch"]["ratioTest"].value = True
+        #cm_quit.match_settings.p["fmatch"]["symmetryTest"].value = True
 
         # method 2: FAIL on Quit with 0.5
         #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
 
-        region.right_click('qt4gui_contextmenu_label').nearby(200).click('qt4gui_contextmenu_quit')
+        region.right_click(cm_label).nearby(200).idle(3).click(cm_quit)
 
         self.assertEqual(0, self.wait_end(child_pipe))
 

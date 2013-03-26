@@ -260,6 +260,10 @@ class Region(object):
         # image is still there
         return False
 
+    def idle(self, timeout):
+        time.sleep(timeout)
+        return self
+
     def get_mouse_location(self):
         return self.desktop.get_mouse_location()
 
