@@ -84,7 +84,7 @@ class DesktopControl:
             autopy_bmp.save(f.name)
 
             pil_image = PIL.Image.open(f.name).convert('RGB')
-            return Image(None, Image.DEFAULT_SIMILARITY, pil_image)
+            return Image(None, pil_image)
 
     def mouse_move(self, location):
         # Note: Sometimes this is not pixel perfect.

@@ -23,31 +23,42 @@ from imagepath import ImagePath
 from cvequalizer import CVEqualizer
 
 class Image:
-    DEFAULT_SIMILARITY = 0.8
 
     _cache = {}
 
-    def __init__(self, image_filename=None, similarity=DEFAULT_SIMILARITY, pil_image=None):
+    def __init__(self, image_filename=None, pil_image=None, match_settings=None):
         self.filename = image_filename
-        self.match_settings = CVEqualizer()
-        self.match_settings.p["find"]["similarity"].value = similarity
-        self.use_own_settings = False
+        self.match_settings = match_settings
         self.pil_image = pil_image
 
+        if self.match_settings != None:
+            self.use_own_settings = True
+        else:
+            self.use_own_settings = False
         self.width = 0
         self.height = 0
         self.target_center_offset = Location(0, 0)
 
-        if self.filename is not None and pil_image is None:
+        if self.filename is not None and (pil_image is None or match_settings is None):
             if not os.path.exists(self.filename):
                 self.filename = ImagePath().search(self.filename)
 
-            if self.filename in self._cache:
-                self.pil_image = self._cache[self.filename]
-            else:
-                # load and cache image
-                self.pil_image = PIL.Image.open(self.filename).convert('RGB')
-                self._cache[self.filename] = self.pil_image
+            if pil_image is None:
+                if self.filename in self._cache:
+                    self.pil_image = self._cache[self.filename]
+                else:
+                    # load and cache image
+                    self.pil_image = PIL.Image.open(self.filename).convert('RGB')
+                    self._cache[self.filename] = self.pil_image
+            if match_settings is None:
+                match_file = self.filename[:-4] + ".match"
+                #print match_file, self.filename
+                if not os.path.exists(match_file):
+                    self.match_settings = CVEqualizer()
+                else:
+                    self.match_settings = CVEqualizer()
+                    self.match_settings.from_match_file(self.filename[:-4])
+                    self.use_own_settings = True
 
         # Set width and height
         if self.pil_image:
@@ -103,6 +114,8 @@ class Image:
 
     def save(self, filename):
         self.pil_image.save(filename)
+        if self.use_own_settings:
+            self.match_settings.to_match_file(filename[:-4])
 
         new_image = self.copy()
         new_image.filename = filename

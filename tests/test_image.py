@@ -21,6 +21,7 @@ import common_test
 
 from tempfile import NamedTemporaryFile
 from image import Image
+from cvequalizer import CVEqualizer
 from errors import *
 
 class ImageTest(unittest.TestCase):
@@ -34,7 +35,8 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(300, image.get_height())
 
         self.assertTrue(image.get_filename().find('all_shapes.png') is not -1)
-        self.assertEqual(Image.DEFAULT_SIMILARITY, image.get_similarity())
+        self.assertIsInstance(image.match_settings, CVEqualizer)
+        self.assertFalse(image.use_own_settings)
 
     def test_copy_object(self):
         image = Image(self.file_all_shapes)
@@ -77,7 +79,8 @@ class ImageTest(unittest.TestCase):
 
         new_image = image.similarity(0.45)
         self.assertEqual(0.45, new_image.get_similarity())
-        self.assertEqual(Image.DEFAULT_SIMILARITY, image.get_similarity())
+        # TODO: create a separate config for defaults to extract this from there
+        self.assertEqual(0.8, image.get_similarity())
 
         self.assertEqual(image.filename, new_image.filename)
         self.assertNotEqual(image.get_similarity(), new_image.get_similarity())
@@ -91,7 +94,8 @@ class ImageTest(unittest.TestCase):
 
         new_image = image.exact()
         self.assertEqual(1.0, new_image.get_similarity())
-        self.assertEqual(Image.DEFAULT_SIMILARITY, image.get_similarity())
+        # TODO: create a separate config for defaults to extract this from there
+        self.assertEqual(0.8, image.get_similarity())
 
     def test_save(self):
         image = Image(self.file_all_shapes)
@@ -103,6 +107,29 @@ class ImageTest(unittest.TestCase):
             self.assertEqual(returned_image.filename, loaded_image.filename)
             self.assertEqual(image.width, loaded_image.width)
             self.assertEqual(image.height, loaded_image.height)
+
+            image.use_own_settings = True
+            returned_image = image.save(f.name)
+            loaded_image = Image(f.name)
+            #print "%s.match" % f.name[:-4]
+            os.unlink("%s.match" % f.name[:-4])
+
+            for category in returned_image.match_settings.p.keys():
+                self.assertIn(category, loaded_image.match_settings.p.keys())
+                for key in returned_image.match_settings.p[category].keys():
+                    self.assertIn(key, loaded_image.match_settings.p[category])
+                    self.assertAlmostEqual(returned_image.match_settings.p[category][key].value,
+                                     loaded_image.match_settings.p[category][key].value)
+                    self.assertEqual(returned_image.match_settings.p[category][key].range[0],
+                                     loaded_image.match_settings.p[category][key].range[0])
+                    self.assertEqual(returned_image.match_settings.p[category][key].range[1],
+                                     loaded_image.match_settings.p[category][key].range[1])
+                    self.assertEqual(returned_image.match_settings.p[category][key].delta,
+                                     loaded_image.match_settings.p[category][key].delta)
+                    self.assertEqual(returned_image.match_settings.p[category][key].tolerance,
+                                     loaded_image.match_settings.p[category][key].tolerance)
+                    self.assertEqual(returned_image.match_settings.p[category][key].fixed,
+                                     loaded_image.match_settings.p[category][key].fixed)
 
     def test_nonexisting_image(self):
         try:
