@@ -285,6 +285,9 @@ class CVEqualizer:
     def from_match_file(self, filename_without_extention):
         """Read the equalizer from a .match file with the given filename."""
         parser = config.RawConfigParser()
+        # preserve case sensitivity
+        parser.optionxform = str
+
         success = parser.read("%s.match" % filename_without_extention)
         # if no file is found throw an exception
         if(len(success)==0):
@@ -308,6 +311,9 @@ class CVEqualizer:
     def to_match_file(self, filename_without_extention):
         """Write the equalizer in a .match file with the given filename."""
         parser = config.RawConfigParser()
+        # preserve case sensitivity
+        parser.optionxform = str
+
         sections = self.p.keys()
         for section in sections:
             if(not parser.has_section(section)):
@@ -363,8 +369,10 @@ class CVParameter:
         for arg in string_args:
             if arg == "None":
                 arg = None
-            elif arg in ("True", "False"):
-                arg = bool(arg)
+            elif arg == "True":
+                arg = True
+            elif arg == "False":
+                arg = False
             elif re.match("\d+$", arg):
                 arg = int(arg)
             elif re.match("[\d.]+", arg):
