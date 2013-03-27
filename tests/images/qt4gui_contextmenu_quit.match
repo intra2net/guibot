@@ -1,0 +1,34 @@
+# IMAGE MATCH DATA
+[fdetect]
+backend = ORB
+nFeatures = <value='5000' min='None' max='None' delta='1' tolerance='0.9' fixed='True'>
+patchSize = <value='31' min='None' max='None' delta='1' tolerance='0.9' fixed='True'>
+scaleFactor = <value='1.20000004768' min='1.01' max='2.0' delta='1.0' tolerance='0.1' fixed='True'>
+firstLevel = <value='0' min='0' max='100' delta='1' tolerance='0.9' fixed='True'>
+scoreType = <value='0' min='None' max='None' delta='1' tolerance='0.9' fixed='True'>
+hzoom = <value='4.0' min='1.0' max='10.0' delta='1.0' tolerance='1.0' fixed='True'>
+WTA_K = <value='2' min='2' max='4' delta='1' tolerance='0.9' fixed='True'>
+nLevels = <value='8' min='None' max='None' delta='1' tolerance='0.9' fixed='True'>
+nzoom = <value='4.0' min='1.0' max='10.0' delta='1.0' tolerance='1.0' fixed='True'>
+edgeThreshold = <value='31' min='None' max='None' delta='1' tolerance='0.9' fixed='True'>
+
+[tmatch]
+backend = ccoeff_normed
+
+[fmatch]
+backend = BruteForce-Hamming
+ratioTest = <value='False' min='None' max='None' delta='0.0' tolerance='1.0' fixed='True'>
+symmetryTest = <value='False' min='None' max='None' delta='0.0' tolerance='1.0' fixed='True'>
+ratioThreshold = <value='0.65' min='0.0' max='1.0' delta='0.1' tolerance='0.1' fixed='True'>
+
+[find]
+backend = hybrid
+ransacReprojThreshold = <value='5.0' min='0.0' max='200.0' delta='10.0' tolerance='1.0' fixed='True'>
+front_similarity = <value='0.55' min='0.0' max='1.0' delta='0.1' tolerance='0.1' fixed='True'>
+nocolor = <value='True' min='None' max='None' delta='0.0' tolerance='1.0' fixed='True'>
+similarity = <value='0.9' min='0.0' max='1.0' delta='0.1' tolerance='0.1' fixed='True'>
+
+[fextract]
+backend = BRIEF
+bytes = <value='32' min='None' max='None' delta='1' tolerance='0.9' fixed='True'>
+
