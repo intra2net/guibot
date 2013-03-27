@@ -434,30 +434,59 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_drag_drop(self):
-        # TODO: solve
+        # TODO: reduce solution
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         region = Region()
 
-        # method 1: FAIL (0 features in haystack)
-        region.configure_find(find_image = "hybrid")
-        region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
-        region.imagefinder.eq.p["fdetect"]["hzoom"].value = 10.0
+        # method 1: SUCCESS
+        drag_text = Image('qt4gui_textedit')
+        drag_text.use_own_settings = True
+        drag_text.match_settings.configure_backend(find_image = "hybrid")
+        drag_text.match_settings.p["find"]["front_similarity"].value = 0.4
+        drag_text.match_settings.p["find"]["similarity"].value = 0.7
+        drag_text.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        drag_text.match_settings.p["fdetect"]["hzoom"].value = 10.0
+
+        drop_text = Image('qt4gui_lineedit')
+        drop_text.use_own_settings = True
+        drop_text.match_settings.configure_backend(find_image = "hybrid")
+        drop_text.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        drop_text.match_settings.p["fdetect"]["hzoom"].value = 4.0
 
         # method 2: FAIL
         #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
 
-        region.drag_drop(Image('qt4gui_textedit'), Image('qt4gui_lineedit'))
+        region.drag_drop(drag_text, drop_text)
 
         Region().wait_vanish('qt4gui_textedit')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_drag(self):
-        # TODO: solve drag_drop
+        # TODO: reduce solution
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().drag(Image('qt4gui_textedit'))
-        Region().hover(Image('qt4gui_label1'))
+        # method 1: SUCCESS
+        drag_text = Image('qt4gui_textedit')
+        drag_text.use_own_settings = True
+        drag_text.match_settings.configure_backend(find_image = "hybrid")
+        drag_text.match_settings.p["find"]["front_similarity"].value = 0.4
+        drag_text.match_settings.p["find"]["similarity"].value = 0.7
+        drag_text.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        drag_text.match_settings.p["fdetect"]["hzoom"].value = 10.0
+
+        Region().drag(drag_text)
+
+        drag_hover = Image('qt4gui_label1')
+        drag_hover.use_own_settings = True
+        drag_hover.match_settings.configure_backend(find_image = "hybrid")
+        drag_hover.match_settings.p["find"]["front_similarity"].value = 0.4
+        drag_hover.match_settings.p["find"]["similarity"].value = 0.9
+        drag_hover.match_settings.p["find"]["ransacReprojThreshold"].value = 3.0
+        drag_hover.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        drag_hover.match_settings.p["fdetect"]["hzoom"].value = 4.0
+
+        Region().hover(drag_hover)
 
         # toggled buttons cleanup
         Region().desktop.mouse_up()
@@ -466,33 +495,54 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_drop_at(self):
-        # TODO: solve drag_drop
+        # TODO: solve
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
-        Region().drag(Image('qt4gui_textedit'))
-        Region().hover(Image('qt4gui_label2'))
-        self.assertFalse(Region().wait_vanish(Image('qt4gui_label2'), timeout=3))
+        drag_text = Image('qt4gui_textedit')
+        drag_text.use_own_settings = True
+        drag_text.match_settings.configure_backend(find_image = "hybrid")
+        drag_text.match_settings.p["find"]["front_similarity"].value = 0.4
+        drag_text.match_settings.p["find"]["similarity"].value = 0.7
+        drag_text.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        drag_text.match_settings.p["fdetect"]["hzoom"].value = 10.0
 
-        Region().drop_at(Image('qt4gui_label2'))
+        Region().drag(drag_text)
+
+        hover_drop = Image('qt4gui_label2')
+        hover_drop.use_own_settings = True
+        hover_drop.match_settings.configure_backend(find_image = "hybrid")
+        hover_drop.match_settings.p["find"]["front_similarity"].value = 0.4
+        hover_drop.match_settings.p["find"]["similarity"].value = 0.8
+        hover_drop.match_settings.p["find"]["ransacReprojThreshold"].value = 3.0
+        hover_drop.match_settings.p["fdetect"]["nzoom"].value = 4.0
+        hover_drop.match_settings.p["fdetect"]["hzoom"].value = 4.0
+
+        Region().hover(hover_drop)
+        self.assertFalse(Region().wait_vanish(hover_drop, timeout=3))
+
+        Region().drop_at(hover_drop)
 
         Region().wait_vanish('qt4gui_label2')
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_mouse_down(self):
-        # TODO: analyse partial solution
+        # TODO: reduce solution
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         region = Region()
 
-        # method 1: PARTIAL SUCCESS (when no other mouse_down labels) with 0.8
+        # method 1: SUCCESS with 0.9
         region.configure_find(find_image = "hybrid")
+        region.imagefinder.eq.p["find"]["front_similarity"].value = 0.4
+        region.imagefinder.eq.p["find"]["similarity"].value = 0.9
+        region.imagefinder.eq.p["find"]["ransacReprojThreshold"].value = 3.0
         region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
         region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
 
         # method 2: FAIL (on cleaner background with 0.4)
         #region.imagefinder.eq.p["find"]["similarity"].value = 0.4
 
-        region.mouse_down(Image('qt4gui_label3'))
+        region.idle(2).mouse_down(Image('qt4gui_label3'))
 
         # toggled buttons cleanup
         Region().desktop.mouse_up()
@@ -501,24 +551,30 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(child_pipe))
 
     def test_mouse_up(self):
-        # TODO: solve
+        # TODO: reduce solution
         child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
 
         region = Region()
 
         # method 1: FAIL (on cleaner background with 0.8)
         region.configure_find(find_image = "hybrid")
+        # need to be less selective at template matching due to its lack of accuracy
+        region.imagefinder.eq.p["find"]["front_similarity"].value = 0.5
+        # need to be very selective to exclude very similar text
+        region.imagefinder.eq.p["find"]["similarity"].value = 0.9
+        #region.imagefinder.eq.p["find"]["ransacReprojThreshold"].value = 3.0
         region.imagefinder.eq.p["fdetect"]["nzoom"].value = 4.0
         region.imagefinder.eq.p["fdetect"]["hzoom"].value = 4.0
 
         # method 2: FAIL (on cleaner background with 0.5)
         #region.imagefinder.eq.p["find"]["similarity"].value = 0.5
 
-        region.mouse_down('qt4gui_label4')
+        region.idle(2).mouse_down('qt4gui_label4')
+
         # cannot use label 4 since the cursor is already on top of it
-        self.assertFalse(region.wait_vanish('qt4gui_label3', timeout=3))
+        self.assertFalse(region.wait_vanish('qt4gui_label4', timeout=3))
         region.mouse_up('qt4gui_label4')
-        self.assertTrue(region.wait_vanish('qt4gui_label4', timeout=3))
+        self.assertTrue(region.wait_vanish('qt4gui_label4', timeout=5))
 
         self.assertEqual(0, self.wait_end(child_pipe))
 
