@@ -93,11 +93,11 @@ class RegionTest(unittest.TestCase):
     def test_configure_find(self):
         region = Region()
         region.configure_find(find_image = "feature")
-        self.assertEqual(region.imagefinder.eq.current["find"], "feature")
+        self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
 
         region.configure_find(find_image = "template", template_match = "autopy")
-        self.assertEqual(region.imagefinder.eq.current["find"], "template")
-        self.assertEqual(region.imagefinder.eq.current["tmatch"], "autopy")
+        self.assertEqual(region.imagefinder.eq.get_backend("find"), "template")
+        self.assertEqual(region.imagefinder.eq.get_backend("tmatch"), "autopy")
 
         # test that a parameter of BRIEF (the current and default extractor)
         # is present in parameters while a parameter of FREAK is not present
@@ -106,10 +106,10 @@ class RegionTest(unittest.TestCase):
 
         region.configure_find(find_image = "feature", feature_detect = "ORB",
                               feature_extract = "FREAK", feature_match = "BruteForce")
-        self.assertEqual(region.imagefinder.eq.current["find"], "feature")
-        self.assertEqual(region.imagefinder.eq.current["fdetect"], "ORB")
-        self.assertEqual(region.imagefinder.eq.current["fextract"], "FREAK")
-        self.assertEqual(region.imagefinder.eq.current["fmatch"], "BruteForce")
+        self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
+        self.assertEqual(region.imagefinder.eq.get_backend("fdetect"), "ORB")
+        self.assertEqual(region.imagefinder.eq.get_backend("fextract"), "FREAK")
+        self.assertEqual(region.imagefinder.eq.get_backend("fmatch"), "BruteForce")
 
         # test that a parameter of FREAK (the new extractor) is now present
         # while the parameter of BRIEF is not present anymore
@@ -118,11 +118,11 @@ class RegionTest(unittest.TestCase):
 
         # check consistency of all unchanged options
         region.configure_find(find_image = None, template_match = "ccorr_normed")
-        self.assertEqual(region.imagefinder.eq.current["find"], "feature")
-        self.assertEqual(region.imagefinder.eq.current["tmatch"], "ccorr_normed")
-        self.assertEqual(region.imagefinder.eq.current["fdetect"], "ORB")
-        self.assertEqual(region.imagefinder.eq.current["fextract"], "FREAK")
-        self.assertEqual(region.imagefinder.eq.current["fmatch"], "BruteForce")
+        self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
+        self.assertEqual(region.imagefinder.eq.get_backend("tmatch"), "ccorr_normed")
+        self.assertEqual(region.imagefinder.eq.get_backend("fdetect"), "ORB")
+        self.assertEqual(region.imagefinder.eq.get_backend("fextract"), "FREAK")
+        self.assertEqual(region.imagefinder.eq.get_backend("fmatch"), "BruteForce")
 
     def test_find(self):
         self.show_image('all_shapes')

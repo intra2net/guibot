@@ -83,11 +83,11 @@ class ImageFinder:
             general_settings = self.eq
             self.eq = needle.match_settings
 
-        if self.eq.current["find"] == "template":
+        if self.eq.get_backend("find") == "template":
             match = self._template_find(needle, haystack)
-        elif self.eq.current["find"] == "feature":
+        elif self.eq.get_backend("find") == "feature":
             match = self._feature_find(needle, haystack)
-        elif self.eq.current["find"] == "hybrid":
+        elif self.eq.get_backend("find") == "hybrid":
             match = self._hybrid_find(needle, haystack)
         else:
             raise ImageFinderMethodError
@@ -105,7 +105,7 @@ class ImageFinder:
 
         Returns a list of Location objects for all matches or None in not found.
         """
-        if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
+        if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
         if needle.use_own_settings:
             general_settings = self.eq
@@ -113,10 +113,10 @@ class ImageFinder:
 
         # autopy template matching for find_all is replaced by ccoeff_normed
         # since it is inefficient and returns match clouds
-        if self.eq.current["tmatch"] == "autopy":
+        if self.eq.get_backend("tmatch") == "autopy":
             match_template = "ccoeff_normed"
         else:
-            match_template = self.eq.current["tmatch"]
+            match_template = self.eq.get_backend("tmatch")
         result = self._match_template(needle, haystack,
                                       self.eq.p["find"]["nocolor"].value,
                                       match_template)
@@ -127,7 +127,7 @@ class ImageFinder:
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
             # switch max and min for sqdiff and sqdiff_normed
-            if self.eq.current["tmatch"] in ("sqdiff", "sqdiff_normed"):
+            if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
                 # TODO: check whetehr find_all would work properly for sqdiff
                 maxVal = 1 - minVal
                 maxLoc = minLoc
@@ -192,10 +192,10 @@ class ImageFinder:
 
         Available template matching methods are: autopy, opencv
         """
-        if self.eq.current["tmatch"] not in self.eq.algorithms["template_matchers"]:
+        if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
 
-        elif self.eq.current["tmatch"] == "autopy":
+        elif self.eq.get_backend("tmatch") == "autopy":
             if needle.get_filename() in self._bitmapcache:
                 autopy_needle = self._bitmapcache[needle.get_filename()]
             else:
@@ -225,7 +225,7 @@ class ImageFinder:
         else:
             result = self._match_template(needle, haystack,
                                           self.eq.p["find"]["nocolor"].value,
-                                          self.eq.current["tmatch"])
+                                          self.eq.get_backend("tmatch"))
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
             logging.debug('minVal: %s', str(minVal))
@@ -234,7 +234,7 @@ class ImageFinder:
                           str(maxVal), self.eq.p["find"]["similarity"].value)
             logging.debug('maxLoc (x,y): %s', str(maxLoc))
             # switch max and min for sqdiff and sqdiff_normed
-            if self.eq.current["tmatch"] in ("sqdiff", "sqdiff_normed"):
+            if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
                 maxVal = 1 - minVal
                 maxLoc = minLoc
 
@@ -441,8 +441,8 @@ class ImageFinder:
         self.hotmap[2] = None
 
         nkp, ndc, hkp, hdc = self._detect_features(ngray, hgray,
-                                                   self.eq.current["fdetect"],
-                                                   self.eq.current["fextract"])
+                                                   self.eq.get_backend("fdetect"),
+                                                   self.eq.get_backend("fextract"))
 
         if len(nkp) < 4 or len(hkp) < 4:
             #print "F0:", len(nkp), len(hkp)
@@ -451,7 +451,7 @@ class ImageFinder:
             return None
 
         mnkp, mhkp = self._match_features(nkp, ndc, hkp, hdc,
-                                          self.eq.current["fmatch"])
+                                          self.eq.get_backend("fmatch"))
 
         if self.hotmap[1] < similarity or len(mnkp) < 4:
             #print "F1:", self.hotmap[1], similarity

@@ -54,8 +54,8 @@ class Calibrator:
         results = []
 
         # test all template matching methods
-        old_config = (imagefinder.eq.current["find"],
-                      imagefinder.eq.current["tmatch"])
+        old_config = (imagefinder.eq.get_backend("find"),
+                      imagefinder.eq.get_backend("tmatch"))
         old_gray = imagefinder.eq.p["find"]["nocolor"].value
         old_similarity = needle.match_settings.p["find"]["similarity"].value
         needle.match_settings.p["find"]["similarity"].value = 0.0
@@ -87,22 +87,22 @@ class Calibrator:
         imagefinder.eq.p["find"]["nocolor"].value = old_gray
 
         # test all feature matching methods
-        old_config = (imagefinder.eq.current["find"],
-                      imagefinder.eq.current["fdetect"],
-                      imagefinder.eq.current["fextract"],
-                      imagefinder.eq.current["fmatch"])
+        old_config = (imagefinder.eq.get_backend("find"),
+                      imagefinder.eq.get_backend("fdetect"),
+                      imagefinder.eq.get_backend("fextract"),
+                      imagefinder.eq.get_backend("fmatch"))
         for key_fd in imagefinder.eq.algorithms["feature_detectors"]:
-
             # skip in-house because of opencv version bug
             if key_fd == "oldSURF":
-                continue
-            # Dense feature detection and in-house-region feature matching
-            # are too much performance overhead
-            if key_fd == "Dense" and key_fm == "in-house-region":
                 continue
 
             for key_fe in imagefinder.eq.algorithms["feature_extractors"]:
                 for key_fm in imagefinder.eq.algorithms["feature_matchers"]:
+                    # Dense feature detection and in-house-region feature matching
+                    # are too much performance overhead
+                    if key_fd == "Dense" and key_fm == "in-house-region":
+                        continue
+
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     #print "%s with %s:" % (needle.filename, method)
 

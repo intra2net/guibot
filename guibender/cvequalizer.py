@@ -83,16 +83,33 @@ class CVEqualizer:
         self.p = {"find" : {}, "tmatch" : {}, "fextract" : {}, "fmatch" : {}, "fdetect" : {}}
 
         # default algorithms
-        self.current = {"find" : "template",
-                        "tmatch" : "ccoeff_normed",
-                        "fdetect" : "ORB",
-                        "fextract" : "BRIEF",
-                        "fmatch" : "BruteForce-Hamming"}
-        self.configure_backend(find_image = self.current["find"],
-                               template_match = self.current["tmatch"],
-                               feature_detect = self.current["fdetect"],
-                               feature_extract = self.current["fextract"],
-                               feature_match = self.current["fmatch"])
+        self._current = {}
+        self.configure_backend(find_image = "template",
+                               template_match = "ccoeff_normed",
+                               feature_detect = "ORB",
+                               feature_extract = "BRIEF",
+                               feature_match = "BruteForce-Hamming")
+
+    def get_backend(self, category):
+        full_names = {"find" : "find_methods",
+                      "tmatch" : "template_matchers",
+                      "fdetect" : "feature_detectors",
+                      "fextract" : "feature_extractors",
+                      "fmatch" : "feature_matchers"}
+        #print category, self._current[category]
+        return self.algorithms[full_names[category]][self._current[category]]
+
+    def set_backend(self, category, value):
+        full_names = {"find" : "find_methods",
+                      "tmatch" : "template_matchers",
+                      "fdetect" : "feature_detectors",
+                      "fextract" : "feature_extractors",
+                      "fmatch" : "feature_matchers"}
+        if value not in self.algorithms[full_names[category]]:
+            raise ImageFinderMethodError
+        else:
+            self._new_params(category, value)
+            self._current[category] = self.algorithms[full_names[category]].index(value)
 
     def configure_backend(self, find_image = None, template_match = None,
                           feature_detect = None, feature_extract = None,
@@ -102,36 +119,16 @@ class CVEqualizer:
         image finder.
         """
         if find_image != None:
-            if find_image not in self.algorithms["find_methods"]:
-                raise ImageFinderMethodError
-            else:
-                self._new_params("find", find_image)
-                self.current["find"] = find_image
+            self.set_backend("find", find_image)
         if template_match != None:
-            if template_match not in self.algorithms["template_matchers"]:
-                raise ImageFinderMethodError
-            else:
-                self._new_params("tmatch", template_match)
-                self.current["tmatch"] = template_match
+            self.set_backend("tmatch", template_match)
         if feature_detect != None:
-            if feature_detect not in self.algorithms["feature_detectors"]:
-                raise ImageFinderMethodError
-            else:
-                self._new_params("fdetect", feature_detect)
-                self.current["fdetect"] = feature_detect
+            self.set_backend("fdetect", feature_detect)
         if feature_extract != None:
-            if feature_extract not in self.algorithms["feature_extractors"]:
-                raise ImageFinderMethodError
-            else:
-                self._new_params("fextract", feature_extract)
-                self.current["fextract"] = feature_extract
+            self.set_backend("fextract", feature_extract)
         if feature_match != None:
-            if feature_match not in self.algorithms["feature_matchers"]:
-                raise ImageFinderMethodError
-            else:
-                self._new_params("fmatch", feature_match)
-                self.current["fmatch"] = feature_match
-
+            self.set_backend("fmatch", feature_match)
+ 
     def _new_params(self, category, new):
         """Update the parameters dictionary according to a new backend algorithm."""
         self.p[category] = {}
@@ -228,11 +225,11 @@ class CVEqualizer:
         and matchers with the equalizer.
         """
         if (category == "find" or category == "tmatch" or
-            (category == "fdetect" and self.current[category] == "oldSURF")):
+            (category == "fdetect" and self.get_backend(category) == "oldSURF")):
             return opencv_backend
         elif category == "fmatch":
             # no internal OpenCV parameters to sync with
-            if self.current[category] in ("in-house-raw", "in-house-region"):
+            if self.get_backend(category) in ("in-house-raw", "in-house-region"):
                 return opencv_backend
 
             # BUG: a bug of OpenCV leads to crash if parameters
@@ -309,4 +306,5 @@ class CVParameter:
         self.fixed = fixed
 
     def __repr__(self):
-        return "<CVParam %s>" % self.value
+        return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s'>"
+                % (self.value, self.range[0], self.range[1], self.delta, self.tolerance, self.fixed))

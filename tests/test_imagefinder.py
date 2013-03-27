@@ -91,9 +91,9 @@ class ImageFinderTest(unittest.TestCase):
         finder.image_logging = logging
         if match_settings != None:
             finder.eq = match_settings
-        self.algorithms = (finder.eq.current["fdetect"],
-                           finder.eq.current["fextract"],
-                           finder.eq.current["fmatch"])
+        self.algorithms = (finder.eq.get_backend("fdetect"),
+                           finder.eq.get_backend("fextract"),
+                           finder.eq.get_backend("fmatch"))
 
         # use private methods for unit testing to visualize internal structure
         ngray = finder._prepare_image(needle, gray = True)
