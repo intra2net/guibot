@@ -14,6 +14,12 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import re
+try:
+    import configparser as config
+except ImportError:
+    import ConfigParser as config
+
 import cv2
 
 from errors import *
@@ -276,6 +282,45 @@ class CVEqualizer:
             else:
                 param.fixed = not mark
 
+    def from_match_file(self, filename_without_extention):
+        """Read the equalizer from a .match file with the given filename."""
+        parser = config.RawConfigParser()
+        success = parser.read("%s.match" % filename_without_extention)
+        # if no file is found throw an exception
+        if(len(success)==0):
+            raise IOError
+
+        sections = self.p.keys()
+        for section in sections:
+            self.set_backend(section, parser.get(section, 'backend'))
+            for option in parser.options(section):
+                if option == "backend":
+                    continue
+                param_string = parser.get(section, option)
+                param = CVParameter.from_string(param_string)
+                #print param_string, param
+                self.p[section][option] = param
+
+        #except (config.NoSectionError, config.NoOptionError, ValueError) as ex:
+        #    print("Could not read config file '%s': %s." % (filename, ex))
+        #    print("Please change or remove the config file.")
+
+    def to_match_file(self, filename_without_extention):
+        """Write the equalizer in a .match file with the given filename."""
+        parser = config.RawConfigParser()
+        sections = self.p.keys()
+        for section in sections:
+            if(not parser.has_section(section)):
+                parser.add_section(section)
+            parser.set(section, 'backend', self.get_backend(section))
+            for option in self.p[section]:
+                #print section, option
+                parser.set(section, option, self.p[section][option])
+
+        with open("%s.match" % filename_without_extention, 'w') as configfile:
+            configfile.write("# IMAGE MATCH DATA\n")
+            parser.write(configfile)
+
 
 class CVParameter:
     """A class for a single parameter from the equalizer."""
@@ -308,3 +353,27 @@ class CVParameter:
     def __repr__(self):
         return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s'>"
                 % (self.value, self.range[0], self.range[1], self.delta, self.tolerance, self.fixed))
+
+    @staticmethod
+    def from_string(repr):
+        args = []
+        string_args = re.match("<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"\
+                               " delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
+                               repr).group(1, 2, 3, 4, 5, 6)
+        for arg in string_args:
+            if arg == "None":
+                arg = None
+            elif arg in ("True", "False"):
+                arg = bool(arg)
+            elif re.match("\d+$", arg):
+                arg = int(arg)
+            elif re.match("[\d.]+", arg):
+                arg = float(arg)
+            else:
+                raise ValueError
+
+            #print arg, type(arg)
+            args.append(arg)
+
+        #print args
+        return CVParameter(*args)
