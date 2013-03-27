@@ -9,7 +9,13 @@
   The final homography only requires 4 matches (fundamental matrix requires 8).
   Figure out a similarity parameter that reflects this reliability.
 
-- calibrator unit tests? further pushing with the region unit tests...
+- Turn the getter methods at various classes into properties to make them more pythonic
+  and preserve the restricted accessibility.
+
+- Hybrid calibration or predefined best settings.
+
+- Examples as part of the documentation, i.e. examples of creating and saving matching
+  parameters, etc.
 
 - Still reconsider whether to return the (0,0) needle point or its center since
   wild transformations are possible and defining the clicking point as (+n,+n)
