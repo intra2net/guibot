@@ -196,13 +196,13 @@ class ImageFinder:
             raise ImageFinderMethodError
 
         elif self.eq.get_backend("tmatch") == "autopy":
-            if needle.get_filename() in self._bitmapcache:
-                autopy_needle = self._bitmapcache[needle.get_filename()]
+            if needle.filename in self._bitmapcache:
+                autopy_needle = self._bitmapcache[needle.filename]
             else:
                 # load and cache it
                 # TODO: Use in-memory conversion
-                autopy_needle = bitmap.Bitmap.open(needle.get_filename())
-                self._bitmapcache[needle.get_filename()] = autopy_needle
+                autopy_needle = bitmap.Bitmap.open(needle.filename)
+                self._bitmapcache[needle.filename] = autopy_needle
 
             # TODO: Use in-memory conversion
             with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
@@ -272,9 +272,9 @@ class ImageFinder:
 
         # project more points for debugging purposes and image logging
         frame_points = []
-        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
-        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
-                             (needle.get_width(), needle.get_height())])
+        frame_points.append((needle.width / 2, needle.height / 2))
+        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
+                             (needle.width, needle.height)])
 
         return self._project_features(frame_points, ngray, hgray,
                                       self.eq.p["find"]["similarity"].value, hcanvas)
@@ -304,16 +304,16 @@ class ImageFinder:
         hcanvas = self._prepare_image(haystack, gray = False)
 
         frame_points = []
-        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
-        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
-                             (needle.get_width(), needle.get_height())])
+        frame_points.append((needle.width / 2, needle.height / 2))
+        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
+                             (needle.width, needle.height)])
 
         hotmaps = []
         for upleft in maxima:
             up = upleft.get_y()
-            down = min(haystack.height, up + needle.get_height())
+            down = min(haystack.height, up + needle.height)
             left = upleft.get_x()
-            right = min(haystack.width, left + needle.get_width())
+            right = min(haystack.width, left + needle.width)
             #print "up-down:", (up, down), "left-right:", (left, right)
 
             haystack_region = hgray[up:down, left:right]
@@ -380,9 +380,9 @@ class ImageFinder:
         hcanvas = self._prepare_image(haystack, gray = False)
 
         frame_points = []
-        frame_points.append((needle.get_width() / 2, needle.get_height() / 2))
-        frame_points.extend([(0, 0), (needle.get_width(), 0), (0, needle.get_height()),
-                             (needle.get_width(), needle.get_height())])
+        frame_points.append((needle.width / 2, needle.height / 2))
+        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
+                             (needle.width, needle.height)])
 
         # the translation distance cannot be larger than the haystack
         dx = min(dx, haystack.width)
@@ -721,7 +721,7 @@ class ImageFinder:
         Convert the Image() object into compatible numpy array
         and into grayscale if the gray parameter is True.
         """
-        searchable_image = numpy.array(image.get_pil_image())
+        searchable_image = numpy.array(image.pil_image)
         # convert RGB to BGR
         searchable_image = searchable_image[:, :, ::-1].copy()
  
@@ -736,7 +736,7 @@ class ImageFinder:
         template matching methods.
         """
         # Sanity check: Needle size must be smaller than haystack
-        if haystack.get_width() < needle.get_width() or haystack.get_height() < needle.get_height():
+        if haystack.width < needle.width or haystack.height < needle.height:
             logging.warning("The size of the searched image is smaller than its region")
             return None
 

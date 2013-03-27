@@ -31,10 +31,10 @@ class ImageTest(unittest.TestCase):
     def test_basic(self):
         image = Image(self.file_all_shapes)
 
-        self.assertEqual(400, image.get_width())
-        self.assertEqual(300, image.get_height())
+        self.assertEqual(400, image.width)
+        self.assertEqual(300, image.height)
 
-        self.assertTrue(image.get_filename().find('all_shapes.png') is not -1)
+        self.assertTrue(image.filename.find('all_shapes.png') is not -1)
         self.assertIsInstance(image.match_settings, CVEqualizer)
         self.assertFalse(image.use_own_settings)
 
@@ -44,7 +44,7 @@ class ImageTest(unittest.TestCase):
         my_copy = image.copy()
         self.assertNotEqual(image.match_settings, my_copy.match_settings)
         self.assertEqual(image.filename, my_copy.filename)
-        self.assertEqual(image.get_similarity(), my_copy.get_similarity())
+        self.assertEqual(image.similarity, my_copy.similarity)
         self.assertEqual(image.pil_image, my_copy.pil_image)
         self.assertEqual(image.width, my_copy.width)
         self.assertEqual(image.height, my_copy.height)
@@ -53,37 +53,37 @@ class ImageTest(unittest.TestCase):
     def test_target_offset(self):
         image = Image(self.file_all_shapes)
 
-        target_offset = image.get_target_offset()
+        target_offset = image.target_center_offset
         self.assertEqual(0, target_offset.get_x())
         self.assertEqual(0, target_offset.get_y())
 
-        new_image = image.target_offset(100, 30)
+        new_image = image.with_target_offset(100, 30)
         self.assertEqual(image.filename, new_image.filename)
-        self.assertEqual(image.get_similarity(), new_image.get_similarity())
+        self.assertEqual(image.similarity, new_image.similarity)
         self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
         self.assertNotEqual(image.target_center_offset, new_image.target_center_offset)
 
-        target_offset = new_image.get_target_offset()
+        target_offset = new_image.target_center_offset
         self.assertEqual(100, target_offset.get_x())
         self.assertEqual(30, target_offset.get_y())
 
         # check it's unchanged in the original
-        target_offset = image.get_target_offset()
+        target_offset = image.target_center_offset
         self.assertEqual(0, target_offset.get_x())
         self.assertEqual(0, target_offset.get_y())
 
     def test_similarity(self):
         image = Image(self.file_all_shapes)
 
-        new_image = image.similarity(0.45)
-        self.assertEqual(0.45, new_image.get_similarity())
+        new_image = image.with_similarity(0.45)
+        self.assertEqual(0.45, new_image.similarity)
         # TODO: create a separate config for defaults to extract this from there
-        self.assertEqual(0.8, image.get_similarity())
+        self.assertEqual(0.8, image.similarity)
 
         self.assertEqual(image.filename, new_image.filename)
-        self.assertNotEqual(image.get_similarity(), new_image.get_similarity())
+        self.assertNotEqual(image.similarity, new_image.similarity)
         self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
@@ -93,9 +93,9 @@ class ImageTest(unittest.TestCase):
         image = Image(self.file_all_shapes)
 
         new_image = image.exact()
-        self.assertEqual(1.0, new_image.get_similarity())
+        self.assertEqual(1.0, new_image.similarity)
         # TODO: create a separate config for defaults to extract this from there
-        self.assertEqual(0.8, image.get_similarity())
+        self.assertEqual(0.8, image.similarity)
 
     def test_save(self):
         image = Image(self.file_all_shapes)
@@ -142,13 +142,13 @@ class ImageTest(unittest.TestCase):
         image = Image(self.file_all_shapes)
 
         second_image = Image(self.file_all_shapes)
-        self.assertEqual(image.get_pil_image(), second_image.get_pil_image())
+        self.assertEqual(image.pil_image, second_image.pil_image)
 
         # Clear image cache the hard way
         Image()._cache.clear()
 
         third_image = Image(self.file_all_shapes)
-        self.assertNotEqual(image.get_pil_image(), third_image.get_pil_image())
+        self.assertNotEqual(image.pil_image, third_image.pil_image)
 
 if __name__ == '__main__':
     unittest.main()
