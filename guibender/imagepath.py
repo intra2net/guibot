@@ -22,12 +22,12 @@ class ImagePath:
     _imagePaths = []
 
     def add_path(self, directory):
-        if directory not in self._imagePaths:
-            self._imagePaths.append(directory)
+        if directory not in ImagePath._imagePaths:
+            ImagePath._imagePaths.append(directory)
 
     def remove_path(self, directory):
         try:
-            self._imagePaths.remove(directory)
+            ImagePath._imagePaths.remove(directory)
         except:
             return False
 
@@ -35,10 +35,10 @@ class ImagePath:
 
     def clear(self):
         # empty list but keep reference
-        del self._imagePaths[:]
+        del ImagePath._imagePaths[:]
 
     def search(self, filename):
-        for dir in self._imagePaths:
+        for dir in ImagePath._imagePaths:
             fullname = os.path.join(dir, filename)
             if os.path.exists(fullname):
                 return fullname
