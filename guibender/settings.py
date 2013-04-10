@@ -18,12 +18,19 @@ import logging
 from errors import *
 
 class Settings:
-    # Shared between all instances
+    # operational parameters shared between all instances
     _drag_delay = 0.5
     _drop_delay = 0.5
     _keys_delay = 0.2
     _rescan_speed_on_find = 0.2
     _save_needle_on_error = True
+
+    # cvequalizer backends shared between all instances
+    _find_image_backend = "template"
+    _template_match_backend = "ccoeff_normed"
+    _feature_detect_backend = "ORB"
+    _feature_extract_backend = "BRIEF"
+    _feature_match_backend = "BruteForce-Hamming"
 
     def delay_after_drag(self, delay = None):
         if delay == None:
@@ -56,3 +63,35 @@ class Settings:
             Settings._save_needle_on_error = value
         else:
             raise ValueError
+
+    # these methods do not check for valid values since this
+    # is already done at the equalizer on initialization
+    def find_image_backend(self, name = None):
+        if name == None:
+            return Settings._find_image_backend
+        else:
+            Settings._find_image_backend = name
+
+    def template_match_backend(self, name = None):
+        if name == None:
+            return Settings._template_match_backend
+        else:
+            Settings._template_match_backend = name
+
+    def feature_detect_backend(self, name = None):
+        if name == None:
+            return Settings._feature_detect_backend
+        else:
+            Settings._feature_detect_backend = name
+
+    def feature_extract_backend(self, name = None):
+        if name == None:
+            return Settings._feature_extract_backend
+        else:
+            Settings._feature_extract_backend = name
+
+    def feature_match_backend(self, name = None):
+        if name == None:
+            return Settings._feature_match_backend
+        else:
+            Settings._feature_match_backend = name
