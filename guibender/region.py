@@ -21,6 +21,7 @@ import time, sys
 from desktopcontrol import DesktopControl
 
 from errors import *
+from settings import Settings
 from location import Location
 from image import Image
 from imagefinder import ImageFinder
@@ -194,15 +195,14 @@ class Region(object):
                 return self.last_match
 
             elif time.time() > timeout_limit:
-                # TODO: Turn this into a setting / make it optional
-                screen_capture.save('/tmp/guibender_last_finderror.png')
-                image.save('/tmp/guibender_last_finderror_needle.png')
+                if Settings().save_needle_on_error():
+                    screen_capture.save('/tmp/guibender_last_finderror.png')
+                    image.save('/tmp/guibender_last_finderror_needle.png')
                 raise FindError()
 
             else:
                 # don't hog the CPU
-                # TODO: Make 'rescan speed' configurable
-                time.sleep(0.2)
+                time.sleep(Settings().rescan_speed_on_find())
 
     def find_all(self, image, timeout=10, allow_zero = False):
         # Load image if needed
@@ -227,15 +227,14 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    # TODO: Turn this into a setting / make it optional
-                    screen_capture.save('/tmp/guibender_last_finderror.png')
-                    image.save('/tmp/guibender_last_finderror_needle.png')
+                    if Settings().save_needle_on_error():
+                        screen_capture.save('/tmp/guibender_last_finderror.png')
+                        image.save('/tmp/guibender_last_finderror_needle.png')
                     raise FindError()
 
             else:
                 # don't hog the CPU
-                # TODO: Make 'rescan speed' configurable
-                time.sleep(0.2)
+                time.sleep(Settings().rescan_speed_on_find())
 
     def exists(self, image, timeout=0):
         try:
@@ -320,16 +319,14 @@ class Region(object):
             #self.desktop.keys_toggle(["Ctrl"], True)
 
         self.desktop.mouse_down(self.LEFT_BUTTON)
-        # TODO: Make delay after drag configurable
-        time.sleep(0.5)
+        time.sleep(Settings().delay_after_drag())
 
         return match
 
     def drop_at(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
 
-        # TODO: Make delay before drop configurable
-        time.sleep(0.5)
+        time.sleep(Settings().delay_before_drop())
 
         self.desktop.mouse_up(self.LEFT_BUTTON)
 
@@ -350,8 +347,7 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-            # TODO: Make configurable
-            time.sleep(0.2)
+            time.sleep(Settings().delay_before_keys())
 
         self.desktop.keys_press(keys)
         return match
@@ -364,8 +360,7 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-            # TODO: Make configurable
-            time.sleep(0.2)
+            time.sleep(Settings().delay_before_keys())
 
         self.desktop.keys_type(text, modifiers)
         return match
