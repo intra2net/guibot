@@ -1,8 +1,3 @@
-- Implement global Settings() class that acts as a Singleton for all
-  configuration settings. Move all hardcoded config values to this class.
-
-- Create rpm package for installation on workstation / autotest server
-
 - Make feature similarity more reliable. Currently it is defined as the ratio of
   keypoints through each feature matching filter. In case of successful matching
   the calibrate method thus optimizes the last ratio (matched / RANSAC inlier
