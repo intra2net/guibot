@@ -1,4 +1,4 @@
-# TODO: what does the next line do?
+# Get python "site-lib" path by executing small python script
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           guibender
