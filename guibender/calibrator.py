@@ -15,6 +15,10 @@
 #
 import time, math
 
+import logging
+log = logging.getLogger('guibender.calibrator')
+
+
 class Calibrator:
     """
     This class provides with a group of methods to facilitate and
@@ -52,6 +56,8 @@ class Calibrator:
         @param refinements: number of refinements allowed to improve calibration
         """
         results = []
+        log.info("Performing benchmarking %s calibration and %s refinements",
+                 "with" if calibration else "without", refinements)
 
         # test all template matching methods
         old_config = (imagefinder.eq.get_backend("find"),
@@ -70,7 +76,7 @@ class Calibrator:
                     method = key + "_gray"
                 else:
                     method = key
-                #print "%s with %s:" % (needle.filename, method)
+                log.debug("Testing %s with %s:", needle.filename, method)
 
                 imagefinder.eq.configure_backend(find_image = "template",
                                                  template_match = key)
@@ -79,7 +85,8 @@ class Calibrator:
                 start_time = time.time()
                 imagefinder.find(needle, haystack)
                 total_time = time.time() - start_time
-                #print "%s at %s in %s" % (imagefinder.hotmap[1], imagefinder.hotmap[2], total_time)
+                log.debug("%s at %s in %s", imagefinder.hotmap[1],
+                          imagefinder.hotmap[2], total_time)
 
                 results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
         imagefinder.eq.configure_backend(find_image = old_config[0],
@@ -104,7 +111,7 @@ class Calibrator:
                         continue
 
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
-                    #print "%s with %s:" % (needle.filename, method)
+                    log.debug("Testing %s with %s:", needle.filename, method)
 
                     imagefinder.eq.configure_backend(find_image = "feature",
                                                      feature_detect = key_fd,
@@ -117,7 +124,8 @@ class Calibrator:
                     start_time = time.time()
                     imagefinder.find(needle, haystack)
                     total_time = time.time() - start_time
-                    #print "%s at %s in %s" % (imagefinder.hotmap[1], imagefinder.hotmap[2], total_time)
+                    log.debug("%s at %s in %s", imagefinder.hotmap[1],
+                              imagefinder.hotmap[2], total_time)
 
                     results.append((method, imagefinder.hotmap[1],
                                     imagefinder.hotmap[2], total_time))
@@ -153,7 +161,7 @@ class Calibrator:
             try:
                 imagefinder.find(needle, haystack)
             except:
-                #print "out of range"
+                log.debug("Time taken is out of the maximum allowable range")
                 imagefinder.hotmap[1] = 0.0
             total_time = time.time() - start_time
 
@@ -192,7 +200,7 @@ class Calibrator:
 
         best_params = params
         best_error = run_function(params)
-        #print best_params, best_error
+        log.log(0, "%s %s", best_params, best_error)
 
         n = 0
         while n < max_attempts and best_error > 0.0:
@@ -202,8 +210,8 @@ class Calibrator:
             for category in deltas:
                 for key in deltas[category]:
                     if deltas[category][key] > params[category][key].tolerance:
-                        #print category, key, params[category][key].value
-                        #print deltas[category][key], params[category][key].tolerance
+                        log.log(0, "%s %s %s", category, key, params[category][key].value)
+                        log.log(0, "%s %s", deltas[category][key], params[category][key].tolerance)
                         all_tolerable = False
                         break
             if all_tolerable:
@@ -212,7 +220,7 @@ class Calibrator:
             for category in params.keys():
                 for key in params[category].keys():
                     if params[category][key].fixed:
-                        #print "fixed:", category, key
+                        log.log(0, "fixed: %s %s", category, key)
                         continue
                     else:
                         param = params[category][key]
@@ -239,7 +247,7 @@ class Calibrator:
                             param.value = True
                     else:
                         continue
-                    #print "+", params, deltas
+                    log.log(0, "+ %s d %s", params, deltas)
 
                     error = run_function(params)
                     if(error < best_error):
@@ -265,7 +273,7 @@ class Calibrator:
                             # the default boolean value was already checked
                             param.value = start_value
                             continue
-                        #print "-", params, deltas
+                        log.log(0, "- %s d %s", params, deltas)
 
                         error = run_function(params)
                         if(error < best_error):
@@ -276,7 +284,7 @@ class Calibrator:
                             param.value = start_value
                             deltas[category][key] *= 0.9
 
-            #print best_params, best_error
+            log.log(0, "%s %s", best_params, best_error)
             n += 1
 
         return (best_params, best_error)

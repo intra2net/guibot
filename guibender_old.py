@@ -62,24 +62,6 @@ class GuiBender(object):
             configfile.write("# 0 NOTSET, 10 DEBUG, 20 INFO, 30 WARNING, 40 ERROR, 50 CRITICAL\n")
             configfile.write("# Add further custom sections below\n\n")
 
-    def prepare_log(self):
-        # reset the log
-        with open(LOG_FILENAME, 'w'):
-            pass
-
-        # add basic configuration
-        logging.basicConfig(filename=LOG_FILENAME,
-                            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                            level=self.config.getint('basic_settings', 'file_log_level'))
-
-        # add a handler for a console output
-        console = logging.StreamHandler()
-        console.setLevel(self.config.getint('basic_settings', 'console_log_level'))
-        formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        console.setFormatter(formatter)
-        logging.getLogger('').addHandler(console)
-        return
-
     def execute_script(self, filename):
         script_globals = {'__file__': filename, '__name__': '__main__', 'guibender' : self }
 

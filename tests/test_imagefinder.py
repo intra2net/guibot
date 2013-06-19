@@ -147,7 +147,7 @@ class ImageFinderTest(unittest.TestCase):
         match = finder.find(needle, haystack)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
-        hotmap_file = os.path.join('log.png')
+        hotmap_file = os.path.join('log_haystack.png')
         self.show_image(hotmap_file, title)
 
 

@@ -13,18 +13,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import logging
 import PIL.Image
 from tempfile import NamedTemporaryFile
 import math
+
+from autopy import bitmap
+import cv, cv2
+import numpy
 
 from location import Location
 from cvequalizer import CVEqualizer
 from errors import *
 
-from autopy import bitmap
-import cv, cv2
-import numpy
+import logging
+log = logging.getLogger('guibender.imagefinder')
 
 
 class ImageFinder:
@@ -80,6 +82,7 @@ class ImageFinder:
         @param needle: an Image() to look for
         """
         if needle.use_own_settings:
+            log.debug("Using special needle settings for matching")
             general_settings = self.eq
             self.eq = needle.match_settings
 
@@ -108,6 +111,7 @@ class ImageFinder:
         if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
         if needle.use_own_settings:
+            log.debug("Using special needle settings for matching")
             general_settings = self.eq
             self.eq = needle.match_settings
 
@@ -117,11 +121,13 @@ class ImageFinder:
             match_template = "ccoeff_normed"
         else:
             match_template = self.eq.get_backend("tmatch")
-        result = self._match_template(needle, haystack,
-                                      self.eq.p["find"]["nocolor"].value,
-                                      match_template)
+        no_color = self.eq.p["find"]["nocolor"].value
+        log.debug("Performing opencv-%s find_all template matching %s color",
+                  match_template, "without" if no_color else "with")
+        result = self._match_template(needle, haystack, no_color, match_template)
 
         # extract maxima once for each needle size region
+        similarity = self.eq.p["find"]["similarity"].value
         maxima = []
         while True:
 
@@ -131,14 +137,13 @@ class ImageFinder:
                 # TODO: check whetehr find_all would work properly for sqdiff
                 maxVal = 1 - minVal
                 maxLoc = minLoc
-            if maxVal < self.eq.p["find"]["similarity"].value:
+            log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
+                      str(maxVal), similarity, str(maxLoc))
+
+            if maxVal < similarity:
+                log.debug("Best match is not accetable")
                 break
-
-            logging.debug('Found a match with:')
-            logging.debug('maxVal (similarity): %s (%s)',
-                          str(maxVal), self.eq.p["find"]["similarity"].value)
-            logging.debug('maxLoc (x,y): %s', str(maxLoc))
-
+            log.debug("Best match is accetable")
             maxima.append(Location(maxLoc[0], maxLoc[1]))
 
             res_w = haystack.width - needle.width + 1
@@ -148,10 +153,11 @@ class ImageFinder:
             match_y0 = max(maxLoc[1] - int(0.5 * needle.height), 0)
             match_y1 = min(maxLoc[1] + int(0.5 * needle.height), len(result[0]))
 
-            logging.debug("Wipe image matches in x [%s, %s]\[%s, %s]",
-                          match_x0, match_x1, 0, res_w)
-            logging.debug("Wipe image matches in y [%s, %s]\[%s, %s]",
-                          match_y0, match_y1, 0, res_h)
+            # log this only if performing deep internal debugging
+            log.log(0, "Wipe image matches in x [%s, %s]\[%s, %s]",
+                    match_x0, match_x1, 0, res_w)
+            log.log(0, "Wipe image matches in y [%s, %s]\[%s, %s]",
+                    match_y0, match_y1, 0, res_h)
 
             # clean found image to look for next safe distance match
             for i in range(max(maxLoc[0] - int(0.5 * needle.width), 0),
@@ -159,23 +165,27 @@ class ImageFinder:
                 for j in range(max(maxLoc[1] - int(0.5 * needle.height), 0),
                                min(maxLoc[1] + int(0.5 * needle.height), res_h)):
 
-                    #print haystack.width, needle.width, maxLoc[0], maxLoc[0] - int(0.5 * needle.width), max(maxLoc[0] - int(0.5 * needle.width), 0)
-                    #print haystack.width, needle.width, maxLoc[0], maxLoc[0] + int(0.5 * needle.width), min(maxLoc[0] + int(0.5 * needle.width), 0)
-                    #print haystack.height, needle.height, maxLoc[1], maxLoc[1] - int(0.5 * needle.height), max(maxLoc[1] - int(0.5 * needle.height), 0)
-                    #print haystack.height, needle.height, maxLoc[1], maxLoc[1] + int(0.5 * needle.height), min(maxLoc[1] + int(0.5 * needle.height), 0)
-                    #print "index at ", j, i, " in ", len(result), len(result[0])
+                    log.log(0, "hw%s,hh%s - %s,%s,%s,%s", haystack.width, needle.width, maxLoc[0],
+                            maxLoc[0] - int(0.5 * needle.width), max(maxLoc[0] - int(0.5 * needle.width), 0))
+                    log.log(0, "hw%s,nw%s - %s,%s,%s,%s", haystack.width, needle.width, maxLoc[0],
+                            maxLoc[0] + int(0.5 * needle.width), min(maxLoc[0] + int(0.5 * needle.width), 0))
+                    log.log(0, "hh%s,nh%s - %s,%s,%s,%s", haystack.height, needle.height, maxLoc[1],
+                            maxLoc[1] - int(0.5 * needle.height), max(maxLoc[1] - int(0.5 * needle.height), 0))
+                    log.log(0, "hh%s,nh%s - %s,%s,%s,%s", haystack.height, needle.height, maxLoc[1],
+                            maxLoc[1] + int(0.5 * needle.height), min(maxLoc[1] + int(0.5 * needle.height), 0))
+                    log.log(0, "index at %s %s in %s %s", j, i, len(result), len(result[0]))
 
                     result[j][i] = 0.0
-            logging.debug("Total maxima up to the point are %i", len(maxima))
-            logging.debug("maxLoc was %s and is now %s", maxVal, result[maxLoc[1], maxLoc[0]])
-        logging.info("%i matches found" % len(maxima))
+            log.log(0, "Total maxima up to the point are %i", len(maxima))
+            log.log(0, "maxLoc was %s and is now %s", maxVal, result[maxLoc[1], maxLoc[0]])
+        log.debug("A total of %i matches found" % len(maxima))
 
         # print a hotmap of the results for debugging purposes
         if self.image_logging <= 40:
             hotmap = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
             cv.ConvertScale(cv.fromarray(result), hotmap, scale = 255.0)
             self.hotmap[0] = numpy.asarray(hotmap)
-            cv2.imwrite("log.png", self.hotmap[0])
+            cv2.imwrite("log_haystack.png", self.hotmap[0])
         self.hotmap[1] = maxVal
         self.hotmap[2] = maxLoc
 
@@ -210,11 +220,14 @@ class ImageFinder:
                 autopy_screenshot = bitmap.Bitmap.open(f.name)
 
                 autopy_tolerance = 1.0 - self.eq.p["find"]["similarity"].value
+                log.debug("Performing autopy template matching with tolerance %s (color)",
+                          autopy_tolerance)
                 # TODO: since only the coordinates are available
                 # and fuzzy areas of matches are returned we need
                 # to ask autopy team for returning the matching rates
                 # as well
                 coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
+                log.debug("Best acceptable match with location %s", coord)
 
                 if coord is not None:
                     self.hotmap[1] = -1.0
@@ -223,20 +236,20 @@ class ImageFinder:
             return None
 
         else:
-            result = self._match_template(needle, haystack,
-                                          self.eq.p["find"]["nocolor"].value,
-                                          self.eq.get_backend("tmatch"))
+            match_template = self.eq.get_backend("tmatch")
+            no_color = self.eq.p["find"]["nocolor"].value
+            similarity = self.eq.p["find"]["similarity"].value
+            log.debug("Performing opencv-%s template matching %s color",
+                      match_template, "without" if no_color else "with")
+            result = self._match_template(needle, haystack, no_color, match_template)
 
             minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
-            logging.debug('minVal: %s', str(minVal))
-            logging.debug('minLoc: %s', str(minLoc))
-            logging.debug('maxVal (similarity): %s (%s)',
-                          str(maxVal), self.eq.p["find"]["similarity"].value)
-            logging.debug('maxLoc (x,y): %s', str(maxLoc))
             # switch max and min for sqdiff and sqdiff_normed
             if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
                 maxVal = 1 - minVal
                 maxLoc = minLoc
+            log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
+                      str(maxVal), similarity, str(maxLoc))
 
             # print a hotmap of the results for debugging purposes
             if self.image_logging <= 40:
@@ -249,9 +262,11 @@ class ImageFinder:
                 hotmap = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
                 cv.ConvertScale(cv.fromarray(result), hotmap, scale = 255.0)
                 self.hotmap[0] = numpy.asarray(hotmap)
-                cv2.imwrite("log.png", self.hotmap[0])
+                cv2.imwrite("log_haystack.png", self.hotmap[0])
 
-            if maxVal > self.eq.p["find"]["similarity"].value:
+            acceptable = maxVal > similarity
+            log.debug('Best match %s acceptable', "is" if acceptable else "is not")
+            if acceptable:
                 self.hotmap[1] = maxVal
                 self.hotmap[2] = maxLoc
                 return Location(maxLoc[0], maxLoc[1])
@@ -276,8 +291,9 @@ class ImageFinder:
         frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
                              (needle.width, needle.height)])
 
+        similarity = self.eq.p["find"]["similarity"].value
         return self._project_features(frame_points, ngray, hgray,
-                                      self.eq.p["find"]["similarity"].value, hcanvas)
+                                      similarity, hcanvas)
 
     def _hybrid_find(self, needle, haystack):
         """
@@ -294,11 +310,14 @@ class ImageFinder:
         # use a different lower similarity for the template matching
         template_similarity = self.eq.p["find"]["front_similarity"].value
         feature_similarity = self.eq.p["find"]["similarity"].value
-        #print template_similarity, feature_similarity
+        log.debug("Using hybrid matching with template similarity %s "\
+                  "and feature similarity %s", template_similarity,
+                  feature_similarity)
+
         self.eq.p["find"]["similarity"].value = template_similarity
         maxima = self.find_all(needle, haystack)
-        self.eq.p["find"]["similarity"].value = feature_similarity
 
+        self.eq.p["find"]["similarity"].value = feature_similarity
         ngray = self._prepare_image(needle, gray = True)
         hgray = self._prepare_image(haystack, gray = True)
         hcanvas = self._prepare_image(haystack, gray = False)
@@ -314,7 +333,8 @@ class ImageFinder:
             down = min(haystack.height, up + needle.height)
             left = upleft.get_x()
             right = min(haystack.width, left + needle.width)
-            #print "up-down:", (up, down), "left-right:", (left, right)
+            log.log(0, "Maximum up-down is %s and left-right is %s",
+                    (up, down), (left, right))
 
             haystack_region = hgray[up:down, left:right]
             haystack_region = haystack_region.copy()
@@ -334,13 +354,18 @@ class ImageFinder:
 
         if self.image_logging <= 30:
             for i, hotmap in enumerate(hotmaps):
-                #print len(maxima), i, hotmap[1]
-                cv2.imwrite("log%i.png" % i, hotmap[0])
+                log.debug("Saving %sth out of %s hotmaps with similarity %s",
+                          i, len(maxima), hotmap[1])
+                cv2.imwrite("log_hybrid_hotmap%i.png" % i, hotmap[0])
 
         if len(hotmaps) == 0:
+            log.debug("No acceptable match with the given feature similarity %s",
+                      feature_similarity)
             return None
         else:
             self.hotmap = max(hotmaps, key = lambda x: x[1])
+            log.debug("Best acceptable match with similarity %s at %s",
+                      self.hotmap[1], (self.hotmap[2][0], self.hotmap[2][1]))
             return Location(self.hotmap[2][0], self.hotmap[2][1])
 
     def _hybrid2to1_find(self, needle, haystack):
@@ -374,6 +399,8 @@ class ImageFinder:
         y = self.eq.p["find"]["y"].value
         dx = self.eq.p["find"]["dx"].value
         dy = self.eq.p["find"]["dy"].value
+        log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
+                  x, y, dx, dy)
 
         ngray = self._prepare_image(needle, gray = True)
         hgray = self._prepare_image(haystack, gray = True)
@@ -389,7 +416,7 @@ class ImageFinder:
         dy = min(dy, haystack.height)
         nx = int(math.ceil(float(max(haystack.width - x, 0)) / dx) + 1)
         ny = int(math.ceil(float(max(haystack.height - y, 0)) / dy) + 1)
-        #print "dividing haystack into %ix%i pieces" % (nx, ny)
+        log.debug("Dividing haystack into %ix%i pieces", nx, ny)
         result = numpy.zeros((ny, nx))
 
         locations = {}
@@ -399,7 +426,9 @@ class ImageFinder:
                 right = min(haystack.width, i * dx + x)
                 up = j * dy
                 down = min(haystack.height, j * dy + y)
-                #print "up-down:", (up, down), "left-right:", (left, right)
+                log.debug("Region up-down is %s and left-right is %s",
+                          (up, down), (left, right))
+
                 haystack_region = hgray[up:down, left:right]
                 haystack_region = haystack_region.copy()
                 hotmap_region = hcanvas[up:down, left:right]
@@ -408,25 +437,30 @@ class ImageFinder:
                 # uncomment this block in order to view the filling of the results
                 # (marked with 1.0 when filled) and the different ndarray shapes
                 #result[j][i] = 1.0
-                #print result
-                #print hregion.shape, hgray.shape, ngray.shape, result.shape, "\n"
+                log.log(0, "%s", result)
+                log.log(0, "shapes: hcanvas %s, hgray %s, ngray %s, res %s\n",
+                        hcanvas.shape, hgray.shape, ngray.shape, result.shape)
 
                 res = self._project_features(frame_points, ngray, haystack_region,
                                              self.eq.p["find"]["similarity"].value,
                                              hotmap_region)
                 result[j][i] = self.hotmap[1]
                 if self.image_logging <= 30:
-                    cv2.imwrite("log%i.png" % (i*ny+j), self.hotmap[0])
+                    log.debug("Saving %sth out of %s hotmaps with similarity %s",
+                              i*ny+j, nx*ny, self.hotmap[1])
+                    cv2.imwrite("log_hybrid2_hotmap%i.png" % (i*ny+j), self.hotmap[0])
 
                 if res == None:
+                    log.debug("No acceptable match in region %s", (i, j))
                     continue
                 else:
                     locations[(j, i)] = (left + self.hotmap[2][0],
                                          up + self.hotmap[2][1])
-                    #print "(x,y):", locations[(j, i)]
+                    log.debug("Acceptable best match with similarity %s at %s in region %s",
+                              self.hotmap[1], locations[(j, i)], (i, j))
 
         if self.image_logging <= 40:
-            cv2.imwrite("log.png", result)
+            cv2.imwrite("log_haystack.png", result)
         return result, locations
 
 
@@ -440,33 +474,45 @@ class ImageFinder:
         self.hotmap[1] = 0.0
         self.hotmap[2] = None
 
+        log.debug("Performing %s feature matching (no color)",
+                  "-".join([self.eq.get_backend("fdetect"),
+                            self.eq.get_backend("fextract"),
+                            self.eq.get_backend("fmatch")]))
         nkp, ndc, hkp, hdc = self._detect_features(ngray, hgray,
                                                    self.eq.get_backend("fdetect"),
                                                    self.eq.get_backend("fextract"))
 
         if len(nkp) < 4 or len(hkp) < 4:
-            #print "F0:", len(nkp), len(hkp)
+            log.debug("No acceptable best match after feature detection: "\
+                      "only %s needle and %s haystack features detected",
+                      len(nkp), len(hkp))
             if self.image_logging <= 40 and self.hotmap[0] != None:
-                cv2.imwrite("log.png", self.hotmap[0])
+                cv2.imwrite("log_haystack.png", self.hotmap[0])
             return None
 
         mnkp, mhkp = self._match_features(nkp, ndc, hkp, hdc,
                                           self.eq.get_backend("fmatch"))
 
         if self.hotmap[1] < similarity or len(mnkp) < 4:
-            #print "F1:", self.hotmap[1], similarity
+            log.debug("No acceptable best match after feature matching: "\
+                      "best match similarity %s is less than required %s",
+                      self.hotmap[1], similarity)
             if self.image_logging <= 40 and self.hotmap[0] != None:
-                cv2.imwrite("log.png", self.hotmap[0])
+                cv2.imwrite("log_haystack.png", self.hotmap[0])
             return None
 
         self._project_locations(locations_in_needle, mnkp, mhkp)
 
         if self.image_logging <= 40 and self.hotmap[0] != None:
-            cv2.imwrite("log.png", self.hotmap[0])
+            cv2.imwrite("log_haystack.png", self.hotmap[0])
         if self.hotmap[1] < similarity:
-            #print "F2:", self.hotmap[1], similarity
+            log.debug("No acceptable best match after RANSAC projection: "\
+                      "best match similarity %s is less than required %s",
+                      self.hotmap[1], similarity)
             return None
         else:
+            log.debug("Best match with similarity %s at %s is acceptable",
+                      self.hotmap[1], self.hotmap[2])
             return Location(*self.hotmap[2])
 
     def _detect_features(self, ngray, hgray, detect, extract):
@@ -481,15 +527,15 @@ class ImageFinder:
         if nfactor > 1.0:
             nmat = cv.fromarray(ngray)
             nmat_zoomed = cv.CreateMat(int(nmat.rows * nfactor), int(nmat.cols * nfactor), cv.CV_8UC1)
-            #print "Zooming x%i needle" % nfactor
-            #print nmat.rows, nmat.cols, "->", nmat_zoomed.rows, nmat_zoomed.cols
+            log.debug("Zooming x%i needle", nfactor)
+            log.log(0, "%s,%s -> %s,%s", nmat.rows, nmat.cols, nmat_zoomed.rows, nmat_zoomed.cols)
             cv.Resize(nmat, nmat_zoomed)
             ngray = numpy.asarray(nmat_zoomed)
         if hfactor > 1.0:
             hmat = cv.fromarray(hgray)
             hmat_zoomed = cv.CreateMat(int(hmat.rows * hfactor), int(hmat.cols * hfactor), cv.CV_8UC1)
-            #print "Zooming x%i haystack" % hfactor
-            #print hmat.rows, hmat.cols, "->", hmat_zoomed.rows, hmat_zoomed.cols
+            log.debug("Zooming x%i haystack", hfactor)
+            log.log(0, "%s,%s -> %s,%s", hmat.rows, hmat.cols, hmat_zoomed.rows, hmat_zoomed.cols)
             cv.Resize(hmat, hmat_zoomed)
             hgray = numpy.asarray(hmat_zoomed)
 
@@ -528,7 +574,8 @@ class ImageFinder:
             hkeypoint.pt = (int(hkeypoint.pt[0] / hfactor),
                             int(hkeypoint.pt[1] / hfactor))
 
-        #print len(nkeypoints), len(hkeypoints)
+        log.debug("Detected %s keypoints in needle and %s in haystack",
+                      len(nkeypoints), len(hkeypoints))
         # plot the detected features for image logging
         if self.image_logging <= 10:
             for hkp in hkeypoints:
@@ -559,13 +606,12 @@ class ImageFinder:
                     smooth_dist1 = m[0].distance + 0.0000001
                     smooth_dist2 = m[1].distance + 0.0000001
 
-                    #print smooth_dist1 / smooth_dist2, self.ratio
                     if (smooth_dist1 / smooth_dist2 < self.eq.p["fmatch"]["ratioThreshold"].value):
                         matches2.append(m[0])
                 else:
                     matches2.append(m[0])
 
-            #print "rt: %i\%i" % (len(matches2), len(matches))
+            log.log(0, "Ratio test result is %i\%i", len(matches2), len(matches))
             return matches2
 
         def symmetry_test(nmatches, hmatches):
@@ -585,7 +631,7 @@ class ImageFinder:
                         matches2.append(m)
                         break
 
-            #print "st: %i\%i" % (len(matches2), len(matches))
+            log.log(0, "Symmetry test result is %i\%i", len(matches2), len(matches))
             return matches2
 
         # build matchers
@@ -628,7 +674,7 @@ class ImageFinder:
         match_hkeypoints = []
         matches = sorted(matches, key = lambda x: x.distance)
         for match in matches:
-            #print match.distance
+            log.log(0, match.distance)
             match_nkeypoints.append(nkeypoints[match.queryIdx])
             match_hkeypoints.append(hkeypoints[match.trainIdx])
 
@@ -642,7 +688,8 @@ class ImageFinder:
 
         # update the current achieved similarity
         self.hotmap[1] = float(len(match_nkeypoints)) / float(len(nkeypoints))
-        #print "%s\\%s" % (len(mnkp), len(nkp)), "-> %f" % self.hotmap[1]
+        log.log(0, "%s\\%s -> %f", len(match_nkeypoints),
+                len(nkeypoints), self.hotmap[1])
 
         return (match_nkeypoints, match_hkeypoints)
 
@@ -701,7 +748,7 @@ class ImageFinder:
         for location in locations_in_needle:
             (ox, oy) = (location[0], location[1])
             orig_center_wrapped = numpy.array([[[ox, oy]]], dtype = numpy.float32)
-            #print orig_center_wrapped.shape, H.shape
+            log.log(0, "%s %s", orig_center_wrapped.shape, H.shape)
             match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
             (mx, my) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
 
@@ -711,7 +758,7 @@ class ImageFinder:
             projected.append((int(mx), int(my)))
 
         self.hotmap[1] = float(total_matches) / float(len(mnkp))
-        #print "%s\\%s" % (total_matches, len(mnkp)), "-> %f" % self.hotmap[1]
+        log.log(0, "%s\\%s -> %f", total_matches, len(mnkp), self.hotmap[1])
         self.hotmap[2] = locations_in_needle.pop()
 
         return projected
@@ -737,7 +784,7 @@ class ImageFinder:
         """
         # Sanity check: Needle size must be smaller than haystack
         if haystack.width < needle.width or haystack.height < needle.height:
-            logging.warning("The size of the searched image is smaller than its region")
+            log.warning("The size of the searched image is smaller than its region")
             return None
 
         methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
@@ -828,7 +875,7 @@ class InHouseCV:
                 coord[1] = -1
             elif target[1] > origin[1]:
                 coord[1] = 1
-            #print origin, ":", target, "=", coord
+            log.log(0, "%s:%s=%s", origin, target, coord)
             return coord
 
         def compare_pos(match1, match2):
@@ -841,8 +888,8 @@ class InHouseCV:
             if hc[1] != nc[1] and hc[1] != 0 and nc[1] != 0:
                 valid_positioning = False
 
-            #print "p1:p2 = %s in haystack and %s in needle" % (hc, nc)
-            #print "is their relative positioning valid? %s" % valid_positioning
+            log.log(0, "p1:p2 = %s in haystack and %s in needle", hc, nc)
+            log.log(0, "is their relative positioning valid? %s", valid_positioning)
 
             return valid_positioning
 
@@ -853,7 +900,8 @@ class InHouseCV:
             nominator = sum(float(not compare_pos(match, new_match)) for match in matches)
             denominator = float(len(matches))
             ratio = nominator / denominator
-            #print "model <-> match = %i disagreeing / %i total matches" % (nominator, denominator)
+            log.log(0, "model <-> match = %i disagreeing / %i total matches",
+                    nominator, denominator)
 
             # avoid 0 mapping, i.e. giving 0 positional
             # conflict to 0 distance matches or 0 distance
@@ -864,8 +912,9 @@ class InHouseCV:
                 new_match.distance = 0.001
 
             cost = ratio * new_match.distance
-            #print "would be + %f cost" % cost
-            #print "match reduction: ", cost / max(sum(m.distance for m in matches), 1)
+            log.log(0, "would be + %f cost", cost)
+            log.log(0, "match reduction: %s",
+                    cost / max(sum(m.distance for m in matches), 1))
 
             return cost
 
@@ -873,7 +922,7 @@ class InHouseCV:
                                 1, variants_ratio)
         matches = [variants[0] for variants in results]
         ratings = [None for _ in matches]
-        #print "%i matches in needle to start with" % len(matches)
+        log.log(0, "%i matches in needle to start with", len(matches))
 
         # minimum one refinement is needed
         refinements = max(1, refinements)
@@ -887,7 +936,8 @@ class InHouseCV:
                     if ratings[j] != 0.0:
                         ratings[j] = match_cost(matches, matches[j])
                 quality = sum(ratings)
-                #print "recalculated quality:", quality
+                log.debug("Recalculated quality: %s", quality)
+
                 # nothing to improve if quality is perfect
                 if quality == 0.0:
                     break
@@ -895,8 +945,8 @@ class InHouseCV:
             outlier_index = ratings.index(max(ratings))
             outlier = matches[outlier_index]
             variants = results[outlier_index]
-            #print "outlier m%i with rating %i" % (outlier_index, max(ratings))
-            #print "%i match variants for needle match %i" % (len(variants), outlier_index)
+            log.log(0, "outlier m%i with rating %i", outlier_index, max(ratings))
+            log.log(0, "%i match variants for needle match %i", len(variants), outlier_index)
 
             # add the match variant with a minimal cost
             variant_costs = []
@@ -909,10 +959,9 @@ class InHouseCV:
                     assert(variants[j].queryIdx == variants[j-1].queryIdx)
                     if variants[j].trainIdx == variants[j-1].trainIdx:
                         continue
-
-                #print "variant %i is m%i/%i in n/h" % (j, variant.queryIdx, variant.trainIdx)
-                #print "variant %i coord in n/h" % j, ncoord(variant), "/", hcoord(variant)
-                #print "variant distance:", variant.distance
+                log.log(0, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)
+                log.log(0, "variant %i coord in n/h %/%s", j, ncoord(variant), hcoord(variant))
+                log.log(0, "variant distance: %s", variant.distance)
 
                 matches[outlier_index] = variant
                 variant_costs.append((j, match_cost(matches, variant)))
@@ -920,7 +969,7 @@ class InHouseCV:
             min_cost_index, min_cost = min(variant_costs, key = lambda x: x[1])
             min_cost_variant = variants[min_cost_index]
             #if variant_costs.index(min(variant_costs)) != 0:
-            #print variant_costs, ">", min_cost, "i.e. variant", min_cost_index
+            log.log(0, "%s>%s i.e. variant %s", variant_costs, min_cost, min_cost_index)
             matches[outlier_index] = min_cost_variant
             ratings[outlier_index] = min_cost
 
@@ -929,8 +978,8 @@ class InHouseCV:
                 ratings[outlier_index] = 0.0
 
             # 0.0 is best quality
-            #print "overall quality:", sum(ratings)
-            #print "reduction: ", sum(ratings) / max(sum(m.distance for m in matches), 1)
+            log.debug("Overall quality: %s", sum(ratings))
+            log.debug("Reduction: %s", sum(ratings) / max(sum(m.distance for m in matches), 1))
 
         return matches
 
@@ -953,7 +1002,7 @@ class InHouseCV:
         if desc4kp > 1:
             desc1 = numpy.array(desc1, dtype = numpy.float32).reshape((-1, desc4kp))
             desc2 = numpy.array(desc2, dtype = numpy.float32).reshape((-1, desc4kp))
-            #print desc1.shape, desc2.shape
+            log.log(0, "%s %s", desc1.shape, desc2.shape)
         else:
             desc1 = numpy.array(desc1, dtype = numpy.float32)
             desc2 = numpy.array(desc2, dtype = numpy.float32)
@@ -962,7 +1011,7 @@ class InHouseCV:
         # kNN training - learn mapping from rows2 to kp2 index
         samples = desc2
         responses = numpy.arange(int(len(desc2)/desc4kp), dtype = numpy.float32)
-        #print len(samples), len(responses)
+        log.log(0, "%s %s", len(samples), len(responses))
         knn = cv2.KNearest()
         knn.train(samples, responses, maxK = k)
 
@@ -970,13 +1019,13 @@ class InHouseCV:
         # retrieve index and value through enumeration
         for i, descriptor in enumerate(desc1):
             descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, desc_size))
-            #print i, descriptor.shape, samples[0].shape
+            log.log(0, "%s %s %s", i, descriptor.shape, samples[0].shape)
             kmatches = []
             ratio = 1.0
 
             for ki in range(k):
                 _, res, _, dists = knn.find_nearest(descriptor, ki+1)
-                #print ki, res, dists
+                log.log(0, "%s %s %s", ki, res, dists)
                 if len(dists[0]) > 1 and autostop > 0.0:
 
                     # TODO: perhaps ratio from first to last ki?
@@ -984,7 +1033,7 @@ class InHouseCV:
                     dist1 = dists[0][-2] + 0.0000001
                     dist2 = dists[0][-1] + 0.0000001
                     ratio = dist1 / dist2
-                    #print ratio, autostop
+                    log.log(0, "%s %s", ratio, autostop)
                     if ratio < autostop:
                         break
 
