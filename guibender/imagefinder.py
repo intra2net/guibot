@@ -784,7 +784,8 @@ class ImageFinder:
         """
         # Sanity check: Needle size must be smaller than haystack
         if haystack.width < needle.width or haystack.height < needle.height:
-            log.warning("The size of the searched image is smaller than its region")
+            log.warning("The size of the searched image (%sx%s) is smaller than its region (%sx%s)",
+                        needle.width, needle.height, haystack.width, haystack.height)
             return None
 
         methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
