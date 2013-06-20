@@ -62,9 +62,59 @@ class Key:
     # SCROLL_LOCK
     # NUM_LOCK
 
+    @staticmethod
+    def to_string(key):
+        return {
+                Key.ENTER : "Enter",
+                # TAB
+                Key.ESC : "Esc",
+                Key.BACKSPACE : "Backspace",
+                Key.DELETE : "Delete",
+                # INSERT
+                Key.CTRL : "Ctrl",
+                Key.ALT : "Alt",
+                Key.SHIFT : "Shift",
+                Key.META : "Meta",
+                Key.F1 : "F1",
+                Key.F2 : "F2",
+                Key.F3 : "F3",
+                Key.F4 : "F4",
+                Key.F5 : "F5",
+                Key.F6 : "F6",
+                Key.F7 : "F7",
+                Key.F8 : "F8",
+                Key.F9 : "F9",
+                Key.F10 : "F10",
+                Key.F11 : "F11",
+                Key.F12 : "F12",
+                Key.HOME : "Home",
+                Key.END : "End",
+                Key.LEFT : "Left",
+                Key.RIGHT : "Right",
+                Key.UP : "Up",
+                Key.DOWN : "Down",
+                Key.PAGE_DOWN : "Page Down",
+                Key.PAGE_UP : "Page Up",
+                Key.CAPS_LOCK : "Caps Lock",
+                # PRINTSCREEN
+                # PAUSE
+                # SCROLL_LOCK
+                # NUM_LOCK
+                }[key]
+
 class KeyModifier:
     MOD_NONE=autopy.key.MOD_NONE
     MOD_CTRL=autopy.key.MOD_CONTROL
     MOD_ALT=autopy.key.MOD_ALT
     MOD_SHIFT=autopy.key.MOD_SHIFT
     MOD_META=autopy.key.MOD_META
+
+    @staticmethod
+    def to_string(key):
+        return {
+                KeyModifier.MOD_NONE : "None",
+                KeyModifier.MOD_CTRL : "Ctrl",
+                KeyModifier.MOD_ALT : "Alt",
+                KeyModifier.MOD_SHIFT : "Shift",
+                KeyModifier.MOD_META : "Meta"
+                }[key]

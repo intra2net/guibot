@@ -13,18 +13,21 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import logging
 import time, sys
 
 # interconnected classes - import only their modules
 # to avoid circular reference
 from desktopcontrol import DesktopControl
-
+from key import Key
 from errors import *
 from settings import Settings
 from location import Location
 from image import Image
 from imagefinder import ImageFinder
+
+import logging
+log = logging.getLogger('guibender.region')
+
 
 class Region(object):
     # Mouse buttons
@@ -105,6 +108,7 @@ class Region(object):
         return Location(self.xpos + self.width, self.ypos + self.height)
 
     def nearby(self, range=50):
+        log.debug("Checking nearby the current region")
         new_xpos = self.xpos - range
         if new_xpos < 0:
             new_xpos = 0
@@ -120,6 +124,7 @@ class Region(object):
         return Region(new_xpos, new_ypos, new_width, new_height)
 
     def above(self, range=0):
+        log.debug("Checking above the current region")
         if range == 0:
             new_ypos = 0
             new_height = self.ypos + self.height
@@ -134,6 +139,7 @@ class Region(object):
         return Region(self.xpos, new_ypos, self.width, new_height)
 
     def below(self, range=0):
+        log.debug("Checking below the current region")
         if range == 0:
             range = self.desktop.get_height()
 
@@ -143,6 +149,7 @@ class Region(object):
         return Region(self.xpos, self.ypos, self.width, new_height)
 
     def left(self, range=0):
+        log.debug("Checking left of the current region")
         if range == 0:
             new_xpos = 0
             new_width = self.xpos + self.width
@@ -157,6 +164,7 @@ class Region(object):
         return Region(new_xpos, self.ypos, new_width, self.height)
 
     def right(self, range=0):
+        log.debug("Checking right of the current region")
         if range == 0:
             range = self.desktop.get_width()
 
@@ -178,6 +186,7 @@ class Region(object):
     def find(self, image, timeout=10):
         # Load image if needed
         if isinstance(image, basestring):
+            log.debug("Looking for image %s", image)
             image = Image(image)
 
         timeout_limit = time.time() + timeout
@@ -207,6 +216,7 @@ class Region(object):
     def find_all(self, image, timeout=10, allow_zero = False):
         # Load image if needed
         if isinstance(image, basestring):
+            log.debug("Looking for multiple occurrences of image %s", image)
             image = Image(image)
 
         # TODO: decide about updating the last_match attribute
@@ -228,6 +238,7 @@ class Region(object):
                     return last_matches
                 else:
                     if Settings().save_needle_on_error():
+                        log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
                         image.save('/tmp/guibender_last_finderror_needle.png')
                     raise FindError()
@@ -237,6 +248,8 @@ class Region(object):
                 time.sleep(Settings().rescan_speed_on_find())
 
     def exists(self, image, timeout=0):
+        if isinstance(image, basestring):
+            log.info("Checking if %s is present", image)
         try:
             return self.find(image, timeout)
         except FindError:
@@ -245,9 +258,13 @@ class Region(object):
         return None
 
     def wait(self, image, timeout=30):
+        if isinstance(image, basestring):
+            log.info("Waiting for %s", image)
         return self.find(image, timeout)
 
     def wait_vanish(self, image, timeout=30):
+        if isinstance(image, basestring):
+            log.info("Waiting for %s to vanish", image)
         expires = time.time() + timeout
         while time.time() < expires:
             if self.exists(image, 0) is None:
@@ -260,6 +277,7 @@ class Region(object):
         return False
 
     def idle(self, timeout):
+        log.debug("Waiting for %ss", timeout)
         time.sleep(timeout)
         return self
 
@@ -267,6 +285,8 @@ class Region(object):
         return self.desktop.get_mouse_location()
 
     def hover(self, image_or_location):
+        if isinstance(image_or_location, basestring):
+            log.info("Hovering over %s", image_or_location)
         # Handle Location
         try:
             self.desktop.mouse_move(image_or_location)
@@ -281,26 +301,42 @@ class Region(object):
         return match
 
     def click(self, image_or_location, modifiers = None):
+        if isinstance(image_or_location, basestring):
+            log.info("Clicking at %s", image_or_location)
+        if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
         match = self.hover(image_or_location)
         self.desktop.mouse_click(modifiers)
         return match
 
     def right_click(self, image_or_location, modifiers = None):
+        if isinstance(image_or_location, basestring):
+            log.info("Right clicking at %s", image_or_location)
+        if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
         match = self.hover(image_or_location)
         self.desktop.mouse_right_click(modifiers)
         return match
 
     def double_click(self, image_or_location, modifiers = None):
+        if isinstance(image_or_location, basestring):
+            log.info("Double clicking at %s", image_or_location)
+        if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
         match = self.hover(image_or_location)
         self.desktop.mouse_double_click(modifiers)
         return match
 
     def mouse_down(self, image_or_location, button=LEFT_BUTTON):
+        if isinstance(image_or_location, basestring):
+            log.debug("Holding down the mouse at %s", image_or_location)
         match = self.hover(image_or_location)
         self.desktop.mouse_down(button)
         return match
 
     def mouse_up(self, image_or_location, button=LEFT_BUTTON):
+        if isinstance(image_or_location, basestring):
+            log.debug("Holding up the mouse at %s", image_or_location)
         match = self.hover(image_or_location)
         self.desktop.mouse_up(button)
         return match
@@ -311,10 +347,13 @@ class Region(object):
         return match
 
     def drag(self, image_or_location, modifiers = None):
+        if isinstance(image_or_location, basestring):
+            log.info("Dragging %s", image_or_location)
         match = self.hover(image_or_location)
 
         time.sleep(0.2)
         if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
             self.desktop.keys_toggle(modifiers, True)
             #self.desktop.keys_toggle(["Ctrl"], True)
 
@@ -324,6 +363,8 @@ class Region(object):
         return match
 
     def drop_at(self, image_or_location, modifiers = None):
+        if isinstance(image_or_location, basestring):
+            log.info("Dropping at %s", image_or_location)
         match = self.hover(image_or_location)
 
         time.sleep(Settings().delay_before_drop())
@@ -332,18 +373,76 @@ class Region(object):
 
         time.sleep(0.5)
         if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
             self.desktop.keys_toggle(modifiers, False)
             #self.desktop.keys_toggle(["Ctrl"], False)
 
         return match
 
-    # Press key combinations - text must be a list
-    # of special characters
     def press(self, keys):
+        """
+        This method types a single key or a list of such.
+        """
+        if isinstance(keys, int):
+            log.info("Pressing key %s", Key.to_string(keys))
+        elif isinstance(keys, basestring):
+            if len(keys) > 1:
+                log.warning("Using press for an entire text - "\
+                            "please use type_text for this purpose")
+            log.info("Pressing key %s", keys)
+        else:
+            for key in keys:
+                key_strings = []
+                if isinstance(key, basestring):
+                    if len(key) > 1:
+                        log.warning("Using press for an entire text - "\
+                                    "please use type_text for this purpose")
+                    key_strings.append(key)
+                else:
+                    key_strings.append(Key.to_string(key))
+            log.info("Pressing together keys %s",
+                     " ".join(keystr for keystr in key_strings))
+
         self.desktop.keys_press(keys)
         return self
 
+    # TODO: cannot initiate list as a default argument
     def press_at(self, image_or_location=None, keys=[]):
+        """
+        This method types a single key or a list of such at
+        a specified image or location.
+        """
+        if isinstance(keys, int):
+            log.info("Pressing key %s at %s", Key.to_string(keys),
+                     image_or_location)
+        elif isinstance(keys, basestring):
+            if len(keys) > 1:
+                log.warning("Using press for an entire text - "\
+                            "please use type_text for this purpose")
+            log.info("Pressing key %s at %s", keys, image_or_location)
+        else:
+            for key in keys:
+                key_strings = []
+                if isinstance(key, basestring):
+                    if len(key) > 1:
+                        log.warning("Using press for an entire text - "\
+                                    "please use type_text for this purpose")
+                    key_strings.append(key)
+                else:
+                    key_strings.append(Key.to_string(key))
+            log.info("Pressing together keys %s at %s",
+                     " ".join(keystr for keystr in key_strings),
+                     image_or_location)
+
+        if isinstance(image_or_location, basestring):
+            if isinstance(keys, int):
+                log.info("Pressing key %s at %s", Key.to_string(keys),
+                         image_or_location)
+            else:
+                log.info("Pressing keys %s at %s",
+                         " ".join([Key.to_string(key) for key in keys]),
+                         image_or_location)
+
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
@@ -353,14 +452,47 @@ class Region(object):
         return match
 
     def type_text(self, text, modifiers=None):
+        """
+        The method types a string text or a list of strings and
+        special keys.
+        """
+        if isinstance(text, basestring):
+            log.info("Typing text '%s'", text)
+        else:
+            for part in text:
+                if isinstance(part, basestring):
+                    log.info("Typing text '%s'", part)
+                else:
+                    log.info("Typing %s", Key.to_string(part))
+        if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
         self.desktop.keys_type(text, modifiers)
         return self
 
+    # TODO: text cannot be empty since the method doesn't make sense
     def type_at(self, image_or_location=None, text='', modifiers=None):
+        """
+        The method types a string text or a list of strings and
+        special keys at a specified image or location.
+        """
+        if isinstance(image_or_location, basestring):
+            if isinstance(text, basestring):
+                log.info("Typing text '%s' at %s", text, image_or_location)
+            else:
+                for part in text:
+                    if isinstance(part, basestring):
+                        log.info("Typing text '%s' at %s", part, image_or_location)
+                    else:
+                        log.info("Typing %s at %s", Key.to_string(part),
+                                 image_or_location)
+
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
             time.sleep(Settings().delay_before_keys())
+
+        if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
 
         self.desktop.keys_type(text, modifiers)
         return match

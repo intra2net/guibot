@@ -20,6 +20,9 @@ try:
 except ImportError:
     import ConfigParser as config
 
+import logging
+log = logging.getLogger('guibender.cvequalizer')
+
 import cv2
 
 from errors import *
@@ -103,7 +106,7 @@ class CVEqualizer:
                       "fdetect" : "feature_detectors",
                       "fextract" : "feature_extractors",
                       "fmatch" : "feature_matchers"}
-        #print category, self._current[category]
+        log.log(0, "%s %s", category, self._current[category])
         return self.algorithms[full_names[category]][self._current[category]]
 
     def set_backend(self, category, value):
@@ -126,14 +129,19 @@ class CVEqualizer:
         image finder.
         """
         if find_image != None:
+            log.log(0, "Setting main backend to %s", find_image)
             self.set_backend("find", find_image)
         if template_match != None:
+            log.log(0, "Setting backend for template matching to %s", template_match)
             self.set_backend("tmatch", template_match)
         if feature_detect != None:
+            log.log(0, "Setting backend for feature detection to %s", feature_detect)
             self.set_backend("fdetect", feature_detect)
         if feature_extract != None:
+            log.log(0, "Setting backend for feature extraction to %s", feature_extract)
             self.set_backend("fextract", feature_extract)
         if feature_match != None:
+            log.log(0, "Setting backend for feature matching to %s", feature_match)
             self.set_backend("fmatch", feature_match)
  
     def _new_params(self, category, new):
@@ -193,10 +201,9 @@ class CVEqualizer:
                     new_backend = cv2.DescriptorMatcher_create(new)
 
         # examine the interface of the OpenCV backend
-        #print old_backend, dir(old_backend)
-        #print new_backend, dir(new_backend)
+        log.log(0, "%s %s", new_backend, dir(new_backend))
         for param in new_backend.getParams():
-            #print new_backend.paramHelp(param)
+            log.log(0, "%s", new_backend.paramHelp(param))
             ptype = new_backend.paramType(param)
             if ptype == 0:
                 val = new_backend.getInt(param)
@@ -207,7 +214,7 @@ class CVEqualizer:
             else:
                 # designed to raise error so that the other ptypes are identified
                 # currently unknown indices: getMat, getAlgorithm, getMatVector, getString
-                #print param, ptype
+                log.log(0, "%s %s", param, ptype)
                 val = new_backend.getAlgorithm(param)
 
             # give more information about some better known parameters
@@ -221,9 +228,9 @@ class CVEqualizer:
                 self.p[category][param] = CVParameter(val, 1.01, 2.0)
             else:
                 self.p[category][param] = CVParameter(val)
-            #print param, "=", val
+            log.debug("%s=%s", param, val)
 
-        #print category, self.p[category], "\n"
+        log.log(0, "%s %s\n", category, self.p[category])
         return
 
     def sync_backend_to_params(self, opencv_backend, category):
@@ -258,7 +265,7 @@ class CVEqualizer:
                 else:
                     # designed to raise error so that the other ptypes are identified
                     # currently unknown indices: setMat, setAlgorithm, setMatVector, setString
-                    #print "synced", param, "to", val
+                    log.log(0, "Synced %s to %s", param, val)
                     val = opencv_backend.setAlgorithm(param, val)
                 self.p[category][param].value = val
         return opencv_backend
@@ -302,7 +309,7 @@ class CVEqualizer:
                     continue
                 param_string = parser.get(section, option)
                 param = CVParameter.from_string(param_string)
-                #print param_string, param
+                log.log(0, "%s %s", param_string, param)
                 self.p[section][option] = param
 
         #except (config.NoSectionError, config.NoOptionError, ValueError) as ex:
@@ -321,7 +328,7 @@ class CVEqualizer:
                 parser.add_section(section)
             parser.set(section, 'backend', self.get_backend(section))
             for option in self.p[section]:
-                #print section, option
+                log.log(0, "%s %s", section, option)
                 parser.set(section, option, self.p[section][option])
 
         with open("%s.match" % filename_without_extention, 'w') as configfile:
@@ -381,8 +388,8 @@ class CVParameter:
             else:
                 raise ValueError
 
-            #print arg, type(arg)
+            log.log(0, "%s %s", arg, type(arg))
             args.append(arg)
 
-        #print args
+        log.log(0, "%s", args)
         return CVParameter(*args)
