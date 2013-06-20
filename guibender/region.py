@@ -391,8 +391,8 @@ class Region(object):
                             "please use type_text for this purpose")
             log.info("Pressing key %s", keys)
         else:
+            key_strings = []
             for key in keys:
-                key_strings = []
                 if isinstance(key, basestring):
                     if len(key) > 1:
                         log.warning("Using press for an entire text - "\
@@ -421,8 +421,8 @@ class Region(object):
                             "please use type_text for this purpose")
             log.info("Pressing key %s at %s", keys, image_or_location)
         else:
+            key_strings = []
             for key in keys:
-                key_strings = []
                 if isinstance(key, basestring):
                     if len(key) > 1:
                         log.warning("Using press for an entire text - "\
