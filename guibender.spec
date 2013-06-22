@@ -55,7 +55,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE TODO.txt
+%doc LICENSE TODO.txt doc/Image\ Logging\ Tutorial.pdf
 #%config guibender.cfg
 #%ghost guibender.log
 #%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6
@@ -77,5 +77,5 @@ rm -rf %{buildroot}
 %{python_sitelib}/guibender/doc
 
 %changelog
-* Mon Dec 11 2006 Jesse Keating <jkeating@redhat.com> - 0.10-1
+* Mon Apr 13 2013 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.10-1
 - Initial spec file
