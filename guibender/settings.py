@@ -15,7 +15,7 @@
 #
 import os
 import logging
-from errors import *
+
 
 class Settings:
     # operational parameters shared between all instances
@@ -24,6 +24,8 @@ class Settings:
     _keys_delay = 0.2
     _rescan_speed_on_find = 0.2
     _save_needle_on_error = True
+    _image_logging_level = logging.ERROR
+    _image_logging_destination = "/tmp/imglogs"
 
     # cvequalizer backends shared between all instances
     _find_image_backend = "template"
@@ -63,6 +65,18 @@ class Settings:
             Settings._save_needle_on_error = value
         else:
             raise ValueError
+
+    def image_logging_level(self, level = None):
+        if level == None:
+            return Settings._image_logging_level
+        else:
+            Settings._image_logging_level = level
+
+    def image_logging_destination(self, dest = None):
+        if dest == None:
+            return Settings._image_logging_destination
+        else:
+            Settings._image_logging_destination = dest
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization

@@ -15,6 +15,8 @@
 #
 import time, math
 
+from imagelogger import ImageLogger
+
 import logging
 log = logging.getLogger('guibender.calibrator')
 
@@ -58,6 +60,8 @@ class Calibrator:
         results = []
         log.info("Performing benchmarking %s calibration and %s refinements",
                  "with" if calibration else "without", refinements)
+        # block logging since we need all its info after the matching finishes
+        ImageLogger.accumulate_logging = True
 
         # test all template matching methods
         old_config = (imagefinder.eq.get_backend("find"),
@@ -85,10 +89,10 @@ class Calibrator:
                 start_time = time.time()
                 imagefinder.find(needle, haystack)
                 total_time = time.time() - start_time
-                log.debug("%s at %s in %s", imagefinder.hotmap[1],
-                          imagefinder.hotmap[2], total_time)
+                similarity, location = self._get_last_criteria(imagefinder, total_time)
+                results.append((method, similarity, location, total_time))
+                imagefinder.imglog.clear()
 
-                results.append((method, imagefinder.hotmap[1], imagefinder.hotmap[2], total_time))
         imagefinder.eq.configure_backend(find_image = old_config[0],
                                          template_match = old_config[1])
         imagefinder.eq.p["find"]["nocolor"].value = old_gray
@@ -124,12 +128,11 @@ class Calibrator:
                     start_time = time.time()
                     imagefinder.find(needle, haystack)
                     total_time = time.time() - start_time
-                    log.debug("%s at %s in %s", imagefinder.hotmap[1],
-                              imagefinder.hotmap[2], total_time)
+                    similarity, location = self._get_last_criteria(imagefinder, total_time)
+                    results.append((method, similarity, location, total_time))
+                    imagefinder.imglog.clear()
 
-                    results.append((method, imagefinder.hotmap[1],
-                                    imagefinder.hotmap[2], total_time))
-
+        ImageLogger.accumulate_logging = False
         imagefinder.eq.configure_backend(find_image = old_config[0],
                                          feature_detect = old_config[1],
                                          feature_extract = old_config[2],
@@ -160,20 +163,25 @@ class Calibrator:
             start_time = time.time()
             try:
                 imagefinder.find(needle, haystack)
+                similarity = imagefinder.imglog.similarities[-1]
             except:
                 log.debug("Time taken is out of the maximum allowable range")
-                imagefinder.hotmap[1] = 0.0
+                similarity = 0.0
             total_time = time.time() - start_time
+            imagefinder.imglog.clear()
 
-            error = 1.0 - imagefinder.hotmap[1]
+            error = 1.0 - similarity
             error += max(total_time - max_exec_time, 0)
             return error
 
+        # block logging since we need all its info after the matching finishes
+        ImageLogger.accumulate_logging = True
         old_similarity = needle.match_settings.p["find"]["similarity"].value
         needle.match_settings.p["find"]["similarity"].value = 0.0
         best_params, error = self.twiddle(imagefinder.eq.p, run, refinements)
         imagefinder.eq.parameters = best_params
         needle.match_settings.p["find"]["similarity"].value = old_similarity
+        ImageLogger.accumulate_logging = False
 
         return error
 
@@ -210,8 +218,10 @@ class Calibrator:
             for category in deltas:
                 for key in deltas[category]:
                     if deltas[category][key] > params[category][key].tolerance:
-                        log.log(0, "%s %s %s", category, key, params[category][key].value)
-                        log.log(0, "%s %s", deltas[category][key], params[category][key].tolerance)
+                        log.log(0, "%s %s %s", category,
+                                key, params[category][key].value)
+                        log.log(0, "%s %s", deltas[category][key],
+                                params[category][key].tolerance)
                         all_tolerable = False
                         break
             if all_tolerable:
@@ -288,3 +298,14 @@ class Calibrator:
             n += 1
 
         return (best_params, best_error)
+
+    def _get_last_criteria(self, imagefinder, total_time):
+        assert(len(imagefinder.imglog.similarities) == len(imagefinder.imglog.locations))
+        if len(imagefinder.imglog.similarities) > 0:
+            similarity = imagefinder.imglog.similarities[-1]
+            location = imagefinder.imglog.locations[-1]
+        else:
+            similarity = 0.0
+            location = None
+        log.debug("%s at %s in %s", similarity, location, total_time)
+        return similarity, location

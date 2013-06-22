@@ -24,3 +24,6 @@ class FindError(GuiBenderError):
 
 class ImageFinderMethodError(GuiBenderError):
     """Exception raised when a non-existent method is used for finding an image"""
+
+class MissingHotmapError(GuiBenderError):
+    """Exception raised when an attempt to access a non-existent hotmap in the image logger is made"""

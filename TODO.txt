@@ -1,3 +1,7 @@
+- Integrate some of the visualization code in the test_imagefinder into the
+  ImageLogger and make improve its unit testing. Check the function draw_needle_features
+  for any further detail.
+
 - Make feature similarity more reliable. Currently it is defined as the ratio of
   keypoints through each feature matching filter. In case of successful matching
   the calibrate method thus optimizes the last ratio (matched / RANSAC inlier

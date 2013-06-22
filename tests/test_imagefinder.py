@@ -23,6 +23,7 @@ import cv, cv2
 from tempfile import NamedTemporaryFile
 
 import common_test
+from settings import Settings
 from imagefinder import ImageFinder
 from calibrator import Calibrator
 from imagepath import ImagePath
@@ -36,6 +37,8 @@ from errors import *
 class ImageFinderTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        Settings().image_logging_level(10)
+
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
@@ -85,6 +88,8 @@ class ImageFinderTest(unittest.TestCase):
 
         self.shown_pictures = []
 
+    # TODO: integrate this to ImageLogger and add
+    # more actual assertion to all this unittests
     def draw_needle_features(self, needle, haystack,
                              match_settings = None, logging = 20):
         finder = ImageFinder()
@@ -147,8 +152,8 @@ class ImageFinderTest(unittest.TestCase):
         match = finder.find(needle, haystack)
         self.assertIsNotNone(match, "The original needle image "\
                              "should be matched in the screen.")
-        hotmap_file = os.path.join('log_haystack.png')
-        self.show_image(hotmap_file, title)
+        #hotmap_file = os.path.join('log_haystack.png')
+        #self.show_image(hotmap_file, title)
 
 
     def test_features_viewport(self):
@@ -156,7 +161,7 @@ class ImageFinderTest(unittest.TestCase):
         needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_viewport')
-        self.draw_needle_features(needle, haystack, needle.match_settings)
+        #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "basic viewport",
                                   needle.match_settings, 10)
         time.sleep(2)
@@ -166,7 +171,7 @@ class ImageFinderTest(unittest.TestCase):
         needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_rotated')
-        self.draw_needle_features(needle, haystack, needle.match_settings)
+        #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "rotated + viewport",
                                   needle.match_settings, 10)
         time.sleep(2)
@@ -176,7 +181,7 @@ class ImageFinderTest(unittest.TestCase):
         needle.match_settings.configure_backend(find_image = "feature")
         needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_scaled')
-        self.draw_needle_features(needle, haystack, needle.match_settings)
+        #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "scaled + viewport",
                                   needle.match_settings, 10)
         time.sleep(2)
@@ -206,7 +211,7 @@ class ImageFinderTest(unittest.TestCase):
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
 
-        self.draw_needle_features(needle, haystack, needle.match_settings)
+        #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
                                   needle.match_settings, 10)
         time.sleep(2)
@@ -253,7 +258,7 @@ class ImageFinderTest(unittest.TestCase):
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
 
-        self.draw_needle_features(needle, haystack, settings)
+        #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "shape text", settings)
         # sleet to see image log better
         time.sleep(2)
@@ -268,7 +273,7 @@ class ImageFinderTest(unittest.TestCase):
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
 
-        self.draw_needle_features(needle, haystack, settings)
+        #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "sans", settings)
         # sleet to see image log better
         time.sleep(2)
@@ -283,7 +288,7 @@ class ImageFinderTest(unittest.TestCase):
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
 
-        self.draw_needle_features(needle, haystack, settings)
+        #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "bold", settings)
         # sleet to see image log better
         time.sleep(2)
@@ -298,7 +303,7 @@ class ImageFinderTest(unittest.TestCase):
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
 
-        self.draw_needle_features(needle, haystack, settings)
+        #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "italic", settings)
         # sleet to see image log better
         time.sleep(2)
@@ -313,7 +318,7 @@ class ImageFinderTest(unittest.TestCase):
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
 
-        self.draw_needle_features(needle, haystack, settings)
+        #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "larger", settings)
         # sleet to see image log better
         time.sleep(2)
@@ -328,7 +333,7 @@ class ImageFinderTest(unittest.TestCase):
         settings.p["fdetect"]["nzoom"].value = 4.0
         settings.p["fdetect"]["hzoom"].value = 4.0
 
-        self.draw_needle_features(needle, haystack, settings)
+        #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "font", settings)
         # sleet to see image log better
         time.sleep(2)

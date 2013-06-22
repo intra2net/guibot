@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import time, sys
+import time, os
 
 # interconnected classes - import only their modules
 # to avoid circular reference
@@ -205,8 +205,11 @@ class Region(object):
 
             elif time.time() > timeout_limit:
                 if Settings().save_needle_on_error():
-                    screen_capture.save('/tmp/guibender_last_finderror.png')
-                    image.save('/tmp/guibender_last_finderror_needle.png')
+                    dump_path = Settings().image_logging_destination()
+                    hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
+                    ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
+                    screen_capture.save(hdump_path)
+                    image.save(ndump_path)
                 raise FindError()
 
             else:
