@@ -24,6 +24,7 @@ from settings import Settings
 from location import Location
 from image import Image
 from imagefinder import ImageFinder
+from imagelogger import ImageLogger
 
 import logging
 log = logging.getLogger('guibender.region')
@@ -205,6 +206,8 @@ class Region(object):
 
             elif time.time() > timeout_limit:
                 if Settings().save_needle_on_error():
+                    if not os.path.exists(ImageLogger.logging_destination):
+                        os.mkdir(ImageLogger.logging_destination)
                     dump_path = Settings().image_logging_destination()
                     hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
