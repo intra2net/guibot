@@ -32,10 +32,11 @@ class ImageLogger:
     """
 
     step = 1
+    accumulate_logging = False
+
     logging_level = Settings().image_logging_level()
     # NOTE: the executing code decides when to clean this directory
     logging_destination = Settings().image_logging_destination()
-    accumulate_logging = False
 
     def __init__(self):
         self.needle = None
@@ -44,6 +45,11 @@ class ImageLogger:
         self.hotmaps = []
         self.similarities = []
         self.locations = []
+
+        # sync these static methods with the general settings at each use
+        ImageLogger.logging_level = Settings().image_logging_level()
+        # NOTE: the executing code decides when to clean this directory
+        ImageLogger.logging_destination = Settings().image_logging_destination()
 
     def debug(self, logtype):
         self.log(10, logtype)
