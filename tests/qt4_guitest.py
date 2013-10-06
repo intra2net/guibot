@@ -18,6 +18,7 @@
 import sys
 from PyQt4 import QtGui, QtCore
 
+
 app = QtGui.QApplication(sys.argv)
 
 class ControlsWithLayout(QtGui.QWidget):
@@ -85,28 +86,32 @@ class ControlsWithLayout(QtGui.QWidget):
         label4.setStyleSheet('QLabel { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
 
         vbox = QtGui.QVBoxLayout()
-        vbox.addStretch(1)
+        #vbox.addStretch(1)
         vbox.addWidget(button_click)
         vbox.addWidget(line_edit)
         vbox.addWidget(line_edit2)
         vbox.addWidget(text_edit)
+        #vbox.setAlignment(QtCore.Qt.AlignTop)
 
         vbox2 = QtGui.QVBoxLayout()
-        vbox2.addStretch(1)
+        #vbox2.addStretch(1)
         vbox2.addWidget(label1)
         vbox2.addWidget(label2)
         vbox2.addWidget(label3)
         vbox2.addWidget(label4)
+        #vbox2.setAlignment(QtCore.Qt.AlignTop)
 
         hbox = QtGui.QHBoxLayout()
-        hbox.addStretch(1)
+        #hbox.addStretch(1)
         hbox.addLayout(vbox)
         hbox.addWidget(list_view)
         hbox.addWidget(right_click_view)
         hbox.addLayout(vbox2)
+        #hbox.setAlignment(QtCore.Qt.AlignLeft)
 
         self.setLayout(hbox)
-        self.resize(400, 100)
+        #self.resize(400, 100)
+        self.showFullScreen()
 
         QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('cleanlooks'))
 
@@ -159,7 +164,7 @@ class MouseUpQuitLabel(QtGui.QLabel):
         self.parent().close()
 
 
-some_controls = ControlsWithLayout()
-some_controls.show()
-
-sys.exit(app.exec_())
+if __name__ == "__main__":
+    some_controls = ControlsWithLayout()
+    some_controls.show()
+    sys.exit(app.exec_())

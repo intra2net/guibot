@@ -15,19 +15,35 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import cv                           # OpenCV
 import sys
+from PyQt4 import QtGui, QtCore
 
-def show_image(filename, title = "show_picture"):
-    image=cv.LoadImage(filename, cv.CV_LOAD_IMAGE_COLOR)
 
-    cv.ShowImage(title, image)
+app = QtGui.QApplication(sys.argv)
 
-    # Wait a bit so we can move the window
-    cv.WaitKey(50000)
+class ImageWithLayout(QtGui.QWidget):
+    def __init__(self, filename, title = "show_picture", parent=None):
+        QtGui.QWidget.__init__(self, parent)
 
-def main():
-    show_image(*sys.argv[1:])
+        self.setWindowTitle(title)
+
+        image = QtGui.QLabel(self)
+        image.setPixmap(QtGui.QPixmap(filename))
+
+        vbox = QtGui.QVBoxLayout()
+        vbox.addWidget(image)
+        #vbox.setAlignment(QtCore.Qt.AlignTop)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addLayout(vbox)
+        hbox.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.setLayout(hbox)
+        self.showFullScreen()
+
+        self.setStyleSheet('ImageWithLayout { background: #ffffff; }')
 
 if __name__ == "__main__":
-    main()
+    some_image = ImageWithLayout(*sys.argv[1:])
+    some_image.show()
+    sys.exit(app.exec_())
