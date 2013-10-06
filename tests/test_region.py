@@ -247,7 +247,7 @@ class RegionTest(unittest.TestCase):
         time.sleep(5)
 
         similarity = Region().sample(Image('shape_blue_circle'))
-        self.assertEqual(similarity, 1.0)
+        self.assertAlmostEqual(similarity, 0.9999998)
 
         self.close_windows()
 
