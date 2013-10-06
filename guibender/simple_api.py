@@ -51,6 +51,9 @@ def find(image, timeout=10):
 def find_all(image, timeout=10, allow_zero=False):
     return guibender.find_all(image, timeout, allow_zero)
 
+def sample(image):
+    return guibender.sample(image)
+
 def exists(image, timeout=0):
     return guibender.exists(image, timeout)
 

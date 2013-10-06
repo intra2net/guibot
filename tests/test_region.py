@@ -230,6 +230,17 @@ class RegionTest(unittest.TestCase):
             self.assertEqual(69, match.get_width())
             self.assertEqual(48, match.get_height())
 
+    def test_sample(self):
+        self.show_image('all_shapes')
+        # sampling is done only from the current haystack
+        # so wait a bit to reach the correct haystack
+        time.sleep(5)
+
+        similarity = Region().sample(Image('shape_blue_circle'))
+        self.assertEqual(similarity, 1.0)
+
+        self.close_windows()
+
     def test_exists(self):
         self.show_image('all_shapes')
 

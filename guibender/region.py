@@ -253,6 +253,15 @@ class Region(object):
                 # don't hog the CPU
                 time.sleep(Settings().rescan_speed_on_find())
 
+    def sample(self, image):
+        if isinstance(image, basestring):
+            log.debug("Looking for image %s", image)
+            image = Image(image)
+        image = image.with_similarity(0.0)
+        image.use_own_settings = True
+        self.find(image)
+        return self.imagefinder.imglog.similarities[-1]
+
     def exists(self, image, timeout=0):
         if isinstance(image, basestring):
             log.info("Checking if %s is present", image)
