@@ -26,7 +26,7 @@ from errors import *
 
 class ImageTest(unittest.TestCase):
     def setUp(self):
-        self.file_all_shapes = os.path.join(common_test.examples_dir, 'images', 'all_shapes.png')
+        self.file_all_shapes = os.path.join(common_test.unittest_dir, 'images', 'all_shapes.png')
 
     def test_basic(self):
         image = Image(self.file_all_shapes)

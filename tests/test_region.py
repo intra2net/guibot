@@ -35,7 +35,6 @@ class RegionTest(unittest.TestCase):
     def setUpClass(self):
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
-        self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
 
         self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
         self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')

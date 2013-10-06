@@ -41,8 +41,6 @@ class ImageFinderTest(unittest.TestCase):
 
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
-        self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
-        self.imagepath.add_path(".")
 
         self.script_show = os.path.join(common_test.unittest_dir, 'qt4_image.py')
 

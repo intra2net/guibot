@@ -32,8 +32,6 @@ class CalibratorTest(unittest.TestCase):
     def setUpClass(self):
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
-        self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
-        self.imagepath.add_path(".")
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
         finder = ImageFinder()
