@@ -3,7 +3,7 @@
 
 Name:           guibender
 Version:        0.10
-Release:        1
+Release:        2
 Summary:        GUI testing tool
 
 Group:          Development/Tools
@@ -39,8 +39,6 @@ rm -rf %{buildroot}
 %{__install} -d %{buildroot}%{python_sitelib}/guibender/guibender
 %{__install} -d %{buildroot}%{python_sitelib}/guibender/tests/images
 %{__install} -d %{buildroot}%{python_sitelib}/guibender/examples/images
-%{__install} -d %{buildroot}%{python_sitelib}/guibender/doc
-%{__install} -t %{buildroot}%{python_sitelib}/guibender/doc doc/design_ideas.txt
 %{__cp} -a guibender/* %{buildroot}%{python_sitelib}/guibender/guibender
 %{__cp} -a tests/* %{buildroot}%{python_sitelib}/guibender/tests
 %{__cp} -a examples/* %{buildroot}%{python_sitelib}/guibender/examples
@@ -74,7 +72,6 @@ rm -rf %{buildroot}
 %{python_sitelib}/guibender/guibender
 %{python_sitelib}/guibender/tests
 %{python_sitelib}/guibender/examples
-%{python_sitelib}/guibender/doc
 
 %changelog
 * Mon Apr 13 2013 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.10-1
