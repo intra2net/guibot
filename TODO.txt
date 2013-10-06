@@ -15,9 +15,6 @@
 
 - Hybrid calibration or predefined best settings.
 
-- Examples as part of the documentation, i.e. examples of creating and saving matching
-  parameters, etc.
-
 - Still reconsider whether to return the (0,0) needle point or its center since
   wild transformations are possible and defining the clicking point as (+n,+n)
   is not as consistent.
