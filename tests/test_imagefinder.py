@@ -44,7 +44,7 @@ class ImageFinderTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
         self.imagepath.add_path(".")
 
-        self.script_show_picture = os.path.join(common_test.unittest_dir, 'show_picture.py')
+        self.script_show = os.path.join(common_test.unittest_dir, 'qt4_image.py')
 
     def setUp(self):
         self.shown_pictures = []
@@ -74,7 +74,7 @@ class ImageFinderTest(unittest.TestCase):
     def show_image(self, filename, title = "show_image"):
         filename = self.imagepath.search(filename)
         self.shown_pictures.append(subprocess.Popen(['python',
-                                                    self.script_show_picture,
+                                                    self.script_show,
                                                     filename, title]))
 
     def close_windows(self):

@@ -37,11 +37,12 @@ class RegionTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
         self.imagepath.add_path(os.path.join(common_test.examples_dir, 'images'))
 
-        self.script_show_picture = os.path.join(common_test.unittest_dir, 'show_picture.py')
-        self.script_qt4_guitest = os.path.join(common_test.unittest_dir, 'qt4_guitest.py')
+        self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
+        self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')
 
     def setUp(self):
-        self.child_show_picture = None
+        self.child_img = None
+        self.child_app = None
 
     def tearDown(self):
         self.close_windows()
@@ -78,14 +79,24 @@ class RegionTest(unittest.TestCase):
 
     def show_image(self, filename):
         filename = self.imagepath.search(filename)
+        self.child_img = subprocess.Popen(['python', self.script_img, filename])
 
-        self.child_show_picture = subprocess.Popen(['python', self.script_show_picture, filename])
+    def show_application(self):
+        self.child_app = subprocess.Popen(['python', self.script_app])
 
     def close_windows(self):
-        if self.child_show_picture is not None:
-            self.child_show_picture.terminate()
-            self.wait_end(self.child_show_picture)
-            self.child_show_picture = None
+        if self.child_img is not None:
+            self.child_img.terminate()
+            self.wait_end(self.child_img)
+            self.child_img = None
+
+            # Hack to make sure app is really closed
+            time.sleep(0.5)
+
+        if self.child_app is not None:
+            self.child_app.terminate()
+            self.wait_end(self.child_app)
+            self.child_app = None
 
             # Hack to make sure app is really closed
             time.sleep(0.5)
@@ -298,72 +309,67 @@ class RegionTest(unittest.TestCase):
         Region().hover(match.get_target())
 
     def test_click(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
+        self.show_application()
         Region().click('qt4gui_button')
-
         Region().wait_vanish('qt4gui_button')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_double_click(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
+        self.show_application()
         Region().idle(2).double_click('qt4gui_double_click')
-
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_right_click(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
+        self.show_application()
         Region().right_click('qt4gui_contextmenu_label').nearby(200).idle(3).click('qt4gui_contextmenu_quit')
-
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_press(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        self.show_application()
         time.sleep(1)
         Region().press(Key.ESC)
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        self.show_application()
         time.sleep(1)
         Region().press([Key.ALT, Key.F4])
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_press_at(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
+        self.show_application()
         Region().press_at('qt4gui_lineedit2', keys=[Key.ENTER])
-
         Region().wait_vanish('qt4gui_lineedit2')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_type_text(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
+        self.show_application()
         Region().click('qt4gui_lineedit').idle(0.2).type_text('quit')
-
         Region().wait_vanish('qt4gui_lineedit')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_type_at(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
+        self.show_application()
         Region().type_at('qt4gui_lineedit', text='quit')
-
         Region().wait_vanish('qt4gui_lineedit')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_drag_drop(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
-
+        self.show_application()
         Region().drag_drop('qt4gui_textedit', 'qt4gui_lineedit')
-
         Region().wait_vanish('qt4gui_textedit')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_drag(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        self.show_application()
 
         # TODO: some bug does not allow for Region().drag().hover()
         Region().drag('qt4gui_textedit')
@@ -373,10 +379,11 @@ class RegionTest(unittest.TestCase):
         Region().desktop.mouse_up()
 
         Region().wait_vanish('qt4gui_label1')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_drop_at(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        self.show_application()
 
         # TODO: some bug does not allow for Region().drag().hover()
         Region().drag('qt4gui_textedit')
@@ -386,10 +393,11 @@ class RegionTest(unittest.TestCase):
         Region().drop_at('qt4gui_label2')
 
         Region().wait_vanish('qt4gui_label2')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_mouse_down(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        self.show_application()
 
         Region().idle(2).mouse_down('qt4gui_label3')
 
@@ -397,10 +405,11 @@ class RegionTest(unittest.TestCase):
         Region().desktop.mouse_up()
 
         Region().wait_vanish('qt4gui_label3')
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_mouse_up(self):
-        child_pipe = subprocess.Popen(['python', self.script_qt4_guitest])
+        self.show_application()
 
         Region().idle(2).mouse_down('qt4gui_label4')
         self.assertFalse(Region().wait_vanish('qt4gui_label4', timeout=3))
@@ -408,7 +417,8 @@ class RegionTest(unittest.TestCase):
         Region().mouse_up('qt4gui_label4')
         self.assertTrue(Region().wait_vanish('qt4gui_label4', timeout=5))
 
-        self.assertEqual(0, self.wait_end(child_pipe))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
     def test_get_mouse_location(self):
         Region().hover(Location(0,0))
