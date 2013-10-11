@@ -269,7 +269,6 @@ class Region(object):
             return self.find(image, timeout)
         except FindError:
             pass
-
         return None
 
     def wait(self, image, timeout=30):
@@ -316,43 +315,43 @@ class Region(object):
         return match
 
     def click(self, image_or_location, modifiers = None):
+        match = self.hover(image_or_location)
         if isinstance(image_or_location, basestring):
             log.info("Clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        match = self.hover(image_or_location)
         self.desktop.mouse_click(modifiers)
         return match
 
     def right_click(self, image_or_location, modifiers = None):
+        match = self.hover(image_or_location)
         if isinstance(image_or_location, basestring):
             log.info("Right clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        match = self.hover(image_or_location)
         self.desktop.mouse_right_click(modifiers)
         return match
 
     def double_click(self, image_or_location, modifiers = None):
+        match = self.hover(image_or_location)
         if isinstance(image_or_location, basestring):
             log.info("Double clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        match = self.hover(image_or_location)
         self.desktop.mouse_double_click(modifiers)
         return match
 
     def mouse_down(self, image_or_location, button=LEFT_BUTTON):
+        match = self.hover(image_or_location)
         if isinstance(image_or_location, basestring):
             log.debug("Holding down the mouse at %s", image_or_location)
-        match = self.hover(image_or_location)
         self.desktop.mouse_down(button)
         return match
 
     def mouse_up(self, image_or_location, button=LEFT_BUTTON):
+        match = self.hover(image_or_location)
         if isinstance(image_or_location, basestring):
             log.debug("Holding up the mouse at %s", image_or_location)
-        match = self.hover(image_or_location)
         self.desktop.mouse_up(button)
         return match
 
@@ -362,8 +361,6 @@ class Region(object):
         return match
 
     def drag(self, image_or_location, modifiers = None):
-        if isinstance(image_or_location, basestring):
-            log.info("Dragging %s", image_or_location)
         match = self.hover(image_or_location)
 
         time.sleep(0.2)
@@ -372,18 +369,19 @@ class Region(object):
             self.desktop.keys_toggle(modifiers, True)
             #self.desktop.keys_toggle(["Ctrl"], True)
 
+        if isinstance(image_or_location, basestring):
+            log.info("Dragging %s", image_or_location)
         self.desktop.mouse_down(self.LEFT_BUTTON)
         time.sleep(Settings().delay_after_drag())
 
         return match
 
     def drop_at(self, image_or_location, modifiers = None):
-        if isinstance(image_or_location, basestring):
-            log.info("Dropping at %s", image_or_location)
         match = self.hover(image_or_location)
-
         time.sleep(Settings().delay_before_drop())
 
+        if isinstance(image_or_location, basestring):
+            log.info("Dropping at %s", image_or_location)
         self.desktop.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
