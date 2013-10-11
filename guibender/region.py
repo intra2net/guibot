@@ -509,6 +509,7 @@ class Region(object):
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
 
+        log.info("Typing text '%s'", text)
         self.desktop.keys_type(text, modifiers)
         return match
 
