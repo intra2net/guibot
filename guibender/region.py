@@ -213,7 +213,7 @@ class Region(object):
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
                     image.save(ndump_path)
-                raise FindError()
+                raise FindError(os.path.basename(image.filename))
 
             else:
                 # don't hog the CPU
@@ -247,7 +247,7 @@ class Region(object):
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
                         image.save('/tmp/guibender_last_finderror_needle.png')
-                    raise FindError()
+                    raise FindError(os.path.basename(image.filename))
 
             else:
                 # don't hog the CPU
