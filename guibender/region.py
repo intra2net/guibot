@@ -490,26 +490,32 @@ class Region(object):
         The method types a string text or a list of strings and
         special keys at a specified image or location.
         """
-        if isinstance(image_or_location, basestring):
-            if isinstance(text, basestring):
-                log.info("Typing text '%s' at %s", text, image_or_location)
-            else:
-                for part in text:
-                    if isinstance(part, basestring):
-                        log.info("Typing text '%s' at %s", part, image_or_location)
-                    else:
-                        log.info("Typing %s at %s", Key.to_string(part),
-                                 image_or_location)
-
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
             time.sleep(Settings().delay_before_keys())
 
+        if isinstance(image_or_location, basestring):
+            imgname = image_or_location
+        elif isinstance(image_or_location, Image):
+            imgname = os.path.dirname(image_or_location.filename)
+        elif image_or_location == None:
+            imgname = "previously focused element"
+        else:
+            imgname = image_or_location
+
+        if isinstance(text, basestring):
+            log.info("Typing text '%s' at %s", text, imgname)
+        else:
+            for part in text:
+                if isinstance(part, basestring):
+                    log.info("Typing text '%s' at %s", part, imgname)
+                else:
+                    log.info("Typing %s at %s", Key.to_string(part), imgname)
+
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
 
-        log.info("Typing text '%s'", text)
         self.desktop.keys_type(text, modifiers)
         return match
 
