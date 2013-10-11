@@ -264,7 +264,7 @@ class Region(object):
 
     def exists(self, image, timeout=0):
         if isinstance(image, basestring):
-            log.info("Checking if %s is present", image)
+            log.debug("Checking if %s is present", image)
         try:
             return self.find(image, timeout)
         except FindError:
