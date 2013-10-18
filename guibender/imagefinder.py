@@ -113,6 +113,8 @@ class ImageFinder:
         self.imglog.haystack = haystack
         self.imglog.dump_matched_images()
 
+        if self.eq.get_backend("find") == "feature":
+            raise ImageFinderMethodError
         if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
         if needle.use_own_settings:
