@@ -264,6 +264,11 @@ class ImageFinder:
             if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
                 maxVal = 1 - minVal
                 maxLoc = minLoc
+            # BUG: Due to an OpenCV bug sqdiff_normed might return a similarity > 1.0
+            # although it must be normalized (i.e. between 0 and 1) so patch this and
+            # other possible similar bugs
+            maxVal = max(maxVal, 0.0)
+            maxVal = min(maxVal, 1.0)
             log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
                       str(maxVal), similarity, str(maxLoc))
             self.imglog.similarities.append(maxVal)
