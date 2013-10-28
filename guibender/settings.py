@@ -34,31 +34,36 @@ class Settings:
     _feature_extract_backend = "BRIEF"
     _feature_match_backend = "BruteForce-Hamming"
 
-    def delay_after_drag(self, delay = None):
+    @staticmethod
+    def delay_after_drag(delay = None):
         if delay == None:
             return Settings._drag_delay
         else:
             Settings._drag_delay = delay
 
-    def delay_before_drop(self, delay = None):
+    @staticmethod
+    def delay_before_drop(delay = None):
         if delay == None:
             return Settings._drop_delay
         else:
             Settings._drop_delay = delay
 
-    def delay_before_keys(self, delay = None):
+    @staticmethod
+    def delay_before_keys(delay = None):
         if delay == None:
             return Settings._keys_delay
         else:
             Settings._keys_delay = delay
 
-    def rescan_speed_on_find(self, delay = None):
+    @staticmethod
+    def rescan_speed_on_find(delay = None):
         if delay == None:
             return Settings._rescan_speed_on_find
         else:
             Settings._rescan_speed_on_find = delay
 
-    def save_needle_on_error(self, value = None):
+    @staticmethod
+    def save_needle_on_error(value = None):
         if value == None:
             return Settings._save_needle_on_error
         elif value == True or value == False:
@@ -66,13 +71,15 @@ class Settings:
         else:
             raise ValueError
 
-    def image_logging_level(self, level = None):
+    @staticmethod
+    def image_logging_level(level = None):
         if level == None:
             return Settings._image_logging_level
         else:
             Settings._image_logging_level = level
 
-    def image_logging_destination(self, dest = None):
+    @staticmethod
+    def image_logging_destination(dest = None):
         if dest == None:
             return Settings._image_logging_destination
         else:
@@ -80,31 +87,36 @@ class Settings:
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
-    def find_image_backend(self, name = None):
+    @staticmethod
+    def find_image_backend(name = None):
         if name == None:
             return Settings._find_image_backend
         else:
             Settings._find_image_backend = name
 
-    def template_match_backend(self, name = None):
+    @staticmethod
+    def template_match_backend(name = None):
         if name == None:
             return Settings._template_match_backend
         else:
             Settings._template_match_backend = name
 
-    def feature_detect_backend(self, name = None):
+    @staticmethod
+    def feature_detect_backend(name = None):
         if name == None:
             return Settings._feature_detect_backend
         else:
             Settings._feature_detect_backend = name
 
-    def feature_extract_backend(self, name = None):
+    @staticmethod
+    def feature_extract_backend(name = None):
         if name == None:
             return Settings._feature_extract_backend
         else:
             Settings._feature_extract_backend = name
 
-    def feature_match_backend(self, name = None):
+    @staticmethod
+    def feature_match_backend(name = None):
         if name == None:
             return Settings._feature_match_backend
         else:

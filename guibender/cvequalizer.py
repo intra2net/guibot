@@ -94,11 +94,11 @@ class CVEqualizer:
 
         # default algorithms
         self._current = {}
-        self.configure_backend(find_image = Settings().find_image_backend(),
-                               template_match = Settings().template_match_backend(),
-                               feature_detect = Settings().feature_detect_backend(),
-                               feature_extract = Settings().feature_extract_backend(),
-                               feature_match = Settings().feature_match_backend())
+        self.configure_backend(find_image = Settings.find_image_backend(),
+                               template_match = Settings.template_match_backend(),
+                               feature_detect = Settings.feature_detect_backend(),
+                               feature_extract = Settings.feature_extract_backend(),
+                               feature_match = Settings.feature_match_backend())
 
     def get_backend(self, category):
         full_names = {"find" : "find_methods",

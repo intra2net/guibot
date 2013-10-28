@@ -37,7 +37,7 @@ from errors import *
 class ImageFinderTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        Settings().image_logging_level(10)
+        Settings.image_logging_level(10)
 
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))

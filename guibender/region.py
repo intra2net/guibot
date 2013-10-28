@@ -205,10 +205,10 @@ class Region(object):
                 return self.last_match
 
             elif time.time() > timeout_limit:
-                if Settings().save_needle_on_error():
+                if Settings.save_needle_on_error():
                     if not os.path.exists(ImageLogger.logging_destination):
                         os.mkdir(ImageLogger.logging_destination)
-                    dump_path = Settings().image_logging_destination()
+                    dump_path = Settings.image_logging_destination()
                     hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
@@ -217,7 +217,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(Settings().rescan_speed_on_find())
+                time.sleep(Settings.rescan_speed_on_find())
 
     def find_all(self, image, timeout=10, allow_zero = False):
         # Load image if needed
@@ -243,7 +243,7 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    if Settings().save_needle_on_error():
+                    if Settings.save_needle_on_error():
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
                         image.save('/tmp/guibender_last_finderror_needle.png')
@@ -251,7 +251,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(Settings().rescan_speed_on_find())
+                time.sleep(Settings.rescan_speed_on_find())
 
     def sample(self, image):
         if isinstance(image, basestring):
@@ -376,13 +376,13 @@ class Region(object):
         if isinstance(image_or_location, basestring):
             log.info("Dragging %s", image_or_location)
         self.desktop.mouse_down(self.LEFT_BUTTON)
-        time.sleep(Settings().delay_after_drag())
+        time.sleep(Settings.delay_after_drag())
 
         return match
 
     def drop_at(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
-        time.sleep(Settings().delay_before_drop())
+        time.sleep(Settings.delay_before_drop())
 
         if isinstance(image_or_location, basestring):
             log.info("Dropping at %s", image_or_location)
@@ -463,7 +463,7 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-            time.sleep(Settings().delay_before_keys())
+            time.sleep(Settings.delay_before_keys())
 
         self.desktop.keys_press(keys)
         return match
@@ -495,7 +495,7 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-            time.sleep(Settings().delay_before_keys())
+            time.sleep(Settings.delay_before_keys())
 
         if isinstance(image_or_location, basestring):
             imgname = image_or_location
