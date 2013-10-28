@@ -259,8 +259,12 @@ class Region(object):
             image = Image(image)
         image = image.with_similarity(0.0)
         image.use_own_settings = True
+        ImageLogger.accumulate_logging = True
         self.find(image)
-        return self.imagefinder.imglog.similarities[-1]
+        ImageLogger.accumulate_logging = False
+        similarity = self.imagefinder.imglog.similarities[-1]
+        self.imagefinder.imglog.clear()
+        return similarity
 
     def exists(self, image, timeout=0):
         if isinstance(image, basestring):
