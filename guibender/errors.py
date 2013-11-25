@@ -31,6 +31,18 @@ class FindError(GuiBenderError):
         else:
             return "The image could not be found on the screen"
 
+class NotFindError(GuiBenderError):
+    """Exception raised when an Image can be found on the screen but should not be"""
+
+    def __init__(self, failed_image=None):
+        self.failed_image = failed_image
+
+    def __str__(self):
+        if self.failed_image:
+            return "The image %s was found on the screen while it was not expected" % self.failed_image
+        else:
+            return "The image was found on the screen while it was not expected"
+
 class ImageFinderMethodError(GuiBenderError):
     """Exception raised when a non-existent method is used for finding an image"""
 

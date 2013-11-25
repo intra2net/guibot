@@ -21,7 +21,7 @@
 
 - generate needle as difference of two images to create image variables
 - ignore subregions while template matching to define frames of matching
+- conditional matching - match needle if no other needle is matched
 - match on still haystack as a wait to wait for some events to finish
 - is idle() necessary?
-- test if wait_vanish is really raising error if the object does not disappear
 - pressing multiple times the same key does not work
