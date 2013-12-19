@@ -99,14 +99,15 @@ class ImageLogger:
 
         elif logtype == "hybrid":
             # knowing how the hybrid works this estimates
-            # the expected number of cases
+            # the expected number of cases starting from 1 (i+1)
+            # to make sure the winner is the first alphabetically
             candidate_num = len(self.similarities) / 2
             for i in range(candidate_num):
                 self.log_locations(30, [self.locations[i]],
                                    self.hotmaps[i],
                                    30*self.similarities[i], 255, 255, 255)
                 name = "imglog%s-3hotmap-%s-%stemplate-%s.png" % (ImageLogger.step,
-                                                                  logtype, i,
+                                                                  logtype, i+1,
                                                                   self.similarities[i])
                 self.dump_hotmap(name, self.hotmaps[i])
                 ii = candidate_num + i
@@ -114,7 +115,7 @@ class ImageLogger:
                                    self.hotmaps[ii],
                                    4, 255, 0, 0)
                 name = "imglog%s-3hotmap-%s-%sfeature-%s.png" % (ImageLogger.step,
-                                                                 logtype, i,
+                                                                 logtype, i+1,
                                                                  self.similarities[ii])
                 self.dump_hotmap(name, self.hotmaps[ii])
 
@@ -165,7 +166,7 @@ class ImageLogger:
         if self.needle.filename == None:
             self.needle.filename = "noname"
         needle_name = os.path.basename(self.needle.filename)
-        needle_name = "imglog%s-0needle-%s" % (ImageLogger.step,
+        needle_name = "imglog%s-1needle-%s" % (ImageLogger.step,
                                                needle_name)
         needle_path = os.path.join(ImageLogger.logging_destination,
                                    needle_name)
@@ -174,7 +175,7 @@ class ImageLogger:
         if self.haystack.filename == None:
             self.haystack.filename = "noname.png"
         haystack_name = os.path.basename(self.haystack.filename)
-        haystack_name = "imglog%s-1haystack-%s" % (ImageLogger.step,
+        haystack_name = "imglog%s-2haystack-%s" % (ImageLogger.step,
                                                    haystack_name)
         haystack_path = os.path.join(ImageLogger.logging_destination,
                                      haystack_name)
