@@ -489,7 +489,10 @@ class ImageFinder:
         Wrapper for the internal feature detection, matching and location
         projection used by all public feature matching functions.
         """
+        # default logging in case no match is found (further overridden by match stages)
         self.imglog.hotmaps.append(hotmap_canvas)
+        self.imglog.locations.append((0, 0))
+        self.imglog.similarities.append(0.0)
 
         log.debug("Performing %s feature matching (no color)",
                   "-".join([self.eq.get_backend("fdetect"),
@@ -696,7 +699,7 @@ class ImageFinder:
 
         # update the current achieved similarity
         match_similarity = float(len(match_nkeypoints)) / float(len(nkeypoints))
-        self.imglog.similarities.append(match_similarity)
+        self.imglog.similarities[-1] = match_similarity
         log.log(0, "%s\\%s -> %f", len(match_nkeypoints),
                 len(nkeypoints), match_similarity)
 
@@ -763,7 +766,7 @@ class ImageFinder:
         # override the match similarity with a more precise one
         self.imglog.similarities[-1] = ransac_similarity
         log.log(0, "%s\\%s -> %f", len(true_matches), len(mnkp), ransac_similarity)
-        self.imglog.locations.append(locations_in_needle.pop())
+        self.imglog.locations[-1] = locations_in_needle.pop()
 
         return projected
 
