@@ -301,16 +301,18 @@ class CVEqualizer:
         if(len(success)==0):
             raise IOError
 
-        sections = self.p.keys()
-        for section in sections:
-            self.set_backend(section, parser.get(section, 'backend'))
-            for option in parser.options(section):
-                if option == "backend":
-                    continue
-                param_string = parser.get(section, option)
-                param = CVParameter.from_string(param_string)
-                log.log(0, "%s %s", param_string, param)
-                self.p[section][option] = param
+        for category in self.p.keys():
+            if parser.has_section(category):
+                section_backend = parser.get(category, 'backend')
+                if section_backend != self.get_backend(category):
+                    self.set_backend(category, section_backend)
+                for option in parser.options(category):
+                    if option == "backend":
+                        continue
+                    param_string = parser.get(category, option)
+                    param = CVParameter.from_string(param_string)
+                    log.log(0, "%s %s", param_string, param)
+                    self.p[category][option] = param
 
         #except (config.NoSectionError, config.NoOptionError, ValueError) as ex:
         #    print("Could not read config file '%s': %s." % (filename, ex))
