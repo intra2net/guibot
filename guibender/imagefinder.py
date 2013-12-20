@@ -109,9 +109,11 @@ class ImageFinder:
 
         Returns a list of Location objects for all matches or None in not found.
         """
-        self.imglog.needle = needle
-        self.imglog.haystack = haystack
-        self.imglog.dump_matched_images()
+        # if called externally and not from a hybrid matching process
+        if not ImageLogger.accumulate_logging:
+            self.imglog.needle = needle
+            self.imglog.haystack = haystack
+            self.imglog.dump_matched_images()
 
         if self.eq.get_backend("find") == "feature":
             raise ImageFinderMethodError
