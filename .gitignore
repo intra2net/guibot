@@ -3,6 +3,7 @@ log*.png
 *.project
 *.pydevproject
 
+*.pyo
 *.pyc
 *.log
 *.cfg
