@@ -328,7 +328,7 @@ class ImageFinder:
                   feature_similarity)
 
         self.eq.p["find"]["similarity"].value = template_similarity
-        maxima = self.find_all(needle, haystack)
+        template_maxima = self.find_all(needle, haystack)
 
         self.eq.p["find"]["similarity"].value = feature_similarity
         ngray = self._prepare_image(needle, gray = True)
@@ -340,8 +340,9 @@ class ImageFinder:
         frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
                              (needle.width, needle.height)])
 
-        hotmaps = []
-        for upleft in maxima:
+        feature_maxima = []
+        is_feature_poor = False
+        for upleft in template_maxima:
             up = upleft.get_y()
             down = min(haystack.height, up + needle.height)
             left = upleft.get_x()
@@ -363,30 +364,47 @@ class ImageFinder:
                             up + self.imglog.locations[-1][1])
                 self.imglog.locations[-1] = location
 
-                hotmaps.append([self.imglog.hotmaps[-1],
+                feature_maxima.append([self.imglog.hotmaps[-1],
                                 self.imglog.similarities[-1],
                                 self.imglog.locations[-1]])
-
                 # stitch back for a better final image logging
                 hcanvas[up:down, left:right] = hotmap_region
 
+            elif self.imglog.similarities[-1] == 0.0:
+                is_feature_poor = True
+
+        if is_feature_poor:
+            log.warn("Feature poor needle detected, falling back to template matching")
+            # NOTE: this has knowledge of the internal workings of the find_all
+            # template matching and more specifically that it orders the matches starting
+            # with the best (this is ok, since this is also internal method)
+            # NOTE: the needle can only be feature poor if there is at lease one
+            # template matching
+            feature_maxima = []
+            for i, _ in enumerate(template_maxima):
+                # test the template match also against the actual required similarity
+                if self.imglog.similarities[i] > feature_similarity:
+                    feature_maxima.append([self.imglog.hotmaps[i],
+                                           self.imglog.similarities[i],
+                                           self.imglog.locations[i]])
+
         # release the accumulated logging from subroutines
         ImageLogger.accumulate_logging = False
-        if len(hotmaps) == 0:
+        if len(feature_maxima) == 0:
             log.debug("No acceptable match with the given feature similarity %s",
                       feature_similarity)
             self.imglog.log(30, "hybrid")
             return None
-        else:
-            best_acceptable = max(hotmaps, key = lambda x: x[1])
-            self.imglog.hotmaps.append(hcanvas)
-            self.imglog.similarities.append(best_acceptable[1])
-            self.imglog.locations.append(best_acceptable[2])
-            log.debug("Best acceptable match with similarity %s at %s",
-                      self.imglog.similarities[-1], self.imglog.locations[-1])
-            location = Location(*self.imglog.locations[-1])
-            self.imglog.log(30, "hybrid")
-            return location
+
+        best_acceptable = max(feature_maxima, key = lambda x: x[1])
+        self.imglog.hotmaps.append(hcanvas)
+        self.imglog.similarities.append(best_acceptable[1])
+        self.imglog.locations.append(best_acceptable[2])
+        log.debug("Best acceptable match with similarity %s at %s",
+                  self.imglog.similarities[-1], self.imglog.locations[-1])
+        location = Location(*self.imglog.locations[-1])
+        self.imglog.log(30, "hybrid")
+        return location
 
     def _hybrid2to1_find(self, needle, haystack):
         """
