@@ -150,7 +150,7 @@ class CVEqualizer:
         if category == "find":
             self.p[category]["similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
             if new in ("feature", "hybrid"):
-                self.p[category]["ransacReprojThreshold"] = CVParameter(10.0, 0.0, 200.0, 10.0, 1.0)
+                self.p[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 10.0, 1.0)
             if new in ("template", "hybrid"):
                 self.p[category]["nocolor"] = CVParameter(False)
             if new == "hybrid":
@@ -165,8 +165,8 @@ class CVEqualizer:
         elif category == "tmatch":
             return
         elif category == "fdetect":
-            self.p[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
-            self.p[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
+            self.p[category]["nzoom"] = CVParameter(4.0, 1.0, 10.0, 1.0, 1.0)
+            self.p[category]["hzoom"] = CVParameter(4.0, 1.0, 10.0, 1.0, 1.0)
 
             if new == "oldSURF":
                 self.p[category]["oldSURFdetect"] = CVParameter(85)
