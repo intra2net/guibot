@@ -266,7 +266,7 @@ class RegionTest(unittest.TestCase):
         # since windows should already be closed?
         self.close_windows()
 
-        self.assertTrue(Region().wait_vanish('all_shapes'))
+        Region().wait_vanish('all_shapes')
 
     def test_wait(self):
         self.show_image('all_shapes')
@@ -278,10 +278,12 @@ class RegionTest(unittest.TestCase):
     def test_wait_vanish(self):
         self.show_image('all_shapes')
         time.sleep(3)
-        self.assertFalse(Region().wait_vanish('all_shapes', timeout = 5))
+        self.assertRaises(NotFindError, Region().wait_vanish, 'all_shapes', timeout = 30)
+        #self.assertFalse()
 
         self.close_windows()
-        self.assertTrue(Region().wait_vanish('all_shapes', timeout = 10))
+        # assert no NotFindError is raised now
+        Region().wait_vanish('all_shapes', timeout = 10)
 
     def test_hover(self):
         # Hover over Location
@@ -310,7 +312,6 @@ class RegionTest(unittest.TestCase):
     def test_click(self):
         self.show_application()
         Region().click('qt4gui_button')
-        Region().wait_vanish('qt4gui_button')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -342,28 +343,24 @@ class RegionTest(unittest.TestCase):
     def test_press_at(self):
         self.show_application()
         Region().press_at('qt4gui_lineedit2', keys=[Key.ENTER])
-        Region().wait_vanish('qt4gui_lineedit2')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_type_text(self):
         self.show_application()
         Region().click('qt4gui_lineedit').idle(0.2).type_text('quit')
-        Region().wait_vanish('qt4gui_lineedit')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_type_at(self):
         self.show_application()
         Region().type_at('qt4gui_lineedit', text='quit')
-        Region().wait_vanish('qt4gui_lineedit')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_drag_drop(self):
         self.show_application()
         Region().drag_drop('qt4gui_textedit', 'qt4gui_lineedit')
-        Region().wait_vanish('qt4gui_textedit')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -377,7 +374,6 @@ class RegionTest(unittest.TestCase):
         # toggled buttons cleanup
         Region().desktop.mouse_up()
 
-        Region().wait_vanish('qt4gui_label1')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -387,11 +383,10 @@ class RegionTest(unittest.TestCase):
         # TODO: some bug does not allow for Region().drag().hover()
         Region().drag('qt4gui_textedit')
         Region().hover('qt4gui_label2')
-        self.assertFalse(Region().wait_vanish('qt4gui_label2', timeout=3))
+        self.assertRaises(NotFindError, Region().wait_vanish, 'qt4gui_label2', timeout=3)
 
         Region().drop_at('qt4gui_label2')
 
-        Region().wait_vanish('qt4gui_label2')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -403,7 +398,6 @@ class RegionTest(unittest.TestCase):
         # toggled buttons cleanup
         Region().desktop.mouse_up()
 
-        Region().wait_vanish('qt4gui_label3')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -411,10 +405,9 @@ class RegionTest(unittest.TestCase):
         self.show_application()
 
         Region().idle(2).mouse_down('qt4gui_label4')
-        self.assertFalse(Region().wait_vanish('qt4gui_label4', timeout=3))
+        self.assertRaises(NotFindError, Region().wait_vanish, 'qt4gui_label4', timeout=3)
 
         Region().mouse_up('qt4gui_label4')
-        self.assertTrue(Region().wait_vanish('qt4gui_label4', timeout=5))
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
