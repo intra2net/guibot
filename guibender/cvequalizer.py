@@ -148,13 +148,13 @@ class CVEqualizer:
         """Update the parameters dictionary according to a new backend algorithm."""
         self.p[category] = {}
         if category == "find":
-            self.p[category]["similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
+            self.p[category]["similarity"] = CVParameter(0.9, 0.0, 1.0, 0.1, 0.1)
             if new in ("feature", "hybrid"):
                 self.p[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 10.0, 1.0)
             if new in ("template", "hybrid"):
                 self.p[category]["nocolor"] = CVParameter(False)
             if new == "hybrid":
-                self.p[category]["front_similarity"] = CVParameter(0.4, 0.0, 1.0, 0.1, 0.1)
+                self.p[category]["front_similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
             # although it is currently not available
             elif new == "2to1hybrid":
                 self.p[category]["x"] = CVParameter(1000, 1, None)
