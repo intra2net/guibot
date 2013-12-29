@@ -393,6 +393,12 @@ class ImageFinder:
         if len(feature_maxima) == 0:
             log.debug("No acceptable match with the given feature similarity %s",
                       feature_similarity)
+            # NOTE: handle cases when the matching failed at the feature stage, i.e. dump
+            # a hotmap for debugging also in this case
+            if len(self.imglog.similarities) > 1:
+                self.imglog.hotmaps.append(hcanvas)
+                self.imglog.similarities.append(self.imglog.similarities[len(template_maxima)])
+                self.imglog.locations.append(self.imglog.locations[len(template_maxima)])
             self.imglog.log(30, "hybrid")
             return None
 
