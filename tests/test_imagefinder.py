@@ -156,8 +156,6 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_viewport(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image = "feature")
-        needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_viewport')
         #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "basic viewport",
@@ -166,8 +164,6 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_rotation(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image = "feature")
-        needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_rotated')
         #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "rotated + viewport",
@@ -176,8 +172,6 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_scaling(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image = "feature")
-        needle.match_settings.p["find"]["similarity"].value = 0.0
         haystack = Image('h_ibs_scaled')
         #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "scaled + viewport",
@@ -187,7 +181,6 @@ class ImageFinderTest(unittest.TestCase):
     def test_template_viewport(self):
         needle = Image('n_ibs')
         needle.match_settings.configure_backend(find_image = "template")
-        needle.match_settings.p["find"]["similarity"].value = 0.9
 
         self.show_image('h_ibs_viewport')
         time.sleep(2)
@@ -202,9 +195,6 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_screen(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image = "feature")
-        needle.match_settings.p["find"]["similarity"].value = 0.0
-
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
@@ -216,9 +206,6 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_mouse_hover(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image = "feature")
-        needle.match_settings.p["find"]["similarity"].value = 0.0
-
         self.show_image('h_ibs_viewport')
         time.sleep(2)
         haystack = DesktopControl().capture_screen()
@@ -233,14 +220,13 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_features_no_match(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image = "feature")
-        needle.match_settings.p["find"]["similarity"].value = 0.5
-
-        haystack = DesktopControl().capture_screen()
+        haystack = Image('all_shapes')
 
         finder = ImageFinder()
+        needle.match_settings.p["find"]["similarity"].value = 0.5
         finder.eq = needle.match_settings
         match = finder.find(needle, haystack)
+
         needle.match_settings.p["find"]["similarity"].value = 0.0
         self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
                                   needle.match_settings, 10)
@@ -264,12 +250,7 @@ class ImageFinderTest(unittest.TestCase):
     def test_feature_text_basic(self):
         needle = Image('word')
         haystack = Image('sentence_sans')
-
         settings = needle.match_settings
-        settings.configure_backend(find_image = "feature")
-        settings.p["find"]["similarity"].value = 0.0
-        settings.p["fdetect"]["nzoom"].value = 4.0
-        settings.p["fdetect"]["hzoom"].value = 4.0
 
         #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "sans", settings)
@@ -279,12 +260,7 @@ class ImageFinderTest(unittest.TestCase):
     def test_feature_text_bold(self):
         needle = Image('word')
         haystack = Image('sentence_bold')
-
         settings = needle.match_settings
-        settings.configure_backend(find_image = "feature")
-        settings.p["find"]["similarity"].value = 0.0
-        settings.p["fdetect"]["nzoom"].value = 4.0
-        settings.p["fdetect"]["hzoom"].value = 4.0
 
         #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "bold", settings)
@@ -294,12 +270,7 @@ class ImageFinderTest(unittest.TestCase):
     def test_feature_text_italic(self):
         needle = Image('word')
         haystack = Image('sentence_italic')
-
         settings = needle.match_settings
-        settings.configure_backend(find_image = "feature")
-        settings.p["find"]["similarity"].value = 0.0
-        settings.p["fdetect"]["nzoom"].value = 4.0
-        settings.p["fdetect"]["hzoom"].value = 4.0
 
         #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "italic", settings)
@@ -309,12 +280,7 @@ class ImageFinderTest(unittest.TestCase):
     def test_feature_text_larger(self):
         needle = Image('word')
         haystack = Image('sentence_larger')
-
         settings = needle.match_settings
-        settings.configure_backend(find_image = "feature")
-        settings.p["find"]["similarity"].value = 0.0
-        settings.p["fdetect"]["nzoom"].value = 4.0
-        settings.p["fdetect"]["hzoom"].value = 4.0
 
         #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "larger", settings)
@@ -324,12 +290,7 @@ class ImageFinderTest(unittest.TestCase):
     def test_feature_text_font(self):
         needle = Image('word')
         haystack = Image('sentence_font')
-
         settings = needle.match_settings
-        settings.configure_backend(find_image = "feature")
-        settings.p["find"]["similarity"].value = 0.0
-        settings.p["fdetect"]["nzoom"].value = 4.0
-        settings.p["fdetect"]["hzoom"].value = 4.0
 
         #self.draw_needle_features(needle, haystack, settings)
         self.draw_haystack_hotmap(haystack, needle, "font", settings)
