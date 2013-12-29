@@ -28,7 +28,7 @@ class Settings:
     _image_logging_destination = "/tmp/imglogs"
 
     # cvequalizer backends shared between all instances
-    _find_image_backend = "template"
+    _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "BRIEF"
