@@ -298,19 +298,6 @@ class RegionTest(unittest.TestCase):
         region.imagefinder.eq.p["find"]["similarity"].value = 0.5
         region.hover(Image('shape_pink_box'))
 
-        self.close_windows()
-
-        # Test hovering over projected location
-        self.show_image('h_ibs_viewport')
-        time.sleep(2)
-        # TODO: currently the match similarity is very low although
-        # the image if matched properly - need to find a way to increase
-        # the similarity while preserving the robustness of the feature matching
-        region.configure_find(find_image = "feature")
-        region.imagefinder.eq.p["find"]["similarity"].value = 0.1
-        match = region.find(Image('n_ibs'))
-        Region().hover(match.get_target())
-
     def test_click(self):
         self.show_application()
         Region().click('qt4gui_button')
