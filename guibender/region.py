@@ -281,8 +281,6 @@ class Region(object):
         return self.find(image, timeout)
 
     def wait_vanish(self, image, timeout=30):
-        # TODO: raise errors just like wait because this
-        # return value fit only the exists() method
         if isinstance(image, basestring):
             log.info("Waiting for %s to vanish", image)
         expires = time.time() + timeout
