@@ -79,9 +79,13 @@ class RegionTest(unittest.TestCase):
     def show_image(self, filename):
         filename = self.imagepath.search(filename)
         self.child_img = subprocess.Popen(['python', self.script_img, filename])
+        # HACK: avoid small variability in loading speed
+        time.sleep(1)
 
     def show_application(self):
         self.child_app = subprocess.Popen(['python', self.script_app])
+        # HACK: avoid small variability in loading speed
+        time.sleep(1)
 
     def close_windows(self):
         if self.child_img is not None:
@@ -89,7 +93,7 @@ class RegionTest(unittest.TestCase):
             self.wait_end(self.child_img)
             self.child_img = None
 
-            # Hack to make sure app is really closed
+            # HACK: make sure app is really closed
             time.sleep(0.5)
 
         if self.child_app is not None:
@@ -97,7 +101,7 @@ class RegionTest(unittest.TestCase):
             self.wait_end(self.child_app)
             self.child_app = None
 
-            # Hack to make sure app is really closed
+            # HACK: make sure app is really closed
             time.sleep(0.5)
 
     def test_configure_find(self):
