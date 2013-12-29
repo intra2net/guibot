@@ -198,44 +198,46 @@ class RegionTest(unittest.TestCase):
 
     def test_find_all(self):
         self.show_image('all_shapes')
-        region = Region()
         # TODO: find should consider both autopy
         # and OpenCV but both may not be supported
         # at developer's platform
-        #region.imagefinder = ImageFinder()
-
-        matches = region.find_all('shape_green_box')
+        greenbox = Image('shape_green_box')
+        matches = Region().find_all(greenbox)
         self.assertEqual(len(matches), 1)
         self.assertEqual(67, matches[0].get_width())
         self.assertEqual(52, matches[0].get_height())
 
-        matches = region.find_all('shape_red_box')
+        redbox = Image('shape_red_box')
+        matches = Region().find_all(redbox)
         self.assertEqual(len(matches), 3)
         for match in matches:
-            region.hover(match)
+            Region().hover(match)
             time.sleep(0.5)
             self.assertEqual(68, match.get_width())
             self.assertEqual(56, match.get_height())
 
-        # pink is similar to red, so the best fuzzy matches are
-        # the three red boxes when considering color
-        region.imagefinder.eq.p["find"]["similarity"].value = 0.5
-        matches = region.find_all('shape_pink_box')
+        pinkbox = Image('shape_pink_box')
+
+        # pink is similar to red, so the best fuzzy matches also
+        # include the three red boxes when considering color
+        pinkbox.match_settings.p["find"]["similarity"].value = 0.5
+        pinkbox.match_settings.p["find"]["nocolor"].value = False
+        matches = Region().find_all(pinkbox)
         self.assertEqual(len(matches), 4)
         for match in matches:
-            region.hover(match)
+            Region().hover(match)
             time.sleep(0.5)
             self.assertEqual(69, match.get_width())
             self.assertEqual(48, match.get_height())
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
-        region.imagefinder.eq.p["find"]["similarity"].value = 0.8
-        region.imagefinder.eq.p["find"]["nocolor"].value = True
-        matches = region.find_all('shape_pink_box')
+        pinkbox.match_settings.p["find"]["similarity"].value = 0.8
+        pinkbox.match_settings.p["find"]["nocolor"].value = True
+        matches = Region().find_all(pinkbox)
         self.assertEqual(len(matches), 3)
         for match in matches:
-            region.hover(match)
+            Region().hover(match)
             time.sleep(0.5)
             self.assertEqual(69, match.get_width())
             self.assertEqual(48, match.get_height())
@@ -247,7 +249,7 @@ class RegionTest(unittest.TestCase):
         time.sleep(5)
 
         similarity = Region().sample(Image('shape_blue_circle'))
-        self.assertAlmostEqual(similarity, 0.9999998)
+        self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
 
         self.close_windows()
 
