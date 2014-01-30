@@ -185,10 +185,9 @@ class Region(object):
                                               feature_match)
 
     def find(self, image, timeout=10):
-        # Load image if needed
         if isinstance(image, basestring):
-            log.debug("Looking for image %s", image)
             image = Image(image)
+        log.debug("Looking for image %s", image)
 
         timeout_limit = time.time() + timeout
         while True:
@@ -213,17 +212,16 @@ class Region(object):
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
                     image.save(ndump_path)
-                raise FindError(os.path.basename(image.filename))
+                raise FindError(image)
 
             else:
                 # don't hog the CPU
                 time.sleep(Settings.rescan_speed_on_find())
 
     def find_all(self, image, timeout=10, allow_zero = False):
-        # Load image if needed
         if isinstance(image, basestring):
-            log.debug("Looking for multiple occurrences of image %s", image)
             image = Image(image)
+        log.debug("Looking for multiple occurrences of image %s", image)
 
         # TODO: decide about updating the last_match attribute
         last_matches = []
@@ -247,15 +245,15 @@ class Region(object):
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
                         image.save('/tmp/guibender_last_finderror_needle.png')
-                    raise FindError(os.path.basename(image.filename))
+                    raise FindError(image)
 
             else:
                 # don't hog the CPU
                 time.sleep(Settings.rescan_speed_on_find())
 
     def sample(self, image):
+        log.debug("Looking for image %s", image)
         if isinstance(image, basestring):
-            log.debug("Looking for image %s", image)
             image = Image(image)
         image = image.with_similarity(0.0)
         image.use_own_settings = True
@@ -267,8 +265,7 @@ class Region(object):
         return similarity
 
     def exists(self, image, timeout=0):
-        if isinstance(image, basestring):
-            log.debug("Checking if %s is present", image)
+        log.debug("Checking if %s is present", image)
         try:
             return self.find(image, timeout)
         except FindError:
@@ -276,13 +273,11 @@ class Region(object):
         return None
 
     def wait(self, image, timeout=30):
-        if isinstance(image, basestring):
-            log.info("Waiting for %s", image)
+        log.info("Waiting for %s", image)
         return self.find(image, timeout)
 
     def wait_vanish(self, image, timeout=30):
-        if isinstance(image, basestring):
-            log.info("Waiting for %s to vanish", image)
+        log.info("Waiting for %s to vanish", image)
         expires = time.time() + timeout
         while time.time() < expires:
             if self.exists(image, 0) is None:
@@ -304,8 +299,8 @@ class Region(object):
         return self.desktop.get_mouse_location()
 
     def hover(self, image_or_location):
-        if isinstance(image_or_location, basestring):
-            log.info("Hovering over %s", image_or_location)
+        log.info("Hovering over %s", image_or_location)
+
         # Handle Location
         try:
             self.desktop.mouse_move(image_or_location)
@@ -321,8 +316,7 @@ class Region(object):
 
     def click(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
-        if isinstance(image_or_location, basestring):
-            log.info("Clicking at %s", image_or_location)
+        log.info("Clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.desktop.mouse_click(modifiers)
@@ -330,8 +324,7 @@ class Region(object):
 
     def right_click(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
-        if isinstance(image_or_location, basestring):
-            log.info("Right clicking at %s", image_or_location)
+        log.info("Right clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.desktop.mouse_right_click(modifiers)
@@ -339,8 +332,7 @@ class Region(object):
 
     def double_click(self, image_or_location, modifiers = None):
         match = self.hover(image_or_location)
-        if isinstance(image_or_location, basestring):
-            log.info("Double clicking at %s", image_or_location)
+        log.info("Double clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.desktop.mouse_double_click(modifiers)
@@ -348,15 +340,13 @@ class Region(object):
 
     def mouse_down(self, image_or_location, button=LEFT_BUTTON):
         match = self.hover(image_or_location)
-        if isinstance(image_or_location, basestring):
-            log.debug("Holding down the mouse at %s", image_or_location)
+        log.debug("Holding down the mouse at %s", image_or_location)
         self.desktop.mouse_down(button)
         return match
 
     def mouse_up(self, image_or_location, button=LEFT_BUTTON):
         match = self.hover(image_or_location)
-        if isinstance(image_or_location, basestring):
-            log.debug("Holding up the mouse at %s", image_or_location)
+        log.debug("Holding up the mouse at %s", image_or_location)
         self.desktop.mouse_up(button)
         return match
 
@@ -374,8 +364,7 @@ class Region(object):
             self.desktop.keys_toggle(modifiers, True)
             #self.desktop.keys_toggle(["Ctrl"], True)
 
-        if isinstance(image_or_location, basestring):
-            log.info("Dragging %s", image_or_location)
+        log.info("Dragging %s", image_or_location)
         self.desktop.mouse_down(self.LEFT_BUTTON)
         time.sleep(Settings.delay_after_drag())
 
@@ -385,8 +374,7 @@ class Region(object):
         match = self.hover(image_or_location)
         time.sleep(Settings.delay_before_drop())
 
-        if isinstance(image_or_location, basestring):
-            log.info("Dropping at %s", image_or_location)
+        log.info("Dropping at %s", image_or_location)
         self.desktop.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
@@ -481,7 +469,7 @@ class Region(object):
                 if isinstance(part, basestring):
                     log.info("Typing text '%s'", part)
                 else:
-                    log.info("Typing %s", Key.to_string(part))
+                    log.info("Pressing %s", Key.to_string(part))
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.desktop.keys_type(text, modifiers)
@@ -514,7 +502,7 @@ class Region(object):
                 if isinstance(part, basestring):
                     log.info("Typing text '%s' at %s", part, imgname)
                 else:
-                    log.info("Typing %s at %s", Key.to_string(part), imgname)
+                    log.info("Pressing %s at %s", Key.to_string(part), imgname)
 
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))

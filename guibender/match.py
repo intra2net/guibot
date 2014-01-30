@@ -29,6 +29,9 @@ class Match(region.Region):
         target_offset = image.target_center_offset
         self.target = self.calc_click_point(xpos, ypos, self.width, self.height, target_offset)
 
+    def __str__(self):
+        return self.target
+
     def calc_click_point(self, xpos, ypos, width, height, offset):
         center_region = region.Region(0, 0, width, height)
         click_center = center_region.get_center()

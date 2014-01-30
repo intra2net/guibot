@@ -65,6 +65,9 @@ class Image:
             self._width = self._pil_image.size[0]
             self._height = self._pil_image.size[1]
 
+    def __str__(self):
+        return os.path.basename(self.filename).replace(".png", "")
+
     def copy(self):
         copy_settings = copy.deepcopy(self.match_settings)
         selfcopy = copy.copy(self)
