@@ -37,6 +37,11 @@ class ImageLogger:
     logging_level = Settings.image_logging_level()
     # NOTE: the executing code decides when to clean this directory
     logging_destination = Settings.image_logging_destination()
+    step_width = Settings.image_logging_step_width()
+
+    def get_printable_step(self):
+        return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
+    printable_step = property(fget=get_printable_step)
 
     def __init__(self):
         self.needle = None
@@ -50,6 +55,7 @@ class ImageLogger:
         ImageLogger.logging_level = Settings.image_logging_level()
         # NOTE: the executing code decides when to clean this directory
         ImageLogger.logging_destination = Settings.image_logging_destination()
+        ImageLogger.step_width = Settings.image_logging_step_width()
 
     def debug(self, logtype):
         self.log(10, logtype)
@@ -78,21 +84,21 @@ class ImageLogger:
             for i in range(len(self.similarities)):
                 self.log_locations(30, [self.locations[i]], self.hotmaps[i],
                                    30*self.similarities[i], 255, 255, 255)
-                name = "imglog%s-3hotmap-%s%s-%s.png" % (ImageLogger.step,
+                name = "imglog%s-3hotmap-%s%s-%s.png" % (self.printable_step,
                                                          logtype, i + 1,
                                                          self.similarities[i])
                 self.dump_hotmap(name, self.hotmaps[i])
 
         elif logtype == "autopy":
             self.log_locations(30, self.locations, 30, 0, 0, 0)
-            name = "imglog%s-3hotmap-%s.png" % (ImageLogger.step,
+            name = "imglog%s-3hotmap-%s.png" % (self.printable_step,
                                                 logtype)
             self.dump_hotmap(name, self.hotmaps[-1])
 
         elif logtype == "feature":
             self.log_locations(30, [self.locations[-1]], self.hotmaps[-1],
                                4, 255, 0, 0)
-            name = "imglog%s-3hotmap-%s-%s.png" % (ImageLogger.step,
+            name = "imglog%s-3hotmap-%s-%s.png" % (self.printable_step,
                                                    logtype,
                                                    self.similarities[-1])
             self.dump_hotmap(name, self.hotmaps[-1])
@@ -106,7 +112,7 @@ class ImageLogger:
                 self.log_locations(30, [self.locations[i]],
                                    self.hotmaps[i],
                                    30*self.similarities[i], 255, 255, 255)
-                name = "imglog%s-3hotmap-%s-%stemplate-%s.png" % (ImageLogger.step,
+                name = "imglog%s-3hotmap-%s-%stemplate-%s.png" % (self.printable_step,
                                                                   logtype, i+1,
                                                                   self.similarities[i])
                 self.dump_hotmap(name, self.hotmaps[i])
@@ -114,7 +120,7 @@ class ImageLogger:
                 self.log_locations(30, [self.locations[ii]],
                                    self.hotmaps[ii],
                                    4, 255, 0, 0)
-                name = "imglog%s-3hotmap-%s-%sfeature-%s.png" % (ImageLogger.step,
+                name = "imglog%s-3hotmap-%s-%sfeature-%s.png" % (self.printable_step,
                                                                  logtype, i+1,
                                                                  self.similarities[ii])
                 self.dump_hotmap(name, self.hotmaps[ii])
@@ -123,14 +129,14 @@ class ImageLogger:
                 self.log_locations(30, [self.locations[-1]],
                                    self.hotmaps[-1],
                                    6, 255, 0, 0)
-                name = "imglog%s-3hotmap-%s-%s.png" % (ImageLogger.step,
+                name = "imglog%s-3hotmap-%s-%s.png" % (self.printable_step,
                                                        logtype,
                                                        self.similarities[-1])
                 self.dump_hotmap(name, self.hotmaps[-1])
 
         elif logtype == "2to1":
             for i in range(len(self.hotmaps)):
-                name = "imglog%s-3hotmap-%s-subregion%s-%s.png" % (ImageLogger.step,
+                name = "imglog%s-3hotmap-%s-subregion%s-%s.png" % (self.printable_step,
                                                                    logtype, i,
                                                                    self.similarities[i])
                 self.dump_hotmap(name, self.hotmaps[i])
@@ -166,7 +172,7 @@ class ImageLogger:
         if self.needle.filename == None:
             self.needle.filename = "noname"
         needle_name = os.path.basename(self.needle.filename)
-        needle_name = "imglog%s-1needle-%s" % (ImageLogger.step,
+        needle_name = "imglog%s-1needle-%s" % (self.printable_step,
                                                needle_name)
         needle_path = os.path.join(ImageLogger.logging_destination,
                                    needle_name)
@@ -175,7 +181,7 @@ class ImageLogger:
         if self.haystack.filename == None:
             self.haystack.filename = "noname.png"
         haystack_name = os.path.basename(self.haystack.filename)
-        haystack_name = "imglog%s-2haystack-%s" % (ImageLogger.step,
+        haystack_name = "imglog%s-2haystack-%s" % (self.printable_step,
                                                    haystack_name)
         haystack_path = os.path.join(ImageLogger.logging_destination,
                                      haystack_name)

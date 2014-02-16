@@ -26,6 +26,7 @@ class Settings:
     _save_needle_on_error = True
     _image_logging_level = logging.ERROR
     _image_logging_destination = "/tmp/imglogs"
+    _image_logging_step_width = 3
 
     # cvequalizer backends shared between all instances
     _find_image_backend = "hybrid"
@@ -84,6 +85,13 @@ class Settings:
             return Settings._image_logging_destination
         else:
             Settings._image_logging_destination = dest
+
+    @staticmethod
+    def image_logging_step_width(width = None):
+        if width == None:
+            return Settings._image_logging_step_width
+        else:
+            Settings._image_logging_step_width = width
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization

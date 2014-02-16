@@ -36,6 +36,7 @@ class ImageLoggerTest(unittest.TestCase):
         self.logpath = os.path.join(common_test.unittest_dir, 'tmp')
         Settings.image_logging_level(0)
         Settings.image_logging_destination(self.logpath)
+        Settings.image_logging_step_width(4)
 
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
@@ -71,8 +72,8 @@ class ImageLoggerTest(unittest.TestCase):
         dump_files = os.listdir(self.logpath)
         self.assertEquals(len(dump_files), 4, "There must be a total of 4 different dumped files in %s" % dump_files)
 
-        step_files = self._get_matches_in('imglog\d-.+\.png', dump_files)
-        first_step_files = self._get_matches_in('imglog1-.+\.png', dump_files)
+        step_files = self._get_matches_in('imglog\d\d\d\d-.+\.png', dump_files)
+        first_step_files = self._get_matches_in('imglog0001-.+\.png', dump_files)
         self.assertEquals(len(step_files), len(first_step_files), "There must be only one logging step in %s" % step_files)
         self.assertEquals(len(step_files), 3, "There must be 3 main files for the logging step in %s" % step_files)
 
@@ -92,7 +93,7 @@ class ImageLoggerTest(unittest.TestCase):
         self.assertIn(backend, hotmaps[0], "The hotmap %s must report the used backend (%s)" % (hotmaps[0], backend))
         self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*", "The hotmap %s must report an achieved similarity" % hotmaps[0])
 
-        match_files = self._get_matches_in('imglog\d-.+\.match', dump_files)
+        match_files = self._get_matches_in('imglog\d\d\d\d-.+\.match', dump_files)
         self.assertEquals(len(match_files), 1, "There must be exactly one match file for the logging step in %s" % dump_files)
         self.assertEquals(match_files[0][:-6], needles[0][0:-4], "The match file %s must have the same name as the needle %s" %
                           (match_files[0], needles[0]))
@@ -124,8 +125,8 @@ class ImageLoggerTest(unittest.TestCase):
         dump_files = os.listdir(self.logpath)
         self.assertEquals(len(dump_files), 6, "There must be a total of 6 different dumped files in %s" % dump_files)
 
-        step_files = self._get_matches_in('imglog\d-.+\.png', dump_files)
-        first_step_files = self._get_matches_in('imglog1-.+\.png', dump_files)
+        step_files = self._get_matches_in('imglog\d\d\d\d-.+\.png', dump_files)
+        first_step_files = self._get_matches_in('imglog0001-.+\.png', dump_files)
         self.assertEquals(len(step_files), len(first_step_files), "There must be only one logging step in %s" % step_files)
         self.assertEquals(len(step_files), 5, "There must be 5 main files for the logging step in %s" % step_files)
 
@@ -169,8 +170,8 @@ class ImageLoggerTest(unittest.TestCase):
         dump_files = os.listdir(self.logpath)
         self.assertEquals(len(dump_files), 10, "There must be a total of 10 different dumped files in %s" % dump_files)
 
-        step_files = self._get_matches_in('imglog\d-.+\.png', dump_files)
-        first_step_files = self._get_matches_in('imglog1-.+\.png', dump_files)
+        step_files = self._get_matches_in('imglog\d\d\d\d-.+\.png', dump_files)
+        first_step_files = self._get_matches_in('imglog0001-.+\.png', dump_files)
         self.assertEquals(len(step_files), len(first_step_files), "There must be only one logging step in %s" % step_files)
         self.assertEquals(len(step_files), 9, "There must be 9 main files for the logging step in %s" % step_files)
 
@@ -208,7 +209,7 @@ class ImageLoggerTest(unittest.TestCase):
                               "The secondary hotmap %s must be enumerated to achieve proper hotmap sorting" % hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)), "The hotmap %s must be a regular file" % hotmap)
 
-        match_files = self._get_matches_in('imglog\d-.+\.match', dump_files)
+        match_files = self._get_matches_in('imglog\d\d\d\d-.+\.match', dump_files)
         self.assertEquals(len(match_files), 1, "There must be exactly one match file for the logging step in %s" % dump_files)
         self.assertEquals(match_files[0][:-6], needles[0][0:-4], "The match file %s must have the same name as the needle %s" %
                           (match_files[0], needles[0]))
