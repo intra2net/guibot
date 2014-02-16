@@ -120,7 +120,7 @@ class ImageLoggerTest(unittest.TestCase):
         settings.configure_backend(find_image = "template")
 
         finder = ImageFinder()
-        finder.find_all(needle, haystack)
+        finder.find(needle, haystack, all=True)
 
         dump_files = os.listdir(self.logpath)
         self.assertEquals(len(dump_files), 6, "There must be a total of 6 different dumped files in %s" % dump_files)

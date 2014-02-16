@@ -229,7 +229,7 @@ class Region(object):
         while True:
             screen_capture = self.desktop.capture_screen(self)
 
-            found_pics = self.imagefinder.find_all(image, screen_capture)
+            found_pics = self.imagefinder.find(image, screen_capture, all=True)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
