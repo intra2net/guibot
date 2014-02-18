@@ -301,6 +301,13 @@ class Region(object):
     def hover(self, image_or_location):
         log.info("Hovering over %s", image_or_location)
 
+        # Handle Match
+        try:
+            self.desktop.mouse_move(image_or_location.get_target())
+            return None
+        except AttributeError:
+            pass
+
         # Handle Location
         try:
             self.desktop.mouse_move(image_or_location)
