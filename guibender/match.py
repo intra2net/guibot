@@ -30,7 +30,9 @@ class Match(region.Region):
         self.target = self.calc_click_point(xpos, ypos, self.width, self.height, target_offset)
 
     def __str__(self):
-        return self.target
+        # NOTE: the __str__ of the Location instance self.target is not called which is a hidden
+        # (worst type of) error so call it explicitly here using str(self.target) or formatting
+        return "%s (match)" % self.target
 
     def calc_click_point(self, xpos, ypos, width, height, offset):
         center_region = region.Region(0, 0, width, height)
