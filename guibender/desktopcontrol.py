@@ -26,6 +26,7 @@ from tempfile import NamedTemporaryFile
 from image import Image
 from location import Location
 from key import Key
+from settings import Settings
 
 import subprocess
 
@@ -80,6 +81,9 @@ class DesktopControl:
         # is a base64 encoded, zlib compressed stream.
         # Ask autopy author about a get_raw() method.
         with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            # we are merely using the name of the file so close it
+            # in order to avoid blocking from writing (e.g. on Windows)
+            f.close()
             autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
             autopy_bmp.save(f.name)
 
@@ -142,15 +146,23 @@ class DesktopControl:
             self.keys_toggle(modifiers, True)
 
         if isinstance(text, basestring) or isinstance(text, str):
-            # TODO: Fix autopy to handle international chars and other stuff
-            subprocess.call(['xdotool', 'type', text], shell=False)
+            # TODO: Fix autopy to handle international chars and other stuff so
+            # that both the Linux and Windows version are reduced to autopy.key
+            if Settings.os_name() == "Windows":
+                autopy.key.type_string(text)
+            elif Settings.os_name() == "Linux":
+                subprocess.call(['xdotool', 'type', text], shell=False)
             return
 
         # Support list of something
         for subtext in text:
             if isinstance(subtext, basestring) or isinstance(subtext, str):
-                # TODO: Fix autopy to handle international chars and other stuff
-                subprocess.call(['xdotool', 'type', subtext], shell=False)
+                # TODO: Fix autopy to handle international chars and other stuff so
+                # that both the Linux and Windows version are reduced to autopy.key
+                if Settings.os_name() == "Windows":
+                    autopy.key.type_string(text)
+                elif Settings.os_name() == "Linux":
+                    subprocess.call(['xdotool', 'type', subtext], shell=False)
             else:
                 autopy.key.tap(subtext)
 

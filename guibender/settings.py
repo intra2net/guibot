@@ -19,13 +19,14 @@ import logging
 
 class Settings:
     # operational parameters shared between all instances
+    _os_name = "Linux"
     _drag_delay = 0.5
     _drop_delay = 0.5
     _keys_delay = 0.2
     _rescan_speed_on_find = 0.2
     _save_needle_on_error = True
     _image_logging_level = logging.ERROR
-    _image_logging_destination = "/tmp/imglogs"
+    _image_logging_destination = "."
     _image_logging_step_width = 3
 
     # cvequalizer backends shared between all instances
@@ -34,6 +35,13 @@ class Settings:
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "BRIEF"
     _feature_match_backend = "BruteForce-Hamming"
+
+    @staticmethod
+    def os_name(name = None):
+        if name == None:
+            return Settings._os_name
+        else:
+            Settings._os_name = name
 
     @staticmethod
     def delay_after_drag(delay = None):
