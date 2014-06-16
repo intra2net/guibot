@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-# guibender simple, procedural API.
-# Creates an internal GuiBender() object.
+#
+# Use module instead of the GuiBender object (simple, procedural API),
+# creating the GuiBender object internally.
 
 import os, sys
 
