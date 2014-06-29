@@ -160,7 +160,7 @@ class DesktopControl:
                 # TODO: Fix autopy to handle international chars and other stuff so
                 # that both the Linux and Windows version are reduced to autopy.key
                 if Settings.os_name() == "Windows":
-                    autopy.key.type_string(text)
+                    autopy.key.type_string(subtext)
                 elif Settings.os_name() == "Linux":
                     subprocess.call(['xdotool', 'type', subtext], shell=False)
             else:
