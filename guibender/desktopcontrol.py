@@ -25,7 +25,7 @@ from tempfile import NamedTemporaryFile
 
 from image import Image
 from location import Location
-from key import Key
+from key import KeyModifier
 from settings import Settings
 
 import subprocess
@@ -146,25 +146,31 @@ class DesktopControl:
             self.keys_toggle(modifiers, True)
 
         if isinstance(text, basestring) or isinstance(text, str):
-            # TODO: Fix autopy to handle international chars and other stuff so
-            # that both the Linux and Windows version are reduced to autopy.key
-            if Settings.os_name() == "Windows":
-                autopy.key.type_string(text)
-            elif Settings.os_name() == "Linux":
-                subprocess.call(['xdotool', 'type', text], shell=False)
+            self._autopy_type_string_wrapper(text)
             return
 
         # Support list of something
         for subtext in text:
             if isinstance(subtext, basestring) or isinstance(subtext, str):
-                # TODO: Fix autopy to handle international chars and other stuff so
-                # that both the Linux and Windows version are reduced to autopy.key
-                if Settings.os_name() == "Windows":
-                    autopy.key.type_string(subtext)
-                elif Settings.os_name() == "Linux":
-                    subprocess.call(['xdotool', 'type', subtext], shell=False)
+                self._autopy_type_string_wrapper(subtext)
             else:
                 autopy.key.tap(subtext)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
+
+    def _autopy_type_string_wrapper(self, text):
+        # TODO: Fix autopy to handle international chars and other stuff so
+        # that both the Linux and Windows version are reduced to autopy.key
+        if Settings.os_name() == "Windows":
+            for char in str(text):
+                if char in ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
+                            "{", "}", ":", "\"", "|", "<", ">", "?"]:
+                    autopy.key.tap(char, KeyModifier.MOD_SHIFT)
+                elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                    autopy.key.tap(char, KeyModifier.MOD_SHIFT)
+                else:
+                    autopy.key.tap(char)
+            #autopy.key.type_string(text)
+        elif Settings.os_name() == "Linux":
+            subprocess.call(['xdotool', 'type', text], shell=False)
