@@ -10,7 +10,7 @@ sys.path.insert(0, '..')
 # Load images/all_shapes.png with a picture viewer
 # and it will print "Shapes exist"
 #
-from guibender.guibender_modular import *
+from guibender.guibender_simple import *
 
 add_image_path('images')
 
