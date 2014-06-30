@@ -18,6 +18,8 @@ import os
 import unittest
 import time
 import subprocess
+import glob
+import os
 
 import cv, cv2
 from tempfile import NamedTemporaryFile
@@ -52,6 +54,10 @@ class ImageFinderTest(unittest.TestCase):
         needle_file = os.path.join(common_test.unittest_dir, 'images/', 'needle.png')
         try:
             os.unlink(needle_file)
+        except OSError:
+            pass
+        try:
+            map(os.unlink, glob.glob(u'imglog*'))
         except OSError:
             pass
 

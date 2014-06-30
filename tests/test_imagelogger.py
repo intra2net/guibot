@@ -46,8 +46,13 @@ class ImageLoggerTest(unittest.TestCase):
         ImageLogger.step = 1
 
     def tearDown(self):
-        pass
         shutil.rmtree(self.logpath)
+
+    @classmethod
+    def tearDownClass(self):
+        Settings.image_logging_level(logging.ERROR)
+        Settings.image_logging_destination(".")
+        Settings.image_logging_step_width(3)
 
     def _get_matches_in(self, pattern, list):
         return [match.group(0) for el in list for match in [re.search(pattern, el)] if match]
