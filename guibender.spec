@@ -44,7 +44,7 @@ rm -rf %{buildroot}
 %{__cp} -a examples/* %{buildroot}%{python_sitelib}/guibender/examples
 # TODO: check whether the config and spec are needed
 # TODO: perhaps move the doc/design ideas to %doc
-%{__install} -t %{buildroot}%{python_sitelib}/guibender/ __init__.py guibender_old.py guibender.spec run_tests.sh
+%{__install} -t %{buildroot}%{python_sitelib}/guibender/ __init__.py guibender.spec run_tests.sh
 
 
 %clean
@@ -65,9 +65,6 @@ rm -rf %{buildroot}
 %{python_sitelib}/guibender/__init__.pyc
 %{python_sitelib}/guibender/__init__.pyo
 %{python_sitelib}/guibender/guibender.spec
-%{python_sitelib}/guibender/guibender_old.py
-%{python_sitelib}/guibender/guibender_old.pyc
-%{python_sitelib}/guibender/guibender_old.pyo
 %{python_sitelib}/guibender/run_tests.sh
 %{python_sitelib}/guibender/guibender
 %{python_sitelib}/guibender/tests
