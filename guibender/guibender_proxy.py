@@ -37,6 +37,8 @@ class GuiBenderProxy(GuiBender):
         super(GuiBenderProxy, self).__init__()
 
     def _proxify(self, obj):
+        if isinstance(obj, (int, float, bool, basestring)) or obj is None:
+            return obj
         if obj not in self._pyroDaemon.objectsById.values():
             self._pyroDaemon.register(obj)
         return obj
