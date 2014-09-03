@@ -14,6 +14,7 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
+import shutil
 
 from errors import *
 from settings import Settings
@@ -167,6 +168,9 @@ class ImageLogger:
         if ImageLogger.logging_level > 30:
             return
         if not os.path.exists(ImageLogger.logging_destination):
+            os.mkdir(ImageLogger.logging_destination)
+        elif ImageLogger.step == 1:
+            shutil.rmtree(ImageLogger.logging_destination)
             os.mkdir(ImageLogger.logging_destination)
 
         if self.needle.filename == None:
