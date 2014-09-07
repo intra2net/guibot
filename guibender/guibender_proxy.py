@@ -18,8 +18,13 @@
 # Use Pyro4 proxifying GuiBender object (serialize-compatible API),
 # creating the GuiBender object locally.
 
-import os, sys
+import os
+import sys
+import re
 
+import Pyro4
+
+import errors
 from guibender import GuiBender
 
 
@@ -106,3 +111,25 @@ class GuiBenderProxy(GuiBender):
 
     def type_at(self, image_or_location=None, text='', modifiers=None):
         return self._proxify(super(GuiBender, self).type_at(image_or_location, text, modifiers))
+
+
+"""
+Put here any exceptions that are too complicated for the default serialization
+and define their serialization methods. A serialization method is also included
+for the ImageFinderMethodError which was chosen randomly just as a sample.
+
+NOTE: This woulnd't be needed if we were using the Pickle serializer but its
+security problems at the moment made us prefer the serpent serializer paying
+for it with some extra setup steps and this method.
+"""
+exceptions = [errors.ImageFinderMethodError]
+
+def serialize_custom_error(class_obj):
+    serialized = {}
+    serialized["__class__"] = re.search("<class '(.+)'>", str(type(class_obj))).group(1)
+    serialized["args"] = class_obj.args
+    serialized["attributes"] = class_obj.__dict__
+    return serialized
+
+for exception in exceptions:
+    Pyro4.util.SerializerBase.register_class_to_dict(exception, serialize_custom_error)
