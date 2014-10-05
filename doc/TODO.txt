@@ -42,3 +42,12 @@ SECONDARY
 - match on still haystack as a wait to wait for some events to finish
 - is idle() necessary?
 - pressing multiple times the same key does not work
+
+DETECTED BUGS:
+--------------------------------------
+- Subregioning fails at certain cases resulting in a 0.0 template similarity no
+matter whether we use hybrid, template or other method. At the image logging
+one can observe that the second haystack (the region from the match of the
+first region) is completely black and of really small size. This could of course
+also be a problem of the image logging so more research is needed. For now, we
+will wait for recurrence of this problem but we will keep it in mind.
