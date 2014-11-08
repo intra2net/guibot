@@ -162,7 +162,7 @@ class DesktopControl:
     def _autopy_type_string_wrapper(self, text):
         # TODO: Fix autopy to handle international chars and other stuff so
         # that both the Linux and Windows version are reduced to autopy.key
-        if Settings.os_name() == "Windows":
+        if Settings.os_name() in ["Windows", "windows"]:
             for char in str(text):
                 if char in ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
                             "{", "}", ":", "\"", "|", "<", ">", "?"]:
@@ -172,5 +172,7 @@ class DesktopControl:
                 else:
                     autopy.key.tap(char)
             #autopy.key.type_string(text)
-        elif Settings.os_name() == "Linux":
+        elif Settings.os_name() in ["Linux", "linux"]:
             subprocess.call(['xdotool', 'type', text], shell=False)
+        else:
+            raise ValueError("Unrecognized operating system - must be one of 'windows', 'linux'.")
