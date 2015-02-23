@@ -993,7 +993,7 @@ class InHouseCV:
                     if variants[j].trainIdx == variants[j-1].trainIdx:
                         continue
                 log.log(0, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)
-                log.log(0, "variant %i coord in n/h %/%s", j, ncoord(variant), hcoord(variant))
+                log.log(0, "variant %i coord in n/h %s/%s", j, ncoord(variant), hcoord(variant))
                 log.log(0, "variant distance: %s", variant.distance)
 
                 matches[outlier_index] = variant
