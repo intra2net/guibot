@@ -287,7 +287,7 @@ class Region(object):
             time.sleep(0.2)
 
         # image is still there
-        name = image if isinstance(image, basestring) else image.name
+        name = image if isinstance(image, basestring) else image.filename
         raise NotFindError(name)
 
     def idle(self, timeout):
