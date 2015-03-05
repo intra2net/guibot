@@ -18,8 +18,6 @@
 # Use Pyro4 proxifying GuiBender object (serialize-compatible API),
 # creating the GuiBender object locally.
 
-import os
-import sys
 import re
 
 import Pyro4
