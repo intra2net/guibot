@@ -62,13 +62,19 @@ rm -rf %{buildroot}
 # top level dir
 %dir %{python_sitelib}/guibender
 %{python_sitelib}/guibender/__init__.py
-%{python_sitelib}/guibender/__init__.pyc
-%{python_sitelib}/guibender/__init__.pyo
+%exclude %{python_sitelib}/guibender/__init__.pyc
+%exclude %{python_sitelib}/guibender/__init__.pyo
 %{python_sitelib}/guibender/guibender.spec
 %{python_sitelib}/guibender/run_tests.sh
 %{python_sitelib}/guibender/guibender
+%exclude %{python_sitelib}/guibender/guibender/*.pyc
+%exclude %{python_sitelib}/guibender/guibender/*.pyo
 %{python_sitelib}/guibender/tests
+%exclude %{python_sitelib}/guibender/tests/*.pyc
+%exclude %{python_sitelib}/guibender/tests/*.pyo
 %{python_sitelib}/guibender/examples
+%exclude %{python_sitelib}/guibender/examples/*.pyc
+%exclude %{python_sitelib}/guibender/examples/*.pyo
 
 %changelog
 * Mon Apr 13 2013 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.10-1
