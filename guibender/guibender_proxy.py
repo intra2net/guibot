@@ -41,6 +41,9 @@ class GuiBenderProxy(GuiBender):
 
     def __init__(self):
         super(GuiBenderProxy, self).__init__()
+        # NOTE: the following attribute is set by Pyro when registering
+        # this as a remote object
+        self._pyroDaemon = None
 
     def _proxify(self, obj):
         if isinstance(obj, (int, float, bool, basestring)) or obj is None:
@@ -49,69 +52,66 @@ class GuiBenderProxy(GuiBender):
             self._pyroDaemon.register(obj)
         return obj
 
-    def last_match(self):
-        return self._proxify(super(GuiBender, self).get_last_match())
-
     def find(self, image, timeout=10):
-        return self._proxify(super(GuiBender, self).find(image, timeout))
+        return self._proxify(super(GuiBenderProxy, self).find(image, timeout))
 
     def find_all(self, image, timeout=10, allow_zero=False):
-        return self._proxify(super(GuiBender, self).find_all(image, timeout, allow_zero))
+        return self._proxify(super(GuiBenderProxy, self).find_all(image, timeout, allow_zero))
 
     def sample(self, image):
-        return self._proxify(super(GuiBender, self).sample(image))
+        return self._proxify(super(GuiBenderProxy, self).sample(image))
 
     def exists(self, image, timeout=0):
-        return self._proxify(super(GuiBender, self).exists(image, timeout))
+        return self._proxify(super(GuiBenderProxy, self).exists(image, timeout))
 
     def wait(self, image, timeout=30):
-        return self._proxify(super(GuiBender, self).wait(image, timeout))
+        return self._proxify(super(GuiBenderProxy, self).wait(image, timeout))
 
     def wait_vanish(self, image, timeout=30):
-        return self._proxify(super(GuiBender, self).wait_vanish(image, timeout))
+        return self._proxify(super(GuiBenderProxy, self).wait_vanish(image, timeout))
 
     def get_mouse_location(self):
-        return self._proxify(super(GuiBender, self).get_mouse_location())
+        return self._proxify(super(GuiBenderProxy, self).get_mouse_location())
 
     def hover(self, image_or_location):
-        return self._proxify(super(GuiBender, self).hover(image_or_location))
+        return self._proxify(super(GuiBenderProxy, self).hover(image_or_location))
 
     def click(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBender, self).click(image_or_location, modifiers))
+        return self._proxify(super(GuiBenderProxy, self).click(image_or_location, modifiers))
 
     def right_click(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBender, self).right_click(image_or_location, modifiers))
+        return self._proxify(super(GuiBenderProxy, self).right_click(image_or_location, modifiers))
 
     def double_click(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBender, self).double_click(image_or_location, modifiers))
+        return self._proxify(super(GuiBenderProxy, self).double_click(image_or_location, modifiers))
 
     def mouse_down(self, image_or_location, button=GuiBender.LEFT_BUTTON):
-        return self._proxify(super(GuiBender, self).mouse_down(image_or_location, button))
+        return self._proxify(super(GuiBenderProxy, self).mouse_down(image_or_location, button))
 
     def mouse_up(self, image_or_location, button=GuiBender.LEFT_BUTTON):
-        return self._proxify(super(GuiBender, self).mouse_up(image_or_location, button))
+        return self._proxify(super(GuiBenderProxy, self).mouse_up(image_or_location, button))
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
-        return self._proxify(super(GuiBender, self).drag_drop(src_image_or_location,
+        return self._proxify(super(GuiBenderProxy, self).drag_drop(src_image_or_location,
                                                               dst_image_or_location, modifiers))
 
     def drag(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBender, self).drag(image_or_location, modifiers))
+        return self._proxify(super(GuiBenderProxy, self).drag(image_or_location, modifiers))
 
     def drop_at(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBender, self).drop_at(image_or_location, modifiers))
+        return self._proxify(super(GuiBenderProxy, self).drop_at(image_or_location, modifiers))
 
     def press(self, keys):
-        return self._proxify(super(GuiBender, self).press(keys))
+        return self._proxify(super(GuiBenderProxy, self).press(keys))
 
     def press_at(self, image_or_location=None, keys=[]):
-        return self._proxify(super(GuiBender, self).press_at(image_or_location, keys))
+        return self._proxify(super(GuiBenderProxy, self).press_at(image_or_location, keys))
 
     def type_text(self, text, modifiers=None):
-        return self._proxify(super(GuiBender, self).type_text(text, modifiers))
+        return self._proxify(super(GuiBenderProxy, self).type_text(text, modifiers))
 
     def type_at(self, image_or_location=None, text='', modifiers=None):
-        return self._proxify(super(GuiBender, self).type_at(image_or_location, text, modifiers))
+        return self._proxify(super(GuiBenderProxy, self).type_at(image_or_location, text, modifiers))
 
 
 """

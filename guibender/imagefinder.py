@@ -177,13 +177,13 @@ class ImageFinder:
                 for j in range(max(maxLoc[1] - int(0.5 * needle.height), 0),
                                min(maxLoc[1] + int(0.5 * needle.height), res_h)):
 
-                    log.log(0, "hw%s,hh%s - %s,%s,%s,%s", haystack.width, needle.width, maxLoc[0],
+                    log.log(0, "hw%s,hh%s - %s,%s,%s", haystack.width, needle.width, maxLoc[0],
                             maxLoc[0] - int(0.5 * needle.width), max(maxLoc[0] - int(0.5 * needle.width), 0))
-                    log.log(0, "hw%s,nw%s - %s,%s,%s,%s", haystack.width, needle.width, maxLoc[0],
+                    log.log(0, "hw%s,nw%s - %s,%s,%s", haystack.width, needle.width, maxLoc[0],
                             maxLoc[0] + int(0.5 * needle.width), min(maxLoc[0] + int(0.5 * needle.width), 0))
-                    log.log(0, "hh%s,nh%s - %s,%s,%s,%s", haystack.height, needle.height, maxLoc[1],
+                    log.log(0, "hh%s,nh%s - %s,%s,%s", haystack.height, needle.height, maxLoc[1],
                             maxLoc[1] - int(0.5 * needle.height), max(maxLoc[1] - int(0.5 * needle.height), 0))
-                    log.log(0, "hh%s,nh%s - %s,%s,%s,%s", haystack.height, needle.height, maxLoc[1],
+                    log.log(0, "hh%s,nh%s - %s,%s,%s", haystack.height, needle.height, maxLoc[1],
                             maxLoc[1] + int(0.5 * needle.height), min(maxLoc[1] + int(0.5 * needle.height), 0))
                     log.log(0, "index at %s %s in %s %s", j, i, len(result), len(result[0]))
 
@@ -498,8 +498,8 @@ class ImageFinder:
                     log.debug("No acceptable match in region %s", (i, j))
                     continue
                 else:
-                    locations[(j, i)] = (left + self.locations[-1][0],
-                                         up + self.locations[-1][1])
+                    locations[(j, i)] = (left + self.imglog.locations[-1][0],
+                                         up + self.imglog.locations[-1][1])
                     self.imglog.locations[-1] = locations[(j, i)]
                     log.debug("Acceptable best match with similarity %s at %s in region %s",
                               self.imglog.similarities[-1], locations[(j, i)], (i, j))
@@ -839,7 +839,7 @@ class ImageFinder:
         return match
 
 
-class InHouseCV:
+class InHouseCV(ImageFinder):
 
     """
     ImageFinder backend with in-house CV algorithms.
