@@ -21,7 +21,9 @@ import common_test
 from region import Region
 from desktopcontrol import DesktopControl
 
+
 class RegionTest(unittest.TestCase):
+
     def test_position_calc(self):
         region = Region(10, 20, 300, 200)
 

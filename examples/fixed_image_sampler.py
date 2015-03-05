@@ -16,12 +16,14 @@ sys.path.insert(0, '..')
 # for successfull matching.
 
 
-import os, re
+import os
+import re
 import unittest
 import shutil
 import logging
 
-import cv, cv2
+import cv
+import cv2
 from tempfile import NamedTemporaryFile
 
 from guibender.settings import Settings

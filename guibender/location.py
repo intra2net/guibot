@@ -13,7 +13,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+
 class Location:
+
     def __init__(self, x_pos, y_pos):
         self.xpos = x_pos
         self.ypos = y_pos

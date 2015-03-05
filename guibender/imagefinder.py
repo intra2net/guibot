@@ -18,7 +18,8 @@ from tempfile import NamedTemporaryFile
 import math
 
 from autopy import bitmap
-import cv, cv2
+import cv
+import cv2
 import numpy
 
 from location import Location
@@ -31,6 +32,7 @@ log = logging.getLogger('guibender.imagefinder')
 
 
 class ImageFinder:
+
     """
     The image finder contains all image matching functionality.
 
@@ -46,7 +48,7 @@ class ImageFinder:
     all be manually adjusted or automatically calibrated.
     """
 
-    def __init__(self, equalizer = None):
+    def __init__(self, equalizer=None):
         """
         Initiates the image finder and its CV backend equalizer.
 
@@ -69,7 +71,7 @@ class ImageFinder:
         # other attributes
         self._bitmapcache = {}
 
-    def find(self, needle, haystack, all = False):
+    def find(self, needle, haystack, all=False):
         """
         Finds an image in another and returns a Location() object
         or None using the backend algorithms and parameters
@@ -117,7 +119,7 @@ class ImageFinder:
         # autopy template matching for _template_find_all is replaced by ccoeff_normed
         # since it is inefficient and returns match clouds
         if self.eq.get_backend("tmatch") == "autopy":
-            logging.warning("The backend algorithm autopy does not support "\
+            logging.warning("The backend algorithm autopy does not support "
                             "multiple matches on screen")
             match_template = "ccoeff_normed"
         else:
@@ -133,7 +135,7 @@ class ImageFinder:
         maxima = []
         while True:
 
-            minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
             # switch max and min for sqdiff and sqdiff_normed
             if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
                 # TODO: check whether _template_find_all would work properly for sqdiff
@@ -248,7 +250,7 @@ class ImageFinder:
             hotmap = self.imglog.hotmap_from_template(result)
             self.imglog.hotmaps.append(hotmap)
 
-            minVal,maxVal,minLoc,maxLoc = cv2.minMaxLoc(result)
+            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
             # switch max and min for sqdiff and sqdiff_normed
             if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
                 maxVal = 1 - minVal
@@ -280,9 +282,9 @@ class ImageFinder:
         Available methods are: a combination of feature detector,
         extractor, and matcher
         """
-        ngray = self._prepare_image(needle, gray = True)
-        hgray = self._prepare_image(haystack, gray = True)
-        hcanvas = self._prepare_image(haystack, gray = False)
+        ngray = self._prepare_image(needle, gray=True)
+        hgray = self._prepare_image(haystack, gray=True)
+        hcanvas = self._prepare_image(haystack, gray=False)
 
         # project more points for debugging purposes and image logging
         frame_points = []
@@ -294,7 +296,7 @@ class ImageFinder:
         return self._project_features(frame_points, ngray, hgray,
                                       similarity, hcanvas)
 
-    def _hybrid_find(self, needle, haystack, all = False):
+    def _hybrid_find(self, needle, haystack, all=False):
         """
         Use template matching to deal with feature dense regions
         and guide a final feature matching.
@@ -310,7 +312,7 @@ class ImageFinder:
         # use a different lower similarity for the template matching
         template_similarity = self.eq.p["find"]["front_similarity"].value
         feature_similarity = self.eq.p["find"]["similarity"].value
-        log.debug("Using hybrid matching with template similarity %s "\
+        log.debug("Using hybrid matching with template similarity %s "
                   "and feature similarity %s", template_similarity,
                   feature_similarity)
 
@@ -318,9 +320,9 @@ class ImageFinder:
         template_maxima = self._template_find_all(needle, haystack)
 
         self.eq.p["find"]["similarity"].value = feature_similarity
-        ngray = self._prepare_image(needle, gray = True)
-        hgray = self._prepare_image(haystack, gray = True)
-        hcanvas = self._prepare_image(haystack, gray = False)
+        ngray = self._prepare_image(needle, gray=True)
+        hgray = self._prepare_image(haystack, gray=True)
+        hcanvas = self._prepare_image(haystack, gray=False)
 
         frame_points = []
         frame_points.append((needle.width / 2, needle.height / 2))
@@ -352,8 +354,8 @@ class ImageFinder:
                 self.imglog.locations[-1] = location
 
                 feature_maxima.append([self.imglog.hotmaps[-1],
-                                self.imglog.similarities[-1],
-                                self.imglog.locations[-1]])
+                                       self.imglog.similarities[-1],
+                                       self.imglog.locations[-1]])
                 # stitch back for a better final image logging
                 hcanvas[up:down, left:right] = hotmap_region
 
@@ -394,7 +396,7 @@ class ImageFinder:
 
         # NOTE: the best of all found will always be logged but if multiple matches
         # are allowed they will all be present on the dumped final canvas
-        best_acceptable = max(feature_maxima, key = lambda x: x[1])
+        best_acceptable = max(feature_maxima, key=lambda x: x[1])
         self.imglog.hotmaps.append(hcanvas)
         self.imglog.similarities.append(best_acceptable[1])
         self.imglog.locations.append(best_acceptable[2])
@@ -448,9 +450,9 @@ class ImageFinder:
         log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
                   x, y, dx, dy)
 
-        ngray = self._prepare_image(needle, gray = True)
-        hgray = self._prepare_image(haystack, gray = True)
-        hcanvas = self._prepare_image(haystack, gray = False)
+        ngray = self._prepare_image(needle, gray=True)
+        hgray = self._prepare_image(haystack, gray=True)
+        hcanvas = self._prepare_image(haystack, gray=False)
 
         frame_points = []
         frame_points.append((needle.width / 2, needle.height / 2))
@@ -507,9 +509,8 @@ class ImageFinder:
         self.imglog.log(30, "2to1")
         return result, locations
 
-
     def _project_features(self, locations_in_needle, ngray, hgray,
-                          similarity, hotmap_canvas = None):
+                          similarity, hotmap_canvas=None):
         """
         Wrapper for the internal feature detection, matching and location
         projection used by all public feature matching functions.
@@ -528,7 +529,7 @@ class ImageFinder:
                                                    self.eq.get_backend("fextract"))
 
         if len(nkp) < 4 or len(hkp) < 4:
-            log.debug("No acceptable best match after feature detection: "\
+            log.debug("No acceptable best match after feature detection: "
                       "only %s needle and %s haystack features detected",
                       len(nkp), len(hkp))
             self.imglog.log(40, "feature")
@@ -538,7 +539,7 @@ class ImageFinder:
                                           self.eq.get_backend("fmatch"))
 
         if self.imglog.similarities[-1] < similarity or len(mnkp) < 4:
-            log.debug("No acceptable best match after feature matching: "\
+            log.debug("No acceptable best match after feature matching: "
                       "best match similarity %s is less than required %s",
                       self.imglog.similarities[-1], similarity)
             self.imglog.log(40, "feature")
@@ -547,7 +548,7 @@ class ImageFinder:
         self._project_locations(locations_in_needle, mnkp, mhkp)
 
         if self.imglog.similarities[-1] < similarity:
-            log.debug("No acceptable best match after RANSAC projection: "\
+            log.debug("No acceptable best match after RANSAC projection: "
                       "best match similarity %s is less than required %s",
                       self.imglog.similarities[-1], similarity)
             self.imglog.log(40, "feature")
@@ -588,8 +589,8 @@ class ImageFinder:
             hessian_threshold = self.eq.p["fdetect"]["oldSURFdetect"].value
             detector = cv2.SURF(hessian_threshold)
 
-            (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints = False)
-            (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints = False)
+            (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints=False)
+            (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints=False)
 
         # include only methods tested for compatibility
         elif (detect in self.eq.algorithms["feature_detectors"]
@@ -619,7 +620,7 @@ class ImageFinder:
                             int(hkeypoint.pt[1] / hfactor))
 
         log.debug("Detected %s keypoints in needle and %s in haystack",
-                      len(nkeypoints), len(hkeypoints))
+                  len(nkeypoints), len(hkeypoints))
         hkp_locations = [hkp.pt for hkp in hkeypoints]
         self.imglog.log_locations(10, hkp_locations, None, 1, 0, 0, 255)
 
@@ -712,7 +713,7 @@ class ImageFinder:
         # prepare final matches
         match_nkeypoints = []
         match_hkeypoints = []
-        matches = sorted(matches, key = lambda x: x.distance)
+        matches = sorted(matches, key=lambda x: x.distance)
         for match in matches:
             log.log(0, match.distance)
             match_nkeypoints.append(nkeypoints[match.queryIdx])
@@ -756,14 +757,14 @@ class ImageFinder:
         assert(len(mnkp) == len(mhkp))
 
         # the match coordinates to be returned
-        locations_in_needle.append((0,0))
+        locations_in_needle.append((0, 0))
 
         # homography and fundamental matrix as options - homography is considered only
         # for rotation but currently gives better results than the fundamental matrix
         H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
                                      numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
                                      self.eq.p["find"]["ransacReprojThreshold"].value)
-        #H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
+        # H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
         #                                 numpy.array([kp.pt for kp in mhkp]),
         #                                 method = cv2.RANSAC, param1 = 10.0,
         #                                 param2 = 0.9)
@@ -781,7 +782,7 @@ class ImageFinder:
         projected = []
         for location in locations_in_needle:
             (ox, oy) = (location[0], location[1])
-            orig_center_wrapped = numpy.array([[[ox, oy]]], dtype = numpy.float32)
+            orig_center_wrapped = numpy.array([[[ox, oy]]], dtype=numpy.float32)
             log.log(0, "%s %s", orig_center_wrapped.shape, H.shape)
             match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
             (mx, my) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
@@ -795,7 +796,7 @@ class ImageFinder:
 
         return projected
 
-    def _prepare_image(self, image, gray = False):
+    def _prepare_image(self, image, gray=False):
         """
         Convert the Image() object into compatible numpy array
         and into grayscale if the gray parameter is True.
@@ -803,7 +804,7 @@ class ImageFinder:
         searchable_image = numpy.array(image.pil_image)
         # convert RGB to BGR
         searchable_image = searchable_image[:, :, ::-1].copy()
- 
+
         if gray:
             searchable_image = cv2.cvtColor(searchable_image, cv2.COLOR_BGR2GRAY)
 
@@ -820,25 +821,26 @@ class ImageFinder:
                         needle.width, needle.height, haystack.width, haystack.height)
             return None
 
-        methods = {"sqdiff" : cv2.TM_SQDIFF, "sqdiff_normed" : cv2.TM_SQDIFF_NORMED,
-                   "ccorr" : cv2.TM_CCORR, "ccorr_normed" : cv2.TM_CCORR_NORMED,
-                   "ccoeff" : cv2.TM_CCOEFF, "ccoeff_normed" : cv2.TM_CCOEFF_NORMED}
+        methods = {"sqdiff": cv2.TM_SQDIFF, "sqdiff_normed": cv2.TM_SQDIFF_NORMED,
+                   "ccorr": cv2.TM_CCORR, "ccorr_normed": cv2.TM_CCORR_NORMED,
+                   "ccoeff": cv2.TM_CCOEFF, "ccoeff_normed": cv2.TM_CCOEFF_NORMED}
         if match not in methods.keys():
             raise ImageFinderMethodError
 
         if nocolor:
-            gray_needle = self._prepare_image(needle, gray = True)
-            gray_haystack = self._prepare_image(haystack, gray = True)
+            gray_needle = self._prepare_image(needle, gray=True)
+            gray_haystack = self._prepare_image(haystack, gray=True)
             match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
         else:
-            opencv_needle = self._prepare_image(needle, gray = False)
-            opencv_haystack = self._prepare_image(haystack, gray = False)
+            opencv_needle = self._prepare_image(needle, gray=False)
+            opencv_haystack = self._prepare_image(haystack, gray=False)
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         return match
 
 
 class InHouseCV:
+
     """
     ImageFinder backend with in-house CV algorithms.
     """
@@ -856,8 +858,8 @@ class InHouseCV:
         """
         opencv_haystack = self._prepare_image(haystack)
         opencv_needle = self._prepare_image(needle)
-        hgray = self._prepare_image(haystack, gray = True)
-        ngray = self._prepare_image(needle, gray = True)
+        hgray = self._prepare_image(haystack, gray=True)
+        ngray = self._prepare_image(needle, gray=True)
 
         # TODO: this MSER blob feature detector is also available in
         # version 2.2.3 - implement if necessary
@@ -873,8 +875,8 @@ class InHouseCV:
         return None
 
     def regionMatch(self, desc1, desc2, kp1, kp2,
-                    refinements = 50, recalc_interval = 10,
-                    variants_k = 100, variants_ratio = 0.33):
+                    refinements=50, recalc_interval=10,
+                    variants_k=100, variants_ratio=0.33):
         """
         Use location information to better decide on matched features.
 
@@ -989,8 +991,8 @@ class InHouseCV:
                 # speed up using some heuristics
                 if j > 0:
                     # cheap assertion paid for with the speedup
-                    assert(variants[j].queryIdx == variants[j-1].queryIdx)
-                    if variants[j].trainIdx == variants[j-1].trainIdx:
+                    assert(variants[j].queryIdx == variants[j - 1].queryIdx)
+                    if variants[j].trainIdx == variants[j - 1].trainIdx:
                         continue
                 log.log(0, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)
                 log.log(0, "variant %i coord in n/h %s/%s", j, ncoord(variant), hcoord(variant))
@@ -999,9 +1001,9 @@ class InHouseCV:
                 matches[outlier_index] = variant
                 variant_costs.append((j, match_cost(matches, variant)))
 
-            min_cost_index, min_cost = min(variant_costs, key = lambda x: x[1])
+            min_cost_index, min_cost = min(variant_costs, key=lambda x: x[1])
             min_cost_variant = variants[min_cost_index]
-            #if variant_costs.index(min(variant_costs)) != 0:
+            # if variant_costs.index(min(variant_costs)) != 0:
             log.log(0, "%s>%s i.e. variant %s", variant_costs, min_cost, min_cost_index)
             matches[outlier_index] = min_cost_variant
             ratings[outlier_index] = min_cost
@@ -1016,7 +1018,7 @@ class InHouseCV:
 
         return matches
 
-    def knnMatch(self, desc1, desc2, k = 1, desc4kp = 1, autostop = 0.0):
+    def knnMatch(self, desc1, desc2, k=1, desc4kp=1, autostop=0.0):
         """
         In-house feature matching algorithm taking needle and haystack
         keypoints and their descriptors and returning a list of DMatch
@@ -1033,31 +1035,31 @@ class InHouseCV:
         is close to 0, i.e. the k+1-th neighbor is too far.
         """
         if desc4kp > 1:
-            desc1 = numpy.array(desc1, dtype = numpy.float32).reshape((-1, desc4kp))
-            desc2 = numpy.array(desc2, dtype = numpy.float32).reshape((-1, desc4kp))
+            desc1 = numpy.array(desc1, dtype=numpy.float32).reshape((-1, desc4kp))
+            desc2 = numpy.array(desc2, dtype=numpy.float32).reshape((-1, desc4kp))
             log.log(0, "%s %s", desc1.shape, desc2.shape)
         else:
-            desc1 = numpy.array(desc1, dtype = numpy.float32)
-            desc2 = numpy.array(desc2, dtype = numpy.float32)
+            desc1 = numpy.array(desc1, dtype=numpy.float32)
+            desc2 = numpy.array(desc2, dtype=numpy.float32)
         desc_size = desc2.shape[1]
 
         # kNN training - learn mapping from rows2 to kp2 index
         samples = desc2
-        responses = numpy.arange(int(len(desc2)/desc4kp), dtype = numpy.float32)
+        responses = numpy.arange(int(len(desc2) / desc4kp), dtype=numpy.float32)
         log.log(0, "%s %s", len(samples), len(responses))
         knn = cv2.KNearest()
-        knn.train(samples, responses, maxK = k)
+        knn.train(samples, responses, maxK=k)
 
         matches = []
         # retrieve index and value through enumeration
         for i, descriptor in enumerate(desc1):
-            descriptor = numpy.array(descriptor, dtype = numpy.float32).reshape((1, desc_size))
+            descriptor = numpy.array(descriptor, dtype=numpy.float32).reshape((1, desc_size))
             log.log(0, "%s %s %s", i, descriptor.shape, samples[0].shape)
             kmatches = []
             ratio = 1.0
 
             for ki in range(k):
-                _, res, _, dists = knn.find_nearest(descriptor, ki+1)
+                _, res, _, dists = knn.find_nearest(descriptor, ki + 1)
                 log.log(0, "%s %s %s", ki, res, dists)
                 if len(dists[0]) > 1 and autostop > 0.0:
 

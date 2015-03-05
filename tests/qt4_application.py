@@ -21,7 +21,9 @@ from PyQt4 import QtGui, QtCore
 
 app = QtGui.QApplication(sys.argv)
 
+
 class ControlsWithLayout(QtGui.QWidget):
+
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
 
@@ -65,7 +67,7 @@ class ControlsWithLayout(QtGui.QWidget):
         right_click_view.setFont(QtGui.QFont(font_family, font_size))
         right_click_view.addItem('Contextmenu')
 
-        right_click_view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu);
+        right_click_view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
         quit_action = QtGui.QAction("Quit", self)
         quit_action.setFont(QtGui.QFont(font_family, font_size))
@@ -86,28 +88,28 @@ class ControlsWithLayout(QtGui.QWidget):
         label4.setStyleSheet('QLabel { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
 
         vbox = QtGui.QVBoxLayout()
-        #vbox.addStretch(1)
+        # vbox.addStretch(1)
         vbox.addWidget(button_click)
         vbox.addWidget(line_edit)
         vbox.addWidget(line_edit2)
         vbox.addWidget(text_edit)
-        #vbox.setAlignment(QtCore.Qt.AlignTop)
+        # vbox.setAlignment(QtCore.Qt.AlignTop)
 
         vbox2 = QtGui.QVBoxLayout()
-        #vbox2.addStretch(1)
+        # vbox2.addStretch(1)
         vbox2.addWidget(label1)
         vbox2.addWidget(label2)
         vbox2.addWidget(label3)
         vbox2.addWidget(label4)
-        #vbox2.setAlignment(QtCore.Qt.AlignTop)
+        # vbox2.setAlignment(QtCore.Qt.AlignTop)
 
         hbox = QtGui.QHBoxLayout()
-        #hbox.addStretch(1)
+        # hbox.addStretch(1)
         hbox.addLayout(vbox)
         hbox.addWidget(list_view)
         hbox.addWidget(right_click_view)
         hbox.addLayout(vbox2)
-        #hbox.setAlignment(QtCore.Qt.AlignLeft)
+        # hbox.setAlignment(QtCore.Qt.AlignLeft)
 
         self.setLayout(hbox)
         #self.resize(400, 100)
@@ -117,7 +119,7 @@ class ControlsWithLayout(QtGui.QWidget):
 
     def quit_on_type(self):
         sender = self.sender()
-        #print sender, sender.text()
+        # print sender, sender.text()
         if sender.text() == "quit":
             self.close()
 
@@ -127,6 +129,7 @@ class ControlsWithLayout(QtGui.QWidget):
 
 
 class DragQuitLabel(QtGui.QLabel):
+
     def __init__(self, title, parent):
         super(DragQuitLabel, self).__init__(title, parent)
         self.setAcceptDrops(True)
@@ -134,7 +137,9 @@ class DragQuitLabel(QtGui.QLabel):
     def dragEnterEvent(self, e):
         self.parent().close()
 
+
 class DropQuitLabel(QtGui.QLabel):
+
     def __init__(self, title, parent):
         super(DropQuitLabel, self).__init__(title, parent)
         self.setAcceptDrops(True)
@@ -148,17 +153,21 @@ class DropQuitLabel(QtGui.QLabel):
     def dropEvent(self, e):
         self.parent().close()
 
+
 class MouseDownQuitLabel(QtGui.QLabel):
+
     def __init__(self, title, parent):
         super(MouseDownQuitLabel, self).__init__(title, parent)
 
     def mousePressEvent(self, e):
         self.parent().close()
 
+
 class MouseUpQuitLabel(QtGui.QLabel):
+
     def __init__(self, title, parent):
         super(MouseUpQuitLabel, self).__init__(title, parent)
-        #self.setAcceptDrops(True)
+        # self.setAcceptDrops(True)
 
     def mouseReleaseEvent(self, e):
         self.parent().close()

@@ -1,5 +1,6 @@
 #!/usr/bin/python
-import os, sys
+import os
+import sys
 
 unittest_dir = os.path.dirname(os.path.abspath(__file__))
 main_dir = os.path.join(unittest_dir, '..')

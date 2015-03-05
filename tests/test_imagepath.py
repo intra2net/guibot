@@ -15,14 +15,17 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import os, sys
+import os
+import sys
 import unittest
 import common_test
 
 from imagepath import ImagePath
 from errors import *
 
+
 class ImagePathTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         # Change to 'tests' directory

@@ -30,7 +30,9 @@ from image import Image
 from key import Key
 from errors import *
 
+
 class RegionTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         self.imagepath = ImagePath()
@@ -106,10 +108,10 @@ class RegionTest(unittest.TestCase):
 
     def test_configure_find(self):
         region = Region()
-        region.configure_find(find_image = "feature")
+        region.configure_find(find_image="feature")
         self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
 
-        region.configure_find(find_image = "template", template_match = "autopy")
+        region.configure_find(find_image="template", template_match="autopy")
         self.assertEqual(region.imagefinder.eq.get_backend("find"), "template")
         self.assertEqual(region.imagefinder.eq.get_backend("tmatch"), "autopy")
 
@@ -118,8 +120,8 @@ class RegionTest(unittest.TestCase):
         self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("bytes"))
         self.assertFalse(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
 
-        region.configure_find(find_image = "feature", feature_detect = "ORB",
-                              feature_extract = "FREAK", feature_match = "BruteForce")
+        region.configure_find(find_image="feature", feature_detect="ORB",
+                              feature_extract="FREAK", feature_match="BruteForce")
         self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
         self.assertEqual(region.imagefinder.eq.get_backend("fdetect"), "ORB")
         self.assertEqual(region.imagefinder.eq.get_backend("fextract"), "FREAK")
@@ -131,7 +133,7 @@ class RegionTest(unittest.TestCase):
         self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
 
         # check consistency of all unchanged options
-        region.configure_find(find_image = None, template_match = "ccorr_normed")
+        region.configure_find(find_image=None, template_match="ccorr_normed")
         self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
         self.assertEqual(region.imagefinder.eq.get_backend("tmatch"), "ccorr_normed")
         self.assertEqual(region.imagefinder.eq.get_backend("fdetect"), "ORB")
@@ -195,7 +197,7 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
-        matches = Region().find_all(Image('shape_blue_circle'), allow_zero = True)
+        matches = Region().find_all(Image('shape_blue_circle'), allow_zero=True)
         self.assertEqual(len(matches), 0)
 
         self.close_windows()
@@ -276,7 +278,7 @@ class RegionTest(unittest.TestCase):
 
     def test_wait(self):
         self.show_image('all_shapes')
-        match = Region().wait(Image('shape_blue_circle'), timeout = 5)
+        match = Region().wait(Image('shape_blue_circle'), timeout=5)
         self.assertTrue(isinstance(match, Match))
 
         self.close_windows()
@@ -284,12 +286,12 @@ class RegionTest(unittest.TestCase):
     def test_wait_vanish(self):
         self.show_image('all_shapes')
         time.sleep(3)
-        self.assertRaises(NotFindError, Region().wait_vanish, 'all_shapes', timeout = 30)
-        #self.assertFalse()
+        self.assertRaises(NotFindError, Region().wait_vanish, 'all_shapes', timeout=30)
+        # self.assertFalse()
 
         self.close_windows()
         # assert no NotFindError is raised now
-        Region().wait_vanish('all_shapes', timeout = 10)
+        Region().wait_vanish('all_shapes', timeout=10)
 
     def test_hover(self):
         # Hover over Location
@@ -406,14 +408,14 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     def test_get_mouse_location(self):
-        Region().hover(Location(0,0))
+        Region().hover(Location(0, 0))
 
         pos = Region().get_mouse_location()
         # Exact match currently not possible, autopy is not pixel perfect.
         self.assertTrue(pos.get_x() < 5)
         self.assertTrue(pos.get_y() < 5)
 
-        Region().hover(Location(30,20))
+        Region().hover(Location(30, 20))
 
         pos = Region().get_mouse_location()
         # Exact match currently not possible, autopy is not pixel perfect.

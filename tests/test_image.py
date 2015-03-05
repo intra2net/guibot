@@ -24,7 +24,9 @@ from image import Image
 from cvequalizer import CVEqualizer
 from errors import *
 
+
 class ImageTest(unittest.TestCase):
+
     def setUp(self):
         self.file_all_shapes = os.path.join(common_test.unittest_dir, 'images', 'all_shapes.png')
 
@@ -111,7 +113,7 @@ class ImageTest(unittest.TestCase):
             image.use_own_settings = True
             returned_image = image.save(f.name)
             loaded_image = Image(f.name)
-            #print "%s.match" % f.name[:-4]
+            # print "%s.match" % f.name[:-4]
             os.unlink("%s.match" % f.name[:-4])
 
             for category in returned_image.match_settings.p.keys():
@@ -119,7 +121,7 @@ class ImageTest(unittest.TestCase):
                 for key in returned_image.match_settings.p[category].keys():
                     self.assertIn(key, loaded_image.match_settings.p[category])
                     self.assertAlmostEqual(returned_image.match_settings.p[category][key].value,
-                                     loaded_image.match_settings.p[category][key].value)
+                                           loaded_image.match_settings.p[category][key].value)
                     self.assertEqual(returned_image.match_settings.p[category][key].range[0],
                                      loaded_image.match_settings.p[category][key].range[0])
                     self.assertEqual(returned_image.match_settings.p[category][key].range[1],

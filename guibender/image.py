@@ -22,6 +22,7 @@ from location import Location
 from imagepath import ImagePath
 from cvequalizer import CVEqualizer
 
+
 class Image:
 
     _cache = {}
@@ -52,7 +53,7 @@ class Image:
                     self._cache[self.filename] = self._pil_image
             if match_settings is None:
                 match_file = self.filename[:-4] + ".match"
-                #print match_file, self.filename
+                # print match_file, self.filename
                 if not os.path.exists(match_file):
                     self.match_settings = CVEqualizer()
                 else:
@@ -76,14 +77,19 @@ class Image:
 
     def get_filename(self):
         return self._filename
+
     def get_width(self):
         return self._width
+
     def get_height(self):
         return self._height
+
     def get_pil_image(self):
         return self._pil_image
+
     def get_similarity(self):
         return self.match_settings.p["find"]["similarity"].value
+
     def get_target_offset(self):
         return self._target_center_offset
 

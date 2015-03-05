@@ -29,6 +29,7 @@ from guibender import GuiBender
 
 
 class GuiBenderProxy(GuiBender):
+
     """
     The proxy guibender object is just a wrapper around the actual guibender
     object that takes care of returning easily serializable Pyro4 proxy objects
@@ -75,13 +76,13 @@ class GuiBenderProxy(GuiBender):
     def hover(self, image_or_location):
         return self._proxify(super(GuiBender, self).hover(image_or_location))
 
-    def click(self, image_or_location, modifiers = None):
+    def click(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBender, self).click(image_or_location, modifiers))
 
-    def right_click(self, image_or_location, modifiers = None):
+    def right_click(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBender, self).right_click(image_or_location, modifiers))
 
-    def double_click(self, image_or_location, modifiers = None):
+    def double_click(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBender, self).double_click(image_or_location, modifiers))
 
     def mouse_down(self, image_or_location, button=GuiBender.LEFT_BUTTON):
@@ -90,14 +91,14 @@ class GuiBenderProxy(GuiBender):
     def mouse_up(self, image_or_location, button=GuiBender.LEFT_BUTTON):
         return self._proxify(super(GuiBender, self).mouse_up(image_or_location, button))
 
-    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers = None):
+    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
         return self._proxify(super(GuiBender, self).drag_drop(src_image_or_location,
                                                               dst_image_or_location, modifiers))
 
-    def drag(self, image_or_location, modifiers = None):
+    def drag(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBender, self).drag(image_or_location, modifiers))
 
-    def drop_at(self, image_or_location, modifiers = None):
+    def drop_at(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBender, self).drop_at(image_or_location, modifiers))
 
     def press(self, keys):
@@ -123,6 +124,7 @@ security problems at the moment made us prefer the serpent serializer paying
 for it with some extra setup steps and this method.
 """
 exceptions = [errors.ImageFinderMethodError]
+
 
 def serialize_custom_error(class_obj):
     serialized = {}

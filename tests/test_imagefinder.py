@@ -21,7 +21,8 @@ import subprocess
 import glob
 import os
 
-import cv, cv2
+import cv
+import cv2
 from tempfile import NamedTemporaryFile
 
 import common_test
@@ -36,7 +37,9 @@ from desktopcontrol import DesktopControl
 from image import Image
 from errors import *
 
+
 class ImageFinderTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         Settings.image_logging_level(10)
@@ -75,7 +78,7 @@ class ImageFinderTest(unittest.TestCase):
 
             time.sleep(0.2)
 
-    def show_image(self, filename, title = "show_image"):
+    def show_image(self, filename, title="show_image"):
         filename = self.imagepath.search(filename)
         self.shown_pictures.append(subprocess.Popen(['python',
                                                     self.script_show,
@@ -95,7 +98,7 @@ class ImageFinderTest(unittest.TestCase):
     # TODO: integrate this to ImageLogger and add
     # more actual assertion to all this unittests
     def draw_needle_features(self, needle, haystack,
-                             match_settings = None, logging = 20):
+                             match_settings=None, logging=20):
         finder = ImageFinder()
         finder.image_logging = logging
         if match_settings != None:
@@ -105,24 +108,24 @@ class ImageFinderTest(unittest.TestCase):
                            finder.eq.get_backend("fmatch"))
 
         # use private methods for unit testing to visualize internal structure
-        ngray = finder._prepare_image(needle, gray = True)
-        hgray = finder._prepare_image(haystack, gray = True)
+        ngray = finder._prepare_image(needle, gray=True)
+        hgray = finder._prepare_image(haystack, gray=True)
         opencv_needle = finder._prepare_image(needle)
         nkp, ndc, hkp, hdc = finder._detect_features(ngray, hgray,
-                                                     detect = self.algorithms[0],
-                                                     extract = self.algorithms[1])
+                                                     detect=self.algorithms[0],
+                                                     extract=self.algorithms[1])
         mnkp, mhkp = finder._match_features(nkp, ndc, hkp, hdc,
-                                            match = self.algorithms[2])
-        #print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
+                                            match=self.algorithms[2])
+        # print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
         #                                                            len(mnkp), len(nkp))
-        self.assertEqual(len(mhkp), len(mnkp), "The matched keypoints in the haystack and "\
-                        "the image should be equal.")
+        self.assertEqual(len(mhkp), len(mnkp), "The matched keypoints in the haystack and "
+                         "the image should be equal.")
         # this rule does not apply to the haystack since it may be scaled and reduced in size
-        self.assertGreaterEqual(len(nkp), len(mnkp), "The matched keypoints in the needle "\
+        self.assertGreaterEqual(len(nkp), len(mnkp), "The matched keypoints in the needle "
                                 "should be fewer than all detected keypoints in the needle")
-        self.assertGreaterEqual(len(mhkp), 4, "Minimum of 4 keypoints should be matched in "\
+        self.assertGreaterEqual(len(mhkp), 4, "Minimum of 4 keypoints should be matched in "
                                 "the haystack while %s were matched" % len(mhkp))
-        self.assertGreaterEqual(len(mnkp), 4, "Minimum of 4 keypoints should be matched in "\
+        self.assertGreaterEqual(len(mnkp), 4, "Minimum of 4 keypoints should be matched in "
                                 "the needle while %s were matched" % len(mnkp))
 
         # draw focus point as well as matched and unmatched features
@@ -131,10 +134,10 @@ class ImageFinderTest(unittest.TestCase):
                 color = (0, 255, 0)
             else:
                 color = (0, 0, 255)
-            x,y = kp.pt
-            cv2.circle(opencv_needle, (int(x),int(y)), 2, color, -1)
+            x, y = kp.pt
+            cv2.circle(opencv_needle, (int(x), int(y)), 2, color, -1)
         (ocx, ocy) = (needle.width / 2, needle.height / 2)
-        cv2.circle(opencv_needle, (int(ocx),int(ocy)), 4, (255,0,0), -1)
+        cv2.circle(opencv_needle, (int(ocx), int(ocy)), 4, (255, 0, 0), -1)
 
         needle_file = os.path.join(common_test.unittest_dir, 'images/', 'needle.png')
         cv2.imwrite(needle_file, opencv_needle)
@@ -144,21 +147,20 @@ class ImageFinderTest(unittest.TestCase):
         # code since the drawn image can directly be shown and saved only if
         # needed (while imshow works here, destroyAllWindows fails)
         #cv2.imshow("needle", opencv_needle)
-        #cv2.waitKey(5000)
-        #cv2.destroyAllWindows()
+        # cv2.waitKey(5000)
+        # cv2.destroyAllWindows()
 
     def draw_haystack_hotmap(self, haystack, needle, title,
-                             match_settings = None, logging = 20):
+                             match_settings=None, logging=20):
         finder = ImageFinder()
         finder.image_logging = logging
         if match_settings != None:
             finder.eq = match_settings
         match = finder.find(needle, haystack)
-        self.assertIsNotNone(match, "The original needle image "\
+        self.assertIsNotNone(match, "The original needle image "
                              "should be matched in the screen.")
         #hotmap_file = os.path.join('log_haystack.png')
         #self.show_image(hotmap_file, title)
-
 
     def test_features_viewport(self):
         needle = Image('n_ibs')
@@ -186,7 +188,7 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_template_viewport(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image = "template")
+        needle.match_settings.configure_backend(find_image="template")
 
         self.show_image('h_ibs_viewport')
         time.sleep(2)
@@ -196,7 +198,7 @@ class ImageFinderTest(unittest.TestCase):
         finder = ImageFinder()
         finder.eq = needle.match_settings
         match = finder.find(needle, haystack)
-        self.assertIsNone(match, "Template matching should fail finding "\
+        self.assertIsNone(match, "Template matching should fail finding "
                           "viewport transformed image.")
 
     def test_features_screen(self):
@@ -220,7 +222,7 @@ class ImageFinderTest(unittest.TestCase):
         finder = ImageFinder()
         finder.eq = needle.match_settings
         match = finder.find(needle, haystack)
-        self.assertIsNotNone(match, "The viewport transformed image "\
+        self.assertIsNotNone(match, "The viewport transformed image "
                              "should be matched in the screen.")
         Region().hover(match)
 
@@ -236,7 +238,7 @@ class ImageFinderTest(unittest.TestCase):
         needle.match_settings.p["find"]["similarity"].value = 0.0
         self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
                                   needle.match_settings, 10)
-        self.assertIsNone(match, "No transformed needle is present "\
+        self.assertIsNone(match, "No transformed needle is present "
                           "and should be found in the haystack.")
 
     def test_feature_text_shapes(self):
@@ -244,7 +246,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('all_shapes')
 
         settings = needle.match_settings
-        settings.configure_backend(find_image = "feature")
+        settings.configure_backend(find_image="feature")
         settings.p["find"]["similarity"].value = 0.0
         settings.p["fdetect"]["nzoom"].value = 4.0
 
@@ -306,4 +308,3 @@ class ImageFinderTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

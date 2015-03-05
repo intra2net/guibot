@@ -37,42 +37,42 @@ class Settings:
     _feature_match_backend = "BruteForce-Hamming"
 
     @staticmethod
-    def os_name(name = None):
+    def os_name(name=None):
         if name == None:
             return Settings._os_name
         else:
             Settings._os_name = name
 
     @staticmethod
-    def delay_after_drag(delay = None):
+    def delay_after_drag(delay=None):
         if delay == None:
             return Settings._drag_delay
         else:
             Settings._drag_delay = delay
 
     @staticmethod
-    def delay_before_drop(delay = None):
+    def delay_before_drop(delay=None):
         if delay == None:
             return Settings._drop_delay
         else:
             Settings._drop_delay = delay
 
     @staticmethod
-    def delay_before_keys(delay = None):
+    def delay_before_keys(delay=None):
         if delay == None:
             return Settings._keys_delay
         else:
             Settings._keys_delay = delay
 
     @staticmethod
-    def rescan_speed_on_find(delay = None):
+    def rescan_speed_on_find(delay=None):
         if delay == None:
             return Settings._rescan_speed_on_find
         else:
             Settings._rescan_speed_on_find = delay
 
     @staticmethod
-    def save_needle_on_error(value = None):
+    def save_needle_on_error(value=None):
         if value == None:
             return Settings._save_needle_on_error
         elif value == True or value == False:
@@ -81,21 +81,21 @@ class Settings:
             raise ValueError
 
     @staticmethod
-    def image_logging_level(level = None):
+    def image_logging_level(level=None):
         if level == None:
             return Settings._image_logging_level
         else:
             Settings._image_logging_level = level
 
     @staticmethod
-    def image_logging_destination(dest = None):
+    def image_logging_destination(dest=None):
         if dest == None:
             return Settings._image_logging_destination
         else:
             Settings._image_logging_destination = dest
 
     @staticmethod
-    def image_logging_step_width(width = None):
+    def image_logging_step_width(width=None):
         if width == None:
             return Settings._image_logging_step_width
         else:
@@ -104,35 +104,35 @@ class Settings:
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
     @staticmethod
-    def find_image_backend(name = None):
+    def find_image_backend(name=None):
         if name == None:
             return Settings._find_image_backend
         else:
             Settings._find_image_backend = name
 
     @staticmethod
-    def template_match_backend(name = None):
+    def template_match_backend(name=None):
         if name == None:
             return Settings._template_match_backend
         else:
             Settings._template_match_backend = name
 
     @staticmethod
-    def feature_detect_backend(name = None):
+    def feature_detect_backend(name=None):
         if name == None:
             return Settings._feature_detect_backend
         else:
             Settings._feature_detect_backend = name
 
     @staticmethod
-    def feature_extract_backend(name = None):
+    def feature_extract_backend(name=None):
         if name == None:
             return Settings._feature_extract_backend
         else:
             Settings._feature_extract_backend = name
 
     @staticmethod
-    def feature_match_backend(name = None):
+    def feature_match_backend(name=None):
         if name == None:
             return Settings._feature_match_backend
         else:

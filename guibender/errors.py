@@ -13,13 +13,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+
 class GuiBenderError(Exception):
+
     """GuiBender exception base class"""
 
+
 class FileNotFoundError(GuiBenderError):
+
     """Exception raised when a picture file cannot be found on disc"""
 
+
 class FindError(GuiBenderError):
+
     """Exception raised when an Image cannot be found on the screen"""
 
     def __init__(self, failed_image=None):
@@ -29,7 +36,9 @@ class FindError(GuiBenderError):
             message = "The image could not be found on the screen"
         super(FindError, self).__init__(message)
 
+
 class NotFindError(GuiBenderError):
+
     """Exception raised when an Image can be found on the screen but should not be"""
 
     def __init__(self, failed_image=None):
@@ -39,8 +48,12 @@ class NotFindError(GuiBenderError):
             message = "The image was found on the screen while it was not expected"
         super(NotFindError, self).__init__(message)
 
+
 class ImageFinderMethodError(GuiBenderError):
+
     """Exception raised when a non-existent method is used for finding an image"""
 
+
 class MissingHotmapError(GuiBenderError):
+
     """Exception raised when an attempt to access a non-existent hotmap in the image logger is made"""

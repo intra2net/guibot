@@ -18,7 +18,8 @@ import os
 import unittest
 import pprint
 
-import cv, cv2
+import cv
+import cv2
 
 import common_test
 from imagefinder import ImageFinder
@@ -27,7 +28,9 @@ from imagepath import ImagePath
 from image import Image
 from errors import *
 
+
 class CalibratorTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         self.imagepath = ImagePath()
@@ -36,7 +39,7 @@ class CalibratorTest(unittest.TestCase):
     def calibration_setUp(self, needle, haystack, calibrate_backends):
         finder = ImageFinder()
         finder.image_logging = 10
-        finder.eq.configure_backend(find_image = "feature")
+        finder.eq.configure_backend(find_image="feature")
         for category in calibrate_backends:
             finder.eq.can_calibrate(True, category)
         calibrator = Calibrator()
@@ -45,16 +48,16 @@ class CalibratorTest(unittest.TestCase):
         needle = Image(needle)
 
         error = calibrator.calibrate(haystack, needle, finder)
-        #print os.path.basename(needle.filename), os.path.basename(haystack.filename), error
+        # print os.path.basename(needle.filename), os.path.basename(haystack.filename), error
         return error
 
     def test_calibrate_viewport(self):
         raw_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
         cal_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
-                                       ["find", "fmatch"])
+                                           ["find", "fmatch"])
 
         self.assertLessEqual(cal_error, raw_error,
-                             "Match error after calibration must be "\
+                             "Match error after calibration must be "
                              "less than the error before calibration")
 
     def test_calibrate_rotation(self):
@@ -63,7 +66,7 @@ class CalibratorTest(unittest.TestCase):
                                            ["find", "fmatch"])
 
         self.assertLessEqual(cal_error, raw_error,
-                             "Match error after calibration must be "\
+                             "Match error after calibration must be "
                              "less than the error before calibration")
 
     def test_calibrate_scaling(self):
@@ -72,7 +75,7 @@ class CalibratorTest(unittest.TestCase):
                                            ["find", "fmatch"])
 
         self.assertLessEqual(cal_error, raw_error,
-                             "Match error after calibration must be "\
+                             "Match error after calibration must be "
                              "less than the error before calibration")
 
     def test_benchmark_full_match(self):
@@ -84,15 +87,15 @@ class CalibratorTest(unittest.TestCase):
         finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #pprint.pprint(results)
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
+        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
         # yes, some methods certainly don't work well together to
         # have similarity as low as 30% on a 1-to-1 match, but oh well...
         top_results = results[:-15]
         for result in top_results:
-            #print result[1]
+            # print result[1]
             self.assertGreaterEqual(result[1], 0.9,
                                     "Minimum similarity for full match is 0.5")
 
@@ -103,9 +106,9 @@ class CalibratorTest(unittest.TestCase):
         finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #pprint.pprint(results)
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
+        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
         top_results = results[:3]
         for result in top_results:
@@ -121,9 +124,9 @@ class CalibratorTest(unittest.TestCase):
         finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration = False)
-        #pprint.pprint(results)
-        self.assertGreater(len(results), 0, "The benchmarked methods "\
+        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
         top_results = results[:3]
         for result in top_results:
@@ -133,4 +136,3 @@ class CalibratorTest(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-

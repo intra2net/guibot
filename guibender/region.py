@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import time, os
+import time
+import os
 
 # interconnected classes - import only their modules
 # to avoid circular reference
@@ -32,9 +33,9 @@ log = logging.getLogger('guibender.region')
 
 class Region(object):
     # Mouse buttons
-    LEFT_BUTTON=DesktopControl.LEFT_BUTTON
-    RIGHT_BUTTON=DesktopControl.RIGHT_BUTTON
-    CENTER_BUTTON=DesktopControl.CENTER_BUTTON
+    LEFT_BUTTON = DesktopControl.LEFT_BUTTON
+    RIGHT_BUTTON = DesktopControl.RIGHT_BUTTON
+    CENTER_BUTTON = DesktopControl.CENTER_BUTTON
 
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
         self.desktop = DesktopControl()
@@ -67,10 +68,10 @@ class Region(object):
             self.ypos = 0
 
         if self.xpos > screen_width:
-            self.xpos = screen_width -1
+            self.xpos = screen_width - 1
 
         if self.ypos > screen_height:
-            self.ypos = screen_height -1
+            self.ypos = screen_height - 1
 
         if self.xpos + self.width > screen_width:
             self.width = screen_width - self.xpos
@@ -177,9 +178,9 @@ class Region(object):
     def get_last_match(self):
         return self.last_match
 
-    def configure_find(self, find_image = None, template_match = None,
-                       feature_detect = None, feature_extract = None,
-                       feature_match = None):
+    def configure_find(self, find_image=None, template_match=None,
+                       feature_detect=None, feature_extract=None,
+                       feature_match=None):
         self.imagefinder.eq.configure_backend(find_image, template_match,
                                               feature_detect, feature_extract,
                                               feature_match)
@@ -218,7 +219,7 @@ class Region(object):
                 # don't hog the CPU
                 time.sleep(Settings.rescan_speed_on_find())
 
-    def find_all(self, image, timeout=10, allow_zero = False):
+    def find_all(self, image, timeout=10, allow_zero=False):
         if isinstance(image, basestring):
             image = Image(image)
         log.debug("Looking for multiple occurrences of image %s", image)
@@ -321,7 +322,7 @@ class Region(object):
 
         return match
 
-    def click(self, image_or_location, modifiers = None):
+    def click(self, image_or_location, modifiers=None):
         match = self.hover(image_or_location)
         log.info("Clicking at %s", image_or_location)
         if modifiers != None:
@@ -329,7 +330,7 @@ class Region(object):
         self.desktop.mouse_click(modifiers)
         return match
 
-    def right_click(self, image_or_location, modifiers = None):
+    def right_click(self, image_or_location, modifiers=None):
         match = self.hover(image_or_location)
         log.info("Right clicking at %s", image_or_location)
         if modifiers != None:
@@ -337,7 +338,7 @@ class Region(object):
         self.desktop.mouse_right_click(modifiers)
         return match
 
-    def double_click(self, image_or_location, modifiers = None):
+    def double_click(self, image_or_location, modifiers=None):
         match = self.hover(image_or_location)
         log.info("Double clicking at %s", image_or_location)
         if modifiers != None:
@@ -357,12 +358,12 @@ class Region(object):
         self.desktop.mouse_up(button)
         return match
 
-    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers = None):
+    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
         self.drag(src_image_or_location, modifiers)
         match = self.drop_at(dst_image_or_location, modifiers)
         return match
 
-    def drag(self, image_or_location, modifiers = None):
+    def drag(self, image_or_location, modifiers=None):
         match = self.hover(image_or_location)
 
         time.sleep(0.2)
@@ -377,7 +378,7 @@ class Region(object):
 
         return match
 
-    def drop_at(self, image_or_location, modifiers = None):
+    def drop_at(self, image_or_location, modifiers=None):
         match = self.hover(image_or_location)
         time.sleep(Settings.delay_before_drop())
 
@@ -400,7 +401,7 @@ class Region(object):
             log.info("Pressing key %s", Key.to_string(keys))
         elif isinstance(keys, basestring):
             if len(keys) > 1:
-                log.warning("Using press for an entire text - "\
+                log.warning("Using press for an entire text - "
                             "please use type_text for this purpose")
             log.info("Pressing key %s", keys)
         else:
@@ -408,7 +409,7 @@ class Region(object):
             for key in keys:
                 if isinstance(key, basestring):
                     if len(key) > 1:
-                        log.warning("Using press for an entire text - "\
+                        log.warning("Using press for an entire text - "
                                     "please use type_text for this purpose")
                     key_strings.append(key)
                 else:
@@ -430,7 +431,7 @@ class Region(object):
                      image_or_location)
         elif isinstance(keys, basestring):
             if len(keys) > 1:
-                log.warning("Using press for an entire text - "\
+                log.warning("Using press for an entire text - "
                             "please use type_text for this purpose")
             log.info("Pressing key %s at %s", keys, image_or_location)
         else:
@@ -438,7 +439,7 @@ class Region(object):
             for key in keys:
                 if isinstance(key, basestring):
                     if len(key) > 1:
-                        log.warning("Using press for an entire text - "\
+                        log.warning("Using press for an entire text - "
                                     "please use type_text for this purpose")
                     key_strings.append(key)
                 else:

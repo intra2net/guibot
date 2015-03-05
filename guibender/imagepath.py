@@ -17,6 +17,7 @@ import os
 import logging
 from errors import *
 
+
 class ImagePath:
     # Shared between all instances
     _imagePaths = []

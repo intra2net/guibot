@@ -14,12 +14,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import os, re
+import os
+import re
 import unittest
 import shutil
 import logging
 
-import cv, cv2
+import cv
+import cv2
 from tempfile import NamedTemporaryFile
 
 import common_test
@@ -30,7 +32,9 @@ from imagepath import ImagePath
 from image import Image
 from errors import *
 
+
 class ImageLoggerTest(unittest.TestCase):
+
     @classmethod
     def setUpClass(self):
         self.logpath = os.path.join(common_test.unittest_dir, 'tmp')
@@ -69,7 +73,7 @@ class ImageLoggerTest(unittest.TestCase):
         haystack = Image(haystack_name)
         needle.use_own_settings = True
         settings = needle.match_settings
-        settings.configure_backend(find_image = backend)
+        settings.configure_backend(find_image=backend)
 
         finder = ImageFinder()
         finder.find(needle, haystack)
@@ -122,7 +126,7 @@ class ImageLoggerTest(unittest.TestCase):
         haystack = Image('all_shapes')
         needle.use_own_settings = True
         settings = needle.match_settings
-        settings.configure_backend(find_image = "template")
+        settings.configure_backend(find_image="template")
 
         finder = ImageFinder()
         finder.find(needle, haystack, all=True)
@@ -157,7 +161,7 @@ class ImageLoggerTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, needles[0])), "The needle must be a regular file")
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, haystacks[0])), "The haystack must be a regular file")
         for i, hotmap in enumerate(sorted(hotmaps)):
-            self.assertIn('template%s' % (i+1), hotmap, "The hotmap %s must be enumerated to achieve proper hotmap sorting" % hotmap)
+            self.assertIn('template%s' % (i + 1), hotmap, "The hotmap %s must be enumerated to achieve proper hotmap sorting" % hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)), "The hotmap %s must be a regular file" % hotmap)
 
     def test_hybrid_match(self):
@@ -165,7 +169,7 @@ class ImageLoggerTest(unittest.TestCase):
         haystack = Image('sentence_font')
         needle.use_own_settings = True
         settings = needle.match_settings
-        settings.configure_backend(find_image = "hybrid")
+        settings.configure_backend(find_image="hybrid")
         settings.p["find"]["front_similarity"].value = 0.3
         settings.p["find"]["similarity"].value = 0.6
 
@@ -202,7 +206,7 @@ class ImageLoggerTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, needles[0])), "The needle must be a regular file")
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, haystacks[0])), "The haystack must be a regular file")
         for i, hotmap in enumerate(sorted(hotmaps)):
-            #print i, i%2, (i-1)/2+1
+            # print i, i%2, (i-1)/2+1
             if i == 0:
                 self.assertNotIn('template', hotmap, "The main hotmap %s must not contain any internal backend" % hotmap)
                 self.assertNotIn('feature', hotmap, "The main hotmap %s must not contain any internal backend" % hotmap)

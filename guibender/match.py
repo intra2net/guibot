@@ -22,9 +22,11 @@ import region
 from image import Image
 from location import Location
 
+
 class Match(region.Region):
+
     def __init__(self, xpos, ypos, image):
-        super(Match,self).__init__(xpos, ypos, image.width, image.height)
+        super(Match, self).__init__(xpos, ypos, image.width, image.height)
 
         target_offset = image.target_center_offset
         self.target = self.calc_click_point(xpos, ypos, self.width, self.height, target_offset)

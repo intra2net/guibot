@@ -14,7 +14,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, sys
+import os
+import sys
 
 import logging
 log = logging.getLogger('guibender')
@@ -25,6 +26,7 @@ from region import Region
 
 
 class GuiBender(Region):
+
     """
     The main guibender object is also a region
     with some convenience functions added.

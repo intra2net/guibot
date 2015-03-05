@@ -19,11 +19,13 @@ import shutil
 from errors import *
 from settings import Settings
 
-import cv, cv2
+import cv
+import cv2
 import numpy
 
 
 class ImageLogger:
+
     """
     This class is reponsible for logging the image matching process
     with the help of images. It always contains the current match
@@ -84,7 +86,7 @@ class ImageLogger:
         if logtype in "template":
             for i in range(len(self.similarities)):
                 self.log_locations(30, [self.locations[i]], self.hotmaps[i],
-                                   30*self.similarities[i], 255, 255, 255)
+                                   30 * self.similarities[i], 255, 255, 255)
                 name = "imglog%s-3hotmap-%s%s-%s.png" % (self.printable_step,
                                                          logtype, i + 1,
                                                          self.similarities[i])
@@ -112,9 +114,9 @@ class ImageLogger:
             for i in range(candidate_num):
                 self.log_locations(30, [self.locations[i]],
                                    self.hotmaps[i],
-                                   30*self.similarities[i], 255, 255, 255)
+                                   30 * self.similarities[i], 255, 255, 255)
                 name = "imglog%s-3hotmap-%s-%stemplate-%s.png" % (self.printable_step,
-                                                                  logtype, i+1,
+                                                                  logtype, i + 1,
                                                                   self.similarities[i])
                 self.dump_hotmap(name, self.hotmaps[i])
                 ii = candidate_num + i
@@ -122,7 +124,7 @@ class ImageLogger:
                                    self.hotmaps[ii],
                                    4, 255, 0, 0)
                 name = "imglog%s-3hotmap-%s-%sfeature-%s.png" % (self.printable_step,
-                                                                 logtype, i+1,
+                                                                 logtype, i + 1,
                                                                  self.similarities[ii])
                 self.dump_hotmap(name, self.hotmaps[ii])
 
@@ -145,8 +147,8 @@ class ImageLogger:
         self.clear()
         ImageLogger.step += 1
 
-    def log_locations(self, lvl, locations, hotmap = None,
-                      radius = 2, r = 255, g = 255, b = 255):
+    def log_locations(self, lvl, locations, hotmap=None,
+                      radius=2, r=255, g=255, b=255):
         if len(self.hotmaps) == 0 and hotmap == None:
             raise MissingHotmapError
         elif hotmap == None:
@@ -157,7 +159,7 @@ class ImageLogger:
         for loc in locations:
             x, y = loc
             color = (r, g, b)
-            cv2.circle(hotmap, (int(x),int(y)), int(radius), color)
+            cv2.circle(hotmap, (int(x), int(y)), int(radius), color)
 
     def log_window(self, hotmap):
         cv2.startWindowThread()
@@ -199,7 +201,7 @@ class ImageLogger:
 
     def hotmap_from_template(self, result):
         matrix = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
-        cv.ConvertScale(cv.fromarray(result), matrix, scale = 255.0)
+        cv.ConvertScale(cv.fromarray(result), matrix, scale=255.0)
         return numpy.asarray(matrix)
 
     def clear(self):

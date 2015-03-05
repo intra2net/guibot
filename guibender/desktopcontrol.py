@@ -30,11 +30,12 @@ from settings import Settings
 
 import subprocess
 
+
 class DesktopControl:
     # Mouse buttons
-    LEFT_BUTTON=autopy.mouse.LEFT_BUTTON
-    RIGHT_BUTTON=autopy.mouse.RIGHT_BUTTON
-    CENTER_BUTTON=autopy.mouse.CENTER_BUTTON
+    LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
+    RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
+    CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
 
     def __init__(self):
         screen_size = autopy.screen.get_size()
@@ -62,7 +63,7 @@ class DesktopControl:
             height = region.get_height()
         else:
             xpos = 0
-            ypos =  0
+            ypos = 0
             width = self.width
             height = self.height
 
@@ -99,21 +100,21 @@ class DesktopControl:
         autopy_pos = autopy.mouse.get_pos()
         return Location(autopy_pos[0], autopy_pos[1])
 
-    def mouse_click(self, modifiers = None):
+    def mouse_click(self, modifiers=None):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         autopy.mouse.click()
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
-    def mouse_right_click(self, modifiers = None):
+    def mouse_right_click(self, modifiers=None):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         autopy.mouse.click(autopy.mouse.RIGHT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
-    def mouse_double_click(self, modifiers = None):
+    def mouse_double_click(self, modifiers=None):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         autopy.mouse.click()
@@ -171,7 +172,7 @@ class DesktopControl:
                     autopy.key.tap(char, KeyModifier.MOD_SHIFT)
                 else:
                     autopy.key.tap(char)
-            #autopy.key.type_string(text)
+            # autopy.key.type_string(text)
         elif Settings.os_name() in ["Linux", "linux"]:
             subprocess.call(['xdotool', 'type', text], shell=False)
         else:

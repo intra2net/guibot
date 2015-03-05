@@ -21,7 +21,9 @@ import common_test
 from desktopcontrol import DesktopControl
 from region import Region
 
+
 class DesktopControlTest(unittest.TestCase):
+
     def test_basic(self):
         desktop = DesktopControl()
 
@@ -39,9 +41,9 @@ class DesktopControlTest(unittest.TestCase):
         self.assertEquals(screen_height, captured.get_height())
 
         # Capture with coordiantes
-        captured = desktop.capture_screen(20, 10, screen_width/2, screen_height/2)
-        self.assertEquals(screen_width/2, captured.get_width())
-        self.assertEquals(screen_height/2, captured.get_height())
+        captured = desktop.capture_screen(20, 10, screen_width / 2, screen_height / 2)
+        self.assertEquals(screen_width / 2, captured.get_width())
+        self.assertEquals(screen_height / 2, captured.get_height())
 
         # Capture with Region
         region = Region(10, 10, 320, 200)

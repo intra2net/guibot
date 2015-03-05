@@ -13,7 +13,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
-import time, math
+import time
+import math
 
 from imagelogger import ImageLogger
 
@@ -22,6 +23,7 @@ log = logging.getLogger('guibender.calibrator')
 
 
 class Calibrator:
+
     """
     This class provides with a group of methods to facilitate and
     automate the selection of algorithms and parameters that are most
@@ -32,7 +34,7 @@ class Calibrator:
     """
 
     def benchmark(self, haystack, needle, imagefinder,
-                  calibration = True, refinements = 10):
+                  calibration=True, refinements=10):
         """
         Performs benchmarking on all available algorithms and returns a list of
         (method, success, coordinates, time) tuples sorted according to
@@ -82,8 +84,8 @@ class Calibrator:
                     method = key
                 log.debug("Testing %s with %s:", needle.filename, method)
 
-                imagefinder.eq.configure_backend(find_image = "template",
-                                                 template_match = key)
+                imagefinder.eq.configure_backend(find_image="template",
+                                                 template_match=key)
                 imagefinder.eq.p["find"]["nocolor"].value = gray
 
                 start_time = time.time()
@@ -93,8 +95,8 @@ class Calibrator:
                 results.append((method, similarity, location, total_time))
                 imagefinder.imglog.clear()
 
-        imagefinder.eq.configure_backend(find_image = old_config[0],
-                                         template_match = old_config[1])
+        imagefinder.eq.configure_backend(find_image=old_config[0],
+                                         template_match=old_config[1])
         imagefinder.eq.p["find"]["nocolor"].value = old_gray
 
         # test all feature matching methods
@@ -117,13 +119,13 @@ class Calibrator:
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     log.debug("Testing %s with %s:", needle.filename, method)
 
-                    imagefinder.eq.configure_backend(find_image = "feature",
-                                                     feature_detect = key_fd,
-                                                     feature_extract = key_fe,
-                                                     feature_match = key_fm)
+                    imagefinder.eq.configure_backend(find_image="feature",
+                                                     feature_detect=key_fd,
+                                                     feature_extract=key_fe,
+                                                     feature_match=key_fm)
                     if calibration:
                         self.calibrate(haystack, needle, imagefinder,
-                                       refinements = refinements)
+                                       refinements=refinements)
 
                     start_time = time.time()
                     imagefinder.find(needle, haystack)
@@ -133,15 +135,15 @@ class Calibrator:
                     imagefinder.imglog.clear()
 
         ImageLogger.accumulate_logging = False
-        imagefinder.eq.configure_backend(find_image = old_config[0],
-                                         feature_detect = old_config[1],
-                                         feature_extract = old_config[2],
-                                         feature_match = old_config[3])
+        imagefinder.eq.configure_backend(find_image=old_config[0],
+                                         feature_detect=old_config[1],
+                                         feature_extract=old_config[2],
+                                         feature_match=old_config[3])
         needle.match_settings.p["find"]["similarity"].value = old_similarity
-        return sorted(results, key = lambda x: x[1], reverse = True)
+        return sorted(results, key=lambda x: x[1], reverse=True)
 
     def calibrate(self, haystack, needle, imagefinder,
-                  refinements = 10, max_exec_time = 0.5):
+                  refinements=10, max_exec_time=0.5):
         """
         Calibrates the available parameters (the equalizer) of an image
         finder for a given needle and haystack.
@@ -247,7 +249,7 @@ class Calibrator:
                         intdelta = int(math.ceil((deltas[category][key])))
                         if param.range[1] != None:
                             param.value = min(start_value + intdelta,
-                                                              param.range[1])
+                                              param.range[1])
                         else:
                             param.value = start_value + intdelta
                     elif type(param.value == bool):

@@ -21,8 +21,10 @@ from PyQt4 import QtGui, QtCore
 
 app = QtGui.QApplication(sys.argv)
 
+
 class ImageWithLayout(QtGui.QWidget):
-    def __init__(self, filename, title = "show_picture", parent=None):
+
+    def __init__(self, filename, title="show_picture", parent=None):
         QtGui.QWidget.__init__(self, parent)
 
         self.setWindowTitle(title)
@@ -32,7 +34,7 @@ class ImageWithLayout(QtGui.QWidget):
 
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(image)
-        #vbox.setAlignment(QtCore.Qt.AlignTop)
+        # vbox.setAlignment(QtCore.Qt.AlignTop)
 
         hbox = QtGui.QHBoxLayout()
         hbox.addLayout(vbox)

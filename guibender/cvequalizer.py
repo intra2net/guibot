@@ -30,6 +30,7 @@ from settings import Settings
 
 
 class CVEqualizer:
+
     def __init__(self):
         """
         Initiates the CV equalizer with default algorithm configuration.
@@ -77,53 +78,53 @@ class CVEqualizer:
             but scaling for example is supported)
         """
         # currently fully compatible methods
-        self.algorithms = {"find_methods" : ("template", "feature", "hybrid"),
-                           "template_matchers" : ("autopy", "sqdiff", "ccorr",
-                                                  "ccoeff", "sqdiff_normed",
-                                                  "ccorr_normed", "ccoeff_normed"),
-                           "feature_matchers" : ("BruteForce", "BruteForce-L1",
-                                                 "BruteForce-Hamming",
-                                                 "BruteForce-Hamming(2)",
-                                                 "in-house-raw", "in-house-region"),
-                           "feature_detectors" : ("ORB", "FAST", "STAR", "GFTT",
-                                                  "HARRIS", "Dense", "oldSURF"),
-                           "feature_extractors" : ("ORB", "BRIEF", "FREAK")}
+        self.algorithms = {"find_methods": ("template", "feature", "hybrid"),
+                           "template_matchers": ("autopy", "sqdiff", "ccorr",
+                                                 "ccoeff", "sqdiff_normed",
+                                                 "ccorr_normed", "ccoeff_normed"),
+                           "feature_matchers": ("BruteForce", "BruteForce-L1",
+                                                "BruteForce-Hamming",
+                                                "BruteForce-Hamming(2)",
+                                                "in-house-raw", "in-house-region"),
+                           "feature_detectors": ("ORB", "FAST", "STAR", "GFTT",
+                                                 "HARRIS", "Dense", "oldSURF"),
+                           "feature_extractors": ("ORB", "BRIEF", "FREAK")}
 
         # parameters registry
-        self.p = {"find" : {}, "tmatch" : {}, "fextract" : {}, "fmatch" : {}, "fdetect" : {}}
+        self.p = {"find": {}, "tmatch": {}, "fextract": {}, "fmatch": {}, "fdetect": {}}
 
         # default algorithms
         self._current = {}
-        self.configure_backend(find_image = Settings.find_image_backend(),
-                               template_match = Settings.template_match_backend(),
-                               feature_detect = Settings.feature_detect_backend(),
-                               feature_extract = Settings.feature_extract_backend(),
-                               feature_match = Settings.feature_match_backend())
+        self.configure_backend(find_image=Settings.find_image_backend(),
+                               template_match=Settings.template_match_backend(),
+                               feature_detect=Settings.feature_detect_backend(),
+                               feature_extract=Settings.feature_extract_backend(),
+                               feature_match=Settings.feature_match_backend())
 
     def get_backend(self, category):
-        full_names = {"find" : "find_methods",
-                      "tmatch" : "template_matchers",
-                      "fdetect" : "feature_detectors",
-                      "fextract" : "feature_extractors",
-                      "fmatch" : "feature_matchers"}
+        full_names = {"find": "find_methods",
+                      "tmatch": "template_matchers",
+                      "fdetect": "feature_detectors",
+                      "fextract": "feature_extractors",
+                      "fmatch": "feature_matchers"}
         log.log(0, "%s %s", category, self._current[category])
         return self.algorithms[full_names[category]][self._current[category]]
 
     def set_backend(self, category, value):
-        full_names = {"find" : "find_methods",
-                      "tmatch" : "template_matchers",
-                      "fdetect" : "feature_detectors",
-                      "fextract" : "feature_extractors",
-                      "fmatch" : "feature_matchers"}
+        full_names = {"find": "find_methods",
+                      "tmatch": "template_matchers",
+                      "fdetect": "feature_detectors",
+                      "fextract": "feature_extractors",
+                      "fmatch": "feature_matchers"}
         if value not in self.algorithms[full_names[category]]:
             raise ImageFinderMethodError
         else:
             self._new_params(category, value)
             self._current[category] = self.algorithms[full_names[category]].index(value)
 
-    def configure_backend(self, find_image = None, template_match = None,
-                          feature_detect = None, feature_extract = None,
-                          feature_match = None):
+    def configure_backend(self, find_image=None, template_match=None,
+                          feature_detect=None, feature_extract=None,
+                          feature_match=None):
         """
         Change some or all of the algorithms used as backend for the
         image finder.
@@ -143,7 +144,7 @@ class CVEqualizer:
         if feature_match != None:
             log.log(0, "Setting backend for feature matching to %s", feature_match)
             self.set_backend("fmatch", feature_match)
- 
+
     def _new_params(self, category, new):
         """Update the parameters dictionary according to a new backend algorithm."""
         self.p[category] = {}
@@ -221,7 +222,7 @@ class CVEqualizer:
             if category in ("fdetect", "fextract") and param == "firstLevel":
                 self.p[category][param] = CVParameter(val, 0, 100)
             elif category in ("fdetect", "fextract") and param == "nFeatures":
-                self.p[category][param] = CVParameter(val, delta = 100)
+                self.p[category][param] = CVParameter(val, delta=100)
             elif category in ("fdetect", "fextract") and param == "WTA_K":
                 self.p[category][param] = CVParameter(val, 2, 4)
             elif category in ("fdetect", "fextract") and param == "scaleFactor":
@@ -239,7 +240,7 @@ class CVEqualizer:
         and matchers with the equalizer.
         """
         if (category == "find" or category == "tmatch" or
-            (category == "fdetect" and self.get_backend(category) == "oldSURF")):
+                (category == "fdetect" and self.get_backend(category) == "oldSURF")):
             return opencv_backend
         elif category == "fmatch":
             # no internal OpenCV parameters to sync with
@@ -298,7 +299,7 @@ class CVEqualizer:
 
         success = parser.read("%s.match" % filename_without_extention)
         # if no file is found throw an exception
-        if(len(success)==0):
+        if(len(success) == 0):
             raise IOError
 
         for category in self.p.keys():
@@ -314,7 +315,7 @@ class CVEqualizer:
                     log.log(0, "%s %s", param_string, param)
                     self.p[category][option] = param
 
-        #except (config.NoSectionError, config.NoOptionError, ValueError) as ex:
+        # except (config.NoSectionError, config.NoOptionError, ValueError) as ex:
         #    print("Could not read config file '%s': %s." % (filename, ex))
         #    print("Please change or remove the config file.")
 
@@ -339,12 +340,13 @@ class CVEqualizer:
 
 
 class CVParameter:
+
     """A class for a single parameter from the equalizer."""
 
     def __init__(self, value,
-                 min = None, max = None,
-                 delta = 1.0, tolerance = 0.1,
-                 fixed = True):
+                 min=None, max=None,
+                 delta=1.0, tolerance=0.1,
+                 fixed=True):
         self.value = value
         self.delta = delta
         self.tolerance = tolerance
@@ -373,7 +375,7 @@ class CVParameter:
     @staticmethod
     def from_string(repr):
         args = []
-        string_args = re.match("<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"\
+        string_args = re.match("<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
                                " delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
                                repr).group(1, 2, 3, 4, 5, 6)
         for arg in string_args:
