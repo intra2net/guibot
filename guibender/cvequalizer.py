@@ -299,7 +299,7 @@ class CVEqualizer:
 
         success = parser.read("%s.match" % filename_without_extention)
         # if no file is found throw an exception
-        if(len(success) == 0):
+        if len(success) == 0:
             raise IOError
 
         for category in self.p.keys():
@@ -327,7 +327,7 @@ class CVEqualizer:
 
         sections = self.p.keys()
         for section in sections:
-            if(not parser.has_section(section)):
+            if not parser.has_section(section):
                 parser.add_section(section)
             parser.set(section, 'backend', self.get_backend(section))
             for option in self.p[section]:
@@ -361,9 +361,9 @@ class CVParameter:
             self.tolerance = 0.9
 
         if min_val != None:
-            assert(value >= min_val)
+            assert value >= min_val
         if max_val != None:
-            assert(value <= max_val)
+            assert value <= max_val
         self.range = (min_val, max_val)
 
         self.fixed = fixed
@@ -375,8 +375,8 @@ class CVParameter:
     @staticmethod
     def from_string(raw):
         args = []
-        string_args = re.match("<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
-                               " delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
+        string_args = re.match(r"<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
+                               r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
                                raw).group(1, 2, 3, 4, 5, 6)
         for arg in string_args:
             if arg == "None":
@@ -385,9 +385,9 @@ class CVParameter:
                 arg = True
             elif arg == "False":
                 arg = False
-            elif re.match("\d+$", arg):
+            elif re.match(r"\d+$", arg):
                 arg = int(arg)
-            elif re.match("[\d.]+", arg):
+            elif re.match(r"[\d.]+", arg):
                 arg = float(arg)
             else:
                 raise ValueError

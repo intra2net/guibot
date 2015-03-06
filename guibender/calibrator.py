@@ -262,7 +262,7 @@ class Calibrator:
                     log.log(0, "+ %s d %s", params, deltas)
 
                     error = run_function(params)
-                    if(error < best_error):
+                    if error < best_error:
                         best_params = params
                         best_error = error
                         deltas[category][key] *= 1.1
@@ -288,7 +288,7 @@ class Calibrator:
                         log.log(0, "- %s d %s", params, deltas)
 
                         error = run_function(params)
-                        if(error < best_error):
+                        if error < best_error:
                             best_params = params
                             best_error = error
                             deltas[category][key] *= 1.1
@@ -302,7 +302,7 @@ class Calibrator:
         return (best_params, best_error)
 
     def _get_last_criteria(self, imagefinder, total_time):
-        assert(len(imagefinder.imglog.similarities) == len(imagefinder.imglog.locations))
+        assert len(imagefinder.imglog.similarities) == len(imagefinder.imglog.locations)
         if len(imagefinder.imglog.similarities) > 0:
             similarity = imagefinder.imglog.similarities[-1]
             location = imagefinder.imglog.locations[-1]

@@ -421,7 +421,7 @@ class Region(object):
         return self
 
     # TODO: cannot initiate list as a default argument
-    def press_at(self, image_or_location=None, keys=[]):
+    def press_at(self, image_or_location=None, keys=None):
         """
         This method types a single key or a list of such at
         a specified image or location.
@@ -436,6 +436,8 @@ class Region(object):
             log.info("Pressing key %s at %s", keys, image_or_location)
         else:
             key_strings = []
+            if keys is None:
+                keys = []
             for key in keys:
                 if isinstance(key, basestring):
                     if len(key) > 1:

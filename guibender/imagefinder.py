@@ -167,9 +167,9 @@ class ImageFinder:
             match_y1 = min(maxLoc[1] + int(0.5 * needle.height), len(result[0]))
 
             # log this only if performing deep internal debugging
-            log.log(0, "Wipe image matches in x [%s, %s]\[%s, %s]",
+            log.log(0, "Wipe image matches in x [%s, %s]/[%s, %s]",
                     match_x0, match_x1, 0, res_w)
-            log.log(0, "Wipe image matches in y [%s, %s]\[%s, %s]",
+            log.log(0, "Wipe image matches in y [%s, %s]/[%s, %s]",
                     match_y0, match_y1, 0, res_h)
 
             # clean found image to look for next safe distance match
@@ -191,7 +191,7 @@ class ImageFinder:
                     result[j][i] = 0.0
             log.log(0, "Total maxima up to the point are %i", len(maxima))
             log.log(0, "maxLoc was %s and is now %s", maxVal, result[maxLoc[1], maxLoc[0]])
-        log.debug("A total of %i matches found" % len(maxima))
+        log.debug("A total of %i matches found", len(maxima))
         self.imglog.log(30, "template")
 
         return maxima
@@ -648,12 +648,12 @@ class ImageFinder:
                     smooth_dist1 = m[0].distance + 0.0000001
                     smooth_dist2 = m[1].distance + 0.0000001
 
-                    if (smooth_dist1 / smooth_dist2 < self.eq.p["fmatch"]["ratioThreshold"].value):
+                    if smooth_dist1 / smooth_dist2 < self.eq.p["fmatch"]["ratioThreshold"].value:
                         matches2.append(m[0])
                 else:
                     matches2.append(m[0])
 
-            log.log(0, "Ratio test result is %i\%i", len(matches2), len(matches))
+            log.log(0, "Ratio test result is %i/%i", len(matches2), len(matches))
             return matches2
 
         def symmetry_test(nmatches, hmatches):
@@ -673,7 +673,7 @@ class ImageFinder:
                         matches2.append(m)
                         break
 
-            log.log(0, "Symmetry test result is %i\%i", len(matches2), len(matches))
+            log.log(0, "Symmetry test result is %i/%i", len(matches2), len(matches))
             return matches2
 
         # build matchers
@@ -755,7 +755,7 @@ class ImageFinder:
         @param mhkp: matched haystack keypoints
         """
         # check matches consistency
-        assert(len(mnkp) == len(mhkp))
+        assert len(mnkp) == len(mhkp)
 
         # the match coordinates to be returned
         locations_in_needle.append((0, 0))
@@ -992,7 +992,7 @@ class InHouseCV(ImageFinder):
                 # speed up using some heuristics
                 if j > 0:
                     # cheap assertion paid for with the speedup
-                    assert(variants[j].queryIdx == variants[j - 1].queryIdx)
+                    assert variants[j].queryIdx == variants[j - 1].queryIdx
                     if variants[j].trainIdx == variants[j - 1].trainIdx:
                         continue
                 log.log(0, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)

@@ -91,7 +91,7 @@ class GuiBenderProxy(GuiBender):
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).drag_drop(src_image_or_location,
-                                                              dst_image_or_location, modifiers))
+                                                                   dst_image_or_location, modifiers))
 
     def drag(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).drag(image_or_location, modifiers))
@@ -102,7 +102,7 @@ class GuiBenderProxy(GuiBender):
     def press(self, keys):
         return self._proxify(super(GuiBenderProxy, self).press(keys))
 
-    def press_at(self, image_or_location=None, keys=[]):
+    def press_at(self, image_or_location=None, keys=None):
         return self._proxify(super(GuiBenderProxy, self).press_at(image_or_location, keys))
 
     def type_text(self, text, modifiers=None):

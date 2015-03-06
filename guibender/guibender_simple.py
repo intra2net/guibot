@@ -69,7 +69,7 @@ def wait_vanish(image, timeout=30):
     return guibender.wait_vanish(image, timeout)
 
 
-def get_mouse_location(self):
+def get_mouse_location():
     return guibender.get_mouse_location()
 
 
@@ -113,7 +113,7 @@ def press(keys):
     return guibender.press(keys)
 
 
-def press_at(image_or_location=None, keys=[]):
+def press_at(image_or_location=None, keys=None):
     return guibender.press_at(image_or_location, keys)
 
 

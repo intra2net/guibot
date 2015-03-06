@@ -64,8 +64,7 @@ class Key:
 
     @staticmethod
     def to_string(key):
-        return {
-            Key.ENTER: "Enter",
+        return {Key.ENTER: "Enter",
                 # TAB
                 Key.ESC: "Esc",
                 Key.BACKSPACE: "Backspace",
@@ -95,12 +94,11 @@ class Key:
                 Key.DOWN: "Down",
                 Key.PAGE_DOWN: "Page Down",
                 Key.PAGE_UP: "Page Up",
-                Key.CAPS_LOCK: "Caps Lock",
                 # PRINTSCREEN
                 # PAUSE
                 # SCROLL_LOCK
                 # NUM_LOCK
-        }[key]
+                Key.CAPS_LOCK: "Caps Lock"}[key]
 
 
 class KeyModifier:
@@ -112,10 +110,8 @@ class KeyModifier:
 
     @staticmethod
     def to_string(key):
-        return {
-            KeyModifier.MOD_NONE: "None",
+        return {KeyModifier.MOD_NONE: "None",
                 KeyModifier.MOD_CTRL: "Ctrl",
                 KeyModifier.MOD_ALT: "Alt",
                 KeyModifier.MOD_SHIFT: "Shift",
-                KeyModifier.MOD_META: "Meta"
-        }[key]
+                KeyModifier.MOD_META: "Meta"}[key]
