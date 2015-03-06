@@ -38,13 +38,13 @@ class ImagePath:
         del ImagePath._imagePaths[:]
 
     def search(self, filename):
-        for dir in ImagePath._imagePaths:
-            fullname = os.path.join(dir, filename)
+        for directory in ImagePath._imagePaths:
+            fullname = os.path.join(directory, filename)
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .png extension
-            fullname = os.path.join(dir, filename + '.png')
+            fullname = os.path.join(directory, filename + '.png')
             if os.path.exists(fullname):
                 return fullname
 

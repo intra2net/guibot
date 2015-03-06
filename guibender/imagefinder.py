@@ -71,7 +71,7 @@ class ImageFinder:
         # other attributes
         self._bitmapcache = {}
 
-    def find(self, needle, haystack, all=False):
+    def find(self, needle, haystack, multiple=False):
         """
         Finds an image in another and returns a Location() object
         or None using the backend algorithms and parameters
@@ -79,6 +79,7 @@ class ImageFinder:
 
         @param haystack: an Image() to look in
         @param needle: an Image() to look for
+        @param multiple: retrieve all matches
         """
         self.imglog.needle = needle
         self.imglog.haystack = haystack
@@ -89,14 +90,14 @@ class ImageFinder:
             general_settings = self.eq
             self.eq = needle.match_settings
 
-        if self.eq.get_backend("find") == "template" and all:
+        if self.eq.get_backend("find") == "template" and multiple:
             matches = self._template_find_all(needle, haystack)
         elif self.eq.get_backend("find") == "template":
             matches = self._template_find(needle, haystack)
         elif self.eq.get_backend("find") == "feature":
             matches = self._feature_find(needle, haystack)
         elif self.eq.get_backend("find") == "hybrid":
-            matches = self._hybrid_find(needle, haystack, all)
+            matches = self._hybrid_find(needle, haystack, multiple)
         else:
             raise ImageFinderMethodError
 
@@ -138,7 +139,7 @@ class ImageFinder:
             minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
             # switch max and min for sqdiff and sqdiff_normed
             if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
-                # TODO: check whether _template_find_all would work properly for sqdiff
+                # TODO: check whether _template_find_all would work propemultiple for sqdiff
                 maxVal = 1 - minVal
                 maxLoc = minLoc
             log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
@@ -296,7 +297,7 @@ class ImageFinder:
         return self._project_features(frame_points, ngray, hgray,
                                       similarity, hcanvas)
 
-    def _hybrid_find(self, needle, haystack, all=False):
+    def _hybrid_find(self, needle, haystack, multiple=False):
         """
         Use template matching to deal with feature dense regions
         and guide a final feature matching.
@@ -389,7 +390,7 @@ class ImageFinder:
                 self.imglog.similarities.append(self.imglog.similarities[len(template_maxima)])
                 self.imglog.locations.append(self.imglog.locations[len(template_maxima)])
             self.imglog.log(30, "hybrid")
-            if all:
+            if multiple:
                 return []
             else:
                 return None
@@ -400,7 +401,7 @@ class ImageFinder:
         self.imglog.hotmaps.append(hcanvas)
         self.imglog.similarities.append(best_acceptable[1])
         self.imglog.locations.append(best_acceptable[2])
-        if all:
+        if multiple:
             locations = []
             for maximum in feature_maxima:
                 locations.append(Location(*maximum[2]))

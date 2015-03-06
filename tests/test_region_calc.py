@@ -78,13 +78,13 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(120, region.get_width())
         self.assertEqual(110, region.get_height())
 
-        region = Region(200, 100, 20, 10).nearby(range=80000)
+        region = Region(200, 100, 20, 10).nearby(rrange=80000)
         self.assertEqual(0, region.get_x())
         self.assertEqual(0, region.get_y())
         self.assertEqual(screen_width, region.get_width())
         self.assertEqual(screen_height, region.get_height())
 
-        region = Region(200, 100, 20, 10).nearby(range=0)
+        region = Region(200, 100, 20, 10).nearby(rrange=0)
         self.assertEqual(200, region.get_x())
         self.assertEqual(100, region.get_y())
         self.assertEqual(20, region.get_width())
@@ -95,28 +95,28 @@ class RegionTest(unittest.TestCase):
         screen_height = DesktopControl().get_height()
 
         # clip upper side
-        region = Region(200, 100, 20, 10).nearby(range=150)
+        region = Region(200, 100, 20, 10).nearby(rrange=150)
         self.assertEqual(50, region.get_x())
         self.assertEqual(0, region.get_y())
         self.assertEqual(320, region.get_width())
         self.assertEqual(260, region.get_height())
 
         # clip lower side
-        region = Region(200, screen_height - 30, 20, 10).nearby(range=50)
+        region = Region(200, screen_height - 30, 20, 10).nearby(rrange=50)
         self.assertEqual(150, region.get_x())
         self.assertEqual(screen_height - 30 - 50, region.get_y())
         self.assertEqual(120, region.get_width())
         self.assertEqual(80, region.get_height())
 
         # clip left side
-        region = Region(20, 100, 30, 10).nearby(range=50)
+        region = Region(20, 100, 30, 10).nearby(rrange=50)
         self.assertEqual(0, region.get_x())
         self.assertEqual(50, region.get_y())
         self.assertEqual(100, region.get_width())
         self.assertEqual(110, region.get_height())
 
         # clip right side
-        region = Region(screen_width - 30, 100, 20, 10).nearby(range=50)
+        region = Region(screen_width - 30, 100, 20, 10).nearby(rrange=50)
         self.assertEqual(screen_width - 30 - 50, region.get_x())
         self.assertEqual(50, region.get_y())
         self.assertEqual(80, region.get_width())

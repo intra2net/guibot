@@ -344,7 +344,7 @@ class CVParameter:
     """A class for a single parameter from the equalizer."""
 
     def __init__(self, value,
-                 min=None, max=None,
+                 min_val=None, max_val=None,
                  delta=1.0, tolerance=0.1,
                  fixed=True):
         self.value = value
@@ -360,11 +360,11 @@ class CVParameter:
             self.delta = 1
             self.tolerance = 0.9
 
-        if min != None:
-            assert(value >= min)
-        if max != None:
-            assert(value <= max)
-        self.range = (min, max)
+        if min_val != None:
+            assert(value >= min_val)
+        if max_val != None:
+            assert(value <= max_val)
+        self.range = (min_val, max_val)
 
         self.fixed = fixed
 
@@ -373,11 +373,11 @@ class CVParameter:
                 % (self.value, self.range[0], self.range[1], self.delta, self.tolerance, self.fixed))
 
     @staticmethod
-    def from_string(repr):
+    def from_string(raw):
         args = []
         string_args = re.match("<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
                                " delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
-                               repr).group(1, 2, 3, 4, 5, 6)
+                               raw).group(1, 2, 3, 4, 5, 6)
         for arg in string_args:
             if arg == "None":
                 arg = None

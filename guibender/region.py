@@ -109,29 +109,29 @@ class Region(object):
     def get_bottom_right(self):
         return Location(self.xpos + self.width, self.ypos + self.height)
 
-    def nearby(self, range=50):
+    def nearby(self, rrange=50):
         log.debug("Checking nearby the current region")
-        new_xpos = self.xpos - range
+        new_xpos = self.xpos - rrange
         if new_xpos < 0:
             new_xpos = 0
 
-        new_ypos = self.ypos - range
+        new_ypos = self.ypos - rrange
         if new_ypos < 0:
             new_ypos = 0
 
-        new_width = self.width + range + self.xpos - new_xpos
-        new_height = self.height + range + self.ypos - new_ypos
+        new_width = self.width + rrange + self.xpos - new_xpos
+        new_height = self.height + rrange + self.ypos - new_ypos
 
         # Final clipping is done in the Region constructor
         return Region(new_xpos, new_ypos, new_width, new_height)
 
-    def above(self, range=0):
+    def above(self, rrange=0):
         log.debug("Checking above the current region")
-        if range == 0:
+        if rrange == 0:
             new_ypos = 0
             new_height = self.ypos + self.height
         else:
-            new_ypos = self.ypos - range
+            new_ypos = self.ypos - rrange
             if new_ypos < 0:
                 new_ypos = 0
 
@@ -140,23 +140,23 @@ class Region(object):
         # Final clipping is done in the Region constructor
         return Region(self.xpos, new_ypos, self.width, new_height)
 
-    def below(self, range=0):
+    def below(self, rrange=0):
         log.debug("Checking below the current region")
-        if range == 0:
-            range = self.desktop.get_height()
+        if rrange == 0:
+            rrange = self.desktop.get_height()
 
-        new_height = self.height + range
+        new_height = self.height + rrange
 
         # Final clipping is done in the Region constructor
         return Region(self.xpos, self.ypos, self.width, new_height)
 
-    def left(self, range=0):
+    def left(self, rrange=0):
         log.debug("Checking left of the current region")
-        if range == 0:
+        if rrange == 0:
             new_xpos = 0
             new_width = self.xpos + self.width
         else:
-            new_xpos = self.xpos - range
+            new_xpos = self.xpos - rrange
             if new_xpos < 0:
                 new_xpos = 0
 
@@ -165,12 +165,12 @@ class Region(object):
         # Final clipping is done in the Region constructor
         return Region(new_xpos, self.ypos, new_width, self.height)
 
-    def right(self, range=0):
+    def right(self, rrange=0):
         log.debug("Checking right of the current region")
-        if range == 0:
-            range = self.desktop.get_width()
+        if rrange == 0:
+            rrange = self.desktop.get_width()
 
-        new_width = self.width + range
+        new_width = self.width + rrange
 
         # Final clipping is done in the Region constructor
         return Region(self.xpos, self.ypos, new_width, self.height)
@@ -230,7 +230,7 @@ class Region(object):
         while True:
             screen_capture = self.desktop.capture_screen(self)
 
-            found_pics = self.imagefinder.find(image, screen_capture, all=True)
+            found_pics = self.imagefinder.find(image, screen_capture, multiple=True)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
