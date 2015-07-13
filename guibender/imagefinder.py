@@ -129,6 +129,10 @@ class ImageFinder:
         log.debug("Performing opencv-%s multiple template matching %s color",
                   match_template, "without" if no_color else "with")
         result = self._match_template(needle, haystack, no_color, match_template)
+        if result is None:
+            log.debug('_match_template() returned no result.')
+            return []
+
         universal_hotmap = self.imglog.hotmap_from_template(result)
 
         # extract maxima once for each needle size region
