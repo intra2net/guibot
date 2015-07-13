@@ -26,7 +26,9 @@ class Image:
 
     _cache = {}
 
-    def __init__(self, image_filename=None, pil_image=None, match_settings=None):
+    def __init__(self, image_filename=None,
+                 pil_image=None, match_settings=None,
+                 use_cache=True):
         self._filename = image_filename
         self.match_settings = match_settings
         self._pil_image = pil_image
@@ -44,12 +46,13 @@ class Image:
                 self.filename = ImagePath().search(self.filename)
 
             if pil_image is None:
-                if self.filename in self._cache:
+                if use_cache and self.filename in self._cache:
                     self._pil_image = self._cache[self.filename]
                 else:
                     # load and cache image
                     self._pil_image = PIL.Image.open(self.filename).convert('RGB')
-                    self._cache[self.filename] = self._pil_image
+                    if use_cache:
+                        self._cache[self.filename] = self._pil_image
             if match_settings is None:
                 match_file = self.filename[:-4] + ".match"
                 # print match_file, self.filename
