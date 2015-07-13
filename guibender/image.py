@@ -46,6 +46,7 @@ class Image:
                 self.filename = ImagePath().search(self.filename)
 
             if pil_image is None:
+                # TODO: check if mtime of the file changed -> cache dirty?
                 if use_cache and self.filename in self._cache:
                     self._pil_image = self._cache[self.filename]
                 else:
