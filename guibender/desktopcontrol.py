@@ -84,6 +84,13 @@ class DesktopControl:
             # we are merely using the name of the file so close it
             # in order to avoid blocking from writing (e.g. on Windows)
             f.close()
+            # BUG: autopy screen capture on Windows must use negative coordinates,
+            # but it doesn't and as a result any normal attempt to capture a subregion
+            # will fall outside of the screen (be black) - it also blocks us trying to
+            # use negative coordinates screaming that we are outside of the screen while
+            # thinking that the coordinates are positive - this was already registered
+            # as a bug on autopy's GitHub page but no progress has been made since that
+            # -> https://github.com/msanders/autopy/issues/32
             autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
             autopy_bmp.save(f.name)
 
