@@ -42,6 +42,7 @@ SECONDARY
 - match on still haystack as a wait to wait for some events to finish
 - is idle() necessary?
 - pressing multiple times the same key does not work
+- add documentation everywhere (sample() and all simple methods as well)
 
 DETECTED BUGS:
 --------------------------------------
