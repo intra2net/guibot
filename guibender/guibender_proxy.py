@@ -54,7 +54,11 @@ class GuiBenderProxy(GuiBender):
         return self._proxify(super(GuiBenderProxy, self).find(image, timeout))
 
     def find_all(self, image, timeout=10, allow_zero=False):
-        return self._proxify(super(GuiBenderProxy, self).find_all(image, timeout, allow_zero))
+        matches = super(GuiBenderProxy, self).find_all(image, timeout, allow_zero)
+        proxified = []
+        for match in matches:
+            proxified.append(self._proxify(match))
+        return proxified
 
     def sample(self, image):
         return self._proxify(super(GuiBenderProxy, self).sample(image))
