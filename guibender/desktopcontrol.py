@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
+import os
 import time
 
 import autopy.screen
@@ -81,9 +82,10 @@ class DesktopControl:
         # is a base64 encoded, zlib compressed stream.
         # Ask autopy author about a get_raw() method.
         with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-            # we are merely using the name of the file so close it
-            # in order to avoid blocking from writing (e.g. on Windows)
+            # the file can be open twice on unix but only once on windows so close
+            # it to avoid this difference (and remove it manually afterwards)
             f.close()
+
             # BUG: autopy screen capture on Windows must use negative coordinates,
             # but it doesn't and as a result any normal attempt to capture a subregion
             # will fall outside of the screen (be black) - it also blocks us trying to
@@ -95,6 +97,7 @@ class DesktopControl:
             autopy_bmp.save(f.name)
 
             pil_image = PIL.Image.open(f.name).convert('RGB')
+            os.unlink(f.name)
             return Image(None, pil_image)
 
     def mouse_move(self, location):
