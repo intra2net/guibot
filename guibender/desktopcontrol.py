@@ -16,10 +16,6 @@
 import os
 import time
 
-import autopy.screen
-import autopy.mouse
-import autopy.key
-
 import PIL.Image
 from tempfile import NamedTemporaryFile
 
@@ -28,18 +24,36 @@ from location import Location
 from key import KeyModifier
 from settings import Settings
 
-import subprocess
-
-# TODO: implement more backends!
-
-class DesktopControl:
+BACKEND = Settings.desktop_control_backend()
+if BACKEND in ["autopy-win", "autopy-nix"]:
+    import autopy.screen
+    import autopy.mouse
+    import autopy.key
+    if BACKEND == "autopy-nix":
+        import subprocess
+    # TODO: define for the other backends as well
     # Mouse buttons
     LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
     RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
     CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
+elif BACKEND == "qemu":
+    monitor = None # TODO: set externally?
+elif BACKEND == "vncdotool":
+    from vncdotool import api
+    # TODO: host and display!
+    client = api.connect('vnchost:display')
+
+class DesktopControl:
 
     def __init__(self):
-        screen_size = autopy.screen.get_size()
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            screen_size = autopy.screen.get_size()
+        elif BACKEND == "qemu":
+            # TODO: figure this out
+            raise NotImplementedError
+        elif BACKEND == "vncdotool":
+            # TODO: figure this out
+            raise NotImplementedError
 
         self.width = screen_size[0]
         self.height = screen_size[1]
@@ -79,74 +93,156 @@ class DesktopControl:
         if ypos + height > self.height:
             height = self.height - ypos
 
-        # TODO: Switch to in-memory conversion. toString()
-        # is a base64 encoded, zlib compressed stream.
-        # Ask autopy author about a get_raw() method.
-        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-            # the file can be open twice on unix but only once on windows so close
-            # it to avoid this difference (and remove it manually afterwards)
-            f.close()
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            # TODO: Switch to in-memory conversion. toString()
+            # is a base64 encoded, zlib compressed stream.
+            # Ask autopy author about a get_raw() method.
+            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+                # the file can be open twice on unix but only once on windows so close
+                # it to avoid this difference (and remove it manually afterwards)
+                f.close()
 
-            # BUG: autopy screen capture on Windows must use negative coordinates,
-            # but it doesn't and as a result any normal attempt to capture a subregion
-            # will fall outside of the screen (be black) - it also blocks us trying to
-            # use negative coordinates screaming that we are outside of the screen while
-            # thinking that the coordinates are positive - this was already registered
-            # as a bug on autopy's GitHub page but no progress has been made since that
-            # -> https://github.com/msanders/autopy/issues/32
-            autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
-            autopy_bmp.save(f.name)
+                # BUG: autopy screen capture on Windows must use negative coordinates,
+                # but it doesn't and as a result any normal attempt to capture a subregion
+                # will fall outside of the screen (be black) - it also blocks us trying to
+                # use negative coordinates screaming that we are outside of the screen while
+                # thinking that the coordinates are positive - this was already registered
+                # as a bug on autopy's GitHub page but no progress has been made since that
+                # -> https://github.com/msanders/autopy/issues/32
+                autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
+                autopy_bmp.save(f.name)
 
-            pil_image = PIL.Image.open(f.name).convert('RGB')
-            os.unlink(f.name)
-            return Image(None, pil_image)
+                pil_image = PIL.Image.open(f.name).convert('RGB')
+                os.unlink(f.name)
+                return Image(None, pil_image)
+        elif BACKEND == "qemu":
+            # TODO: capture subregion?
+            return monitor.screendump('screenshot.png')
+        elif BACKEND == "vncdotool":
+            return client.captureRegion(xpos, ypos, width, height)
 
-    def mouse_move(self, location):
-        # Note: Sometimes this is not pixel perfect.
-        # Need to investigate the autopy source later on
-        autopy.mouse.smooth_move(location.get_x(), location.get_y())
+    def mouse_move(self, location, smooth=True):
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            # TODO: sometimes this is not pixel perfect, i.e.
+            # need to investigate the autopy source later on
+            if smooth:
+                autopy.mouse.smooth_move(location.get_x(), location.get_y())
+            else:
+                autopy.mouse.move(location.get_x(), location.get_y())
+        elif BACKEND == "qemu":
+            if smooth:
+                # TODO: does such thing exist?
+                raise NotImplementedError
+            else:
+                # TODO: test since this might be (dx,dy) instead of (x,y)
+                monitor.mouse_move(location.get_x(), location.get_y())
+        elif BACKEND == "vncdotool":
+            if smooth:
+                client.mouseDrag(location.get_x(), location.get_y(), step=30)
+            else:
+                client.mouseMove(location.get_x(), location.get_y())
 
     def get_mouse_location(self):
-        autopy_pos = autopy.mouse.get_pos()
-        return Location(autopy_pos[0], autopy_pos[1])
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            pos = autopy.mouse.get_pos()
+        elif BACKEND == "qemu":
+            # TODO: figure this out
+            raise NotImplementedError
+        elif BACKEND == "vncdotool":
+            # TODO: figure this out
+            raise NotImplementedError
+        return Location(pos[0], pos[1])
 
     def mouse_click(self, modifiers=None):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
-        autopy.mouse.click()
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            autopy.mouse.click()
+        elif BACKEND == "qemu":
+            # TODO: figure out what 'state' is
+            monitor.mouse_button(state)
+        elif BACKEND == "vncdotool":
+            # TODO: figure out the button format
+            client.mousePress(button)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
     def mouse_right_click(self, modifiers=None):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
-        autopy.mouse.click(autopy.mouse.RIGHT_BUTTON)
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            autopy.mouse.click(autopy.mouse.RIGHT_BUTTON)
+        elif BACKEND == "qemu":
+            # TODO: figure out what 'state' is
+            monitor.mouse_button(state)
+        elif BACKEND == "vncdotool":
+            # TODO: figure out the button format
+            client.mousePress(button)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
     def mouse_double_click(self, modifiers=None):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
-        autopy.mouse.click()
-        # TODO: Make double click speed configurable
-        time.sleep(0.1)
-        autopy.mouse.click()
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            autopy.mouse.click()
+            # TODO: Make double click speed configurable
+            time.sleep(0.1)
+            autopy.mouse.click()
+        elif BACKEND == "qemu":
+            # TODO: figure out what 'state' is
+            monitor.mouse_button(state)
+            # TODO: Make double click speed configurable
+            time.sleep(0.1)
+            monitor.mouse_button(state)
+        elif BACKEND == "vncdotool":
+            # TODO: figure out the button format
+            client.mousePress(button)
+            # TODO: Make double click speed configurable
+            time.sleep(0.1)
+            client.mousePress(button)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button=LEFT_BUTTON):
-        autopy.mouse.toggle(True, button)
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            autopy.mouse.toggle(True, button)
+        elif BACKEND == "qemu":
+            # TODO: figure out what 'state' is
+            monitor.mouse_button(state)
+        elif BACKEND == "vncdotool":
+            # TODO: figure out the button format
+            client.mouseDown(button)
 
     def mouse_up(self, button=LEFT_BUTTON):
-        autopy.mouse.toggle(False, button)
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            autopy.mouse.toggle(False, button)
+        elif BACKEND == "qemu":
+            # TODO: figure out what 'state' is
+            monitor.mouse_button(state)
+        elif BACKEND == "vncdotool":
+            # TODO: figure out the button format
+            client.mouseUp(button)
+
+    def key_toggle(self, key, up_down):
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            autopy.key.toggle(keys, up_down)
+        elif BACKEND == "qemu":
+            # TODO: test and handle longer hold
+            monitor.sendkey(key, hold_time=1)
+        elif BACKEND == "vncdotool":
+            if up_down:
+                client.keyUp(key)
+            else:
+                client.keyDown(key)
 
     def keys_toggle(self, keys, up_down):
         try:
             # Support lists
             for key in keys:
-                autopy.key.toggle(key, up_down)
+                self.key_toggle(key, up_down)
         except:
-            autopy.key.toggle(keys, up_down)
+            self.key_toggle(key, up_down)
 
     def keys_press(self, keys):
         self.keys_toggle(keys, True)
@@ -173,7 +269,7 @@ class DesktopControl:
     def _type_string_wrapper(self, text):
         # TODO: Fix autopy to handle international chars and other stuff so
         # that both the Linux and Windows version are reduced to autopy.key
-        if Settings.desktop_control_backend() == "autopy-win":
+        if BACKEND == "autopy-win":
             for char in str(text):
                 if char in ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
                             "{", "}", ":", "\"", "|", "<", ">", "?"]:
@@ -183,8 +279,13 @@ class DesktopControl:
                 else:
                     autopy.key.tap(char)
             # autopy.key.type_string(text)
-        elif Settings.desktop_control_backend() == "autopy-nix":
+        elif BACKEND == "autopy-nix":
             # HACK: use xdotool to handle various character encoding
             subprocess.call(['xdotool', 'type', text], shell=False)
-        else:
-            raise ValueError("Unrecognized operating system - must be one of 'windows', 'linux'.")
+        elif BACKEND == "qemu":
+            for char in str(text):
+                monitor.sendkey(char, hold_time=1)
+        elif BACKEND == "vncdotool":
+            for char in str(text):
+                client.keyPress(char)
+            # TODO: try client.type(text)
