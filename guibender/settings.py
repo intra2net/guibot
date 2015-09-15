@@ -28,7 +28,8 @@ class Settings:
     _image_logging_destination = "."
     _image_logging_step_width = 3
 
-    # cvequalizer backends shared between all instances
+    # backends shared between all instances
+    _desktop_control_backend = "autopy"
     _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
@@ -100,10 +101,43 @@ class Settings:
         else:
             Settings._image_logging_step_width = width
 
+    @staticmethod
+    def desktop_control_backend(name=None):
+        """
+        Possible backends:
+           - autopy - Windows and Linux compatible with both the GUI actions and
+                      their calls executed on the same machine.
+           - qemu - guest OS independent with GUI actions on a virtual machine
+                    through Qemu Monitor object (provided by Autotest) and
+                    their calls on the host machine.
+           - vncdotool - guest OS independent or Linux remote OS with GUI
+                         actions on a remote machine through vnc and their
+                         calls on a vnc client machine.
+
+        Warning: To use a particular backend you need to satisfy its dependencies,
+        i.e. the backend has to be installed or you will have unsatisfied imports.
+        """
+        if name == None:
+            return Settings._desktop_control_backend
+        else:
+            Settings._desktop_control_backend = name
+
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
     @staticmethod
     def find_image_backend(name=None):
+        """
+        Possible backends:
+            - template - template matching using correlation coefficients,
+                         square difference or the default autopy matching.
+            - feature - feature matching using a mixture of feature detection,
+                        extraction and matching algorithms.
+            - hybrid - a mixture of template and feature matching where the
+                       first is used as necessary and the second as sufficient stage.
+
+        Warning: To use a particular backend you need to satisfy its dependencies,
+        i.e. the backend has to be installed or you will have unsatisfied imports.
+        """
         if name == None:
             return Settings._find_image_backend
         else:

@@ -30,6 +30,7 @@ from settings import Settings
 
 import subprocess
 
+# TODO: implement more backends!
 
 class DesktopControl:
     # Mouse buttons

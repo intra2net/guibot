@@ -13,10 +13,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
-#
-#
-# Use module instead of the GuiBender object (simple, procedural API),
-# creating the GuiBender object internally.
+
+
+# Frontend with simple procedural API allowing the use of a module instead of
+# the GuiBender object (creating and running the GuiBender object internally).
 
 from guibender import GuiBender
 
