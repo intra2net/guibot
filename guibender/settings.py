@@ -134,6 +134,8 @@ class Settings:
         if name == None:
             return Settings._desktop_control_backend
         else:
+            if name not in ["autopy-win", "autopy-nix", "qemu", "vncdotool"]:
+                raise ValueError("Unsupported backend for GUI actions '%s'" % name)
             Settings._desktop_control_backend = name
 
     # these methods do not check for valid values since this
