@@ -22,10 +22,6 @@ import unittest
 import shutil
 import logging
 
-import cv
-import cv2
-from tempfile import NamedTemporaryFile
-
 from guibender.settings import Settings
 from guibender.imagefinder import ImageFinder
 from guibender.imagelogger import ImageLogger

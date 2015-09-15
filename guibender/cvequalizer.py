@@ -23,6 +23,7 @@ except ImportError:
 import logging
 log = logging.getLogger('guibender.cvequalizer')
 
+# TODO: make this OpenCV independent with the rest
 import cv2
 
 from errors import *
