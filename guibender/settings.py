@@ -118,9 +118,9 @@ class Settings:
     def desktop_control_backend(name=None):
         """
         Possible backends:
-           - autopy-win, autopy-nix - Windows and Linux compatible with both
-                                      the GUI actions and their calls executed
-                                      on the same machine.
+           - autopy-win, autopy-nix - Windows, Linux (and OS X) compatible with
+                                      both the GUI actions and their calls
+                                      executed on the same machine.
            - qemu - guest OS independent with GUI actions on a virtual machine
                     through Qemu Monitor object (provided by Autotest) and
                     their calls on the host machine.
