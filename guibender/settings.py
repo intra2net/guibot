@@ -18,7 +18,6 @@ import logging
 
 class Settings:
     # operational parameters shared between all instances
-    _os_name = "Linux"
     _drag_delay = 0.5
     _drop_delay = 0.5
     _keys_delay = 0.2
@@ -29,22 +28,12 @@ class Settings:
     _image_logging_step_width = 3
 
     # backends shared between all instances
-    _desktop_control_backend = "autopy"
+    _desktop_control_backend = "autopy-nix"
     _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "BRIEF"
     _feature_match_backend = "BruteForce-Hamming"
-
-    @staticmethod
-    def os_name(name=None):
-        """
-        Possible values: Windows, Linux.
-        """
-        if name == None:
-            return Settings._os_name
-        else:
-            Settings._os_name = name
 
     @staticmethod
     def delay_after_drag(delay=None):
@@ -129,8 +118,9 @@ class Settings:
     def desktop_control_backend(name=None):
         """
         Possible backends:
-           - autopy - Windows and Linux compatible with both the GUI actions and
-                      their calls executed on the same machine.
+           - autopy-win, autopy-nix - Windows and Linux compatible with both
+                                      the GUI actions and their calls executed
+                                      on the same machine.
            - qemu - guest OS independent with GUI actions on a virtual machine
                     through Qemu Monitor object (provided by Autotest) and
                     their calls on the host machine.

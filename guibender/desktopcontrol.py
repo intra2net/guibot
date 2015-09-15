@@ -157,23 +157,23 @@ class DesktopControl:
             self.keys_toggle(modifiers, True)
 
         if isinstance(text, basestring) or isinstance(text, str):
-            self._autopy_type_string_wrapper(text)
+            self._type_string_wrapper(text)
             return
 
         # Support list of something
         for subtext in text:
             if isinstance(subtext, basestring) or isinstance(subtext, str):
-                self._autopy_type_string_wrapper(subtext)
+                self._type_string_wrapper(subtext)
             else:
                 autopy.key.tap(subtext)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
-    def _autopy_type_string_wrapper(self, text):
+    def _type_string_wrapper(self, text):
         # TODO: Fix autopy to handle international chars and other stuff so
         # that both the Linux and Windows version are reduced to autopy.key
-        if Settings.os_name() in ["Windows", "windows"]:
+        if Settings.desktop_control_backend() == "autopy-win":
             for char in str(text):
                 if char in ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
                             "{", "}", ":", "\"", "|", "<", ">", "?"]:
@@ -183,7 +183,8 @@ class DesktopControl:
                 else:
                     autopy.key.tap(char)
             # autopy.key.type_string(text)
-        elif Settings.os_name() in ["Linux", "linux"]:
+        elif Settings.desktop_control_backend() == "autopy-nix":
+            # HACK: use xdotool to handle various character encoding
             subprocess.call(['xdotool', 'type', text], shell=False)
         else:
             raise ValueError("Unrecognized operating system - must be one of 'windows', 'linux'.")
