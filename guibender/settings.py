@@ -18,6 +18,7 @@ import logging
 
 class Settings:
     # operational parameters shared between all instances
+    _click_delay = 0.1
     _drag_delay = 0.5
     _drop_delay = 0.5
     _keys_delay = 0.2
@@ -34,6 +35,14 @@ class Settings:
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "BRIEF"
     _feature_match_backend = "BruteForce-Hamming"
+
+    @staticmethod
+    def click_delay(delay=None):
+        """Timeout before mouse click."""
+        if delay == None:
+            return Settings._click_delay
+        else:
+            Settings._click_delay = delay
 
     @staticmethod
     def delay_after_drag(delay=None):

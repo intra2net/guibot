@@ -173,22 +173,20 @@ class DesktopControl:
             self.keys_toggle(modifiers, False)
 
     def mouse_double_click(self, modifiers=None):
+        timeout = Settings.click_delay()
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if BACKEND in ["autopy-win", "autopy-nix"]:
             autopy.mouse.click(MouseButton.LEFT_BUTTON)
-            # TODO: Make double click speed configurable
-            time.sleep(0.1)
+            time.sleep(timeout)
             autopy.mouse.click(MouseButton.LEFT_BUTTON)
         elif BACKEND == "qemu":
             monitor.mouse_button(MouseButton.LEFT_BUTTON)
-            # TODO: Make double click speed configurable
-            time.sleep(0.1)
+            time.sleep(timeout)
             monitor.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
             client.mousePress(MouseButton.LEFT_BUTTON)
-            # TODO: Make double click speed configurable
-            time.sleep(0.1)
+            time.sleep(timeout)
             client.mousePress(MouseButton.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
