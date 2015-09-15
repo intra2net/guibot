@@ -19,7 +19,7 @@ import os
 # interconnected classes - import only their modules
 # to avoid circular reference
 from desktopcontrol import DesktopControl
-from key import Key
+from key import Key, MouseButton
 from errors import *
 from settings import Settings
 from location import Location
@@ -33,9 +33,9 @@ log = logging.getLogger('guibender.region')
 
 class Region(object):
     # Mouse buttons
-    LEFT_BUTTON = DesktopControl.LEFT_BUTTON
-    RIGHT_BUTTON = DesktopControl.RIGHT_BUTTON
-    CENTER_BUTTON = DesktopControl.CENTER_BUTTON
+    LEFT_BUTTON = MouseButton.LEFT_BUTTON
+    RIGHT_BUTTON = MouseButton.RIGHT_BUTTON
+    CENTER_BUTTON = MouseButton.CENTER_BUTTON
 
     def __init__(self, xpos=0, ypos=0, width=0, height=0):
         self.desktop = DesktopControl()

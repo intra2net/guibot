@@ -373,3 +373,26 @@ class KeyModifier:
                 KeyModifier.MOD_ALT: "Alt",
                 KeyModifier.MOD_SHIFT: "Shift",
                 KeyModifier.MOD_META: "Meta"}[key]
+
+class MouseButton:
+
+    if BACKEND in ["autopy-win", "autopy-nix"]:
+        LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
+        RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
+        CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
+    elif BACKEND == "qemu":
+        # TODO: check if 1=left, 2=middle, 4=right as described in the scarce documentation
+        LEFT_BUTTON = 0
+        RIGHT_BUTTON = 2
+        CENTER_BUTTON = 4
+    elif BACKEND == "vncdotool":
+        # TODO: check if 1=left, 2=middle, 4=right or 3=right?
+        LEFT_BUTTON = 1
+        RIGHT_BUTTON = 2
+        CENTER_BUTTON = 3
+
+    @staticmethod
+    def to_string(key):
+        return {MouseButton.LEFT_BUTTON: "MouseLeft",
+                MouseButton.RIGHT_BUTTON: "MouseRight",
+                MouseButton.CENTER_BUTTON: "MouseCenter"}[key]

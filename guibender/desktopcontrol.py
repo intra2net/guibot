@@ -21,7 +21,7 @@ from tempfile import NamedTemporaryFile
 
 from image import Image
 from location import Location
-from key import KeyModifier
+from key import KeyModifier, MouseButton
 from settings import Settings
 
 BACKEND = Settings.desktop_control_backend()
@@ -31,11 +31,6 @@ if BACKEND in ["autopy-win", "autopy-nix"]:
     import autopy.key
     if BACKEND == "autopy-nix":
         import subprocess
-    # TODO: define for the other backends as well
-    # Mouse buttons
-    LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
-    RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
-    CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
 elif BACKEND == "qemu":
     monitor = None # TODO: set externally?
 elif BACKEND == "vncdotool":
@@ -157,13 +152,11 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.click()
+            autopy.mouse.click(MouseButton.LEFT_BUTTON)
         elif BACKEND == "qemu":
-            # TODO: figure out what 'state' is
-            monitor.mouse_button(state)
+            monitor.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
-            # TODO: figure out the button format
-            client.mousePress(button)
+            client.mousePress(MouseButton.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -171,13 +164,11 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.click(autopy.mouse.RIGHT_BUTTON)
+            autopy.mouse.click(MouseButton.RIGHT_BUTTON)
         elif BACKEND == "qemu":
-            # TODO: figure out what 'state' is
-            monitor.mouse_button(state)
+            monitor.mouse_button(MouseButton.RIGHT_BUTTON)
         elif BACKEND == "vncdotool":
-            # TODO: figure out the button format
-            client.mousePress(button)
+            client.mousePress(MouseButton.RIGHT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -185,43 +176,41 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.click()
+            autopy.mouse.click(MouseButton.LEFT_BUTTON)
             # TODO: Make double click speed configurable
             time.sleep(0.1)
-            autopy.mouse.click()
+            autopy.mouse.click(MouseButton.LEFT_BUTTON)
         elif BACKEND == "qemu":
-            # TODO: figure out what 'state' is
-            monitor.mouse_button(state)
+            monitor.mouse_button(MouseButton.LEFT_BUTTON)
             # TODO: Make double click speed configurable
             time.sleep(0.1)
-            monitor.mouse_button(state)
+            monitor.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
-            # TODO: figure out the button format
-            client.mousePress(button)
+            client.mousePress(MouseButton.LEFT_BUTTON)
             # TODO: Make double click speed configurable
             time.sleep(0.1)
-            client.mousePress(button)
+            client.mousePress(MouseButton.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
-    def mouse_down(self, button=LEFT_BUTTON):
+    def mouse_down(self, button=MouseButton.LEFT_BUTTON):
         if BACKEND in ["autopy-win", "autopy-nix"]:
             autopy.mouse.toggle(True, button)
         elif BACKEND == "qemu":
-            # TODO: figure out what 'state' is
-            monitor.mouse_button(state)
+            # TODO: sync with autopy button
+            monitor.mouse_button(button)
         elif BACKEND == "vncdotool":
-            # TODO: figure out the button format
+            # TODO: sync with autopy button
             client.mouseDown(button)
 
-    def mouse_up(self, button=LEFT_BUTTON):
+    def mouse_up(self, button=MouseButton.LEFT_BUTTON):
         if BACKEND in ["autopy-win", "autopy-nix"]:
             autopy.mouse.toggle(False, button)
         elif BACKEND == "qemu":
-            # TODO: figure out what 'state' is
-            monitor.mouse_button(state)
+            # TODO: sync with autopy button
+            monitor.mouse_button(button)
         elif BACKEND == "vncdotool":
-            # TODO: figure out the button format
+            # TODO: sync with autopy button
             client.mouseUp(button)
 
     def key_toggle(self, key, up_down):
