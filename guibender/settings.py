@@ -38,6 +38,9 @@ class Settings:
 
     @staticmethod
     def os_name(name=None):
+        """
+        Possible values: Windows, Linux.
+        """
         if name == None:
             return Settings._os_name
         else:
@@ -45,6 +48,7 @@ class Settings:
 
     @staticmethod
     def delay_after_drag(delay=None):
+        """Timeout before drag operation."""
         if delay == None:
             return Settings._drag_delay
         else:
@@ -52,6 +56,7 @@ class Settings:
 
     @staticmethod
     def delay_before_drop(delay=None):
+        """Timeout before drop operation."""
         if delay == None:
             return Settings._drop_delay
         else:
@@ -59,6 +64,7 @@ class Settings:
 
     @staticmethod
     def delay_before_keys(delay=None):
+        """Timeout before key press operation."""
         if delay == None:
             return Settings._keys_delay
         else:
@@ -66,6 +72,9 @@ class Settings:
 
     @staticmethod
     def rescan_speed_on_find(delay=None):
+        """
+        Frequency of the image matching attempts (to reduce overhead on the CPU).
+        """
         if delay == None:
             return Settings._rescan_speed_on_find
         else:
@@ -73,6 +82,9 @@ class Settings:
 
     @staticmethod
     def save_needle_on_error(value=None):
+        """
+        Perform an extra dump of the needle on matching error.
+        """
         if value == None:
             return Settings._save_needle_on_error
         elif value == True or value == False:
@@ -82,6 +94,11 @@ class Settings:
 
     @staticmethod
     def image_logging_level(level=None):
+        """
+        Possible values: similar to the python logging module.
+
+        See the image logging documentation for more details.
+        """
         if level == None:
             return Settings._image_logging_level
         else:
@@ -89,6 +106,9 @@ class Settings:
 
     @staticmethod
     def image_logging_destination(dest=None):
+        """
+        String for relative path of the image logging steps.
+        """
         if dest == None:
             return Settings._image_logging_destination
         else:
@@ -96,6 +116,10 @@ class Settings:
 
     @staticmethod
     def image_logging_step_width(width=None):
+        """
+        Integer to determine the number of digits when enumerating the image
+        logging steps, e.g. width=3 for 001, 002, etc.
+        """
         if width == None:
             return Settings._image_logging_step_width
         else:
@@ -145,6 +169,10 @@ class Settings:
 
     @staticmethod
     def template_match_backend(name=None):
+        """
+        Possible backends: autopy, sqdiff, ccorr, ccoeff, sqdiff_normed,
+        ccorr_normed, ccoeff_normed.
+        """
         if name == None:
             return Settings._template_match_backend
         else:
@@ -152,6 +180,10 @@ class Settings:
 
     @staticmethod
     def feature_detect_backend(name=None):
+        """
+        Possible backends: BruteForce, BruteForce-L1, BruteForce-Hamming,
+        BruteForce-Hamming(2), in-house-raw, in-house-region.
+        """
         if name == None:
             return Settings._feature_detect_backend
         else:
@@ -159,6 +191,9 @@ class Settings:
 
     @staticmethod
     def feature_extract_backend(name=None):
+        """
+        Possible backends: ORB, FAST, STAR, GFTT, HARRIS, Dense, oldSURF.
+        """
         if name == None:
             return Settings._feature_extract_backend
         else:
@@ -166,6 +201,9 @@ class Settings:
 
     @staticmethod
     def feature_match_backend(name=None):
+        """
+        Possible backends: ORB, BRIEF, FREAK.
+        """
         if name == None:
             return Settings._feature_match_backend
         else:
