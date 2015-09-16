@@ -109,6 +109,7 @@ class Region(object):
     def get_bottom_right(self):
         return Location(self.xpos + self.width, self.ypos + self.height)
 
+    """Main region methods"""
     def nearby(self, rrange=50):
         log.debug("Checking nearby the current region")
         new_xpos = self.xpos - rrange
@@ -175,6 +176,7 @@ class Region(object):
         # Final clipping is done in the Region constructor
         return Region(self.xpos, self.ypos, new_width, self.height)
 
+    """Image expect methods"""
     def get_last_match(self):
         return self.last_match
 
@@ -318,6 +320,7 @@ class Region(object):
         name = image if isinstance(image, basestring) else image.filename
         raise NotFindError(name)
 
+    """Mouse methods"""
     def idle(self, timeout):
         """
         Wait for a number of seconds and continue the nested call chain.
@@ -472,6 +475,7 @@ class Region(object):
 
         return match
 
+    """Keyboard methods"""
     def press_keys(self, keys):
         """
         This method types a single key or a list of keys simultaneously.
