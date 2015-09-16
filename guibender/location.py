@@ -17,7 +17,7 @@
 
 class Location:
 
-    def __init__(self, x_pos, y_pos):
+    def __init__(self, x_pos=0, y_pos=0):
         self.xpos = x_pos
         self.ypos = y_pos
 
