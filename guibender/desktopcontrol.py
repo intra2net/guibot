@@ -136,11 +136,9 @@ class DesktopControl:
                 autopy.mouse.move(location.get_x(), location.get_y())
         elif BACKEND == "qemu":
             if smooth:
-                # TODO: does such thing exist?
-                raise NotImplementedError
-            else:
-                # TODO: test since this might be (dx,dy) instead of (x,y)
-                monitor.mouse_move(location.get_x(), location.get_y())
+                # TODO: implement smooth mouse move?
+                pass
+            monitor.mouse_move(location.get_x(), location.get_y())
         elif BACKEND == "vncdotool":
             if smooth:
                 client.mouseDrag(location.get_x(), location.get_y(), step=30)
