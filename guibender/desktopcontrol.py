@@ -93,39 +93,39 @@ class DesktopControl:
             xpos = self.width - 1
         if ypos > self.height:
             ypos = self.height - 1
-
         if xpos + width > self.width:
             width = self.width - xpos
         if ypos + height > self.height:
             height = self.height - ypos
 
+        # TODO: Switch to in-memory conversion - patch backends or request get_raw() from authors
+        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            # NOTE: the file can be open twice on unix but only once on windows so simply
+            # use the generated filename to avoid this difference and remove it manually
+            filename = f.name
+
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            # TODO: Switch to in-memory conversion. toString()
-            # is a base64 encoded, zlib compressed stream.
-            # Ask autopy author about a get_raw() method.
-            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-                # the file can be open twice on unix but only once on windows so close
-                # it to avoid this difference (and remove it manually afterwards)
-                f.close()
 
-                # BUG: autopy screen capture on Windows must use negative coordinates,
-                # but it doesn't and as a result any normal attempt to capture a subregion
-                # will fall outside of the screen (be black) - it also blocks us trying to
-                # use negative coordinates screaming that we are outside of the screen while
-                # thinking that the coordinates are positive - this was already registered
-                # as a bug on autopy's GitHub page but no progress has been made since that
-                # -> https://github.com/msanders/autopy/issues/32
-                autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
-                autopy_bmp.save(f.name)
+            # BUG: autopy screen capture on Windows must use negative coordinates,
+            # but it doesn't and as a result any normal attempt to capture a subregion
+            # will fall outside of the screen (be black) - it also blocks us trying to
+            # use negative coordinates screaming that we are outside of the screen while
+            # thinking that the coordinates are positive - this was already registered
+            # as a bug on autopy's GitHub page but no progress has been made since that
+            # -> https://github.com/msanders/autopy/issues/32
+            autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
+            autopy_bmp.save(filename)
 
-                pil_image = PIL.Image.open(f.name).convert('RGB')
-                os.unlink(f.name)
-                return Image(None, pil_image)
+            pil_image = PIL.Image.open(filename).convert('RGB')
         elif BACKEND == "qemu":
-            # TODO: capture subregion?
-            return monitor.screendump('screenshot.png')
+            # TODO: capture subregion own implementation?
+            monitor.screendump(filename=filename, debug=True)
+            pil_image = PIL.Image.open(filename)
         elif BACKEND == "vncdotool":
-            return client.captureRegion(xpos, ypos, width, height)
+            client.captureRegion(filename, xpos, ypos, width, height)
+            pil_image = PIL.Image.open(filename).convert('RGB')
+        os.unlink(filename)
+        return Image(None, pil_image)
 
     def mouse_move(self, location, smooth=True):
         if BACKEND in ["autopy-win", "autopy-nix"]:
