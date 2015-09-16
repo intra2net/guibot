@@ -43,15 +43,26 @@ class DesktopControl:
     def __init__(self):
         if BACKEND in ["autopy-win", "autopy-nix"]:
             screen_size = autopy.screen.get_size()
+            self.width = screen_size[0]
+            self.height = screen_size[1]
         elif BACKEND == "qemu":
-            # TODO: figure this out
-            raise NotImplementedError
+            if not monitor:
+                raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
+            with NamedTemporaryFile(prefix='guibender', suffix='.ppm') as f:
+                filename = f.name
+            monitor.screendump(filename=filename, debug=True)
+            screen = PIL.Image.open(filename)
+            os.unlink(filename)
+            self.width = screen.size[0]
+            self.height = screen.size[1]
         elif BACKEND == "vncdotool":
-            # TODO: figure this out
-            raise NotImplementedError
-
-        self.width = screen_size[0]
-        self.height = screen_size[1]
+            # TODO: try to avoid the file performance slowdown
+            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+                filename = f.name
+            screen = client.captureScreen(filename)
+            os.unlink(filename)
+            self.width = screen.width
+            self.height = screen.height
 
     def get_width(self):
         return self.width
