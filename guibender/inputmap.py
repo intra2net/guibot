@@ -351,9 +351,20 @@ class KeyModifier:
         MOD_SHIFT = autopy.key.MOD_SHIFT
         MOD_META = autopy.key.MOD_META
     elif BACKEND == "qemu":
-        raise NotImplementedError
+        # TODO: 'none' is not available
+        MOD_NONE = None
+        MOD_CTRL = 'ctrl'
+        MOD_ALT = 'alt'
+        MOD_SHIFT = 'shift'
+        # TODO: 'meta' is not available
+        MOD_META = None
     elif BACKEND == "vncdotool":
-        raise NotImplementedError
+        # TODO: 'none' is not available
+        MOD_NONE = None
+        MOD_CTRL = 'ctrl'
+        MOD_ALT = 'alt'
+        MOD_SHIFT = 'shift'
+        MOD_META = 'meta'
 
     @staticmethod
     def to_string(key):
