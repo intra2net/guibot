@@ -219,25 +219,18 @@ class DesktopControl:
             # TODO: sync with autopy button
             client.mouseUp(button)
 
-    def key_toggle(self, key, up_down):
-        if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.key.toggle(keys, up_down)
-        elif BACKEND == "qemu":
-            # TODO: test and handle longer hold
-            monitor.sendkey(key, hold_time=1)
-        elif BACKEND == "vncdotool":
-            if up_down:
-                client.keyUp(key)
-            else:
-                client.keyDown(key)
-
     def keys_toggle(self, keys, up_down):
-        try:
-            # Support lists
-            for key in keys:
-                self.key_toggle(key, up_down)
-        except:
-            self.key_toggle(key, up_down)
+        for key in keys:
+            if BACKEND in ["autopy-win", "autopy-nix"]:
+                autopy.key.toggle(key, up_down)
+            elif BACKEND == "qemu":
+                # TODO: test and handle longer hold
+                monitor.sendkey(key, hold_time=1)
+            elif BACKEND == "vncdotool":
+                if up_down:
+                    client.keyDown(key)
+                else:
+                    client.keyUp(key)
 
     def keys_press(self, keys):
         self.keys_toggle(keys, True)
@@ -247,40 +240,28 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
-        if isinstance(text, basestring) or isinstance(text, str):
-            self._type_string_wrapper(text)
-            return
-
-        # Support list of something
-        for subtext in text:
-            if isinstance(subtext, basestring) or isinstance(subtext, str):
-                self._type_string_wrapper(subtext)
-            else:
-                autopy.key.tap(subtext)
+        for part in text:
+            # TODO: Fix autopy to handle international chars and other stuff so
+            # that both the Linux and Windows version are reduced to autopy.key
+            if BACKEND == "autopy-win":
+                for char in str(part):
+                    if char in ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
+                                "{", "}", ":", "\"", "|", "<", ">", "?"]:
+                        autopy.key.tap(char, KeyModifier.MOD_SHIFT)
+                    elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                        autopy.key.tap(char, KeyModifier.MOD_SHIFT)
+                    else:
+                        autopy.key.tap(char)
+                # autopy.key.type_string(text)
+            elif BACKEND == "autopy-nix":
+                # HACK: use xdotool to handle various character encoding
+                subprocess.call(['xdotool', 'type', part], shell=False)
+            elif BACKEND == "qemu":
+                for char in str(part):
+                    monitor.sendkey(char, hold_time=1)
+            elif BACKEND == "vncdotool":
+                for char in str(part):
+                    client.keyPress(char)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
-
-    def _type_string_wrapper(self, text):
-        # TODO: Fix autopy to handle international chars and other stuff so
-        # that both the Linux and Windows version are reduced to autopy.key
-        if BACKEND == "autopy-win":
-            for char in str(text):
-                if char in ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
-                            "{", "}", ":", "\"", "|", "<", ">", "?"]:
-                    autopy.key.tap(char, KeyModifier.MOD_SHIFT)
-                elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                    autopy.key.tap(char, KeyModifier.MOD_SHIFT)
-                else:
-                    autopy.key.tap(char)
-            # autopy.key.type_string(text)
-        elif BACKEND == "autopy-nix":
-            # HACK: use xdotool to handle various character encoding
-            subprocess.call(['xdotool', 'type', text], shell=False)
-        elif BACKEND == "qemu":
-            for char in str(text):
-                monitor.sendkey(char, hold_time=1)
-        elif BACKEND == "vncdotool":
-            for char in str(text):
-                client.keyPress(char)
-            # TODO: try client.type(text)

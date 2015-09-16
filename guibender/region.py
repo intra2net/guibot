@@ -389,132 +389,128 @@ class Region(object):
 
         return match
 
-    def press(self, keys):
+    def press_keys(self, keys):
         """
-        This method types a single key or a list of such.
-        """
-        if isinstance(keys, int):
-            log.info("Pressing key %s", Key.to_string(keys))
-        elif isinstance(keys, basestring):
-            if len(keys) > 1:
-                log.warning("Using press for an entire text - "
-                            "please use type_text for this purpose")
-            log.info("Pressing key %s", keys)
-        else:
-            key_strings = []
-            for key in keys:
-                if isinstance(key, basestring):
-                    if len(key) > 1:
-                        log.warning("Using press for an entire text - "
-                                    "please use type_text for this purpose")
-                    key_strings.append(key)
-                else:
-                    key_strings.append(Key.to_string(key))
-            log.info("Pressing together keys %s",
-                     " ".join(keystr for keystr in key_strings))
+        This method types a single key or a list of keys simultaneously.
 
-        self.desktop.keys_press(keys)
+        Therefore press_keys([Key.ENTER]) is equivalent to press_keys(Key.ENTER).
+        Other options are
+            press_keys([Key.CTRL, 'X'])
+            press_keys(['a', 'b', 3])
+        """
+        keys_list = self._parse_keys(keys)
+        self.desktop.keys_press(keys_list)
         return self
 
-    # TODO: cannot initiate list as a default argument
-    def press_at(self, image_or_location=None, keys=None):
+    def press_at(self, keys, image_or_location):
         """
-        This method types a single key or a list of such at
-        a specified image or location.
+        This method types a single key or a list of keys simultaneously
+        at a specified image or location.
+
+        This method is similar to press_keys above.
         """
-        if isinstance(keys, int):
-            log.info("Pressing key %s at %s", Key.to_string(keys),
-                     image_or_location)
-        elif isinstance(keys, basestring):
-            if len(keys) > 1:
-                log.warning("Using press for an entire text - "
-                            "please use type_text for this purpose")
-            log.info("Pressing key %s at %s", keys, image_or_location)
+        keys_list = self._parse_keys(keys, image_or_location)
+        match = self.click(image_or_location)
+        time.sleep(Settings.delay_before_keys())
+        self.desktop.keys_press(keys_list)
+        return match
+
+    def _parse_keys(self, keys, image_or_location=None):
+        at_str = " at %s" % image_or_location if image_or_location else ""
+
+        keys_list = []
+        # if not a list (i.e. if a single key)
+        if isinstance(keys, int) or isinstance(keys, basestring):
+            key = keys
+            try:
+                log.info("Pressing key '%s'%s", Key.to_string(key), at_str)
+            # if not a special key (i.e. if a character key)
+            except KeyError:
+                if isinstance(key, int):
+                    key = str(key)
+                elif len(key) > 1:
+                    raise # a key cannot be a string (text)
+                log.info("Pressing key '%s'%s", key, at_str)
+            keys_list.append(key)
         else:
             key_strings = []
-            if keys is None:
-                keys = []
             for key in keys:
-                if isinstance(key, basestring):
-                    if len(key) > 1:
-                        log.warning("Using press for an entire text - "
-                                    "please use type_text for this purpose")
-                    key_strings.append(key)
-                else:
+                try:
                     key_strings.append(Key.to_string(key))
-            log.info("Pressing together keys %s at %s",
-                     " ".join(keystr for keystr in key_strings),
-                     image_or_location)
-
-        if isinstance(image_or_location, basestring):
-            if isinstance(keys, int):
-                log.info("Pressing key %s at %s", Key.to_string(keys),
-                         image_or_location)
-            else:
-                log.info("Pressing keys %s at %s",
-                         " ".join([Key.to_string(key) for key in keys]),
-                         image_or_location)
-
-        match = None
-        if image_or_location != None:
-            match = self.click(image_or_location)
-            time.sleep(Settings.delay_before_keys())
-
-        self.desktop.keys_press(keys)
-        return match
+                except KeyError:
+                    if isinstance(key, int):
+                        key = str(key)
+                    elif len(key) > 1:
+                        raise # a key cannot be a string (text)
+                    key_strings.append(key)
+                keys_list.append(key)
+            log.info("Pressing together keys '%s'%s",
+                     "'+'".join(keystr for keystr in key_strings),
+                     at_str)
+        return keys_list
 
     def type_text(self, text, modifiers=None):
         """
-        The method types a string text or a list of strings and
-        special keys.
+        This method specializes in typing a list of consecutive character keys
+        (string text without special keys) or a list of strings.
+
+        Therefore type_text(['hello']) is equivalent to type_text('hello').
+        Other options are
+            type_text('ab3') # compare with press_keys()
+            type_text(['Hello', ' ', 'user3614']) # in cases with appending
+
+        Special keys are only allowed as modifiers here, call 'press_keys'
+        multiple times for consecutively typing special keys.
+
+        Modifiers is a list equivalent to the one in press_keys().
         """
-        if isinstance(text, basestring):
-            log.info("Typing text '%s'", text)
-        else:
-            for part in text:
-                if isinstance(part, basestring):
-                    log.info("Typing text '%s'", part)
-                else:
-                    log.info("Pressing %s", Key.to_string(part))
+        text_list = self._parse_text(text)
         if modifiers != None:
-            log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.keys_type(text, modifiers)
+            if isinstance(modifiers, basestring):
+                modifiers = [modifiers]
+            log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
+        self.desktop.keys_type(text_list, modifiers)
         return self
 
-    # TODO: text cannot be empty since the method doesn't make sense
-    def type_at(self, image_or_location=None, text='', modifiers=None):
+    def type_at(self, text, image_or_location, modifiers=None):
         """
-        The method types a string text or a list of strings and
-        special keys at a specified image or location.
+        This method specializes in typing a list of consecutive character keys
+        (string text without special keys) or a list of strings at a specified
+        image or location.
+
+        This method is similar to type_text above.
         """
+        text_list = self._parse_text(text, image_or_location)
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
             time.sleep(Settings.delay_before_keys())
+        if modifiers != None:
+            if isinstance(modifiers, basestring):
+                modifiers = [modifiers]
+            log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
+        self.desktop.keys_type(text_list, modifiers)
+        return match
 
-        if isinstance(image_or_location, basestring):
-            imgname = image_or_location
-        elif isinstance(image_or_location, Image):
-            imgname = os.path.dirname(image_or_location.filename)
-        elif image_or_location == None:
-            imgname = "previously focused element"
-        else:
-            imgname = image_or_location
+    def _parse_text(self, text, image_or_location=None):
+        at_str = " at %s" % image_or_location if image_or_location else ""
 
+        text_list = []
         if isinstance(text, basestring):
-            log.info("Typing text '%s' at %s", text, imgname)
+            log.info("Typing text '%s'%s", text, at_str)
+            text_list = [text]
         else:
             for part in text:
                 if isinstance(part, basestring):
-                    log.info("Typing text '%s' at %s", part, imgname)
+                    log.info("Typing text '%s'%s", part, at_str)
+                    text_list.append(part)
+                elif isinstance(part, int):
+                    log.info("Typing '%i'%s", part, at_str)
+                    text_list.append(str(part))
                 else:
-                    log.info("Pressing %s at %s", Key.to_string(part), imgname)
+                    raise ValueError("Unknown text character" % part)
+        return text_list
 
-        if modifiers != None:
-            log.info("Holding the modifiers %s", " ".join(modifiers))
-
-        self.desktop.keys_type(text, modifiers)
-        return match
 
 # TODO: make this more pythonic
 import match

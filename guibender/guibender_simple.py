@@ -109,7 +109,7 @@ def drop_at(image_or_location, modifiers=None):
     return guibender.drop_at(image_or_location, modifiers)
 
 
-def press(keys):
+def press_keys(keys):
     return guibender.press(keys)
 
 

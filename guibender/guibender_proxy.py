@@ -104,7 +104,7 @@ class GuiBenderProxy(GuiBender):
     def drop_at(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).drop_at(image_or_location, modifiers))
 
-    def press(self, keys):
+    def press_keys(self, keys):
         return self._proxify(super(GuiBenderProxy, self).press(keys))
 
     def press_at(self, image_or_location=None, keys=None):
