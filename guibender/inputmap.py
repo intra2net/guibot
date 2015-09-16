@@ -15,20 +15,9 @@
 #
 
 from settings import Settings
-
 BACKEND = Settings.desktop_control_backend()
 if BACKEND in ["autopy-win", "autopy-nix"]:
     import autopy.key
-elif BACKEND == "qemu":
-    monitor = None # TODO: set externally?
-elif BACKEND == "vncdotool":
-    from vncdotool import api
-    # TODO: host and display!
-    client = api.connect('vnchost:display')
-
-
-# TODO: Define the key maps for the other two backends
-# Define keys to current backend key mapping.
 
 
 class Key:
