@@ -36,6 +36,8 @@ elif BACKEND == "qemu":
 elif BACKEND == "vncdotool":
     from vncdotool import api
     client = api.connect('%s:%i' % (Settings.vnc_hostname(), Settings.vnc_port()))
+# NOTE: some backends require mouse pointer reinitialization so compensate for it
+POINTER = Location(0, 0)
 
 class DesktopControl:
 
@@ -126,7 +128,16 @@ class DesktopControl:
         os.unlink(filename)
         return Image(None, pil_image)
 
+    def get_mouse_location(self):
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            pos = autopy.mouse.get_pos()
+            return Location(pos[0], pos[1])
+        else:
+            return POINTER
+
     def mouse_move(self, location, smooth=True):
+        # NOTE: we need this to be able to set the variable
+        global POINTER
         if BACKEND in ["autopy-win", "autopy-nix"]:
             # TODO: sometimes this is not pixel perfect, i.e.
             # need to investigate the autopy source later on
@@ -139,22 +150,13 @@ class DesktopControl:
                 # TODO: implement smooth mouse move?
                 pass
             monitor.mouse_move(location.get_x(), location.get_y())
+            POINTER = location
         elif BACKEND == "vncdotool":
             if smooth:
                 client.mouseDrag(location.get_x(), location.get_y(), step=30)
             else:
                 client.mouseMove(location.get_x(), location.get_y())
-
-    def get_mouse_location(self):
-        if BACKEND in ["autopy-win", "autopy-nix"]:
-            pos = autopy.mouse.get_pos()
-        elif BACKEND == "qemu":
-            # TODO: figure this out
-            raise NotImplementedError
-        elif BACKEND == "vncdotool":
-            # TODO: figure this out
-            raise NotImplementedError
-        return Location(pos[0], pos[1])
+            POINTER = location
 
     def mouse_click(self, modifiers=None):
         if modifiers != None:

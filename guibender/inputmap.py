@@ -363,15 +363,13 @@ class MouseButton:
         RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
         CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
     elif BACKEND == "qemu":
-        # TODO: check if 1=left, 2=middle, 4=right as described in the scarce documentation
-        LEFT_BUTTON = 0
-        RIGHT_BUTTON = 2
-        CENTER_BUTTON = 4
-    elif BACKEND == "vncdotool":
-        # TODO: check if 1=left, 2=middle, 4=right or 3=right?
         LEFT_BUTTON = 1
-        RIGHT_BUTTON = 2
-        CENTER_BUTTON = 3
+        RIGHT_BUTTON = 4
+        CENTER_BUTTON = 2
+    elif BACKEND == "vncdotool":
+        LEFT_BUTTON = 1
+        RIGHT_BUTTON = 3
+        CENTER_BUTTON = 2
 
     @staticmethod
     def to_string(key):
