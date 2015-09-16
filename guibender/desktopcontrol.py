@@ -19,10 +19,10 @@ import time
 import PIL.Image
 from tempfile import NamedTemporaryFile
 
+from settings import Settings
 from image import Image
 from location import Location
-from key import KeyModifier, MouseButton
-from settings import Settings
+from inputmap import KeyModifier, MouseButton
 
 BACKEND = Settings.desktop_control_backend()
 if BACKEND in ["autopy-win", "autopy-nix"]:

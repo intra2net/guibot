@@ -18,10 +18,10 @@ import os
 
 # interconnected classes - import only their modules
 # to avoid circular reference
-from desktopcontrol import DesktopControl
-from key import Key, MouseButton
-from errors import *
 from settings import Settings
+from desktopcontrol import DesktopControl
+from inputmap import Key, MouseButton
+from errors import *
 from location import Location
 from image import Image
 from imagefinder import ImageFinder

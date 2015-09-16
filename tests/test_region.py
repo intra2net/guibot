@@ -27,7 +27,7 @@ from region import Region
 from match import Match
 from desktopcontrol import DesktopControl
 from image import Image
-from key import Key
+from inputmap import Key
 from errors import *
 
 
