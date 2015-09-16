@@ -30,6 +30,8 @@ class Settings:
 
     # backends shared between all instances
     _desktop_control_backend = "autopy-nix"
+    _vnc_hostname = "localhost"
+    _vnc_port = 0
     _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
@@ -146,6 +148,26 @@ class Settings:
             if name not in ["autopy-win", "autopy-nix", "qemu", "vncdotool"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % name)
             Settings._desktop_control_backend = name
+
+    @staticmethod
+    def vnc_hostname(name=None):
+        """
+        Hostname of the vnc server in case vncdotool backend is used.
+        """
+        if name == None:
+            return Settings._vnc_hostname
+        else:
+            Settings._vnc_hostname = name
+
+    @staticmethod
+    def vnc_port(port=None):
+        """
+        Port of the vnc server in case vncdotool backend is used.
+        """
+        if port == None:
+            return Settings._vnc_port
+        else:
+            Settings._vnc_port = port
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization

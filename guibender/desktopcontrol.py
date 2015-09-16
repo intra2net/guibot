@@ -35,8 +35,7 @@ elif BACKEND == "qemu":
     monitor = None # TODO: set externally?
 elif BACKEND == "vncdotool":
     from vncdotool import api
-    # TODO: host and display!
-    client = api.connect('vnchost:display')
+    client = api.connect('%s:%i' % (Settings.vnc_hostname(), Settings.vnc_port()))
 
 class DesktopControl:
 
