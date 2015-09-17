@@ -98,7 +98,7 @@ class GuiBenderProxy(GuiBender):
         return self._proxify(super(GuiBenderProxy, self).drag_drop(src_image_or_location,
                                                                    dst_image_or_location, modifiers))
 
-    def drag(self, image_or_location, modifiers=None):
+    def drag_from(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).drag(image_or_location, modifiers))
 
     def drop_at(self, image_or_location, modifiers=None):

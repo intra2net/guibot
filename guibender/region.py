@@ -288,14 +288,31 @@ class Region(object):
         raise NotFindError(name)
 
     def idle(self, timeout):
+        """
+        Wait for a number of seconds and continue the nested call chain.
+
+        This method can be used as both a way to compactly wait for some time
+        while not breaking the call chain. e.g.
+
+        aregion.hover('abox').idle(1).click('aboxwithinthebox')
+
+        and as a way to conveniently perform timeout in between actions.
+        """
         log.debug("Waiting for %ss", timeout)
         time.sleep(timeout)
         return self
 
     def get_mouse_location(self):
+        """
+        Obtain the mouse location as a Location object.
+        """
         return self.desktop.get_mouse_location()
 
     def hover(self, image_or_location):
+        """
+        Hover the mouse over a Location, Match, Image or string (image name)
+        object and return a resulting Match object in case of search.
+        """
         log.info("Hovering over %s", image_or_location)
 
         # Handle Match
@@ -319,6 +336,11 @@ class Region(object):
         return match
 
     def click(self, image_or_location, modifiers=None):
+        """
+        Click over a variety of object types (like hover) using
+        the left mouse button and optionally holding special keys
+        (a list of key modifiers, e.g. [KeyModifier.MOD_CTRL, 'x']).
+        """
         match = self.hover(image_or_location)
         log.info("Clicking at %s", image_or_location)
         if modifiers != None:
@@ -327,6 +349,11 @@ class Region(object):
         return match
 
     def right_click(self, image_or_location, modifiers=None):
+        """
+        Click over a variety of object types (like hover) using
+        the right mouse button and optionally holding special keys
+        (like click).
+        """
         match = self.hover(image_or_location)
         log.info("Right clicking at %s", image_or_location)
         if modifiers != None:
@@ -335,6 +362,11 @@ class Region(object):
         return match
 
     def double_click(self, image_or_location, modifiers=None):
+        """
+        Double click over a variety of object types (like hover) using
+        the left mouse button and optionally holding special keys
+        (like click).
+        """
         match = self.hover(image_or_location)
         log.info("Double clicking at %s", image_or_location)
         if modifiers != None:
@@ -343,23 +375,39 @@ class Region(object):
         return match
 
     def mouse_down(self, image_or_location, button=LEFT_BUTTON):
+        """
+        Hold down a mouse button specified by 'button' over a
+        variety of object types (like hover).
+        """
         match = self.hover(image_or_location)
         log.debug("Holding down the mouse at %s", image_or_location)
         self.desktop.mouse_down(button)
         return match
 
     def mouse_up(self, image_or_location, button=LEFT_BUTTON):
+        """
+        Release a mouse button specified by 'button' over a
+        variety of object types (like hover).
+        """
         match = self.hover(image_or_location)
         log.debug("Holding up the mouse at %s", image_or_location)
         self.desktop.mouse_up(button)
         return match
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
-        self.drag(src_image_or_location, modifiers)
+        """
+        Drag from and drop at a variety of object types (like hover)
+        optionally holding special keys (like click).
+        """
+        self.drag_from(src_image_or_location, modifiers)
         match = self.drop_at(dst_image_or_location, modifiers)
         return match
 
-    def drag(self, image_or_location, modifiers=None):
+    def drag_from(self, image_or_location, modifiers=None):
+        """
+        Drag from a variety of object types (like hover) optionally
+        holding special keys (like click).
+        """
         match = self.hover(image_or_location)
 
         time.sleep(0.2)
@@ -375,6 +423,10 @@ class Region(object):
         return match
 
     def drop_at(self, image_or_location, modifiers=None):
+        """
+        Drop at a variety of object types (like hover) optionally
+        holding special keys (like click).
+        """
         match = self.hover(image_or_location)
         time.sleep(Settings.delay_before_drop())
 

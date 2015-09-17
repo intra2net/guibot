@@ -101,7 +101,7 @@ def drag_drop(src_image_or_location, dst_image_or_location, modifiers=None):
     return guibender.drag_drop(src_image_or_location, dst_image_or_location, modifiers)
 
 
-def drag(image_or_location, modifiers=None):
+def drag_from(image_or_location, modifiers=None):
     return guibender.drag(image_or_location, modifiers)
 
 
