@@ -220,13 +220,39 @@ class DesktopControl:
             client.mouseUp(button)
 
     def keys_toggle(self, keys, up_down):
-        for key in keys:
-            if BACKEND in ["autopy-win", "autopy-nix"]:
+        if BACKEND in ["autopy-win", "autopy-nix"]:
+            for key in keys:
                 autopy.key.toggle(key, up_down)
-            elif BACKEND == "qemu":
-                # TODO: test and handle longer hold
-                monitor.sendkey(key, hold_time=1)
-            elif BACKEND == "vncdotool":
+        elif BACKEND == "qemu":
+            qemu_escape_map = {"\\": '0x2b',
+                               "/" : 'slash',
+                               " " : 'spc',
+                               "*" : 'asterisk',
+                               "-" : 'minus',
+                               "=" : 'equal',
+                               "," : 'comma',
+                               "." : 'dot',
+                               ";" : '0x27',
+                               "'" : '0x28',
+                               "`" : '0x29',
+                               # TODO: verify '<' (since autotest != qemu doc)
+                               "<" : '0x2b',
+                               "(" : '0x1a',
+                               ")" : '0x1b'
+                               }
+            for key in keys:
+                if qemu_escape_map.has_key(key):
+                    key = qemu_escape_map[key]
+            # TODO: test and handle longer hold
+            monitor.sendkey("-".join(keys), hold_time=1)
+        elif BACKEND == "vncdotool":
+            for key in keys:
+                if key == "\\":
+                    key = 'bslash'
+                elif key == "/":
+                    key = 'fslash'
+                elif key == " ":
+                    key = 'space'
                 if up_down:
                     client.keyDown(key)
                 else:
@@ -240,27 +266,58 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
-        for part in text:
-            # TODO: Fix autopy to handle international chars and other stuff so
-            # that both the Linux and Windows version are reduced to autopy.key
-            if BACKEND == "autopy-win":
+        if BACKEND == "autopy-win":
+            shift_chars = ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
+                           "_", "+", "{", "}", ":", "\"", "|", "<", ">", "?"]
+            capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            for part in text:
                 for char in str(part):
-                    if char in ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")", "_", "+",
-                                "{", "}", ":", "\"", "|", "<", ">", "?"]:
+                    if char in shift_chars:
                         autopy.key.tap(char, KeyModifier.MOD_SHIFT)
-                    elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
+                    elif char in capital_chars:
                         autopy.key.tap(char, KeyModifier.MOD_SHIFT)
                     else:
                         autopy.key.tap(char)
+                # TODO: Fix autopy to handle international chars and other stuff so
+                # that both the Linux and Windows version are reduced to autopy.key
                 # autopy.key.type_string(text)
-            elif BACKEND == "autopy-nix":
+        elif BACKEND == "autopy-nix":
+            for part in text:
                 # HACK: use xdotool to handle various character encoding
                 subprocess.call(['xdotool', 'type', part], shell=False)
-            elif BACKEND == "qemu":
+        elif BACKEND == "qemu":
+            qemu_escape_map = {"\\": '0x2b',
+                               "/" : 'slash',
+                               " " : 'spc',
+                               "*" : 'asterisk',
+                               "-" : 'minus',
+                               "=" : 'equal',
+                               "," : 'comma',
+                               "." : 'dot',
+                               ";" : '0x27',
+                               "'" : '0x28',
+                               "`" : '0x29',
+                               # TODO: verify '<' (since autotest != qemu doc)
+                               "<" : '0x2b',
+                               "(" : '0x1a',
+                               ")" : '0x1b'
+                               }
+            for part in text:
                 for char in str(part):
+                    if qemu_escape_map.has_key(char):
+                        char = qemu_escape_map[char]
                     monitor.sendkey(char, hold_time=1)
-            elif BACKEND == "vncdotool":
+        elif BACKEND == "vncdotool":
+            for part in text:
                 for char in str(part):
+                    if char == "\\":
+                        char = 'bslash'
+                    elif char == "/":
+                        char = 'fslash'
+                    elif char == " ":
+                        char = 'space'
+                    elif char == "\n":
+                        char = 'return'
                     client.keyPress(char)
 
         if modifiers != None:

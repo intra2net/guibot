@@ -109,20 +109,6 @@ class Key:
         BACKSPACE = 'backspace'
         DELETE = 'delete'
         INSERT = 'insert'
-        # TODO: check for parsing issues and/or move to the typing wrappers
-        BSLASH = '0x2b'
-        FSLASH = 'slash'
-        SPACE = 'spc'
-        MINUS = "minus"
-        EQUAL = "equal"
-        COMMA = "comma"
-        PERIOD = "dot"
-        SEMICOLON = "0x27"
-        APOSTROPHE = "0x28"
-        GRAVE = "0x29"
-        LESS = "0x2b"
-        BRACKETLEFT = "0x1a"
-        BRACKETRIGHT = "0x1b"
 
         CTRL = 'ctrl'
         ALT = 'alt'
@@ -209,10 +195,6 @@ class Key:
         BACKSPACE = 'bsp'
         DELETE = 'del' # also 'delete'
         INSERT = 'ins'
-        # TODO: check for parsing issues and/or move to the typing wrappers
-        BSLASH = 'bslash' # also 'slash'
-        FSLASH = 'fslash'
-        SPACE = 'space' # also 'spacebar', 'sb'
 
         CTRL = 'ctrl' # also 'lctrl'
         ALT = 'alt' # also 'lalt'
