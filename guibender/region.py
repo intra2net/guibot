@@ -178,14 +178,24 @@ class Region(object):
     def get_last_match(self):
         return self.last_match
 
+    # TODO: Something similar for the GUI action configuration?
     def configure_find(self, find_image=None, template_match=None,
                        feature_detect=None, feature_extract=None,
                        feature_match=None):
+        """
+        Configure in one step all the CV algorithms.
+        """
         self.imagefinder.eq.configure_backend(find_image, template_match,
                                               feature_detect, feature_extract,
                                               feature_match)
 
     def find(self, image, timeout=10):
+        """
+        Find an image on the screen.
+
+        This method is the main entrance to all our image finding capabilities
+        and is the milestone for all image expect methods.
+        """
         if isinstance(image, basestring):
             image = Image(image)
         log.debug("Looking for image %s", image)
@@ -216,6 +226,11 @@ class Region(object):
                 time.sleep(Settings.rescan_speed_on_find())
 
     def find_all(self, image, timeout=10, allow_zero=False):
+        """
+        Find multiples of an image on the screen.
+
+        This method is similar the one above but allows for more than one match.
+        """
         if isinstance(image, basestring):
             image = Image(image)
         log.debug("Looking for multiple occurrences of image %s", image)
@@ -249,6 +264,10 @@ class Region(object):
                 time.sleep(Settings.rescan_speed_on_find())
 
     def sample(self, image):
+        """
+        Sample the similarity between and image and the screen,
+        i.e. the probability that the image is on the screen.
+        """
         log.debug("Looking for image %s", image)
         if isinstance(image, basestring):
             image = Image(image)
@@ -262,6 +281,10 @@ class Region(object):
         return similarity
 
     def exists(self, image, timeout=0):
+        """
+        Check if an image exists on the screen using the image matching
+        success as a threshold for the existence.
+        """
         log.debug("Checking if %s is present", image)
         try:
             return self.find(image, timeout)
@@ -270,10 +293,18 @@ class Region(object):
         return None
 
     def wait(self, image, timeout=30):
+        """
+        Wait for an image to appear (be matched) with a given timeout
+        as failing tolerance.
+        """
         log.info("Waiting for %s", image)
         return self.find(image, timeout)
 
     def wait_vanish(self, image, timeout=30):
+        """
+        Wait for an image to disappear (be unmatched, i.e. matched
+        without success) with a given timeout as failing tolerance.
+        """
         log.info("Waiting for %s to vanish", image)
         expires = time.time() + timeout
         while time.time() < expires:
