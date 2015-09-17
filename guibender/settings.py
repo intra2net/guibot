@@ -32,6 +32,7 @@ class Settings:
     _desktop_control_backend = "autopy-nix"
     _vnc_hostname = "localhost"
     _vnc_port = 0
+    _qemu_monitor = None
     _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
@@ -168,6 +169,16 @@ class Settings:
             return Settings._vnc_port
         else:
             Settings._vnc_port = port
+
+    @staticmethod
+    def qemu_monitor(monitor=None):
+        """
+        Qemu monitor object in case qemu backend is used.
+        """
+        if monitor == None:
+            return Settings._qemu_monitor
+        else:
+            Settings._qemu_monitor = monitor
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization

@@ -24,6 +24,8 @@ from image import Image
 from location import Location
 from inputmap import KeyModifier, MouseButton
 
+# NOTE: dynamically switching the GUI control backend is not possible and also
+# doesn't make sense as a use case - simply run everything again
 BACKEND = Settings.desktop_control_backend()
 if BACKEND in ["autopy-win", "autopy-nix"]:
     import autopy.screen
@@ -32,35 +34,44 @@ if BACKEND in ["autopy-win", "autopy-nix"]:
     if BACKEND == "autopy-nix":
         import subprocess
 elif BACKEND == "qemu":
-    monitor = None # TODO: set externally?
+    pass
 elif BACKEND == "vncdotool":
     from vncdotool import api
-    client = api.connect('%s:%i' % (Settings.vnc_hostname(), Settings.vnc_port()))
+    import logging
+    logging.getLogger('vncdotool').setLevel(logging.ERROR)
+    logging.getLogger('twisted').setLevel(logging.ERROR)
 # NOTE: some backends require mouse pointer reinitialization so compensate for it
 POINTER = Location(0, 0)
 
 class DesktopControl:
 
     def __init__(self):
+        self.backend = None
+        self.width = None
+        self.height = None
+
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            screen_size = autopy.screen.get_size()
+            self.backend = autopy
+            screen_size = self.backend.screen.get_size()
             self.width = screen_size[0]
             self.height = screen_size[1]
         elif BACKEND == "qemu":
-            if not monitor:
+            self.backend = Settings.qemu_monitor()
+            if not self.backend:
                 raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
             with NamedTemporaryFile(prefix='guibender', suffix='.ppm') as f:
                 filename = f.name
-            monitor.screendump(filename=filename, debug=True)
+            self.backend.screendump(filename=filename, debug=True)
             screen = PIL.Image.open(filename)
             os.unlink(filename)
             self.width = screen.size[0]
             self.height = screen.size[1]
         elif BACKEND == "vncdotool":
+            self.backend = api.connect('%s:%i' % (Settings.vnc_hostname(), Settings.vnc_port()))
             # TODO: try to avoid the file performance slowdown
             with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
                 filename = f.name
-            screen = client.captureScreen(filename)
+            screen = self.backend.captureScreen(filename)
             os.unlink(filename)
             self.width = screen.width
             self.height = screen.height
@@ -114,23 +125,23 @@ class DesktopControl:
             # thinking that the coordinates are positive - this was already registered
             # as a bug on autopy's GitHub page but no progress has been made since that
             # -> https://github.com/msanders/autopy/issues/32
-            autopy_bmp = autopy.bitmap.capture_screen(((xpos, ypos), (width, height)))
+            autopy_bmp = self.backend.bitmap.capture_screen(((xpos, ypos), (width, height)))
             autopy_bmp.save(filename)
 
             pil_image = PIL.Image.open(filename).convert('RGB')
         elif BACKEND == "qemu":
             # TODO: capture subregion own implementation?
-            monitor.screendump(filename=filename, debug=True)
+            self.backend.screendump(filename=filename, debug=True)
             pil_image = PIL.Image.open(filename)
         elif BACKEND == "vncdotool":
-            client.captureRegion(filename, xpos, ypos, width, height)
+            self.backend.captureRegion(filename, xpos, ypos, width, height)
             pil_image = PIL.Image.open(filename).convert('RGB')
         os.unlink(filename)
         return Image(None, pil_image)
 
     def get_mouse_location(self):
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            pos = autopy.mouse.get_pos()
+            pos = self.backend.mouse.get_pos()
             return Location(pos[0], pos[1])
         else:
             return POINTER
@@ -142,31 +153,31 @@ class DesktopControl:
             # TODO: sometimes this is not pixel perfect, i.e.
             # need to investigate the autopy source later on
             if smooth:
-                autopy.mouse.smooth_move(location.get_x(), location.get_y())
+                self.backend.mouse.smooth_move(location.get_x(), location.get_y())
             else:
-                autopy.mouse.move(location.get_x(), location.get_y())
+                self.backend.mouse.move(location.get_x(), location.get_y())
         elif BACKEND == "qemu":
             if smooth:
                 # TODO: implement smooth mouse move?
                 pass
-            monitor.mouse_move(location.get_x(), location.get_y())
+            self.backend.mouse_move(location.get_x(), location.get_y())
             POINTER = location
         elif BACKEND == "vncdotool":
             if smooth:
-                client.mouseDrag(location.get_x(), location.get_y(), step=30)
+                self.backend.mouseDrag(location.get_x(), location.get_y(), step=30)
             else:
-                client.mouseMove(location.get_x(), location.get_y())
+                self.backend.mouseMove(location.get_x(), location.get_y())
             POINTER = location
 
     def mouse_click(self, modifiers=None):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.click(MouseButton.LEFT_BUTTON)
+            self.backend.mouse.click(MouseButton.LEFT_BUTTON)
         elif BACKEND == "qemu":
-            monitor.mouse_button(MouseButton.LEFT_BUTTON)
+            self.backend.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
-            client.mousePress(MouseButton.LEFT_BUTTON)
+            self.backend.mousePress(MouseButton.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -174,11 +185,11 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.click(MouseButton.RIGHT_BUTTON)
+            self.backend.mouse.click(MouseButton.RIGHT_BUTTON)
         elif BACKEND == "qemu":
-            monitor.mouse_button(MouseButton.RIGHT_BUTTON)
+            self.backend.mouse_button(MouseButton.RIGHT_BUTTON)
         elif BACKEND == "vncdotool":
-            client.mousePress(MouseButton.RIGHT_BUTTON)
+            self.backend.mousePress(MouseButton.RIGHT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -187,44 +198,44 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.click(MouseButton.LEFT_BUTTON)
+            self.backend.mouse.click(MouseButton.LEFT_BUTTON)
             time.sleep(timeout)
-            autopy.mouse.click(MouseButton.LEFT_BUTTON)
+            self.backend.mouse.click(MouseButton.LEFT_BUTTON)
         elif BACKEND == "qemu":
-            monitor.mouse_button(MouseButton.LEFT_BUTTON)
+            self.backend.mouse_button(MouseButton.LEFT_BUTTON)
             time.sleep(timeout)
-            monitor.mouse_button(MouseButton.LEFT_BUTTON)
+            self.backend.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
-            client.mousePress(MouseButton.LEFT_BUTTON)
+            self.backend.mousePress(MouseButton.LEFT_BUTTON)
             time.sleep(timeout)
-            client.mousePress(MouseButton.LEFT_BUTTON)
+            self.backend.mousePress(MouseButton.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button=MouseButton.LEFT_BUTTON):
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.toggle(True, button)
+            self.backend.mouse.toggle(True, button)
         elif BACKEND == "qemu":
             # TODO: sync with autopy button
-            monitor.mouse_button(button)
+            self.backend.mouse_button(button)
         elif BACKEND == "vncdotool":
             # TODO: sync with autopy button
-            client.mouseDown(button)
+            self.backend.mouseDown(button)
 
     def mouse_up(self, button=MouseButton.LEFT_BUTTON):
         if BACKEND in ["autopy-win", "autopy-nix"]:
-            autopy.mouse.toggle(False, button)
+            self.backend.mouse.toggle(False, button)
         elif BACKEND == "qemu":
             # TODO: sync with autopy button
-            monitor.mouse_button(button)
+            self.backend.mouse_button(button)
         elif BACKEND == "vncdotool":
             # TODO: sync with autopy button
-            client.mouseUp(button)
+            self.backend.mouseUp(button)
 
     def keys_toggle(self, keys, up_down):
         if BACKEND in ["autopy-win", "autopy-nix"]:
             for key in keys:
-                autopy.key.toggle(key, up_down)
+                self.backend.key.toggle(key, up_down)
         elif BACKEND == "qemu":
             qemu_escape_map = {"\\": '0x2b',
                                "/" : 'slash',
@@ -246,7 +257,7 @@ class DesktopControl:
                 if qemu_escape_map.has_key(key):
                     key = qemu_escape_map[key]
             # TODO: test and handle longer hold
-            monitor.sendkey("-".join(keys), hold_time=1)
+            self.backend.sendkey("-".join(keys), hold_time=1)
         elif BACKEND == "vncdotool":
             for key in keys:
                 if key == "\\":
@@ -256,9 +267,9 @@ class DesktopControl:
                 elif key == " ":
                     key = 'space'
                 if up_down:
-                    client.keyDown(key)
+                    self.backend.keyDown(key)
                 else:
-                    client.keyUp(key)
+                    self.backend.keyUp(key)
 
     def keys_press(self, keys):
         self.keys_toggle(keys, True)
@@ -275,11 +286,11 @@ class DesktopControl:
             for part in text:
                 for char in str(part):
                     if char in shift_chars:
-                        autopy.key.tap(char, KeyModifier.MOD_SHIFT)
+                        self.backend.key.tap(char, KeyModifier.MOD_SHIFT)
                     elif char in capital_chars:
-                        autopy.key.tap(char, KeyModifier.MOD_SHIFT)
+                        self.backend.key.tap(char, KeyModifier.MOD_SHIFT)
                     else:
-                        autopy.key.tap(char)
+                        self.backend.key.tap(char)
                 # TODO: Fix autopy to handle international chars and other stuff so
                 # that both the Linux and Windows version are reduced to autopy.key
                 # autopy.key.type_string(text)
@@ -308,7 +319,7 @@ class DesktopControl:
                 for char in str(part):
                     if qemu_escape_map.has_key(char):
                         char = qemu_escape_map[char]
-                    monitor.sendkey(char, hold_time=1)
+                    self.backend.sendkey(char, hold_time=1)
         elif BACKEND == "vncdotool":
             for part in text:
                 for char in str(part):
@@ -320,7 +331,7 @@ class DesktopControl:
                         char = 'space'
                     elif char == "\n":
                         char = 'return'
-                    client.keyPress(char)
+                    self.backend.keyPress(char)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
