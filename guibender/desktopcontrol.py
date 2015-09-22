@@ -178,6 +178,8 @@ class DesktopControl:
             self.backend.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
             self.backend.mousePress(MouseButton.LEFT_BUTTON)
+            # BUG: the mouse button is pressed down forever (on LEFT)
+            self.backend.mouseUp(MouseButton.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -207,8 +209,12 @@ class DesktopControl:
             self.backend.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
             self.backend.mousePress(MouseButton.LEFT_BUTTON)
+            # BUG: the mouse button is pressed down forever (on LEFT)
+            self.backend.mouseUp(MouseButton.LEFT_BUTTON)
             time.sleep(timeout)
             self.backend.mousePress(MouseButton.LEFT_BUTTON)
+            # BUG: the mouse button is pressed down forever (on LEFT)
+            self.backend.mouseUp(MouseButton.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
