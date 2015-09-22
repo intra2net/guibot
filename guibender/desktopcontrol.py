@@ -308,6 +308,14 @@ class DesktopControl:
                 # HACK: use xdotool to handle various character encoding
                 subprocess.call(['xdotool', 'type', part], shell=False)
         elif BACKEND == "qemu":
+            special_chars = {"~": "`", "!": "1", "@": "2", "#": "3", "$": "4",
+                             "%": "5", "^": "6", "&": "7", "*": "8", "(": "9",
+                             ")": "0", "_": "-", "+": "=", "{": "[", "}": "]",
+                             ":": ";", "\"": "'", "|":  "\\", "<": ",", ">": ".", "?": "/"}
+            capital_chars = {"A": "a", "B": "b", "C": "c", "D": "d", "E": "e", "F":"f", "G": "g",
+                             "H": "h", "I": "i", "J": "j", "K": "k", "L": "l", "M": "m", "N": "n",
+                             "O": "o", "P": "p", "Q": "q", "R": "r", "S": "s", "T": "t", "U": "u",
+                             "V": "v", "W": "w", "X": "x", "Y": "y", "Z": "z"}
             qemu_escape_map = {"\\": '0x2b',
                                "/" : 'slash',
                                " " : 'spc',
@@ -319,15 +327,19 @@ class DesktopControl:
                                ";" : '0x27',
                                "'" : '0x28',
                                "`" : '0x29',
-                               # TODO: verify '<' (since autotest != qemu doc)
                                "<" : '0x2b',
                                "(" : '0x1a',
                                ")" : '0x1b'
                                }
+            # TODO: the following characters still have problems ~()_+[]{}:\"|<>?
             for part in text:
                 for char in str(part):
                     if qemu_escape_map.has_key(char):
                         char = qemu_escape_map[char]
+                    elif capital_chars.has_key(char):
+                        char = "shift-%s" % capital_chars[char]
+                    elif special_chars.has_key(char):
+                        char = "shift-%s" % special_chars[char]
                     self.backend.sendkey(char, hold_time=1)
         elif BACKEND == "vncdotool":
             for part in text:
