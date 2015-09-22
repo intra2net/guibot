@@ -175,6 +175,9 @@ class DesktopControl:
         if BACKEND in ["autopy-win", "autopy-nix"]:
             self.backend.mouse.click(MouseButton.LEFT_BUTTON)
         elif BACKEND == "qemu":
+            # BUG: the mouse_button monitor command resets the mouse position to
+            # (0,0) making it impossible to click anywhere else, see this for more info:
+            # http://lists.nongnu.org/archive/html/qemu-devel/2013-06/msg02506.html
             self.backend.mouse_button(MouseButton.LEFT_BUTTON)
         elif BACKEND == "vncdotool":
             self.backend.mousePress(MouseButton.LEFT_BUTTON)
