@@ -68,7 +68,8 @@ class DesktopControl:
             self.height = screen.size[1]
         elif BACKEND == "vncdotool":
             self.backend = api.connect('%s:%i' % (Settings.vnc_hostname(), Settings.vnc_port()))
-            self.backend.factory.force_caps = True
+            if Settings.preprocess_special_chars():
+                self.backend.factory.force_caps = True
             # TODO: try to avoid the file performance slowdown
             with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
                 filename = f.name
@@ -295,9 +296,9 @@ class DesktopControl:
             capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             for part in text:
                 for char in str(part):
-                    if char in shift_chars:
+                    if char in shift_chars and Settings.preprocess_special_chars():
                         self.backend.key.tap(char, KeyModifier.MOD_SHIFT)
-                    elif char in capital_chars:
+                    elif char in capital_chars and Settings.preprocess_special_chars():
                         self.backend.key.tap(char, KeyModifier.MOD_SHIFT)
                     else:
                         self.backend.key.tap(char)
@@ -337,9 +338,9 @@ class DesktopControl:
                 for char in str(part):
                     if qemu_escape_map.has_key(char):
                         char = qemu_escape_map[char]
-                    elif capital_chars.has_key(char):
+                    elif capital_chars.has_key(char) and Settings.preprocess_special_chars():
                         char = "shift-%s" % capital_chars[char]
-                    elif special_chars.has_key(char):
+                    elif special_chars.has_key(char) and Settings.preprocess_special_chars():
                         char = "shift-%s" % special_chars[char]
                     self.backend.sendkey(char, hold_time=1)
         elif BACKEND == "vncdotool":

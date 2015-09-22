@@ -23,6 +23,7 @@ class Settings:
     _drop_delay = 0.5
     _keys_delay = 0.2
     _rescan_speed_on_find = 0.2
+    _preprocess_special_chars = True
     _save_needle_on_error = True
     _image_logging_level = logging.ERROR
     _image_logging_destination = "."
@@ -80,6 +81,27 @@ class Settings:
             return Settings._rescan_speed_on_find
         else:
             Settings._rescan_speed_on_find = delay
+
+    @staticmethod
+    def preprocess_special_chars(value=None):
+        """
+        Preprocess capital and special characters and handle them internally
+        (automatic replacement of shift modifier key).
+
+        Warning: The characters will be forcefully preprocessed for the
+        autopy-nix (capital and special) and vncdotool (capital) backends.
+        """
+        if value == None:
+            if Settings.desktop_control_backend() == "autopy-nix":
+                return True
+            elif Settings.desktop_control_backend() == "vncdotool":
+                return None
+            else:
+                return Settings._preprocess_special_chars
+        elif value == True or value == False:
+            Settings._preprocess_special_chars = value
+        else:
+            raise ValueError
 
     @staticmethod
     def save_needle_on_error(value=None):
