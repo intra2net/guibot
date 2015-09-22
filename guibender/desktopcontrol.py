@@ -68,6 +68,7 @@ class DesktopControl:
             self.height = screen.size[1]
         elif BACKEND == "vncdotool":
             self.backend = api.connect('%s:%i' % (Settings.vnc_hostname(), Settings.vnc_port()))
+            self.backend.factory.force_caps = True
             # TODO: try to avoid the file performance slowdown
             with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
                 filename = f.name
