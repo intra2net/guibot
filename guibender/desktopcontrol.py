@@ -15,6 +15,7 @@
 #
 import os
 import time
+import subprocess
 
 import PIL.Image
 from tempfile import NamedTemporaryFile
@@ -28,66 +29,33 @@ from inputmap import KeyModifier, MouseButton
 class DesktopControl:
 
     def __init__(self, equalizer=None):
+        self._screen = None
         self._backend_obj = None
         self._width = None
         self._height = None
         # NOTE: some backends require mouse pointer reinitialization so compensate for it
-        self._pointer = Location(0, 0)
-
+        self._pointer = None
         if equalizer == None:
             self.eq = DCEqualizer()
         else:
             self.eq = equalizer
-        if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
-            # dependencies
-            import autopy.screen
-            import autopy.mouse
-            if self.eq.get_backend() == "autopy-nix":
-                import subprocess
-            else:
-                import autopy.key
-            # object
-            self._backend_obj = autopy
-            # screen size
-            screen_size = self._backend_obj.screen.get_size()
-            self._width = screen_size[0]
-            self._height = screen_size[1]
-        elif self.eq.get_backend() == "qemu":
-            # object
-            self._backend_obj = self.eq.p["qemu_monitor"]
-            if not self._backend_obj:
-                raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
-            # screen size
-            with NamedTemporaryFile(prefix='guibender', suffix='.ppm') as f:
-                filename = f.name
-            self._backend_obj.screendump(filename=filename, debug=True)
-            screen = PIL.Image.open(filename)
-            os.unlink(filename)
-            self._width = screen.size[0]
-            self._height = screen.size[1]
-        elif self.eq.get_backend() == "vncdotool":
-            # imports
-            from vncdotool import api
-            import logging
-            logging.getLogger('vncdotool').setLevel(logging.ERROR)
-            logging.getLogger('twisted').setLevel(logging.ERROR)
-            # object
-            self._backend_obj = api.connect('%s:%i' % (self.eq.p["vnc_hostname"], self.eq.p["vnc_port"]))
-            if Settings.preprocess_special_chars():
-                self._backend_obj.factory.force_caps = True
-            # screen size
-            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-                filename = f.name
-            screen = self._backend_obj.captureScreen(filename)
-            os.unlink(filename)
-            self._width = screen.width
-            self._height = screen.height
+        self.connect_screen()
 
     def get_width(self):
         return self._width
 
     def get_height(self):
         return self._height
+
+    def connect_screen(self):
+        # apply any configuration in the equalizer to the backend
+        self._screen = self.eq.sync_backend_to_params(self._screen)
+
+        # unpack the screen contents here to use through shortcuts
+        self._backend_obj = self._screen.backend
+        self._width = self._screen.width
+        self._height = self._screen.height
+        self._pointer = Location(self._screen.pointer[0], self._screen.pointer[1])
 
     def capture_screen(self, *args):
         if len(args) == 4:

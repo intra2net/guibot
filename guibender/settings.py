@@ -15,13 +15,16 @@
 #
 
 import re
+import os
 try:
     import configparser as config
 except ImportError:
     import ConfigParser as config
-
 import logging
 log = logging.getLogger('guibender.settings')
+
+import PIL.Image
+from tempfile import NamedTemporaryFile
 
 # TODO: make this OpenCV independent with the rest
 import cv2
@@ -303,6 +306,58 @@ class DCEqualizer:
             self.p["vnc_port"] = 0
         log.log(0, "%s %s\n", new, self.p)
 
+    def sync_backend_to_params(self, backend):
+        """
+        Synchronize the desktop control backend with the equalizer.
+        """
+        if backend is None:
+            backend = DCScreen()
+        if self.get_backend() in ["autopy-win", "autopy-nix"]:
+            import autopy
+            backend.backend = autopy
+            # screen size
+            screen_size = backend.backend.screen.get_size()
+            backend.width = screen_size[0]
+            backend.height = screen_size[1]
+        elif self.get_backend() == "qemu":
+            backend.backend = self.p["qemu_monitor"]
+            if backend.backend is None:
+                raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
+            # screen size
+            with NamedTemporaryFile(prefix='guibender', suffix='.ppm') as f:
+                filename = f.name
+            backend.backend.screendump(filename=filename, debug=True)
+            screen = PIL.Image.open(filename)
+            os.unlink(filename)
+            backend.width = screen.size[0]
+            backend.height = screen.size[1]
+        elif self.get_backend() == "vncdotool":
+            logging.getLogger('vncdotool').setLevel(logging.ERROR)
+            logging.getLogger('twisted').setLevel(logging.ERROR)
+            from vncdotool import api
+            backend.backend = api.connect('%s:%i' % (self.p["vnc_hostname"], self.p["vnc_port"]))
+            if Settings.preprocess_special_chars():
+                backend.backend.factory.force_caps = True
+            # screen size
+            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+                filename = f.name
+            screen = backend.backend.captureScreen(filename)
+            os.unlink(filename)
+            backend.width = screen.width
+            backend.height = screen.height
+        return backend
+
+
+class DCScreen:
+
+    """A class for a synchronizable backend with the equalizer."""
+
+    def __init__(self):
+        self.backend = None
+        self.pointer = (0, 0)
+        self.width = 0
+        self.height = 0
+
 
 class CVEqualizer:
 
@@ -509,42 +564,44 @@ class CVEqualizer:
         log.log(0, "%s %s\n", category, self.p[category])
         return
 
-    def sync_backend_to_params(self, opencv_backend, category):
+    def sync_backend_to_params(self, backend, category):
         """
-        Synchronize the inner OpenCV parameters of detectors, extractors,
-        and matchers with the equalizer.
+        Synchronize the desktop control backend with the equalizer.
+
+        In particular, synchronize the inner OpenCV parameters of detectors,
+        extractors, and matchers with the equalizer.
         """
         if (category == "find" or category == "tmatch" or
                 (category == "fdetect" and self.get_backend(category) == "oldSURF")):
-            return opencv_backend
+            return backend
         elif category == "fmatch":
             # no internal OpenCV parameters to sync with
             if self.get_backend(category) in ("in-house-raw", "in-house-region"):
-                return opencv_backend
+                return backend
 
             # BUG: a bug of OpenCV leads to crash if parameters
             # are extracted from the matcher interface although
             # the API supports it - skip fmatch for now
             else:
-                return opencv_backend
+                return backend
 
-        for param in opencv_backend.getParams():
+        for param in backend.getParams():
             if param in self.p[category]:
                 val = self.p[category][param].value
-                ptype = opencv_backend.paramType(param)
+                ptype = backend.paramType(param)
                 if ptype == 0:
-                    opencv_backend.setInt(param, val)
+                    backend.setInt(param, val)
                 elif ptype == 1:
-                    opencv_backend.setBool(param, val)
+                    backend.setBool(param, val)
                 elif ptype == 2:
-                    opencv_backend.setDouble(param, val)
+                    backend.setDouble(param, val)
                 else:
                     # designed to raise error so that the other ptypes are identified
                     # currently unknown indices: setMat, setAlgorithm, setMatVector, setString
                     log.log(0, "Synced %s to %s", param, val)
-                    val = opencv_backend.setAlgorithm(param, val)
+                    val = backend.setAlgorithm(param, val)
                 self.p[category][param].value = val
-        return opencv_backend
+        return backend
 
     def can_calibrate(self, mark, category):
         """
