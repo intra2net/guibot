@@ -20,6 +20,7 @@ from location import Location
 from imagelogger import ImageLogger
 from errors import *
 
+# TODO: make it possible to define per image finder specific CV backend
 if Settings.find_image_backend() == "template" and Settings.template_match_backend() == "autopy":
     from autopy import bitmap
     from tempfile import NamedTemporaryFile
