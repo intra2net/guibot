@@ -51,22 +51,23 @@ class Region(object):
             dc = DesktopControl()
         if cv is None:
             cv = ImageFinder()
+        # since the backends are read/write make them public attributes
         self.dc_backend = dc
         self.cv_backend = cv
 
-        self.last_match = None
-        self.xpos = xpos
-        self.ypos = ypos
+        self._last_match = None
+        self._xpos = xpos
+        self._ypos = ypos
 
         if width == 0:
-            self.width = self.dc_backend.get_width()
+            self._width = self.dc_backend.get_width()
         else:
-            self.width = width
+            self._width = width
 
         if height == 0:
-            self.height = self.dc_backend.get_height()
+            self._height = self.dc_backend.get_height()
         else:
-            self.height = height
+            self._height = height
 
         self._ensure_screen_clipping()
 
@@ -74,67 +75,67 @@ class Region(object):
         screen_width = self.dc_backend.get_width()
         screen_height = self.dc_backend.get_height()
 
-        if self.xpos < 0:
-            self.xpos = 0
+        if self._xpos < 0:
+            self._xpos = 0
 
-        if self.ypos < 0:
-            self.ypos = 0
+        if self._ypos < 0:
+            self._ypos = 0
 
-        if self.xpos > screen_width:
-            self.xpos = screen_width - 1
+        if self._xpos > screen_width:
+            self._xpos = screen_width - 1
 
-        if self.ypos > screen_height:
-            self.ypos = screen_height - 1
+        if self._ypos > screen_height:
+            self._ypos = screen_height - 1
 
-        if self.xpos + self.width > screen_width:
-            self.width = screen_width - self.xpos
+        if self._xpos + self._width > screen_width:
+            self._width = screen_width - self._xpos
 
-        if self.ypos + self.height > screen_height:
-            self.height = screen_height - self.ypos
+        if self._ypos + self._height > screen_height:
+            self._height = screen_height - self._ypos
 
     def get_x(self):
-        return self.xpos
+        return self._xpos
 
     def get_y(self):
-        return self.ypos
+        return self._ypos
 
     def get_width(self):
-        return self.width
+        return self._width
 
     def get_height(self):
-        return self.height
+        return self._height
 
     def get_center(self):
-        xpos = (self.width - self.xpos) / 2
-        ypos = (self.height - self.ypos) / 2
+        xpos = (self._width - self._xpos) / 2
+        ypos = (self._height - self._ypos) / 2
 
         return Location(xpos, ypos)
 
     def get_top_left(self):
-        return Location(self.xpos, self.ypos)
+        return Location(self._xpos, self._ypos)
 
     def get_top_right(self):
-        return Location(self.xpos + self.width, self.ypos)
+        return Location(self._xpos + self._width, self._ypos)
 
     def get_bottom_left(self):
-        return Location(self.xpos, self.ypos + self.height)
+        return Location(self._xpos, self._ypos + self._height)
 
     def get_bottom_right(self):
-        return Location(self.xpos + self.width, self.ypos + self.height)
+        return Location(self._xpos + self._width, self._ypos + self._height)
 
     """Main region methods"""
     def nearby(self, rrange=50):
         log.debug("Checking nearby the current region")
-        new_xpos = self.xpos - rrange
+        new_xpos = self._xpos - rrange
         if new_xpos < 0:
             new_xpos = 0
 
-        new_ypos = self.ypos - rrange
+        new_ypos = self._ypos - rrange
         if new_ypos < 0:
             new_ypos = 0
 
-        new_width = self.width + rrange + self.xpos - new_xpos
-        new_height = self.height + rrange + self.ypos - new_ypos
+        new_width = self._width + rrange + self._xpos - new_xpos
+        new_height = self._height + rrange + self._ypos - new_ypos
 
         # Final clipping is done in the Region constructor
         return Region(new_xpos, new_ypos, new_width, new_height,
@@ -144,16 +145,16 @@ class Region(object):
         log.debug("Checking above the current region")
         if rrange == 0:
             new_ypos = 0
-            new_height = self.ypos + self.height
+            new_height = self._ypos + self._height
         else:
-            new_ypos = self.ypos - rrange
+            new_ypos = self._ypos - rrange
             if new_ypos < 0:
                 new_ypos = 0
 
-            new_height = self.height + self.ypos - new_ypos
+            new_height = self._height + self._ypos - new_ypos
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, new_ypos, self.width, new_height,
+        return Region(self._xpos, new_ypos, self._width, new_height,
                       self.dc_backend, self.cv_backend)
 
     def below(self, rrange=0):
@@ -161,26 +162,26 @@ class Region(object):
         if rrange == 0:
             rrange = self.dc_backend.get_height()
 
-        new_height = self.height + rrange
+        new_height = self._height + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, self.ypos, self.width, new_height,
+        return Region(self._xpos, self._ypos, self._width, new_height,
                       self.dc_backend, self.cv_backend)
 
     def left(self, rrange=0):
         log.debug("Checking left of the current region")
         if rrange == 0:
             new_xpos = 0
-            new_width = self.xpos + self.width
+            new_width = self._xpos + self._width
         else:
-            new_xpos = self.xpos - rrange
+            new_xpos = self._xpos - rrange
             if new_xpos < 0:
                 new_xpos = 0
 
-            new_width = self.width + self.xpos - new_xpos
+            new_width = self._width + self._xpos - new_xpos
 
         # Final clipping is done in the Region constructor
-        return Region(new_xpos, self.ypos, new_width, self.height,
+        return Region(new_xpos, self._ypos, new_width, self._height,
                       self.dc_backend, self.cv_backend)
 
     def right(self, rrange=0):
@@ -188,26 +189,15 @@ class Region(object):
         if rrange == 0:
             rrange = self.dc_backend.get_width()
 
-        new_width = self.width + rrange
+        new_width = self._width + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, self.ypos, new_width, self.height,
+        return Region(self._xpos, self._ypos, new_width, self._height,
                       self.dc_backend, self.cv_backend)
 
     """Image expect methods"""
     def get_last_match(self):
-        return self.last_match
-
-    # TODO: Something similar for the GUI action configuration?
-    def configure_find(self, find_image=None, template_match=None,
-                       feature_detect=None, feature_extract=None,
-                       feature_match=None):
-        """
-        Configure in one step all the CV algorithms.
-        """
-        self.cv_backend.eq.configure_backend(find_image, template_match,
-                                             feature_detect, feature_extract,
-                                             feature_match)
+        return self._last_match
 
     def find(self, image, timeout=10):
         """
@@ -226,10 +216,10 @@ class Region(object):
 
             found_pic = self.cv_backend.find(image, screen_capture)
             if found_pic is not None:
-                self.last_match = match.Match(self.xpos + found_pic.get_x(),
-                                              self.ypos + found_pic.get_y(), image,
-                                              self.dc_backend, self.cv_backend)
-                return self.last_match
+                self._last_match = match.Match(self._xpos + found_pic.get_x(),
+                                               self._ypos + found_pic.get_y(), image,
+                                               self.dc_backend, self.cv_backend)
+                return self._last_match
 
             elif time.time() > timeout_limit:
                 if Settings.save_needle_on_error():
@@ -266,8 +256,8 @@ class Region(object):
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
-                    last_matches.append(match.Match(self.xpos + found_pic.get_x(),
-                                                    self.ypos + found_pic.get_y(), image,
+                    last_matches.append(match.Match(self._xpos + found_pic.get_x(),
+                                                    self._ypos + found_pic.get_y(), image,
                                                     self.dc_backend, self.cv_backend))
                 return last_matches
 

@@ -27,12 +27,12 @@ class Match(region.Region):
         super(Match, self).__init__(xpos, ypos, image.width, image.height, dc, cv)
 
         target_offset = image.target_center_offset
-        self.target = self.calc_click_point(xpos, ypos, self.width, self.height, target_offset)
+        self._target = self.calc_click_point(xpos, ypos, self._width, self._height, target_offset)
 
     def __str__(self):
-        # NOTE: the __str__ of the Location instance self.target is not called which is a hidden
-        # (worst type of) error so call it explicitly here using str(self.target) or formatting
-        return "%s (match)" % self.target
+        # NOTE: the __str__ of the Location instance self._target is not called which is a hidden
+        # (worst type of) error so call it explicitly here using str(self._target) or formatting
+        return "%s (match)" % self._target
 
     def calc_click_point(self, xpos, ypos, width, height, offset):
         center_region = region.Region(0, 0, width, height,
@@ -45,4 +45,4 @@ class Match(region.Region):
         return Location(target_xpos, target_ypos)
 
     def get_target(self):
-        return self.target
+        return self._target
