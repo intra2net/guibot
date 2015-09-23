@@ -15,9 +15,8 @@
 #
 import PIL.Image
 
-from settings import Settings
+from settings import Settings, CVEqualizer
 from location import Location
-from cvequalizer import CVEqualizer
 from imagelogger import ImageLogger
 from errors import *
 

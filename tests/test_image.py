@@ -21,7 +21,7 @@ import common_test
 
 from tempfile import NamedTemporaryFile
 from image import Image
-from cvequalizer import CVEqualizer
+from settings import CVEqualizer
 from errors import *
 
 

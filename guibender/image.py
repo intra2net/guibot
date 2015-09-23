@@ -23,7 +23,7 @@ import numpy
 
 from location import Location
 from imagepath import ImagePath
-from cvequalizer import CVEqualizer
+from settings import CVEqualizer
 
 
 class Image:
