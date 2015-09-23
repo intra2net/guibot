@@ -39,7 +39,8 @@ class DesktopControl:
             self.eq = DCEqualizer()
         else:
             self.eq = equalizer
-        self.connect_screen()
+        if Settings.screen_autoconnect():
+            self.connect_screen()
 
     def get_width(self):
         return self._width

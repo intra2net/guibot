@@ -39,6 +39,7 @@ class Settings:
     _drop_delay = 0.5
     _keys_delay = 0.2
     _rescan_speed_on_find = 0.2
+    _screen_autoconnect = True
     _preprocess_special_chars = True
     _save_needle_on_error = True
     _image_logging_level = logging.ERROR
@@ -94,6 +95,24 @@ class Settings:
             return Settings._rescan_speed_on_find
         else:
             Settings._rescan_speed_on_find = delay
+
+    @staticmethod
+    def screen_autoconnect(value=None):
+        """
+        Perform a complete initialization of the desktop control, connecting to
+        the backend (screen) selected in the Settings._desktop_control_backend.
+
+        If disabled, you have to connect before performing any GUI operations:
+        region.dc_backend.connect_screen()
+
+        The use of this is to allow you to perform some configuration first.
+        """
+        if value == None:
+            return Settings._screen_autoconnect
+        elif value == True or value == False:
+            Settings._screen_autoconnect = value
+        else:
+            raise ValueError
 
     @staticmethod
     def preprocess_special_chars(value=None):
