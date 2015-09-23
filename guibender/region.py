@@ -37,29 +37,42 @@ class Region(object):
     RIGHT_BUTTON = MouseButton.RIGHT_BUTTON
     CENTER_BUTTON = MouseButton.CENTER_BUTTON
 
-    def __init__(self, xpos=0, ypos=0, width=0, height=0):
-        self.desktop = DesktopControl()
-        self.imagefinder = ImageFinder()
-        self.last_match = None
+    def __init__(self, xpos=0, ypos=0, width=0, height=0,
+                 dc=None, cv=None):
+        """
+        Initialize a region from xpos to xpos+width and from ypos to
+        ypos+height with desktop control backend defined by 'dc' and
+        computer vision backend defined by 'cv'.
 
+        If any of the backends is not defined a new will be initiated
+        using the parameters defined in Settings for the initialization.
+        """
+        if dc is None:
+            dc = DesktopControl()
+        if cv is None:
+            cv = ImageFinder()
+        self.dc_backend = dc
+        self.cv_backend = cv
+
+        self.last_match = None
         self.xpos = xpos
         self.ypos = ypos
 
         if width == 0:
-            self.width = self.desktop.get_width()
+            self.width = self.dc_backend.get_width()
         else:
             self.width = width
 
         if height == 0:
-            self.height = self.desktop.get_height()
+            self.height = self.dc_backend.get_height()
         else:
             self.height = height
 
         self._ensure_screen_clipping()
 
     def _ensure_screen_clipping(self):
-        screen_width = self.desktop.get_width()
-        screen_height = self.desktop.get_height()
+        screen_width = self.dc_backend.get_width()
+        screen_height = self.dc_backend.get_height()
 
         if self.xpos < 0:
             self.xpos = 0
@@ -124,7 +137,8 @@ class Region(object):
         new_height = self.height + rrange + self.ypos - new_ypos
 
         # Final clipping is done in the Region constructor
-        return Region(new_xpos, new_ypos, new_width, new_height)
+        return Region(new_xpos, new_ypos, new_width, new_height,
+                      self.dc_backend, self.cv_backend)
 
     def above(self, rrange=0):
         log.debug("Checking above the current region")
@@ -139,17 +153,19 @@ class Region(object):
             new_height = self.height + self.ypos - new_ypos
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, new_ypos, self.width, new_height)
+        return Region(self.xpos, new_ypos, self.width, new_height,
+                      self.dc_backend, self.cv_backend)
 
     def below(self, rrange=0):
         log.debug("Checking below the current region")
         if rrange == 0:
-            rrange = self.desktop.get_height()
+            rrange = self.dc_backend.get_height()
 
         new_height = self.height + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, self.ypos, self.width, new_height)
+        return Region(self.xpos, self.ypos, self.width, new_height,
+                      self.dc_backend, self.cv_backend)
 
     def left(self, rrange=0):
         log.debug("Checking left of the current region")
@@ -164,17 +180,19 @@ class Region(object):
             new_width = self.width + self.xpos - new_xpos
 
         # Final clipping is done in the Region constructor
-        return Region(new_xpos, self.ypos, new_width, self.height)
+        return Region(new_xpos, self.ypos, new_width, self.height,
+                      self.dc_backend, self.cv_backend)
 
     def right(self, rrange=0):
         log.debug("Checking right of the current region")
         if rrange == 0:
-            rrange = self.desktop.get_width()
+            rrange = self.dc_backend.get_width()
 
         new_width = self.width + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, self.ypos, new_width, self.height)
+        return Region(self.xpos, self.ypos, new_width, self.height,
+                      self.dc_backend, self.cv_backend)
 
     """Image expect methods"""
     def get_last_match(self):
@@ -187,9 +205,9 @@ class Region(object):
         """
         Configure in one step all the CV algorithms.
         """
-        self.imagefinder.eq.configure_backend(find_image, template_match,
-                                              feature_detect, feature_extract,
-                                              feature_match)
+        self.cv_backend.eq.configure_backend(find_image, template_match,
+                                             feature_detect, feature_extract,
+                                             feature_match)
 
     def find(self, image, timeout=10):
         """
@@ -204,12 +222,13 @@ class Region(object):
 
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.desktop.capture_screen(self)
+            screen_capture = self.dc_backend.capture_screen(self)
 
-            found_pic = self.imagefinder.find(image, screen_capture)
+            found_pic = self.cv_backend.find(image, screen_capture)
             if found_pic is not None:
                 self.last_match = match.Match(self.xpos + found_pic.get_x(),
-                                              self.ypos + found_pic.get_y(), image)
+                                              self.ypos + found_pic.get_y(), image,
+                                              self.dc_backend, self.cv_backend)
                 return self.last_match
 
             elif time.time() > timeout_limit:
@@ -241,14 +260,15 @@ class Region(object):
         last_matches = []
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.desktop.capture_screen(self)
+            screen_capture = self.dc_backend.capture_screen(self)
 
-            found_pics = self.imagefinder.find(image, screen_capture, multiple=True)
+            found_pics = self.cv_backend.find(image, screen_capture, multiple=True)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
                     last_matches.append(match.Match(self.xpos + found_pic.get_x(),
-                                                    self.ypos + found_pic.get_y(), image))
+                                                    self.ypos + found_pic.get_y(), image,
+                                                    self.dc_backend, self.cv_backend))
                 return last_matches
 
             elif time.time() > timeout_limit:
@@ -278,8 +298,8 @@ class Region(object):
         ImageLogger.accumulate_logging = True
         self.find(image)
         ImageLogger.accumulate_logging = False
-        similarity = self.imagefinder.imglog.similarities[-1]
-        self.imagefinder.imglog.clear()
+        similarity = self.cv_backend.imglog.similarities[-1]
+        self.cv_backend.imglog.clear()
         return similarity
 
     def exists(self, image, timeout=0):
@@ -340,7 +360,7 @@ class Region(object):
         """
         Obtain the mouse location as a Location object.
         """
-        return self.desktop.get_mouse_location()
+        return self.dc_backend.get_mouse_location()
 
     def hover(self, image_or_location):
         """
@@ -351,21 +371,21 @@ class Region(object):
 
         # Handle Match
         try:
-            self.desktop.mouse_move(image_or_location.get_target())
+            self.dc_backend.mouse_move(image_or_location.get_target())
             return None
         except AttributeError:
             pass
 
         # Handle Location
         try:
-            self.desktop.mouse_move(image_or_location)
+            self.dc_backend.mouse_move(image_or_location)
             return None
         except AttributeError:
             pass
 
         # Find image
         match = self.find(image_or_location)
-        self.desktop.mouse_move(match.get_target())
+        self.dc_backend.mouse_move(match.get_target())
 
         return match
 
@@ -379,7 +399,7 @@ class Region(object):
         log.info("Clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.mouse_click(modifiers)
+        self.dc_backend.mouse_click(modifiers)
         return match
 
     def right_click(self, image_or_location, modifiers=None):
@@ -392,7 +412,7 @@ class Region(object):
         log.info("Right clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.mouse_right_click(modifiers)
+        self.dc_backend.mouse_right_click(modifiers)
         return match
 
     def double_click(self, image_or_location, modifiers=None):
@@ -405,7 +425,7 @@ class Region(object):
         log.info("Double clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.mouse_double_click(modifiers)
+        self.dc_backend.mouse_double_click(modifiers)
         return match
 
     def mouse_down(self, image_or_location, button=LEFT_BUTTON):
@@ -415,7 +435,7 @@ class Region(object):
         """
         match = self.hover(image_or_location)
         log.debug("Holding down the mouse at %s", image_or_location)
-        self.desktop.mouse_down(button)
+        self.dc_backend.mouse_down(button)
         return match
 
     def mouse_up(self, image_or_location, button=LEFT_BUTTON):
@@ -425,7 +445,7 @@ class Region(object):
         """
         match = self.hover(image_or_location)
         log.debug("Holding up the mouse at %s", image_or_location)
-        self.desktop.mouse_up(button)
+        self.dc_backend.mouse_up(button)
         return match
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
@@ -447,11 +467,11 @@ class Region(object):
         time.sleep(0.2)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-            self.desktop.keys_toggle(modifiers, True)
-            #self.desktop.keys_toggle(["Ctrl"], True)
+            self.dc_backend.keys_toggle(modifiers, True)
+            #self.dc_backend.keys_toggle(["Ctrl"], True)
 
         log.info("Dragging %s", image_or_location)
-        self.desktop.mouse_down(self.LEFT_BUTTON)
+        self.dc_backend.mouse_down(self.LEFT_BUTTON)
         time.sleep(Settings.delay_after_drag())
 
         return match
@@ -465,13 +485,13 @@ class Region(object):
         time.sleep(Settings.delay_before_drop())
 
         log.info("Dropping at %s", image_or_location)
-        self.desktop.mouse_up(self.LEFT_BUTTON)
+        self.dc_backend.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-            self.desktop.keys_toggle(modifiers, False)
-            #self.desktop.keys_toggle(["Ctrl"], False)
+            self.dc_backend.keys_toggle(modifiers, False)
+            #self.dc_backend.keys_toggle(["Ctrl"], False)
 
         return match
 
@@ -486,7 +506,7 @@ class Region(object):
             press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
-        self.desktop.keys_press(keys_list)
+        self.dc_backend.keys_press(keys_list)
         return self
 
     def press_at(self, keys, image_or_location):
@@ -499,7 +519,7 @@ class Region(object):
         keys_list = self._parse_keys(keys, image_or_location)
         match = self.click(image_or_location)
         time.sleep(Settings.delay_before_keys())
-        self.desktop.keys_press(keys_list)
+        self.dc_backend.keys_press(keys_list)
         return match
 
     def _parse_keys(self, keys, image_or_location=None):
@@ -556,7 +576,7 @@ class Region(object):
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
-        self.desktop.keys_type(text_list, modifiers)
+        self.dc_backend.keys_type(text_list, modifiers)
         return self
 
     def type_at(self, text, image_or_location, modifiers=None):
@@ -576,7 +596,7 @@ class Region(object):
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
-        self.desktop.keys_type(text_list, modifiers)
+        self.dc_backend.keys_type(text_list, modifiers)
         return match
 
     def _parse_text(self, text, image_or_location=None):
