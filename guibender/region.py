@@ -259,6 +259,7 @@ class Region(object):
                     last_matches.append(match.Match(self._xpos + found_pic.get_x(),
                                                     self._ypos + found_pic.get_y(), image,
                                                     self.dc_backend, self.cv_backend))
+                self._last_match = found_pics[-1]
                 return last_matches
 
             elif time.time() > timeout_limit:
