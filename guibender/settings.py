@@ -44,9 +44,6 @@ class Settings:
 
     # backends shared between all instances
     _desktop_control_backend = "autopy-nix"
-    _vnc_hostname = "localhost"
-    _vnc_port = 0
-    _qemu_monitor = None
     _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
@@ -185,36 +182,6 @@ class Settings:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % name)
             Settings._desktop_control_backend = name
 
-    @staticmethod
-    def vnc_hostname(name=None):
-        """
-        Hostname of the vnc server in case vncdotool backend is used.
-        """
-        if name == None:
-            return Settings._vnc_hostname
-        else:
-            Settings._vnc_hostname = name
-
-    @staticmethod
-    def vnc_port(port=None):
-        """
-        Port of the vnc server in case vncdotool backend is used.
-        """
-        if port == None:
-            return Settings._vnc_port
-        else:
-            Settings._vnc_port = port
-
-    @staticmethod
-    def qemu_monitor(monitor=None):
-        """
-        Qemu monitor object in case qemu backend is used.
-        """
-        if monitor == None:
-            return Settings._qemu_monitor
-        else:
-            Settings._qemu_monitor = monitor
-
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
     @staticmethod
@@ -277,6 +244,64 @@ class Settings:
             return Settings._feature_match_backend
         else:
             Settings._feature_match_backend = name
+
+
+class DCEqualizer:
+
+    def __init__(self):
+        """
+        Initialize a class for the desktop control backend configuration.
+
+        This class is similar to the computer vision backend configuration
+        one but is simpler due to the lack of categories.
+
+        A parameter can be accessed as follows:
+        print self.p["vnc_hostname"]
+        """
+        self.algorithms = ("autopy-nix", "autopy-win", "qemu", "vncdotool")
+        self.p = {}
+        self._current = None
+
+        self.configure_backend(Settings.desktop_control_backend())
+
+    def get_backend(self):
+        log.log(0, "desktop_control %s", self._current)
+        return self._current
+
+    def configure_backend(self, name, *args):
+        """
+        Change the type and parameters of a backend for the
+        desktop control.
+        """
+        self._current = name
+        self._new_params(name)
+
+        if name == "vncdotool":
+            if len(args) == 2:
+                self.p["vnc_hostname"] = args[0]
+                self.p["vnc_port"] = args[1]
+            elif len(args) == 1:
+                self.p["vnc_port"] = args[0]
+        elif name == "qemu":
+            if len(args) == 1:
+                self.p["qemu_monitor"] = args[0]
+
+    def _new_params(self, new):
+        """Update the parameters dictionary according to a new backend method."""
+        self.p = {}
+        if new == "autopy-nix":
+            pass
+        elif new == "autopy-wind":
+            pass
+        elif new == "qemu":
+            # qemu monitor object in case qemu backend is used.
+            self.p["qemu_monitor"] = None
+        elif new == "vncdotool":
+            # hostname of the vnc server in case vncdotool backend is used.
+            self.p["vnc_hostname"] = "localhost"
+            # port of the vnc server in case vncdotool backend is used.
+            self.p["vnc_port"] = 0
+        log.log(0, "%s %s\n", new, self.p)
 
 
 class CVEqualizer:
