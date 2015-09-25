@@ -23,7 +23,6 @@ from tempfile import NamedTemporaryFile
 from settings import Settings, DCEqualizer
 from image import Image
 from location import Location
-from inputmap import KeyModifier, MouseButton
 
 
 class DesktopControl:
@@ -35,6 +34,10 @@ class DesktopControl:
         self._height = None
         # NOTE: some backends require mouse pointer reinitialization so compensate for it
         self._pointer = None
+        self._keymap = None
+        self._mousemap = None
+        self._modmap = None
+
         if equalizer == None:
             self.eq = DCEqualizer()
         else:
@@ -57,6 +60,9 @@ class DesktopControl:
         self._width = self._screen.width
         self._height = self._screen.height
         self._pointer = Location(self._screen.pointer[0], self._screen.pointer[1])
+        self._keymap = self._screen.keymap
+        self._mousemap = self._screen.mousemap
+        self._modmap = self._screen.modmap
 
     def capture_screen(self, *args):
         if len(args) == 4:
@@ -147,16 +153,16 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
-            self._backend_obj.mouse.click(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouse.click(self._mousemap.LEFT_BUTTON)
         elif self.eq.get_backend() == "qemu":
             # BUG: the mouse_button monitor command resets the mouse position to
             # (0,0) making it impossible to click anywhere else, see this for more info:
             # http://lists.nongnu.org/archive/html/qemu-devel/2013-06/msg02506.html
-            self._backend_obj.mouse_button(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
         elif self.eq.get_backend() == "vncdotool":
-            self._backend_obj.mousePress(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
             # BUG: the mouse button is pressed down forever (on LEFT)
-            self._backend_obj.mouseUp(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouseUp(self._mousemap.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -164,11 +170,11 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
-            self._backend_obj.mouse.click(MouseButton.RIGHT_BUTTON)
+            self._backend_obj.mouse.click(self._mousemap.RIGHT_BUTTON)
         elif self.eq.get_backend() == "qemu":
-            self._backend_obj.mouse_button(MouseButton.RIGHT_BUTTON)
+            self._backend_obj.mouse_button(self._mousemap.RIGHT_BUTTON)
         elif self.eq.get_backend() == "vncdotool":
-            self._backend_obj.mousePress(MouseButton.RIGHT_BUTTON)
+            self._backend_obj.mousePress(self._mousemap.RIGHT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -177,25 +183,25 @@ class DesktopControl:
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
-            self._backend_obj.mouse.click(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouse.click(self._mousemap.LEFT_BUTTON)
             time.sleep(timeout)
-            self._backend_obj.mouse.click(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouse.click(self._mousemap.LEFT_BUTTON)
         elif self.eq.get_backend() == "qemu":
-            self._backend_obj.mouse_button(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
             time.sleep(timeout)
-            self._backend_obj.mouse_button(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
         elif self.eq.get_backend() == "vncdotool":
-            self._backend_obj.mousePress(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
             # BUG: the mouse button is pressed down forever (on LEFT)
-            self._backend_obj.mouseUp(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouseUp(self._mousemap.LEFT_BUTTON)
             time.sleep(timeout)
-            self._backend_obj.mousePress(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
             # BUG: the mouse button is pressed down forever (on LEFT)
-            self._backend_obj.mouseUp(MouseButton.LEFT_BUTTON)
+            self._backend_obj.mouseUp(self._mousemap.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
-    def mouse_down(self, button=MouseButton.LEFT_BUTTON):
+    def mouse_down(self, button):
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
             self._backend_obj.mouse.toggle(True, button)
         elif self.eq.get_backend() == "qemu":
@@ -205,7 +211,7 @@ class DesktopControl:
             # TODO: sync with autopy button
             self._backend_obj.mouseDown(button)
 
-    def mouse_up(self, button=MouseButton.LEFT_BUTTON):
+    def mouse_up(self, button):
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
             self._backend_obj.mouse.toggle(False, button)
         elif self.eq.get_backend() == "qemu":
@@ -269,9 +275,9 @@ class DesktopControl:
             for part in text:
                 for char in str(part):
                     if char in shift_chars and Settings.preprocess_special_chars():
-                        self._backend_obj.key.tap(char, KeyModifier.MOD_SHIFT)
+                        self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
                     elif char in capital_chars and Settings.preprocess_special_chars():
-                        self._backend_obj.key.tap(char, KeyModifier.MOD_SHIFT)
+                        self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
                     else:
                         self._backend_obj.key.tap(char)
                 # TODO: Fix autopy to handle international chars and other stuff so

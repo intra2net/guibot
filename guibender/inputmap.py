@@ -14,365 +14,362 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from settings import Settings
-BACKEND = Settings.desktop_control_backend()
-if BACKEND in ["autopy-win", "autopy-nix"]:
-    import autopy.key
-
 
 class Key:
 
-    if BACKEND in ["autopy-win", "autopy-nix"]:
-        # commented out keys are not supported by autopy
-        # TODO: this needs to be patched
+    def __init__(self, backend):
+        if backend in ["autopy-win", "autopy-nix"]:
+            import autopy
+            # commented out keys are not supported by autopy
+            # TODO: this needs to be patched
+            self.ENTER = autopy.key.K_RETURN
+            self.TAB = None
+            self.ESC = autopy.key.K_ESCAPE
+            self.BACKSPACE = autopy.key.K_BACKSPACE
+            self.DELETE = autopy.key.K_DELETE
+            self.INSERT = None
 
-        ENTER = autopy.key.K_RETURN
-        TAB = None
-        ESC = autopy.key.K_ESCAPE
-        BACKSPACE = autopy.key.K_BACKSPACE
-        DELETE = autopy.key.K_DELETE
-        INSERT = None
+            self.CTRL = autopy.key.K_CONTROL
+            self.ALT = autopy.key.K_ALT
+            self.SHIFT = autopy.key.K_SHIFT
+            self.META = autopy.key.K_META
+            self.RCTRL = None
+            self.RALT = None
+            self.RSHIFT = None
+            self.RMETA = None
 
-        CTRL = autopy.key.K_CONTROL
-        ALT = autopy.key.K_ALT
-        SHIFT = autopy.key.K_SHIFT
-        META = autopy.key.K_META
-        RCTRL = None
-        RALT = None
-        RSHIFT = None
-        RMETA = None
+            self.F1 = autopy.key.K_F1
+            self.F2 = autopy.key.K_F2
+            self.F3 = autopy.key.K_F3
+            self.F4 = autopy.key.K_F4
+            self.F5 = autopy.key.K_F5
+            self.F6 = autopy.key.K_F6
+            self.F7 = autopy.key.K_F7
+            self.F8 = autopy.key.K_F8
+            self.F9 = autopy.key.K_F9
+            self.F10 = autopy.key.K_F10
+            self.F11 = autopy.key.K_F11
+            self.F12 = autopy.key.K_F12
+            self.F13 = None
+            self.F14 = None
+            self.F15 = None
+            self.F16 = None
+            self.F17 = None
+            self.F18 = None
+            self.F19 = None
+            self.F20 = None
 
-        F1 = autopy.key.K_F1
-        F2 = autopy.key.K_F2
-        F3 = autopy.key.K_F3
-        F4 = autopy.key.K_F4
-        F5 = autopy.key.K_F5
-        F6 = autopy.key.K_F6
-        F7 = autopy.key.K_F7
-        F8 = autopy.key.K_F8
-        F9 = autopy.key.K_F9
-        F10 = autopy.key.K_F10
-        F11 = autopy.key.K_F11
-        F12 = autopy.key.K_F12
-        F13 = None
-        F14 = None
-        F15 = None
-        F16 = None
-        F17 = None
-        F18 = None
-        F19 = None
-        F20 = None
+            self.HOME = autopy.key.K_HOME
+            self.END = autopy.key.K_END
+            self.LEFT = autopy.key.K_LEFT
+            self.RIGHT = autopy.key.K_RIGHT
+            self.UP = autopy.key.K_UP
+            self.DOWN = autopy.key.K_DOWN
+            self.PAGE_DOWN = autopy.key.K_PAGEDOWN
+            self.PAGE_UP = autopy.key.K_PAGEUP
 
-        HOME = autopy.key.K_HOME
-        END = autopy.key.K_END
-        LEFT = autopy.key.K_LEFT
-        RIGHT = autopy.key.K_RIGHT
-        UP = autopy.key.K_UP
-        DOWN = autopy.key.K_DOWN
-        PAGE_DOWN = autopy.key.K_PAGEDOWN
-        PAGE_UP = autopy.key.K_PAGEUP
+            self.CAPS_LOCK = autopy.key.K_CAPSLOCK
+            self.PRINTSCREEN = None
+            self.PAUSE = None
+            self.SCROLL_LOCK = None
+            self.NUM_LOCK = None
+            self.SYS_REQ = None
+            self.SUPER = None
+            self.RSUPER = None
+            self.HYPER = None
+            self.RHYPER = None
+            self.MENU = None
 
-        CAPS_LOCK = autopy.key.K_CAPSLOCK
-        PRINTSCREEN = None
-        PAUSE = None
-        SCROLL_LOCK = None
-        NUM_LOCK = None
-        SYS_REQ = None
-        SUPER = None
-        RSUPER = None
-        HYPER = None
-        RHYPER = None
-        MENU = None
+            self.KP0 = None
+            self.KP1 = None
+            self.KP2 = None
+            self.KP3 = None
+            self.KP4 = None
+            self.KP5 = None
+            self.KP6 = None
+            self.KP7 = None
+            self.KP8 = None
+            self.KP9 = None
+            self.KP_ENTER = None
+            self.KP_DIVIDE = None
+            self.KP_MULTIPLY = None
+            self.KP_SUBTRACT = None
+            self.KP_ADD = None
+            self.KP_DECIMAL = None
 
-        KP0 = None
-        KP1 = None
-        KP2 = None
-        KP3 = None
-        KP4 = None
-        KP5 = None
-        KP6 = None
-        KP7 = None
-        KP8 = None
-        KP9 = None
-        KP_ENTER = None
-        KP_DIVIDE = None
-        KP_MULTIPLY = None
-        KP_SUBTRACT = None
-        KP_ADD = None
-        KP_DECIMAL = None
+        elif backend == "qemu":
 
-    elif BACKEND == "qemu":
+            self.ENTER = 'ret'
+            self.TAB = 'tab'
+            self.ESC = 'esc'
+            self.BACKSPACE = 'backspace'
+            self.DELETE = 'delete'
+            self.INSERT = 'insert'
 
-        ENTER = 'ret'
-        TAB = 'tab'
-        ESC = 'esc'
-        BACKSPACE = 'backspace'
-        DELETE = 'delete'
-        INSERT = 'insert'
+            self.CTRL = 'ctrl'
+            self.ALT = 'alt'
+            # TODO: if needed these are also supported
+            # altgr, altgr_r (right altgr)
+            self.SHIFT = 'shift'
+            # TODO: 'meta' is not available
+            self.META = None
+            self.RCTRL = 'ctrl_r'
+            self.RALT = 'alt_r'
+            self.RSHIFT = 'shift_r'
+            # TODO: 'right meta' is not available
+            self.RMETA = None
 
-        CTRL = 'ctrl'
-        ALT = 'alt'
-        # TODO: if needed these are also supported
-        # altgr, altgr_r (right altgr)
-        SHIFT = 'shift'
-        # TODO: 'meta' is not available
-        META = None
-        RCTRL = 'ctrl_r'
-        RALT = 'alt_r'
-        RSHIFT = 'shift_r'
-        # TODO: 'right meta' is not available
-        RMETA = None
+            self.F1 = 'f1'
+            self.F2 = 'f2'
+            self.F3 = 'f3'
+            self.F4 = 'f4'
+            self.F5 = 'f5'
+            self.F6 = 'f6'
+            self.F7 = 'f7'
+            self.F8 = 'f8'
+            self.F9 = 'f9'
+            self.F10 = 'f10'
+            self.F11 = 'f11'
+            self.F12 = 'f12'
+            # TODO: these function keys are not available
+            self.F13 = None
+            self.F14 = None
+            self.F15 = None
+            self.F16 = None
+            self.F17 = None
+            self.F18 = None
+            self.F19 = None
+            self.F20 = None
 
-        F1 = 'f1'
-        F2 = 'f2'
-        F3 = 'f3'
-        F4 = 'f4'
-        F5 = 'f5'
-        F6 = 'f6'
-        F7 = 'f7'
-        F8 = 'f8'
-        F9 = 'f9'
-        F10 = 'f10'
-        F11 = 'f11'
-        F12 = 'f12'
-        # TODO: these function keys are not available
-        F13 = None
-        F14 = None
-        F15 = None
-        F16 = None
-        F17 = None
-        F18 = None
-        F19 = None
-        F20 = None
+            self.HOME = 'home'
+            self.END = 'end'
+            self.LEFT = 'left'
+            self.RIGHT = 'right'
+            self.UP = 'up'
+            self.DOWN = 'down'
+            self.PAGE_DOWN = 'pgdn'
+            self.PAGE_UP = 'pgup'
 
-        HOME = 'home'
-        END = 'end'
-        LEFT = 'left'
-        RIGHT = 'right'
-        UP = 'up'
-        DOWN = 'down'
-        PAGE_DOWN = 'pgdn'
-        PAGE_UP = 'pgup'
+            self.CAPS_LOCK = 'caps_lock'
+            self.PRINTSCREEN = 'print'
+            # TODO: 'pause' is not available
+            self.PAUSE = None
+            self.SCROLL_LOCK = 'scroll_lock'
+            self.NUM_LOCK = 'num_lock'
+            self.SYS_REQ = 'sysrq'
+            self.SUPER = '0xdc'
+            self.RSUPER = '0xdb'
+            # TODO: 'hyper' and 'right hyper' are not available
+            self.HYPER = None
+            self.RHYPER = None
+            self.MENU = "menu"
 
-        CAPS_LOCK = 'caps_lock'
-        PRINTSCREEN = 'print'
-        # TODO: 'pause' is not available
-        PAUSE = None
-        SCROLL_LOCK = 'scroll_lock'
-        NUM_LOCK = 'num_lock'
-        SYS_REQ = 'sysrq'
-        SUPER = '0xdc'
-        RSUPER = '0xdb'
-        # TODO: 'hyper' and 'right hyper' are not available
-        HYPER = None
-        RHYPER = None
-        MENU = "menu"
+            self.KP0 = 'kp_0'
+            self.KP1 = 'kp_1'
+            self.KP2 = 'kp_2'
+            self.KP3 = 'kp_3'
+            self.KP4 = 'kp_4'
+            self.KP5 = 'kp_5'
+            self.KP6 = 'kp_6'
+            self.KP7 = 'kp_7'
+            self.KP8 = 'kp_8'
+            self.KP9 = 'kp_9'
+            self.KP_ENTER = 'kp_enter'
+            self.KP_DIVIDE = 'kp_divide'
+            self.KP_MULTIPLY = 'kp_multiply'
+            self.KP_SUBTRACT = 'kp_subtract'
+            self.KP_ADD = 'kp_add'
+            self.KP_DECIMAL = 'kp_decimal'
 
-        KP0 = 'kp_0'
-        KP1 = 'kp_1'
-        KP2 = 'kp_2'
-        KP3 = 'kp_3'
-        KP4 = 'kp_4'
-        KP5 = 'kp_5'
-        KP6 = 'kp_6'
-        KP7 = 'kp_7'
-        KP8 = 'kp_8'
-        KP9 = 'kp_9'
-        KP_ENTER = 'kp_enter'
-        KP_DIVIDE = 'kp_divide'
-        KP_MULTIPLY = 'kp_multiply'
-        KP_SUBTRACT = 'kp_subtract'
-        KP_ADD = 'kp_add'
-        KP_DECIMAL = 'kp_decimal'
+        elif backend == "vncdotool":
 
-    elif BACKEND == "vncdotool":
+            # TODO: it would be preferable to translate directly to RBF like
+            # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
+            self.ENTER = 'return' # also 'enter'
+            self.TAB = 'tab'
+            self.ESC = 'esc'
+            self.BACKSPACE = 'bsp'
+            self.DELETE = 'del' # also 'delete'
+            self.INSERT = 'ins'
 
-        # TODO: it would be preferable to translate directly to RBF like
-        # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
-        ENTER = 'return' # also 'enter'
-        TAB = 'tab'
-        ESC = 'esc'
-        BACKSPACE = 'bsp'
-        DELETE = 'del' # also 'delete'
-        INSERT = 'ins'
+            self.CTRL = 'ctrl' # also 'lctrl'
+            self.ALT = 'alt' # also 'lalt'
+            self.SHIFT = 'shift' # also 'lshift'
+            self.META = 'meta' # also 'lmeta'
+            self.RCTRL = 'rctrl'
+            self.RALT = 'ralt'
+            self.RSHIFT = 'rshift'
+            self.RMETA = 'rmeta'
 
-        CTRL = 'ctrl' # also 'lctrl'
-        ALT = 'alt' # also 'lalt'
-        SHIFT = 'shift' # also 'lshift'
-        META = 'meta' # also 'lmeta'
-        RCTRL = 'rctrl'
-        RALT = 'ralt'
-        RSHIFT = 'rshift'
-        RMETA = 'rmeta'
+            self.F1 = 'f1'
+            self.F2 = 'f2'
+            self.F3 = 'f3'
+            self.F4 = 'f4'
+            self.F5 = 'f5'
+            self.F6 = 'f6'
+            self.F7 = 'f7'
+            self.F8 = 'f8'
+            self.F9 = 'f9'
+            self.F10 = 'f10'
+            self.F11 = 'f11'
+            self.F12 = 'f12'
+            self.F13 = 'f13'
+            self.F14 = 'f14'
+            self.F15 = 'f15'
+            self.F16 = 'f16'
+            self.F17 = 'f17'
+            self.F18 = 'f18'
+            self.F19 = 'f19'
+            self.F20 = 'f20'
 
-        F1 = 'f1'
-        F2 = 'f2'
-        F3 = 'f3'
-        F4 = 'f4'
-        F5 = 'f5'
-        F6 = 'f6'
-        F7 = 'f7'
-        F8 = 'f8'
-        F9 = 'f9'
-        F10 = 'f10'
-        F11 = 'f11'
-        F12 = 'f12'
-        F13 = 'f13'
-        F14 = 'f14'
-        F15 = 'f15'
-        F16 = 'f16'
-        F17 = 'f17'
-        F18 = 'f18'
-        F19 = 'f19'
-        F20 = 'f20'
+            self.HOME = 'home'
+            self.END = 'end'
+            self.LEFT = 'left'
+            self.RIGHT = 'right'
+            self.UP = 'up'
+            self.DOWN = 'down'
+            self.PAGE_DOWN = 'pgdn'
+            self.PAGE_UP = 'pgup'
 
-        HOME = 'home'
-        END = 'end'
-        LEFT = 'left'
-        RIGHT = 'right'
-        UP = 'up'
-        DOWN = 'down'
-        PAGE_DOWN = 'pgdn'
-        PAGE_UP = 'pgup'
+            self.CAPS_LOCK = 'caplk'
+            # TODO: 'print screen' is not available
+            self.PRINTSCREEN = None
+            self.PAUSE = 'pause'
+            self.SCROLL_LOCK = 'scrlk'
+            self.NUM_LOCK = 'numlk'
+            self.SYS_REQ = 'sysrq'
+            self.SUPER = 'super' # also 'lsuper'
+            self.RSUPER = 'rsuper'
+            self.HYPER = 'hyper' # also 'lhyper'
+            self.RHYPER = 'rhyper'
+            # TODO: 'menu' is not available
+            self.MENU = None
 
-        CAPS_LOCK = 'caplk'
-        # TODO: 'print screen' is not available
-        PRINTSCREEN = None
-        PAUSE = 'pause'
-        SCROLL_LOCK = 'scrlk'
-        NUM_LOCK = 'numlk'
-        SYS_REQ = 'sysrq'
-        SUPER = 'super' # also 'lsuper'
-        RSUPER = 'rsuper'
-        HYPER = 'hyper' # also 'lhyper'
-        RHYPER = 'rhyper'
-        # TODO: 'menu' is not available
-        MENU = None
+            self.KP0 = 'kp0'
+            self.KP1 = 'kp1'
+            self.KP2 = 'kp2'
+            self.KP3 = 'kp3'
+            self.KP4 = 'kp4'
+            self.KP5 = 'kp5'
+            self.KP6 = 'kp6'
+            self.KP7 = 'kp7'
+            self.KP8 = 'kp8'
+            self.KP9 = 'kp9'
+            self.KP_ENTER = 'kpenter'
+            # TODO: these are not available
+            self.KP_DIVIDE = None
+            self.KP_MULTIPLY = None
+            self.KP_SUBTRACT = None
+            self.KP_ADD = None
+            self.KP_DECIMAL = None
 
-        KP0 = 'kp0'
-        KP1 = 'kp1'
-        KP2 = 'kp2'
-        KP3 = 'kp3'
-        KP4 = 'kp4'
-        KP5 = 'kp5'
-        KP6 = 'kp6'
-        KP7 = 'kp7'
-        KP8 = 'kp8'
-        KP9 = 'kp9'
-        KP_ENTER = 'kpenter'
-        # TODO: these are not available
-        KP_DIVIDE = None
-        KP_MULTIPLY = None
-        KP_SUBTRACT = None
-        KP_ADD = None
-        KP_DECIMAL = None
-
-    @staticmethod
-    def to_string(key):
-        return {Key.ENTER: "Enter",
-                Key.TAB: "Tab",
-                Key.ESC: "Esc",
-                Key.BACKSPACE: "Backspace",
-                Key.DELETE: "Delete",
-                Key.INSERT: "Insert",
-                Key.CTRL: "Ctrl",
-                Key.ALT: "Alt",
-                Key.SHIFT: "Shift",
-                Key.META: "Meta",
-                Key.RCTRL: "RightControl",
-                Key.RALT: "RightAlt",
-                Key.RSHIFT: "RightShift",
-                Key.RMETA: "RightMeta",
-                Key.F1: "F1",
-                Key.F2: "F2",
-                Key.F3: "F3",
-                Key.F4: "F4",
-                Key.F5: "F5",
-                Key.F6: "F6",
-                Key.F7: "F7",
-                Key.F8: "F8",
-                Key.F9: "F9",
-                Key.F10: "F10",
-                Key.F11: "F11",
-                Key.F12: "F12",
-                Key.F13: "F13",
-                Key.F14: "F14",
-                Key.F15: "F15",
-                Key.F16: "F16",
-                Key.F17: "F17",
-                Key.F18: "F18",
-                Key.F19: "F19",
-                Key.F20: "F20",
-                Key.HOME: "Home",
-                Key.END: "End",
-                Key.LEFT: "Left",
-                Key.RIGHT: "Right",
-                Key.UP: "Up",
-                Key.DOWN: "Down",
-                Key.PAGE_DOWN: "Page Down",
-                Key.PAGE_UP: "Page Up",
-                Key.CAPS_LOCK: "Caps Lock",
-                Key.PRINTSCREEN: "Print Screen",
-                Key.PAUSE: "Pause",
-                Key.SCROLL_LOCK: "Scroll Lock",
-                Key.NUM_LOCK: "Num Lock",
-                Key.SYS_REQ: "Sys Req",
-                Key.SUPER: "Super",
-                Key.RSUPER: "RightSuper",
-                Key.HYPER: "Hyper",
-                Key.RHYPER: "RightHyper",
-                Key.MENU: "Menu"}[key]
+    def to_string(self, key):
+        return {self.ENTER: "Enter",
+                self.TAB: "Tab",
+                self.ESC: "Esc",
+                self.BACKSPACE: "Backspace",
+                self.DELETE: "Delete",
+                self.INSERT: "Insert",
+                self.CTRL: "Ctrl",
+                self.ALT: "Alt",
+                self.SHIFT: "Shift",
+                self.META: "Meta",
+                self.RCTRL: "RightControl",
+                self.RALT: "RightAlt",
+                self.RSHIFT: "RightShift",
+                self.RMETA: "RightMeta",
+                self.F1: "F1",
+                self.F2: "F2",
+                self.F3: "F3",
+                self.F4: "F4",
+                self.F5: "F5",
+                self.F6: "F6",
+                self.F7: "F7",
+                self.F8: "F8",
+                self.F9: "F9",
+                self.F10: "F10",
+                self.F11: "F11",
+                self.F12: "F12",
+                self.F13: "F13",
+                self.F14: "F14",
+                self.F15: "F15",
+                self.F16: "F16",
+                self.F17: "F17",
+                self.F18: "F18",
+                self.F19: "F19",
+                self.F20: "F20",
+                self.HOME: "Home",
+                self.END: "End",
+                self.LEFT: "Left",
+                self.RIGHT: "Right",
+                self.UP: "Up",
+                self.DOWN: "Down",
+                self.PAGE_DOWN: "Page Down",
+                self.PAGE_UP: "Page Up",
+                self.CAPS_LOCK: "Caps Lock",
+                self.PRINTSCREEN: "Print Screen",
+                self.PAUSE: "Pause",
+                self.SCROLL_LOCK: "Scroll Lock",
+                self.NUM_LOCK: "Num Lock",
+                self.SYS_REQ: "Sys Req",
+                self.SUPER: "Super",
+                self.RSUPER: "RightSuper",
+                self.HYPER: "Hyper",
+                self.RHYPER: "RightHyper",
+                self.MENU: "Menu"}[key]
 
 
 class KeyModifier:
 
-    if BACKEND in ["autopy-win", "autopy-nix"]:
-        MOD_NONE = autopy.key.MOD_NONE
-        MOD_CTRL = autopy.key.MOD_CONTROL
-        MOD_ALT = autopy.key.MOD_ALT
-        MOD_SHIFT = autopy.key.MOD_SHIFT
-        MOD_META = autopy.key.MOD_META
-    elif BACKEND == "qemu":
-        # TODO: 'none' is not available
-        MOD_NONE = None
-        MOD_CTRL = 'ctrl'
-        MOD_ALT = 'alt'
-        MOD_SHIFT = 'shift'
-        # TODO: 'meta' is not available
-        MOD_META = None
-    elif BACKEND == "vncdotool":
-        # TODO: 'none' is not available
-        MOD_NONE = None
-        MOD_CTRL = 'ctrl'
-        MOD_ALT = 'alt'
-        MOD_SHIFT = 'shift'
-        MOD_META = 'meta'
+    def __init__(self, backend):
+        if backend in ["autopy-win", "autopy-nix"]:
+            import autopy
+            self.MOD_NONE = autopy.key.MOD_NONE
+            self.MOD_CTRL = autopy.key.MOD_CONTROL
+            self.MOD_ALT = autopy.key.MOD_ALT
+            self.MOD_SHIFT = autopy.key.MOD_SHIFT
+            self.MOD_META = autopy.key.MOD_META
+        elif backend == "qemu":
+            # TODO: 'none' is not available
+            self.MOD_NONE = None
+            self.MOD_CTRL = 'ctrl'
+            self.MOD_ALT = 'alt'
+            self.MOD_SHIFT = 'shift'
+            # TODO: 'meta' is not available
+            self.MOD_META = None
+        elif backend == "vncdotool":
+            # TODO: 'none' is not available
+            self.MOD_NONE = None
+            self.MOD_CTRL = 'ctrl'
+            self.MOD_ALT = 'alt'
+            self.MOD_SHIFT = 'shift'
+            self.MOD_META = 'meta'
 
-    @staticmethod
-    def to_string(key):
-        return {KeyModifier.MOD_NONE: "None",
-                KeyModifier.MOD_CTRL: "Ctrl",
-                KeyModifier.MOD_ALT: "Alt",
-                KeyModifier.MOD_SHIFT: "Shift",
-                KeyModifier.MOD_META: "Meta"}[key]
+    def to_string(self, key):
+        return {self.MOD_NONE: "None",
+                self.MOD_CTRL: "Ctrl",
+                self.MOD_ALT: "Alt",
+                self.MOD_SHIFT: "Shift",
+                self.MOD_META: "Meta"}[key]
 
 class MouseButton:
 
-    if BACKEND in ["autopy-win", "autopy-nix"]:
-        LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
-        RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
-        CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
-    elif BACKEND == "qemu":
-        LEFT_BUTTON = 1
-        RIGHT_BUTTON = 4
-        CENTER_BUTTON = 2
-    elif BACKEND == "vncdotool":
-        LEFT_BUTTON = 1
-        RIGHT_BUTTON = 3
-        CENTER_BUTTON = 2
+    def __init__(self, backend):
+        if backend in ["autopy-win", "autopy-nix"]:
+            import autopy
+            self.LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
+            self.RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
+            self.CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
+        elif backend == "qemu":
+            self.LEFT_BUTTON = 1
+            self.RIGHT_BUTTON = 4
+            self.CENTER_BUTTON = 2
+        elif backend == "vncdotool":
+            self.LEFT_BUTTON = 1
+            self.RIGHT_BUTTON = 3
+            self.CENTER_BUTTON = 2
 
-    @staticmethod
-    def to_string(key):
-        return {MouseButton.LEFT_BUTTON: "MouseLeft",
-                MouseButton.RIGHT_BUTTON: "MouseRight",
-                MouseButton.CENTER_BUTTON: "MouseCenter"}[key]
+    def to_string(self, key):
+        return {self.LEFT_BUTTON: "MouseLeft",
+                self.RIGHT_BUTTON: "MouseRight",
+                self.CENTER_BUTTON: "MouseCenter"}[key]

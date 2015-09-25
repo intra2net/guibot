@@ -30,6 +30,7 @@ from tempfile import NamedTemporaryFile
 import cv2
 
 from errors import *
+from inputmap import Key, KeyModifier, MouseButton
 
 
 class Settings:
@@ -364,6 +365,9 @@ class DCEqualizer:
             os.unlink(filename)
             backend.width = screen.width
             backend.height = screen.height
+        backend.keymap = Key(self.get_backend())
+        backend.mousemap = MouseButton(self.get_backend())
+        backend.modmap = KeyModifier(self.get_backend())
         return backend
 
 
@@ -376,6 +380,9 @@ class DCScreen:
         self.pointer = (0, 0)
         self.width = 0
         self.height = 0
+        self.keymap = None
+        self.mousemap = None
+        self.modmap = None
 
 
 class CVEqualizer:
