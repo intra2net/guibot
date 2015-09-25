@@ -57,3 +57,8 @@ class ImageFinderMethodError(GuiBenderError):
 class MissingHotmapError(GuiBenderError):
 
     """Exception raised when an attempt to access a non-existent hotmap in the image logger is made"""
+
+
+class UninitializedBackend(GuiBenderError):
+
+    """Exception raised when a region is created within an empty screen (a disconnected desktop control backend)"""

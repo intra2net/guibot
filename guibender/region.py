@@ -54,17 +54,20 @@ class Region(object):
         self._xpos = xpos
         self._ypos = ypos
 
-        if width == 0:
+        if width == 0 and self.dc_backend.get_width() is not None:
             self._width = self.dc_backend.get_width()
         else:
             self._width = width
 
-        if height == 0:
+        if height == 0 and self.dc_backend.get_height() is not None:
             self._height = self.dc_backend.get_height()
         else:
             self._height = height
 
-        self._ensure_screen_clipping()
+        if self.is_empty():
+            raise UninitializedBackend
+        else:
+            self._ensure_screen_clipping()
 
         mouse_map = self.dc_backend.get_mousemap()
         for mouse_button in dir(mouse_map):
@@ -132,6 +135,10 @@ class Region(object):
 
     def get_bottom_right(self):
         return Location(self._xpos + self._width, self._ypos + self._height)
+
+    def is_empty(self):
+        return (self._xpos == 0 and self._ypos == 0
+                and self._width == 0 and self._height == 0)
 
     """Main region methods"""
     def nearby(self, rrange=50):
