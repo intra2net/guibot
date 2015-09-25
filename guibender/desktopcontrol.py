@@ -51,6 +51,15 @@ class DesktopControl:
     def get_height(self):
         return self._height
 
+    def get_keymap(self):
+        return self._keymap
+
+    def get_mousemap(self):
+        return self._mousemap
+
+    def get_modmap(self):
+        return self._modmap
+
     def connect_screen(self):
         # apply any configuration in the equalizer to the backend
         self._screen = self.eq.sync_backend_to_params(self._screen)

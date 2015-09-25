@@ -20,7 +20,6 @@ import os
 # to avoid circular reference
 from settings import Settings
 from desktopcontrol import DesktopControl
-from inputmap import Key, MouseButton
 from errors import *
 from location import Location
 from image import Image
@@ -32,10 +31,6 @@ log = logging.getLogger('guibender.region')
 
 
 class Region(object):
-    # Mouse buttons
-    LEFT_BUTTON = MouseButton.LEFT_BUTTON
-    RIGHT_BUTTON = MouseButton.RIGHT_BUTTON
-    CENTER_BUTTON = MouseButton.CENTER_BUTTON
 
     def __init__(self, xpos=0, ypos=0, width=0, height=0,
                  dc=None, cv=None):
@@ -70,6 +65,21 @@ class Region(object):
             self._height = height
 
         self._ensure_screen_clipping()
+
+        mouse_map = self.dc_backend.get_mousemap()
+        for mouse_button in dir(mouse_map):
+            if mouse_button.endswith('_BUTTON'):
+                setattr(self, mouse_button, getattr(mouse_map, mouse_button))
+
+        key_map = self.dc_backend.get_keymap()
+        for key in dir(key_map):
+            if not key.startswith('__') and key != "to_string":
+                setattr(self, key, getattr(key_map, key))
+
+        mod_map = self.dc_backend.get_modmap()
+        for modifier_key in dir(mod_map):
+            if modifier_key.startswith('MOD_'):
+                setattr(self, modifier_key, getattr(mod_map, modifier_key))
 
     def _ensure_screen_clipping(self):
         screen_width = self.dc_backend.get_width()
@@ -419,21 +429,25 @@ class Region(object):
         self.dc_backend.mouse_double_click(modifiers)
         return match
 
-    def mouse_down(self, image_or_location, button=LEFT_BUTTON):
+    def mouse_down(self, image_or_location, button=None):
         """
         Hold down a mouse button specified by 'button' over a
         variety of object types (like hover).
         """
+        if button is None:
+            button = self.LEFT_BUTTON
         match = self.hover(image_or_location)
         log.debug("Holding down the mouse at %s", image_or_location)
         self.dc_backend.mouse_down(button)
         return match
 
-    def mouse_up(self, image_or_location, button=LEFT_BUTTON):
+    def mouse_up(self, image_or_location, button=None):
         """
         Release a mouse button specified by 'button' over a
         variety of object types (like hover).
         """
+        if button is None:
+            button = self.LEFT_BUTTON
         match = self.hover(image_or_location)
         log.debug("Holding up the mouse at %s", image_or_location)
         self.dc_backend.mouse_up(button)
@@ -521,7 +535,7 @@ class Region(object):
         if isinstance(keys, int) or isinstance(keys, basestring):
             key = keys
             try:
-                log.info("Pressing key '%s'%s", Key.to_string(key), at_str)
+                log.info("Pressing key '%s'%s", self.dc_backend.get_keymap().to_string(key), at_str)
             # if not a special key (i.e. if a character key)
             except KeyError:
                 if isinstance(key, int):
@@ -534,7 +548,7 @@ class Region(object):
             key_strings = []
             for key in keys:
                 try:
-                    key_strings.append(Key.to_string(key))
+                    key_strings.append(self.dc_backend.get_keymap().to_string(key))
                 except KeyError:
                     if isinstance(key, int):
                         key = str(key)

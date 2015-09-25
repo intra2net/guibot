@@ -88,10 +88,10 @@ class GuiBenderProxy(GuiBender):
     def double_click(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).double_click(image_or_location, modifiers))
 
-    def mouse_down(self, image_or_location, button=GuiBender.LEFT_BUTTON):
+    def mouse_down(self, image_or_location, button=None):
         return self._proxify(super(GuiBenderProxy, self).mouse_down(image_or_location, button))
 
-    def mouse_up(self, image_or_location, button=GuiBender.LEFT_BUTTON):
+    def mouse_up(self, image_or_location, button=None):
         return self._proxify(super(GuiBenderProxy, self).mouse_up(image_or_location, button))
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):

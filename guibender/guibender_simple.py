@@ -22,10 +22,6 @@ from guibender import GuiBender
 
 guibender = GuiBender()
 
-LEFT_BUTTON = GuiBender.LEFT_BUTTON
-RIGHT_BUTTON = GuiBender.RIGHT_BUTTON
-CENTER_BUTTON = GuiBender.CENTER_BUTTON
-
 # return main guibender object
 
 
@@ -89,11 +85,11 @@ def double_click(image_or_location, modifiers=None):
     return guibender.double_click(image_or_location, modifiers)
 
 
-def mouse_down(image_or_location, button=LEFT_BUTTON):
+def mouse_down(image_or_location, button=None):
     return guibender.mouse_down(image_or_location, button)
 
 
-def mouse_up(image_or_location, button=LEFT_BUTTON):
+def mouse_up(image_or_location, button=None):
     return guibender.mouse_up(image_or_location, button)
 
 
