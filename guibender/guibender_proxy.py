@@ -38,8 +38,8 @@ class GuiBenderProxy(GuiBender):
     from code which is executed on another machine somewhere on the network.
     """
 
-    def __init__(self):
-        super(GuiBenderProxy, self).__init__()
+    def __init__(self, dc=None, cv=None):
+        super(GuiBenderProxy, self).__init__(dc=dc, cv=cv)
         # NOTE: the following attribute is set by Pyro when registering
         # this as a remote object
         self._pyroDaemon = None
