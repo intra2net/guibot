@@ -518,6 +518,7 @@ class Region(object):
             press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
+        time.sleep(Settings.delay_before_keys())
         self.dc_backend.keys_press(keys_list)
         return self
 
@@ -584,6 +585,7 @@ class Region(object):
         Modifiers is a list equivalent to the one in press_keys().
         """
         text_list = self._parse_text(text)
+        time.sleep(Settings.delay_before_keys())
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
@@ -603,7 +605,7 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-            time.sleep(Settings.delay_before_keys())
+        time.sleep(Settings.delay_before_keys())
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
