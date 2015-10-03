@@ -73,6 +73,11 @@ class DesktopControl:
         self._mousemap = self._screen.mousemap
         self._modmap = self._screen.modmap
 
+        # sync pointer
+        if self.eq.get_backend() not in ["autopy-win", "autopy-nix"]:
+            self.mouse_move(Location(self._width, self._height), smooth=False)
+            self.mouse_move(Location(0, 0), smooth=False)
+
     def capture_screen(self, *args):
         if len(args) == 4:
             xpos = args[0]
