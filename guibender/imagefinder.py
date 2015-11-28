@@ -241,7 +241,7 @@ class ImageFinder:
                 # to ask autopy team for returning the matching rates
                 # as well
                 coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
-                log.debug("Best acceptable match with location %s", coord)
+                log.debug("Best acceptable match starting at %s", coord)
 
                 if coord is not None:
                     self.imglog.locations.append(coord)
@@ -270,7 +270,7 @@ class ImageFinder:
             # other possible similar bugs
             maxVal = max(maxVal, 0.0)
             maxVal = min(maxVal, 1.0)
-            log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
+            log.debug('Best match with value %s (similarity %s) and starting at %s',
                       str(maxVal), similarity, str(maxLoc))
             self.imglog.similarities.append(maxVal)
             self.imglog.locations.append(maxLoc)
@@ -417,7 +417,7 @@ class ImageFinder:
             self.imglog.log(30, "hybrid")
             return locations
         else:
-            log.debug("Best acceptable match with similarity %s at %s",
+            log.debug("Best acceptable match with similarity %s starting at %s",
                       self.imglog.similarities[-1], self.imglog.locations[-1])
             location = Location(*self.imglog.locations[-1])
             self.imglog.log(30, "hybrid")
@@ -511,7 +511,7 @@ class ImageFinder:
                     locations[(j, i)] = (left + self.imglog.locations[-1][0],
                                          up + self.imglog.locations[-1][1])
                     self.imglog.locations[-1] = locations[(j, i)]
-                    log.debug("Acceptable best match with similarity %s at %s in region %s",
+                    log.debug("Acceptable best match with similarity %s starting at %s in region %s",
                               self.imglog.similarities[-1], locations[(j, i)], (i, j))
 
         # release the accumulated logging from subroutines
@@ -564,8 +564,6 @@ class ImageFinder:
             self.imglog.log(40, "feature")
             return None
         else:
-            log.debug("Best match with similarity %s at %s is acceptable",
-                      self.imglog.similarities[-1], self.imglog.locations[-1])
             location = Location(*self.imglog.locations[-1])
             self.imglog.log(30, "feature")
             return location
