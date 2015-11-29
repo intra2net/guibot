@@ -16,6 +16,8 @@
 import os
 import time
 import subprocess
+import logging
+log = logging.getLogger('guibender.desktopcontrol')
 
 import PIL.Image
 from tempfile import NamedTemporaryFile
@@ -72,6 +74,10 @@ class DesktopControl:
         self._keymap = self._screen.keymap
         self._mousemap = self._screen.mousemap
         self._modmap = self._screen.modmap
+
+        # additional logging for vncdotool available so let's make use of it
+        if self.eq.get_backend() == "vncdotool":
+            logging.getLogger('vncdotool.client').setLevel(10)
 
         # sync pointer
         if self.eq.get_backend() not in ["autopy-win", "autopy-nix"]:
