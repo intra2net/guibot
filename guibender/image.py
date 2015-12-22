@@ -17,9 +17,13 @@ import copy
 import os
 import PIL.Image
 
+# TODO: try to use PIL functionality instead
+import cv2
+import numpy
+
 from location import Location
 from imagepath import ImagePath
-from cvequalizer import CVEqualizer
+from settings import CVEqualizer
 
 
 class Image:
@@ -126,3 +130,17 @@ class Image:
         new_image.filename = filename
 
         return new_image
+
+    def preprocess(self, gray=False):
+        """
+        Convert the Image() object into compatible numpy array
+        and into grayscale if the gray parameter is True.
+
+        This format is used by the ImageFinder and ImageLogger modules.
+        """
+        searchable_image = numpy.array(self._pil_image)
+        # convert RGB to BGR
+        searchable_image = searchable_image[:, :, ::-1].copy()
+        if gray:
+            searchable_image = cv2.cvtColor(searchable_image, cv2.COLOR_BGR2GRAY)
+        return searchable_image

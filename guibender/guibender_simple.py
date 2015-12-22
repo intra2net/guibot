@@ -13,18 +13,14 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
-#
-#
-# Use module instead of the GuiBender object (simple, procedural API),
-# creating the GuiBender object internally.
+
+
+# Frontend with simple procedural API allowing the use of a module instead of
+# the GuiBender object (creating and running the GuiBender object internally).
 
 from guibender import GuiBender
 
 guibender = GuiBender()
-
-LEFT_BUTTON = GuiBender.LEFT_BUTTON
-RIGHT_BUTTON = GuiBender.RIGHT_BUTTON
-CENTER_BUTTON = GuiBender.CENTER_BUTTON
 
 # return main guibender object
 
@@ -89,11 +85,11 @@ def double_click(image_or_location, modifiers=None):
     return guibender.double_click(image_or_location, modifiers)
 
 
-def mouse_down(image_or_location, button=LEFT_BUTTON):
+def mouse_down(image_or_location, button=None):
     return guibender.mouse_down(image_or_location, button)
 
 
-def mouse_up(image_or_location, button=LEFT_BUTTON):
+def mouse_up(image_or_location, button=None):
     return guibender.mouse_up(image_or_location, button)
 
 
@@ -101,7 +97,7 @@ def drag_drop(src_image_or_location, dst_image_or_location, modifiers=None):
     return guibender.drag_drop(src_image_or_location, dst_image_or_location, modifiers)
 
 
-def drag(image_or_location, modifiers=None):
+def drag_from(image_or_location, modifiers=None):
     return guibender.drag(image_or_location, modifiers)
 
 
@@ -109,7 +105,7 @@ def drop_at(image_or_location, modifiers=None):
     return guibender.drop_at(image_or_location, modifiers)
 
 
-def press(keys):
+def press_keys(keys):
     return guibender.press(keys)
 
 

@@ -14,18 +14,23 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import PIL.Image
-from tempfile import NamedTemporaryFile
-import math
 
-from autopy import bitmap
-import cv
-import cv2
-import numpy
-
+from settings import Settings, CVEqualizer
 from location import Location
-from cvequalizer import CVEqualizer
 from imagelogger import ImageLogger
 from errors import *
+
+# TODO: make it possible to define per image finder specific CV backend
+if Settings.find_image_backend() == "template" and Settings.template_match_backend() == "autopy":
+    from autopy import bitmap
+    from tempfile import NamedTemporaryFile
+else:
+    # TODO: OpenCV is required for 95% of the backends so we need to improve the image
+    # logging and overall image manipulation in order to be able to truly avoid it
+    import cv
+    import cv2
+    import math
+    import numpy
 
 import logging
 log = logging.getLogger('guibender.imagefinder')
@@ -213,7 +218,7 @@ class ImageFinder:
 
         elif self.eq.get_backend("tmatch") == "autopy":
             # prepare a canvas solely for image logging
-            self.imglog.hotmaps.append(self._prepare_image(haystack))
+            self.imglog.hotmaps.append(haystack.preprocess())
 
             if needle.filename in self._bitmapcache:
                 autopy_needle = self._bitmapcache[needle.filename]
@@ -236,7 +241,7 @@ class ImageFinder:
                 # to ask autopy team for returning the matching rates
                 # as well
                 coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
-                log.debug("Best acceptable match with location %s", coord)
+                log.debug("Best acceptable match starting at %s", coord)
 
                 if coord is not None:
                     self.imglog.locations.append(coord)
@@ -265,7 +270,7 @@ class ImageFinder:
             # other possible similar bugs
             maxVal = max(maxVal, 0.0)
             maxVal = min(maxVal, 1.0)
-            log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
+            log.debug('Best match with value %s (similarity %s) and starting at %s',
                       str(maxVal), similarity, str(maxLoc))
             self.imglog.similarities.append(maxVal)
             self.imglog.locations.append(maxLoc)
@@ -287,9 +292,9 @@ class ImageFinder:
         Available methods are: a combination of feature detector,
         extractor, and matcher
         """
-        ngray = self._prepare_image(needle, gray=True)
-        hgray = self._prepare_image(haystack, gray=True)
-        hcanvas = self._prepare_image(haystack, gray=False)
+        ngray = needle.preprocess(gray=True)
+        hgray = haystack.preprocess(gray=True)
+        hcanvas = haystack.preprocess(gray=False)
 
         # project more points for debugging purposes and image logging
         frame_points = []
@@ -325,9 +330,9 @@ class ImageFinder:
         template_maxima = self._template_find_all(needle, haystack)
 
         self.eq.p["find"]["similarity"].value = feature_similarity
-        ngray = self._prepare_image(needle, gray=True)
-        hgray = self._prepare_image(haystack, gray=True)
-        hcanvas = self._prepare_image(haystack, gray=False)
+        ngray = needle.preprocess(gray=True)
+        hgray = haystack.preprocess(gray=True)
+        hcanvas = haystack.preprocess(gray=False)
 
         frame_points = []
         frame_points.append((needle.width / 2, needle.height / 2))
@@ -412,7 +417,7 @@ class ImageFinder:
             self.imglog.log(30, "hybrid")
             return locations
         else:
-            log.debug("Best acceptable match with similarity %s at %s",
+            log.debug("Best acceptable match with similarity %s starting at %s",
                       self.imglog.similarities[-1], self.imglog.locations[-1])
             location = Location(*self.imglog.locations[-1])
             self.imglog.log(30, "hybrid")
@@ -455,9 +460,9 @@ class ImageFinder:
         log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
                   x, y, dx, dy)
 
-        ngray = self._prepare_image(needle, gray=True)
-        hgray = self._prepare_image(haystack, gray=True)
-        hcanvas = self._prepare_image(haystack, gray=False)
+        ngray = needle.preprocess(gray=True)
+        hgray = haystack.preprocess(gray=True)
+        hcanvas = haystack.preprocess(gray=False)
 
         frame_points = []
         frame_points.append((needle.width / 2, needle.height / 2))
@@ -506,7 +511,7 @@ class ImageFinder:
                     locations[(j, i)] = (left + self.imglog.locations[-1][0],
                                          up + self.imglog.locations[-1][1])
                     self.imglog.locations[-1] = locations[(j, i)]
-                    log.debug("Acceptable best match with similarity %s at %s in region %s",
+                    log.debug("Acceptable best match with similarity %s starting at %s in region %s",
                               self.imglog.similarities[-1], locations[(j, i)], (i, j))
 
         # release the accumulated logging from subroutines
@@ -559,8 +564,6 @@ class ImageFinder:
             self.imglog.log(40, "feature")
             return None
         else:
-            log.debug("Best match with similarity %s at %s is acceptable",
-                      self.imglog.similarities[-1], self.imglog.locations[-1])
             location = Location(*self.imglog.locations[-1])
             self.imglog.log(30, "feature")
             return location
@@ -801,20 +804,6 @@ class ImageFinder:
 
         return projected
 
-    def _prepare_image(self, image, gray=False):
-        """
-        Convert the Image() object into compatible numpy array
-        and into grayscale if the gray parameter is True.
-        """
-        searchable_image = numpy.array(image.pil_image)
-        # convert RGB to BGR
-        searchable_image = searchable_image[:, :, ::-1].copy()
-
-        if gray:
-            searchable_image = cv2.cvtColor(searchable_image, cv2.COLOR_BGR2GRAY)
-
-        return searchable_image
-
     def _match_template(self, needle, haystack, nocolor, match):
         """
         Match a color or grayscale needle image using the OpenCV
@@ -833,12 +822,12 @@ class ImageFinder:
             raise ImageFinderMethodError
 
         if nocolor:
-            gray_needle = self._prepare_image(needle, gray=True)
-            gray_haystack = self._prepare_image(haystack, gray=True)
+            gray_needle = needle.preprocess(gray=True)
+            gray_haystack = haystack.preprocess(gray=True)
             match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
         else:
-            opencv_needle = self._prepare_image(needle, gray=False)
-            opencv_haystack = self._prepare_image(haystack, gray=False)
+            opencv_needle = needle.preprocess(gray=False)
+            opencv_haystack = haystack.preprocess(gray=False)
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
         return match
@@ -861,10 +850,10 @@ class InHouseCV(ImageFinder):
 
         The current MSER might not be used in the actual implementation.
         """
-        opencv_haystack = self._prepare_image(haystack)
-        opencv_needle = self._prepare_image(needle)
-        hgray = self._prepare_image(haystack, gray=True)
-        ngray = self._prepare_image(needle, gray=True)
+        opencv_haystack = haystack.preprocess()
+        opencv_needle = needle.preprocess()
+        hgray = haystack.preprocess(gray=True)
+        ngray = needle.preprocess(gray=True)
 
         # TODO: this MSER blob feature detector is also available in
         # version 2.2.3 - implement if necessary

@@ -29,9 +29,10 @@ class GuiBender(Region):
     with some convenience functions added.
     """
 
-    def __init__(self):
-        # Init with default region of full screen
-        super(GuiBender, self).__init__()
+    def __init__(self, dc=None, cv=None):
+        # initialize with default region of full screen and own
+        # desktop control and computer vision backends
+        super(GuiBender, self).__init__(dc=dc, cv=cv)
 
         self.imagepath = ImagePath()
 

@@ -13,10 +13,11 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
-#
-#
-# Use Pyro4 proxifying GuiBender object (serialize-compatible API),
-# creating the GuiBender object locally.
+
+
+# Frontend with serialization compatible API allowing the use of Pyro4 modified
+# GuiBender object (creating and running the GuiBender object remotely and
+# manipulating it locally).
 
 import re
 
@@ -37,8 +38,8 @@ class GuiBenderProxy(GuiBender):
     from code which is executed on another machine somewhere on the network.
     """
 
-    def __init__(self):
-        super(GuiBenderProxy, self).__init__()
+    def __init__(self, dc=None, cv=None):
+        super(GuiBenderProxy, self).__init__(dc=dc, cv=cv)
         # NOTE: the following attribute is set by Pyro when registering
         # this as a remote object
         self._pyroDaemon = None
@@ -87,23 +88,23 @@ class GuiBenderProxy(GuiBender):
     def double_click(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).double_click(image_or_location, modifiers))
 
-    def mouse_down(self, image_or_location, button=GuiBender.LEFT_BUTTON):
+    def mouse_down(self, image_or_location, button=None):
         return self._proxify(super(GuiBenderProxy, self).mouse_down(image_or_location, button))
 
-    def mouse_up(self, image_or_location, button=GuiBender.LEFT_BUTTON):
+    def mouse_up(self, image_or_location, button=None):
         return self._proxify(super(GuiBenderProxy, self).mouse_up(image_or_location, button))
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).drag_drop(src_image_or_location,
                                                                    dst_image_or_location, modifiers))
 
-    def drag(self, image_or_location, modifiers=None):
+    def drag_from(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).drag(image_or_location, modifiers))
 
     def drop_at(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).drop_at(image_or_location, modifiers))
 
-    def press(self, keys):
+    def press_keys(self, keys):
         return self._proxify(super(GuiBenderProxy, self).press(keys))
 
     def press_at(self, image_or_location=None, keys=None):

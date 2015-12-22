@@ -19,6 +19,7 @@ import shutil
 from errors import *
 from settings import Settings
 
+# TODO: try to use PIL functionality instead
 import cv
 import cv2
 import numpy

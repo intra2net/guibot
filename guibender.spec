@@ -3,7 +3,7 @@
 
 Name:           guibender
 Version:        0.10
-Release:        3
+Release:        4
 Summary:        GUI testing tool
 
 Group:          Development/Tools
@@ -12,7 +12,16 @@ URL:            http://developer.intra2net.com
 # TODO: source location?
 Source0:        http://developer.intra2net.com/%{name}-%{version}.tar.gz
 
+# There are some conditional dependencies that we will require upon use,
+# in particular one of autopy/vncdotool/qemu-kvm for the desktop control
+# backend.
+# for autopy: download or find modules -> copy to /usr/lib/python2.7/site-packages/autopy/
+# for vncdotool: download -> python setup.py install (in vncdotool folder)
+# for qemu: need to have autotest with virt-test installed then simply pass the qemu monitor as parameter
+# TODO: opencv must be turned into conditional dependency only if we use
+# particular computer vision backends.
 Requires:       opencv >= 2.4
+Requires:       opencv-python
 
 %description
 A tool to use for GUI testing using autopy and OpenCV.

@@ -18,10 +18,9 @@ import os
 
 # interconnected classes - import only their modules
 # to avoid circular reference
-from desktopcontrol import DesktopControl
-from key import Key
-from errors import *
 from settings import Settings
+from desktopcontrol import DesktopControl
+from errors import *
 from location import Location
 from image import Image
 from imagefinder import ImageFinder
@@ -32,177 +31,212 @@ log = logging.getLogger('guibender.region')
 
 
 class Region(object):
-    # Mouse buttons
-    LEFT_BUTTON = DesktopControl.LEFT_BUTTON
-    RIGHT_BUTTON = DesktopControl.RIGHT_BUTTON
-    CENTER_BUTTON = DesktopControl.CENTER_BUTTON
 
-    def __init__(self, xpos=0, ypos=0, width=0, height=0):
-        self.desktop = DesktopControl()
-        self.imagefinder = ImageFinder()
-        self.last_match = None
+    def __init__(self, xpos=0, ypos=0, width=0, height=0,
+                 dc=None, cv=None):
+        """
+        Initialize a region from xpos to xpos+width and from ypos to
+        ypos+height with desktop control backend defined by 'dc' and
+        computer vision backend defined by 'cv'.
 
-        self.xpos = xpos
-        self.ypos = ypos
+        If any of the backends is not defined a new will be initiated
+        using the parameters defined in Settings for the initialization.
+        """
+        if dc is None:
+            dc = DesktopControl()
+        if cv is None:
+            cv = ImageFinder()
+        # since the backends are read/write make them public attributes
+        self.dc_backend = dc
+        self.cv_backend = cv
 
-        if width == 0:
-            self.width = self.desktop.get_width()
+        self._last_match = None
+        self._xpos = xpos
+        self._ypos = ypos
+
+        if width == 0 and self.dc_backend.get_width() is not None:
+            self._width = self.dc_backend.get_width()
         else:
-            self.width = width
+            self._width = width
 
-        if height == 0:
-            self.height = self.desktop.get_height()
+        if height == 0 and self.dc_backend.get_height() is not None:
+            self._height = self.dc_backend.get_height()
         else:
-            self.height = height
+            self._height = height
 
-        self._ensure_screen_clipping()
+        if self.is_empty():
+            raise UninitializedBackend
+        else:
+            self._ensure_screen_clipping()
+
+        mouse_map = self.dc_backend.get_mousemap()
+        for mouse_button in dir(mouse_map):
+            if mouse_button.endswith('_BUTTON'):
+                setattr(self, mouse_button, getattr(mouse_map, mouse_button))
+
+        key_map = self.dc_backend.get_keymap()
+        for key in dir(key_map):
+            if not key.startswith('__') and key != "to_string":
+                setattr(self, key, getattr(key_map, key))
+
+        mod_map = self.dc_backend.get_modmap()
+        for modifier_key in dir(mod_map):
+            if modifier_key.startswith('MOD_'):
+                setattr(self, modifier_key, getattr(mod_map, modifier_key))
 
     def _ensure_screen_clipping(self):
-        screen_width = self.desktop.get_width()
-        screen_height = self.desktop.get_height()
+        screen_width = self.dc_backend.get_width()
+        screen_height = self.dc_backend.get_height()
 
-        if self.xpos < 0:
-            self.xpos = 0
+        if self._xpos < 0:
+            self._xpos = 0
 
-        if self.ypos < 0:
-            self.ypos = 0
+        if self._ypos < 0:
+            self._ypos = 0
 
-        if self.xpos > screen_width:
-            self.xpos = screen_width - 1
+        if self._xpos > screen_width:
+            self._xpos = screen_width - 1
 
-        if self.ypos > screen_height:
-            self.ypos = screen_height - 1
+        if self._ypos > screen_height:
+            self._ypos = screen_height - 1
 
-        if self.xpos + self.width > screen_width:
-            self.width = screen_width - self.xpos
+        if self._xpos + self._width > screen_width:
+            self._width = screen_width - self._xpos
 
-        if self.ypos + self.height > screen_height:
-            self.height = screen_height - self.ypos
+        if self._ypos + self._height > screen_height:
+            self._height = screen_height - self._ypos
 
     def get_x(self):
-        return self.xpos
+        return self._xpos
 
     def get_y(self):
-        return self.ypos
+        return self._ypos
 
     def get_width(self):
-        return self.width
+        return self._width
 
     def get_height(self):
-        return self.height
+        return self._height
 
     def get_center(self):
-        xpos = (self.width - self.xpos) / 2
-        ypos = (self.height - self.ypos) / 2
+        xpos = (self._width - self._xpos) / 2
+        ypos = (self._height - self._ypos) / 2
 
         return Location(xpos, ypos)
 
     def get_top_left(self):
-        return Location(self.xpos, self.ypos)
+        return Location(self._xpos, self._ypos)
 
     def get_top_right(self):
-        return Location(self.xpos + self.width, self.ypos)
+        return Location(self._xpos + self._width, self._ypos)
 
     def get_bottom_left(self):
-        return Location(self.xpos, self.ypos + self.height)
+        return Location(self._xpos, self._ypos + self._height)
 
     def get_bottom_right(self):
-        return Location(self.xpos + self.width, self.ypos + self.height)
+        return Location(self._xpos + self._width, self._ypos + self._height)
 
+    def is_empty(self):
+        return (self._xpos == 0 and self._ypos == 0
+                and self._width == 0 and self._height == 0)
+
+    """Main region methods"""
     def nearby(self, rrange=50):
         log.debug("Checking nearby the current region")
-        new_xpos = self.xpos - rrange
+        new_xpos = self._xpos - rrange
         if new_xpos < 0:
             new_xpos = 0
 
-        new_ypos = self.ypos - rrange
+        new_ypos = self._ypos - rrange
         if new_ypos < 0:
             new_ypos = 0
 
-        new_width = self.width + rrange + self.xpos - new_xpos
-        new_height = self.height + rrange + self.ypos - new_ypos
+        new_width = self._width + rrange + self._xpos - new_xpos
+        new_height = self._height + rrange + self._ypos - new_ypos
 
         # Final clipping is done in the Region constructor
-        return Region(new_xpos, new_ypos, new_width, new_height)
+        return Region(new_xpos, new_ypos, new_width, new_height,
+                      self.dc_backend, self.cv_backend)
 
     def above(self, rrange=0):
         log.debug("Checking above the current region")
         if rrange == 0:
             new_ypos = 0
-            new_height = self.ypos + self.height
+            new_height = self._ypos + self._height
         else:
-            new_ypos = self.ypos - rrange
+            new_ypos = self._ypos - rrange
             if new_ypos < 0:
                 new_ypos = 0
 
-            new_height = self.height + self.ypos - new_ypos
+            new_height = self._height + self._ypos - new_ypos
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, new_ypos, self.width, new_height)
+        return Region(self._xpos, new_ypos, self._width, new_height,
+                      self.dc_backend, self.cv_backend)
 
     def below(self, rrange=0):
         log.debug("Checking below the current region")
         if rrange == 0:
-            rrange = self.desktop.get_height()
+            rrange = self.dc_backend.get_height()
 
-        new_height = self.height + rrange
+        new_height = self._height + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, self.ypos, self.width, new_height)
+        return Region(self._xpos, self._ypos, self._width, new_height,
+                      self.dc_backend, self.cv_backend)
 
     def left(self, rrange=0):
         log.debug("Checking left of the current region")
         if rrange == 0:
             new_xpos = 0
-            new_width = self.xpos + self.width
+            new_width = self._xpos + self._width
         else:
-            new_xpos = self.xpos - rrange
+            new_xpos = self._xpos - rrange
             if new_xpos < 0:
                 new_xpos = 0
 
-            new_width = self.width + self.xpos - new_xpos
+            new_width = self._width + self._xpos - new_xpos
 
         # Final clipping is done in the Region constructor
-        return Region(new_xpos, self.ypos, new_width, self.height)
+        return Region(new_xpos, self._ypos, new_width, self._height,
+                      self.dc_backend, self.cv_backend)
 
     def right(self, rrange=0):
         log.debug("Checking right of the current region")
         if rrange == 0:
-            rrange = self.desktop.get_width()
+            rrange = self.dc_backend.get_width()
 
-        new_width = self.width + rrange
+        new_width = self._width + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self.xpos, self.ypos, new_width, self.height)
+        return Region(self._xpos, self._ypos, new_width, self._height,
+                      self.dc_backend, self.cv_backend)
 
+    """Image expect methods"""
     def get_last_match(self):
-        return self.last_match
-
-    def configure_find(self, find_image=None, template_match=None,
-                       feature_detect=None, feature_extract=None,
-                       feature_match=None):
-        self.imagefinder.eq.configure_backend(find_image, template_match,
-                                              feature_detect, feature_extract,
-                                              feature_match)
+        return self._last_match
 
     def find(self, image, timeout=10):
+        """
+        Find an image on the screen.
+
+        This method is the main entrance to all our image finding capabilities
+        and is the milestone for all image expect methods.
+        """
         if isinstance(image, basestring):
             image = Image(image)
         log.debug("Looking for image %s", image)
 
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.desktop.capture_screen(self)
+            screen_capture = self.dc_backend.capture_screen(self)
 
-            # TODO: implement cropping or preparation here but not in the
-            # image finder which concentrates solely on finding the image
-            # (only autopy supports this but is almost never used compared
-            # to the alternative methods)
-            found_pic = self.imagefinder.find(image, screen_capture)
+            found_pic = self.cv_backend.find(image, screen_capture)
             if found_pic is not None:
-                self.last_match = match.Match(self.xpos + found_pic.get_x(),
-                                              self.ypos + found_pic.get_y(), image)
-                return self.last_match
+                self._last_match = match.Match(self._xpos + found_pic.get_x(),
+                                               self._ypos + found_pic.get_y(), image,
+                                               self.dc_backend, self.cv_backend)
+                return self._last_match
 
             elif time.time() > timeout_limit:
                 if Settings.save_needle_on_error():
@@ -220,6 +254,11 @@ class Region(object):
                 time.sleep(Settings.rescan_speed_on_find())
 
     def find_all(self, image, timeout=10, allow_zero=False):
+        """
+        Find multiples of an image on the screen.
+
+        This method is similar the one above but allows for more than one match.
+        """
         if isinstance(image, basestring):
             image = Image(image)
         log.debug("Looking for multiple occurrences of image %s", image)
@@ -228,14 +267,16 @@ class Region(object):
         last_matches = []
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.desktop.capture_screen(self)
+            screen_capture = self.dc_backend.capture_screen(self)
 
-            found_pics = self.imagefinder.find(image, screen_capture, multiple=True)
+            found_pics = self.cv_backend.find(image, screen_capture, multiple=True)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
-                    last_matches.append(match.Match(self.xpos + found_pic.get_x(),
-                                                    self.ypos + found_pic.get_y(), image))
+                    last_matches.append(match.Match(self._xpos + found_pic.get_x(),
+                                                    self._ypos + found_pic.get_y(), image,
+                                                    self.dc_backend, self.cv_backend))
+                self._last_match = found_pics[-1]
                 return last_matches
 
             elif time.time() > timeout_limit:
@@ -253,6 +294,10 @@ class Region(object):
                 time.sleep(Settings.rescan_speed_on_find())
 
     def sample(self, image):
+        """
+        Sample the similarity between and image and the screen,
+        i.e. the probability that the image is on the screen.
+        """
         log.debug("Looking for image %s", image)
         if isinstance(image, basestring):
             image = Image(image)
@@ -261,11 +306,15 @@ class Region(object):
         ImageLogger.accumulate_logging = True
         self.find(image)
         ImageLogger.accumulate_logging = False
-        similarity = self.imagefinder.imglog.similarities[-1]
-        self.imagefinder.imglog.clear()
+        similarity = self.cv_backend.imglog.similarities[-1]
+        self.cv_backend.imglog.clear()
         return similarity
 
     def exists(self, image, timeout=0):
+        """
+        Check if an image exists on the screen using the image matching
+        success as a threshold for the existence.
+        """
         log.debug("Checking if %s is present", image)
         try:
             return self.find(image, timeout)
@@ -274,10 +323,18 @@ class Region(object):
         return None
 
     def wait(self, image, timeout=30):
+        """
+        Wait for an image to appear (be matched) with a given timeout
+        as failing tolerance.
+        """
         log.info("Waiting for %s", image)
         return self.find(image, timeout)
 
     def wait_vanish(self, image, timeout=30):
+        """
+        Wait for an image to disappear (be unmatched, i.e. matched
+        without success) with a given timeout as failing tolerance.
+        """
         log.info("Waiting for %s to vanish", image)
         expires = time.time() + timeout
         while time.time() < expires:
@@ -291,234 +348,290 @@ class Region(object):
         name = image if isinstance(image, basestring) else image.filename
         raise NotFindError(name)
 
+    """Mouse methods"""
     def idle(self, timeout):
+        """
+        Wait for a number of seconds and continue the nested call chain.
+
+        This method can be used as both a way to compactly wait for some time
+        while not breaking the call chain. e.g.
+
+        aregion.hover('abox').idle(1).click('aboxwithinthebox')
+
+        and as a way to conveniently perform timeout in between actions.
+        """
         log.debug("Waiting for %ss", timeout)
         time.sleep(timeout)
         return self
 
     def get_mouse_location(self):
-        return self.desktop.get_mouse_location()
+        """
+        Obtain the mouse location as a Location object.
+        """
+        return self.dc_backend.get_mouse_location()
 
     def hover(self, image_or_location):
+        """
+        Hover the mouse over a Location, Match, Image or string (image name)
+        object and return a resulting Match object in case of search.
+        """
         log.info("Hovering over %s", image_or_location)
 
         # Handle Match
         try:
-            self.desktop.mouse_move(image_or_location.get_target())
+            self.dc_backend.mouse_move(image_or_location.get_target())
             return None
         except AttributeError:
             pass
 
         # Handle Location
         try:
-            self.desktop.mouse_move(image_or_location)
+            self.dc_backend.mouse_move(image_or_location)
             return None
         except AttributeError:
             pass
 
         # Find image
         match = self.find(image_or_location)
-        self.desktop.mouse_move(match.get_target())
+        self.dc_backend.mouse_move(match.get_target())
 
         return match
 
     def click(self, image_or_location, modifiers=None):
+        """
+        Click over a variety of object types (like hover) using
+        the left mouse button and optionally holding special keys
+        (a list of key modifiers, e.g. [KeyModifier.MOD_CTRL, 'x']).
+        """
         match = self.hover(image_or_location)
         log.info("Clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.mouse_click(modifiers)
+        self.dc_backend.mouse_click(modifiers)
         return match
 
     def right_click(self, image_or_location, modifiers=None):
+        """
+        Click over a variety of object types (like hover) using
+        the right mouse button and optionally holding special keys
+        (like click).
+        """
         match = self.hover(image_or_location)
         log.info("Right clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.mouse_right_click(modifiers)
+        self.dc_backend.mouse_right_click(modifiers)
         return match
 
     def double_click(self, image_or_location, modifiers=None):
+        """
+        Double click over a variety of object types (like hover) using
+        the left mouse button and optionally holding special keys
+        (like click).
+        """
         match = self.hover(image_or_location)
         log.info("Double clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.mouse_double_click(modifiers)
+        self.dc_backend.mouse_double_click(modifiers)
         return match
 
-    def mouse_down(self, image_or_location, button=LEFT_BUTTON):
+    def mouse_down(self, image_or_location, button=None):
+        """
+        Hold down a mouse button specified by 'button' over a
+        variety of object types (like hover).
+        """
+        if button is None:
+            button = self.LEFT_BUTTON
         match = self.hover(image_or_location)
         log.debug("Holding down the mouse at %s", image_or_location)
-        self.desktop.mouse_down(button)
+        self.dc_backend.mouse_down(button)
         return match
 
-    def mouse_up(self, image_or_location, button=LEFT_BUTTON):
+    def mouse_up(self, image_or_location, button=None):
+        """
+        Release a mouse button specified by 'button' over a
+        variety of object types (like hover).
+        """
+        if button is None:
+            button = self.LEFT_BUTTON
         match = self.hover(image_or_location)
         log.debug("Holding up the mouse at %s", image_or_location)
-        self.desktop.mouse_up(button)
+        self.dc_backend.mouse_up(button)
         return match
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
-        self.drag(src_image_or_location, modifiers)
+        """
+        Drag from and drop at a variety of object types (like hover)
+        optionally holding special keys (like click).
+        """
+        self.drag_from(src_image_or_location, modifiers)
         match = self.drop_at(dst_image_or_location, modifiers)
         return match
 
-    def drag(self, image_or_location, modifiers=None):
+    def drag_from(self, image_or_location, modifiers=None):
+        """
+        Drag from a variety of object types (like hover) optionally
+        holding special keys (like click).
+        """
         match = self.hover(image_or_location)
 
         time.sleep(0.2)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-            self.desktop.keys_toggle(modifiers, True)
-            #self.desktop.keys_toggle(["Ctrl"], True)
+            self.dc_backend.keys_toggle(modifiers, True)
+            #self.dc_backend.keys_toggle(["Ctrl"], True)
 
         log.info("Dragging %s", image_or_location)
-        self.desktop.mouse_down(self.LEFT_BUTTON)
+        self.dc_backend.mouse_down(self.LEFT_BUTTON)
         time.sleep(Settings.delay_after_drag())
 
         return match
 
     def drop_at(self, image_or_location, modifiers=None):
+        """
+        Drop at a variety of object types (like hover) optionally
+        holding special keys (like click).
+        """
         match = self.hover(image_or_location)
         time.sleep(Settings.delay_before_drop())
 
         log.info("Dropping at %s", image_or_location)
-        self.desktop.mouse_up(self.LEFT_BUTTON)
+        self.dc_backend.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-            self.desktop.keys_toggle(modifiers, False)
-            #self.desktop.keys_toggle(["Ctrl"], False)
+            self.dc_backend.keys_toggle(modifiers, False)
+            #self.dc_backend.keys_toggle(["Ctrl"], False)
 
         return match
 
-    def press(self, keys):
+    """Keyboard methods"""
+    def press_keys(self, keys):
         """
-        This method types a single key or a list of such.
-        """
-        if isinstance(keys, int):
-            log.info("Pressing key %s", Key.to_string(keys))
-        elif isinstance(keys, basestring):
-            if len(keys) > 1:
-                log.warning("Using press for an entire text - "
-                            "please use type_text for this purpose")
-            log.info("Pressing key %s", keys)
-        else:
-            key_strings = []
-            for key in keys:
-                if isinstance(key, basestring):
-                    if len(key) > 1:
-                        log.warning("Using press for an entire text - "
-                                    "please use type_text for this purpose")
-                    key_strings.append(key)
-                else:
-                    key_strings.append(Key.to_string(key))
-            log.info("Pressing together keys %s",
-                     " ".join(keystr for keystr in key_strings))
+        This method types a single key or a list of keys simultaneously.
 
-        self.desktop.keys_press(keys)
+        Therefore press_keys([Key.ENTER]) is equivalent to press_keys(Key.ENTER).
+        Other options are
+            press_keys([Key.CTRL, 'X'])
+            press_keys(['a', 'b', 3])
+        """
+        keys_list = self._parse_keys(keys)
+        time.sleep(Settings.delay_before_keys())
+        self.dc_backend.keys_press(keys_list)
         return self
 
-    # TODO: cannot initiate list as a default argument
-    def press_at(self, image_or_location=None, keys=None):
+    def press_at(self, keys, image_or_location):
         """
-        This method types a single key or a list of such at
-        a specified image or location.
+        This method types a single key or a list of keys simultaneously
+        at a specified image or location.
+
+        This method is similar to press_keys above.
         """
-        if isinstance(keys, int):
-            log.info("Pressing key %s at %s", Key.to_string(keys),
-                     image_or_location)
-        elif isinstance(keys, basestring):
-            if len(keys) > 1:
-                log.warning("Using press for an entire text - "
-                            "please use type_text for this purpose")
-            log.info("Pressing key %s at %s", keys, image_or_location)
+        keys_list = self._parse_keys(keys, image_or_location)
+        match = self.click(image_or_location)
+        time.sleep(Settings.delay_before_keys())
+        self.dc_backend.keys_press(keys_list)
+        return match
+
+    def _parse_keys(self, keys, image_or_location=None):
+        at_str = " at %s" % image_or_location if image_or_location else ""
+
+        keys_list = []
+        # if not a list (i.e. if a single key)
+        if isinstance(keys, int) or isinstance(keys, basestring):
+            key = keys
+            try:
+                log.info("Pressing key '%s'%s", self.dc_backend.get_keymap().to_string(key), at_str)
+            # if not a special key (i.e. if a character key)
+            except KeyError:
+                if isinstance(key, int):
+                    key = str(key)
+                elif len(key) > 1:
+                    raise # a key cannot be a string (text)
+                log.info("Pressing key '%s'%s", key, at_str)
+            keys_list.append(key)
         else:
             key_strings = []
-            if keys is None:
-                keys = []
             for key in keys:
-                if isinstance(key, basestring):
-                    if len(key) > 1:
-                        log.warning("Using press for an entire text - "
-                                    "please use type_text for this purpose")
+                try:
+                    key_strings.append(self.dc_backend.get_keymap().to_string(key))
+                except KeyError:
+                    if isinstance(key, int):
+                        key = str(key)
+                    elif len(key) > 1:
+                        raise # a key cannot be a string (text)
                     key_strings.append(key)
-                else:
-                    key_strings.append(Key.to_string(key))
-            log.info("Pressing together keys %s at %s",
-                     " ".join(keystr for keystr in key_strings),
-                     image_or_location)
-
-        if isinstance(image_or_location, basestring):
-            if isinstance(keys, int):
-                log.info("Pressing key %s at %s", Key.to_string(keys),
-                         image_or_location)
-            else:
-                log.info("Pressing keys %s at %s",
-                         " ".join([Key.to_string(key) for key in keys]),
-                         image_or_location)
-
-        match = None
-        if image_or_location != None:
-            match = self.click(image_or_location)
-            time.sleep(Settings.delay_before_keys())
-
-        self.desktop.keys_press(keys)
-        return match
+                keys_list.append(key)
+            log.info("Pressing together keys '%s'%s",
+                     "'+'".join(keystr for keystr in key_strings),
+                     at_str)
+        return keys_list
 
     def type_text(self, text, modifiers=None):
         """
-        The method types a string text or a list of strings and
-        special keys.
+        This method specializes in typing a list of consecutive character keys
+        (string text without special keys) or a list of strings.
+
+        Therefore type_text(['hello']) is equivalent to type_text('hello').
+        Other options are
+            type_text('ab3') # compare with press_keys()
+            type_text(['Hello', ' ', 'user3614']) # in cases with appending
+
+        Special keys are only allowed as modifiers here, call 'press_keys'
+        multiple times for consecutively typing special keys.
+
+        Modifiers is a list equivalent to the one in press_keys().
         """
-        if isinstance(text, basestring):
-            log.info("Typing text '%s'", text)
-        else:
-            for part in text:
-                if isinstance(part, basestring):
-                    log.info("Typing text '%s'", part)
-                else:
-                    log.info("Pressing %s", Key.to_string(part))
+        text_list = self._parse_text(text)
+        time.sleep(Settings.delay_before_keys())
         if modifiers != None:
-            log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.desktop.keys_type(text, modifiers)
+            if isinstance(modifiers, basestring):
+                modifiers = [modifiers]
+            log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
+        self.dc_backend.keys_type(text_list, modifiers)
         return self
 
-    # TODO: text cannot be empty since the method doesn't make sense
-    def type_at(self, image_or_location=None, text='', modifiers=None):
+    def type_at(self, text, image_or_location, modifiers=None):
         """
-        The method types a string text or a list of strings and
-        special keys at a specified image or location.
+        This method specializes in typing a list of consecutive character keys
+        (string text without special keys) or a list of strings at a specified
+        image or location.
+
+        This method is similar to type_text above.
         """
+        text_list = self._parse_text(text, image_or_location)
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-            time.sleep(Settings.delay_before_keys())
+        time.sleep(Settings.delay_before_keys())
+        if modifiers != None:
+            if isinstance(modifiers, basestring):
+                modifiers = [modifiers]
+            log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
+        self.dc_backend.keys_type(text_list, modifiers)
+        return match
 
-        if isinstance(image_or_location, basestring):
-            imgname = image_or_location
-        elif isinstance(image_or_location, Image):
-            imgname = os.path.dirname(image_or_location.filename)
-        elif image_or_location == None:
-            imgname = "previously focused element"
-        else:
-            imgname = image_or_location
+    def _parse_text(self, text, image_or_location=None):
+        at_str = " at %s" % image_or_location if image_or_location else ""
 
+        text_list = []
         if isinstance(text, basestring):
-            log.info("Typing text '%s' at %s", text, imgname)
+            log.info("Typing text '%s'%s", text, at_str)
+            text_list = [text]
         else:
             for part in text:
                 if isinstance(part, basestring):
-                    log.info("Typing text '%s' at %s", part, imgname)
+                    log.info("Typing text '%s'%s", part, at_str)
+                    text_list.append(part)
+                elif isinstance(part, int):
+                    log.info("Typing '%i'%s", part, at_str)
+                    text_list.append(str(part))
                 else:
-                    log.info("Pressing %s at %s", Key.to_string(part), imgname)
+                    raise ValueError("Unknown text character" % part)
+        return text_list
 
-        if modifiers != None:
-            log.info("Holding the modifiers %s", " ".join(modifiers))
-
-        self.desktop.keys_type(text, modifiers)
-        return match
 
 # TODO: make this more pythonic
 import match
