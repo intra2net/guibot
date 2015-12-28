@@ -39,6 +39,7 @@ class Settings:
     _drag_delay = 0.5
     _drop_delay = 0.5
     _keys_delay = 0.2
+    _type_delay = 0.1
     _rescan_speed_on_find = 0.2
     _screen_autoconnect = True
     _preprocess_special_chars = True
@@ -86,6 +87,14 @@ class Settings:
             return Settings._keys_delay
         else:
             Settings._keys_delay = delay
+
+    @staticmethod
+    def delay_between_keys(delay=None):
+        """Timeout between key type operations."""
+        if delay == None:
+            return Settings._type_delay
+        else:
+            Settings._type_delay = delay
 
     @staticmethod
     def rescan_speed_on_find(delay=None):

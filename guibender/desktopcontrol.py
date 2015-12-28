@@ -300,12 +300,14 @@ class DesktopControl:
                         self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
                     else:
                         self._backend_obj.key.tap(char)
+                    time.sleep(Settings.delay_between_keys())
                 # TODO: Fix autopy to handle international chars and other stuff so
                 # that both the Linux and Windows version are reduced to autopy.key
                 # autopy.key.type_string(text)
         elif self.eq.get_backend() == "autopy-nix":
             for part in text:
                 # HACK: use xdotool to handle various character encoding
+                # TODO: remove alltogether rather than using "--delay milliseconds"
                 subprocess.call(['xdotool', 'type', part], shell=False)
         elif self.eq.get_backend() == "qemu":
             special_chars = {"~": "`", "!": "1", "@": "2", "#": "3", "$": "4",
@@ -341,6 +343,7 @@ class DesktopControl:
                     elif special_chars.has_key(char) and Settings.preprocess_special_chars():
                         char = "shift-%s" % special_chars[char]
                     self._backend_obj.sendkey(char, hold_time=1)
+                    time.sleep(Settings.delay_between_keys())
         elif self.eq.get_backend() == "vncdotool":
             for part in text:
                 for char in str(part):
@@ -352,6 +355,7 @@ class DesktopControl:
                         char = 'space'
                     elif char == "\n":
                         char = 'return'
+                    time.sleep(Settings.delay_between_keys())
                     self._backend_obj.keyPress(char)
 
         if modifiers != None:
