@@ -3,7 +3,7 @@
 
 Name:           guibender
 Version:        0.10
-Release:        4
+Release:        5
 Summary:        GUI testing tool
 
 Group:          Development/Tools
