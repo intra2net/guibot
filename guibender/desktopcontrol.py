@@ -181,7 +181,8 @@ class DesktopControl:
             self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
         elif self.eq.get_backend() == "vncdotool":
             self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
-            # BUG: the mouse button is pressed down forever (on LEFT)
+            # BUG: the mouse button is pressed down forever (on LEFT) and lags behind
+            time.sleep(0.1)
             self._backend_obj.mouseUp(self._mousemap.LEFT_BUTTON)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
