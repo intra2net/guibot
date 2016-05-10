@@ -47,6 +47,7 @@ class Settings:
     _image_logging_level = logging.ERROR
     _image_logging_destination = "."
     _image_logging_step_width = 3
+    _image_quality = 0
 
     # backends shared between all instances
     _desktop_control_backend = "autopy-nix"
@@ -189,6 +190,18 @@ class Settings:
             return Settings._image_logging_step_width
         else:
             Settings._image_logging_step_width = width
+
+    @staticmethod
+    def image_quality(quality=None):
+        """
+        Integer to determine the quality of the image dumps ranging from 0 for
+        no compression to 9 for maximum compression (used to save space and
+        reduce the disk space needed for image logging).
+        """
+        if quality == None:
+            return Settings._image_quality
+        else:
+            Settings._image_quality = quality
 
     @staticmethod
     def desktop_control_backend(name=None):

@@ -198,7 +198,7 @@ class ImageLogger:
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
         path = os.path.join(ImageLogger.logging_destination, name)
-        cv2.imwrite(path, hotmap)
+        cv2.imwrite(path, hotmap, [cv.CV_IMWRITE_PNG_COMPRESSION, Settings.image_quality()])
 
     def hotmap_from_template(self, result):
         matrix = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)

@@ -21,6 +21,7 @@ import PIL.Image
 import cv2
 import numpy
 
+from settings import Settings
 from location import Location
 from imagepath import ImagePath
 from settings import CVEqualizer
@@ -122,7 +123,7 @@ class Image:
         return self.with_similarity(1.0)
 
     def save(self, filename):
-        self.pil_image.save(filename)
+        self.pil_image.save(filename, compress_level=Settings.image_quality())
         if self.use_own_settings:
             self.match_settings.to_match_file(filename[:-4])
 
