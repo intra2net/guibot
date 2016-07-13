@@ -47,7 +47,7 @@ class Settings:
     _image_logging_level = logging.ERROR
     _image_logging_destination = "."
     _image_logging_step_width = 3
-    _image_quality = 0
+    _image_quality = 3
 
     # backends shared between all instances
     _desktop_control_backend = "autopy-nix"
