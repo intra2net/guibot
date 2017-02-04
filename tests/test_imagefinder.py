@@ -21,7 +21,6 @@ import subprocess
 import glob
 import os
 
-import cv
 import cv2
 from tempfile import NamedTemporaryFile
 

@@ -27,7 +27,6 @@ if Settings.find_image_backend() == "template" and Settings.template_match_backe
 else:
     # TODO: OpenCV is required for 95% of the backends so we need to improve the image
     # logging and overall image manipulation in order to be able to truly avoid it
-    import cv
     import cv2
     import math
     import numpy
@@ -578,19 +577,15 @@ class ImageFinder:
 
         # zoom in if explicitly set
         if nfactor > 1.0:
-            nmat = cv.fromarray(ngray)
-            nmat_zoomed = cv.CreateMat(int(nmat.rows * nfactor), int(nmat.cols * nfactor), cv.CV_8UC1)
             log.debug("Zooming x%i needle", nfactor)
-            log.log(0, "%s,%s -> %s,%s", nmat.rows, nmat.cols, nmat_zoomed.rows, nmat_zoomed.cols)
-            cv.Resize(nmat, nmat_zoomed)
-            ngray = numpy.asarray(nmat_zoomed)
+            new_shape = (int(ngray.shape[0] * nfactor), int(ngray.shape[1] * nfactor))
+            log.log(0, "%s -> %s", ngray.shape, new_shape)
+            ngray = cv2.resize(ngray, new_shape)
         if hfactor > 1.0:
-            hmat = cv.fromarray(hgray)
-            hmat_zoomed = cv.CreateMat(int(hmat.rows * hfactor), int(hmat.cols * hfactor), cv.CV_8UC1)
             log.debug("Zooming x%i haystack", hfactor)
-            log.log(0, "%s,%s -> %s,%s", hmat.rows, hmat.cols, hmat_zoomed.rows, hmat_zoomed.cols)
-            cv.Resize(hmat, hmat_zoomed)
-            hgray = numpy.asarray(hmat_zoomed)
+            new_shape = (int(hgray.shape[0] * hfactor), int(hgray.shape[1] * hfactor))
+            log.log(0, "%s -> %s", hgray.shape, new_shape)
+            hgray = cv2.resize(hgray, new_shape)
 
         if detect == "oldSURF":
             # build the old surf feature detector
@@ -603,9 +598,11 @@ class ImageFinder:
         # include only methods tested for compatibility
         elif (detect in self.eq.algorithms["feature_detectors"]
               and extract in self.eq.algorithms["feature_extractors"]):
-            detector = cv2.FeatureDetector_create(detect)
+            feature_detector_create = getattr(cv2, "%s_create" % detect)
+            detector = feature_detector_create()
             detector = self.eq.sync_backend_to_params(detector, "fdetect")
-            extractor = cv2.DescriptorExtractor_create(extract)
+            descriptor_extractor_create = getattr(cv2, "%s_create" % extract)
+            extractor = descriptor_extractor_create()
             extractor = self.eq.sync_backend_to_params(extractor, "fextract")
 
             # keypoints
@@ -689,6 +686,8 @@ class ImageFinder:
         # include only methods tested for compatibility
         elif match in self.eq.algorithms["feature_matchers"]:
             # build matcher and match feature vectors
+            # NOTE: descriptor matcher creation is kept the old way while feature
+            # detection and extraction not - example of the untidy maintenance of OpenCV
             matcher = cv2.DescriptorMatcher_create(match)
             matcher = self.eq.sync_backend_to_params(matcher, "fmatch")
         else:
@@ -841,8 +840,8 @@ class InHouseCV(ImageFinder):
 
     def __init__(self):
         """Initiate thee CV backend attributes."""
-        self.detector = cv2.FeatureDetector_create("ORB")
-        self.extractor = cv2.DescriptorExtractor_create("ORB")
+        self.detector = cv2.ORB_create()
+        self.extractor = cv2.ORB_create()
 
     def detect_features(self, needle, haystack):
         """

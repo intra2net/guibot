@@ -20,8 +20,6 @@ import unittest
 import shutil
 import logging
 
-import cv
-import cv2
 from tempfile import NamedTemporaryFile
 
 import common_test

@@ -18,9 +18,6 @@ import os
 import unittest
 import pprint
 
-import cv
-import cv2
-
 import common_test
 from imagefinder import ImageFinder
 from calibrator import Calibrator

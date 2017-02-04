@@ -20,7 +20,6 @@ from errors import *
 from settings import Settings
 
 # TODO: try to use PIL functionality instead
-import cv
 import cv2
 import numpy
 
@@ -198,12 +197,10 @@ class ImageLogger:
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
         path = os.path.join(ImageLogger.logging_destination, name)
-        cv2.imwrite(path, hotmap, [cv.CV_IMWRITE_PNG_COMPRESSION, Settings.image_quality()])
+        cv2.imwrite(path, hotmap, [cv2.IMWRITE_PNG_COMPRESSION, Settings.image_quality()])
 
     def hotmap_from_template(self, result):
-        matrix = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
-        cv.ConvertScale(cv.fromarray(result), matrix, scale=255.0)
-        return numpy.asarray(matrix)
+        return result * 255.0
 
     def clear(self):
         self.needle = None

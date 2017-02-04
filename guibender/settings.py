@@ -54,7 +54,7 @@ class Settings:
     _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
-    _feature_extract_backend = "BRIEF"
+    _feature_extract_backend = "ORB"
     _feature_match_backend = "BruteForce-Hamming"
 
     @staticmethod
@@ -448,12 +448,29 @@ class CVEqualizer:
             ratio test - boolean for whether to perform a ratio test
             symmetry test - boolean for whether to perform a symmetry test
 
+        Note: SURF and SIFT are proprietary algorithms and are not available
+        by default in newer OpenCV versions (>3.0).
         Note: "in-house-raw" performs regular knn matching, but "in-house-region"
             performs a special filtering and replacement of matches based on
             positional information (it does not have ratio and symmetry tests
             and assumes that the needle is transformed preserving the relative
             positions of each pair of matches, i.e. no rotation is allowed,
             but scaling for example is supported)
+
+        TODO: new available algos
+        AKAZE_create
+        AgastFeatureDetector_create
+        BRISK_create
+        DescriptorMatcher_create
+        FastFeatureDetector_create
+        GFTTDetector_create
+        KAZE_create
+        MSER_create
+        ORB_create
+        SimpleBlobDetector_create
+        StereoBM_create
+        StereoSGBM_create
+        Tracker_create
         """
         # currently fully compatible methods
         self.algorithms = {"find_methods": ("template", "feature", "hybrid"),
@@ -551,10 +568,12 @@ class CVEqualizer:
                 self.p[category]["oldSURFdetect"] = CVParameter(85)
                 return
             else:
-                new_backend = cv2.FeatureDetector_create(new)
+                feature_detector_create = getattr(cv2, "%s_create" % new)
+                new_backend = feature_detector_create()
 
         elif category == "fextract":
-            new_backend = cv2.DescriptorExtractor_create(new)
+            descriptor_extractor_create = getattr(cv2, "%s_create" % new)
+            new_backend = descriptor_extractor_create()
         elif category == "fmatch":
             if new == "in-house-region":
                 self.p[category]["refinements"] = CVParameter(50, 1, None)
@@ -577,24 +596,20 @@ class CVEqualizer:
                     # the API supports it - skip fmatch for now
                     return
 
+                    # NOTE: descriptor matcher creation is kept the old way while feature
+                    # detection and extraction not - example of the untidy maintenance of OpenCV
                     new_backend = cv2.DescriptorMatcher_create(new)
 
         # examine the interface of the OpenCV backend
         log.log(0, "%s %s", new_backend, dir(new_backend))
-        for param in new_backend.getParams():
-            log.log(0, "%s", new_backend.paramHelp(param))
-            ptype = new_backend.paramType(param)
-            if ptype == 0:
-                val = new_backend.getInt(param)
-            elif ptype == 1:
-                val = new_backend.getBool(param)
-            elif ptype == 2:
-                val = new_backend.getDouble(param)
-            else:
-                # designed to raise error so that the other ptypes are identified
-                # currently unknown indices: getMat, getAlgorithm, getMatVector, getString
-                log.log(0, "%s %s", param, ptype)
-                val = new_backend.getAlgorithm(param)
+        for attribute in dir(new_backend):
+            if not attribute.startswith("get"):
+                continue
+            param = attribute.replace("get", "")
+            get_param = getattr(new_backend, attribute)
+            val = get_param()
+            if type(val) not in [bool, int, float, type(None)]:
+                continue
 
             # give more information about some better known parameters
             if category in ("fdetect", "fextract") and param == "firstLevel":
@@ -633,21 +648,19 @@ class CVEqualizer:
             else:
                 return backend
 
-        for param in backend.getParams():
+        for attribute in dir(backend):
+            if not attribute.startswith("get"):
+                continue
+            param = attribute.replace("get", "")
             if param in self.p[category]:
                 val = self.p[category][param].value
-                ptype = backend.paramType(param)
-                if ptype == 0:
-                    backend.setInt(param, val)
-                elif ptype == 1:
-                    backend.setBool(param, val)
-                elif ptype == 2:
-                    backend.setDouble(param, val)
-                else:
-                    # designed to raise error so that the other ptypes are identified
-                    # currently unknown indices: setMat, setAlgorithm, setMatVector, setString
-                    log.log(0, "Synced %s to %s", param, val)
-                    val = backend.setAlgorithm(param, val)
+                set_attribute = attribute.replace("get", "set")
+                # some getters might not have corresponding setters
+                if not hasattr(backend, set_attribute):
+                    continue
+                set_param = getattr(backend, set_attribute)
+                set_param(val)
+                log.log(0, "Synced %s to %s", param, val)
                 self.p[category][param].value = val
         return backend
 
