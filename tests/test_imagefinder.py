@@ -96,6 +96,7 @@ class ImageFinderTest(unittest.TestCase):
 
     # TODO: integrate this to ImageLogger and add
     # more actual assertion to all this unittests
+
     def draw_needle_features(self, needle, haystack,
                              match_settings=None, logging=20):
         finder = ImageFinder()
@@ -160,6 +161,40 @@ class ImageFinderTest(unittest.TestCase):
                              "should be matched in the screen.")
         #hotmap_file = os.path.join('log_haystack.png')
         #self.show_image(hotmap_file, title)
+
+    def test_configure_find(self):
+        finder = ImageFinder()
+        finder.eq.configure_backend(find_image="feature")
+        self.assertEqual(finder.eq.get_backend("find"), "feature")
+
+        finder.eq.configure_backend(find_image="template", template_match="autopy")
+        self.assertEqual(finder.eq.get_backend("find"), "template")
+        self.assertEqual(finder.eq.get_backend("tmatch"), "autopy")
+
+        # test that a parameter of BRIEF (the current and default extractor)
+        # is present in parameters while a parameter of FREAK is not present
+        self.assertTrue(finder.eq.p["fextract"].has_key("bytes"))
+        self.assertFalse(finder.eq.p["fextract"].has_key("nbOctave"))
+
+        finder.eq.configure_backend(find_image="feature", feature_detect="ORB",
+                                    feature_extract="FREAK", feature_match="BruteForce")
+        self.assertEqual(finder.eq.get_backend("find"), "feature")
+        self.assertEqual(finder.eq.get_backend("fdetect"), "ORB")
+        self.assertEqual(finder.eq.get_backend("fextract"), "FREAK")
+        self.assertEqual(finder.eq.get_backend("fmatch"), "BruteForce")
+
+        # test that a parameter of FREAK (the new extractor) is now present
+        # while the parameter of BRIEF is not present anymore
+        self.assertTrue(finder.eq.p["fextract"].has_key("nbOctave"))
+        self.assertTrue(finder.eq.p["fextract"].has_key("nbOctave"))
+
+        # check consistency of all unchanged options
+        finder.eq.configure_backend(find_image=None, template_match="ccorr_normed")
+        self.assertEqual(finder.eq.get_backend("find"), "feature")
+        self.assertEqual(finder.eq.get_backend("tmatch"), "ccorr_normed")
+        self.assertEqual(finder.eq.get_backend("fdetect"), "ORB")
+        self.assertEqual(finder.eq.get_backend("fextract"), "FREAK")
+        self.assertEqual(finder.eq.get_backend("fmatch"), "BruteForce")
 
     def test_features_viewport(self):
         needle = Image('n_ibs')

@@ -106,40 +106,6 @@ class RegionTest(unittest.TestCase):
             # HACK: make sure app is really closed
             time.sleep(0.5)
 
-    def test_configure_find(self):
-        region = Region()
-        region.configure_find(find_image="feature")
-        self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
-
-        region.configure_find(find_image="template", template_match="autopy")
-        self.assertEqual(region.imagefinder.eq.get_backend("find"), "template")
-        self.assertEqual(region.imagefinder.eq.get_backend("tmatch"), "autopy")
-
-        # test that a parameter of BRIEF (the current and default extractor)
-        # is present in parameters while a parameter of FREAK is not present
-        self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("bytes"))
-        self.assertFalse(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
-
-        region.configure_find(find_image="feature", feature_detect="ORB",
-                              feature_extract="FREAK", feature_match="BruteForce")
-        self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
-        self.assertEqual(region.imagefinder.eq.get_backend("fdetect"), "ORB")
-        self.assertEqual(region.imagefinder.eq.get_backend("fextract"), "FREAK")
-        self.assertEqual(region.imagefinder.eq.get_backend("fmatch"), "BruteForce")
-
-        # test that a parameter of FREAK (the new extractor) is now present
-        # while the parameter of BRIEF is not present anymore
-        self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
-        self.assertTrue(region.imagefinder.eq.p["fextract"].has_key("nbOctave"))
-
-        # check consistency of all unchanged options
-        region.configure_find(find_image=None, template_match="ccorr_normed")
-        self.assertEqual(region.imagefinder.eq.get_backend("find"), "feature")
-        self.assertEqual(region.imagefinder.eq.get_backend("tmatch"), "ccorr_normed")
-        self.assertEqual(region.imagefinder.eq.get_backend("fdetect"), "ORB")
-        self.assertEqual(region.imagefinder.eq.get_backend("fextract"), "FREAK")
-        self.assertEqual(region.imagefinder.eq.get_backend("fmatch"), "BruteForce")
-
     def test_find(self):
         self.show_image('all_shapes')
 
@@ -301,7 +267,7 @@ class RegionTest(unittest.TestCase):
         match.hover(match.get_target())
 
         # Hover over Image with 50% similarity
-        region.imagefinder.eq.p["find"]["similarity"].value = 0.5
+        region.cv_backend.eq.p["find"]["similarity"].value = 0.5
         region.hover(Image('shape_pink_box'))
 
     def test_click(self):
@@ -322,22 +288,22 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_press(self):
+    def test_press_keys(self):
         self.show_application()
         time.sleep(1)
-        Region().press(Key.ESC)
+        Region().press_keys(Region().ESC)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
         self.show_application()
         time.sleep(1)
-        Region().press([Key.ALT, Key.F4])
+        Region().press_keys([Region().ALT, Region().F4])
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_press_at(self):
         self.show_application()
-        Region().press_at('qt4gui_lineedit2', keys=[Key.ENTER])
+        Region().press_at([Region().ENTER], 'qt4gui_lineedit2')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -349,7 +315,7 @@ class RegionTest(unittest.TestCase):
 
     def test_type_at(self):
         self.show_application()
-        Region().type_at('qt4gui_lineedit', text='quit')
+        Region().type_at('quit', 'qt4gui_lineedit')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -359,15 +325,15 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_drag(self):
+    def test_drag_from(self):
         self.show_application()
 
-        # TODO: some bug does not allow for Region().drag().hover()
-        Region().drag('qt4gui_textedit')
+        # TODO: some bug does not allow for Region().drag_from().hover()
+        Region().drag_from('qt4gui_textedit')
         Region().hover('qt4gui_label1')
 
         # toggled buttons cleanup
-        Region().desktop.mouse_up()
+        Region().dc_backend.mouse_up(Region().LEFT_BUTTON)
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
@@ -376,7 +342,7 @@ class RegionTest(unittest.TestCase):
         self.show_application()
 
         # TODO: some bug does not allow for Region().drag().hover()
-        Region().drag('qt4gui_textedit')
+        Region().drag_from('qt4gui_textedit')
         Region().hover('qt4gui_label2')
         self.assertRaises(NotFindError, Region().wait_vanish, 'qt4gui_label2', timeout=3)
 
@@ -391,7 +357,7 @@ class RegionTest(unittest.TestCase):
         Region().idle(2).mouse_down('qt4gui_label3')
 
         # toggled buttons cleanup
-        Region().desktop.mouse_up()
+        Region().dc_backend.mouse_up(Region().LEFT_BUTTON)
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
