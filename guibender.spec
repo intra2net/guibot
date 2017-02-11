@@ -33,6 +33,9 @@ BuildRequires:  python-devel
 
 BuildArch:      noarch
 
+# don't generate debug informaiton
+%global debug_package %{nil}
+
 
 %prep
 %setup -q
