@@ -18,9 +18,11 @@
 import os
 import unittest
 import time
+import shutil
 import subprocess
 import common_test
 
+from settings import Settings
 from imagepath import ImagePath
 from location import Location
 from region import Region
@@ -47,6 +49,8 @@ class RegionTest(unittest.TestCase):
 
     def tearDown(self):
         self.close_windows()
+        if os.path.exists(Settings.image_logging_destination()):
+            shutil.rmtree(Settings.image_logging_destination())
 
     def test_basic(self):
         screen_width = DesktopControl().get_width()

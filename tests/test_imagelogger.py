@@ -36,6 +36,7 @@ class ImageLoggerTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.logpath = os.path.join(common_test.unittest_dir, 'tmp')
+        self.prev_logpath = Settings.image_logging_destination()
         Settings.image_logging_level(0)
         Settings.image_logging_destination(self.logpath)
         Settings.image_logging_step_width(4)
@@ -44,7 +45,7 @@ class ImageLoggerTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
     def setUp(self):
-        os.mkdir(self.logpath)
+        # the image logger will recreate its logging destination
         ImageLogger.step = 1
 
     def tearDown(self):
@@ -53,7 +54,7 @@ class ImageLoggerTest(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         Settings.image_logging_level(logging.ERROR)
-        Settings.image_logging_destination(".")
+        Settings.image_logging_destination(self.prev_logpath)
         Settings.image_logging_step_width(3)
 
     def _get_matches_in(self, pattern, list):

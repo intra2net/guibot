@@ -45,7 +45,7 @@ class Settings:
     _preprocess_special_chars = True
     _save_needle_on_error = True
     _image_logging_level = logging.ERROR
-    _image_logging_destination = "."
+    _image_logging_destination = "./imglog"
     _image_logging_step_width = 3
     _image_quality = 3
 

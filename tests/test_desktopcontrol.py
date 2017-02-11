@@ -15,14 +15,21 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+import os
+import shutil
 import unittest
 import common_test
 
 from desktopcontrol import DesktopControl
 from region import Region
+from settings import Settings
 
 
 class DesktopControlTest(unittest.TestCase):
+
+    def tearDown(self):
+        if os.path.exists(Settings.image_logging_destination()):
+            shutil.rmtree(Settings.image_logging_destination())
 
     def test_basic(self):
         desktop = DesktopControl()

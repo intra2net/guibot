@@ -19,7 +19,7 @@ import unittest
 import time
 import subprocess
 import glob
-import os
+import shutil
 
 import cv2
 from tempfile import NamedTemporaryFile
@@ -53,15 +53,8 @@ class ImageFinderTest(unittest.TestCase):
 
     def tearDown(self):
         self.close_windows()
-        needle_file = os.path.join(common_test.unittest_dir, 'images/', 'needle.png')
-        try:
-            os.unlink(needle_file)
-        except OSError:
-            pass
-        try:
-            map(os.unlink, glob.glob(u'imglog*'))
-        except OSError:
-            pass
+        if os.path.exists(Settings.image_logging_destination()):
+            shutil.rmtree(Settings.image_logging_destination())
 
     def wait_end(self, subprocess_pipe, timeout=30):
         expires = time.time() + timeout

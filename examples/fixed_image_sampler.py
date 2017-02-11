@@ -71,5 +71,5 @@ finder.find(needle, haystack)
 if REMOVE_LOGPATH:
     shutil.rmtree(LOGPATH)
 Settings.image_logging_level(logging.ERROR)
-Settings.image_logging_destination(".")
+Settings.image_logging_destination("./imglog")
 Settings.image_logging_step_width(3)
