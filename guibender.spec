@@ -2,8 +2,8 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           guibender
-Version:        0.10
-Release:        6
+Version:        0.11
+Release:        1
 Summary:        GUI testing tool
 
 Group:          Development/Tools
@@ -20,7 +20,7 @@ Source0:        http://developer.intra2net.com/%{name}-%{version}.tar.gz
 # for qemu: need to have autotest with virt-test installed then simply pass the qemu monitor as parameter
 # TODO: opencv must be turned into conditional dependency only if we use
 # particular computer vision backends.
-Requires:       opencv >= 2.4
+Requires:       opencv >= 3.1
 Requires:       opencv-python
 
 %description
