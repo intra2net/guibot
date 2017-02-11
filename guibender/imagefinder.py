@@ -777,10 +777,14 @@ class ImageFinder:
         #                                 param2 = 0.9)
 
         # measure total used features for the projected focus point
+        if H is None or mask is None:
+            log.log(30, "Homography error occurred during feature matching")
+            self.imglog.similarities[-1] = 0.0
+            return []
         true_matches = []
-        for kp in mhkp:
+        for i, kp in enumerate(mhkp):
             # true matches are also inliers for the homography
-            if mask[mhkp.index(kp)][0] == 1:
+            if mask[i][0] == 1:
                 true_matches.append(kp)
         tmhkp_locations = [tmhkp.pt for tmhkp in true_matches]
         self.imglog.log_locations(20, tmhkp_locations, None, 3, 0, 255, 0)
