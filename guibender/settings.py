@@ -413,28 +413,9 @@ class CVEqualizer:
         """
         Initiates the CV equalizer with default algorithm configuration.
 
-        Available algorithms:
-            template matchers:
-                autopy, sqdiff, ccorr, ccoeff
-                sqdiff_normed, *ccorr_normed, ccoeff_normed
-
-            feature detectors:
-                FAST, STAR, *SIFT, *SURF, ORB, *MSER,
-                GFTT, HARRIS, Dense, *SimpleBlob
-                *GridFAST, *GridSTAR, ...
-                *PyramidFAST, *PyramidSTAR, ...
-                *oldSURF (OpenCV 2.2.3)
-
-            feature extractors:
-                *SIFT, *SURF, ORB, BRIEF, FREAK
-
-            feature matchers:
-                BruteForce, BruteForce-L1, BruteForce-Hamming,
-                BruteForce-Hamming(2), **FlannBased,
-                in-house-raw, in-house-region
-
-            Starred methods are currently known to be buggy.
-            Double starred methods should be investigated further.
+        Available algorithms can be seen in the `algorithms` attribute
+        whose keys are the algorithm types and values are the members of
+        these types.
 
         External (image finder) parameters:
             detect filter - works for certain detectors and
@@ -456,34 +437,19 @@ class CVEqualizer:
             and assumes that the needle is transformed preserving the relative
             positions of each pair of matches, i.e. no rotation is allowed,
             but scaling for example is supported)
-
-        TODO: new available algos
-        AKAZE_create
-        AgastFeatureDetector_create
-        BRISK_create
-        DescriptorMatcher_create
-        FastFeatureDetector_create
-        GFTTDetector_create
-        KAZE_create
-        MSER_create
-        ORB_create
-        SimpleBlobDetector_create
-        StereoBM_create
-        StereoSGBM_create
-        Tracker_create
         """
         # currently fully compatible methods
         self.algorithms = {"find_methods": ("template", "feature", "hybrid"),
                            "template_matchers": ("autopy", "sqdiff", "ccorr",
                                                  "ccoeff", "sqdiff_normed",
                                                  "ccorr_normed", "ccoeff_normed"),
-                           "feature_matchers": ("BruteForce", "BruteForce-L1",
-                                                "BruteForce-Hamming",
-                                                "BruteForce-Hamming(2)",
-                                                "in-house-raw", "in-house-region"),
-                           "feature_detectors": ("ORB", "FAST", "STAR", "GFTT",
-                                                 "HARRIS", "Dense", "oldSURF"),
-                           "feature_extractors": ("ORB", "BRIEF", "FREAK")}
+                           "feature_matchers": ("BruteForce", "BruteForce-L1", "BruteForce-Hamming",
+                                                "BruteForce-Hamming(2)"),
+                           "feature_detectors": ("ORB", "BRISK", "KAZE", "AKAZE", "MSER",
+                                                 "AgastFeatureDetector", "FastFeatureDetector", "GFTTDetector",
+                                                 "SimpleBlobDetector", "oldSURF"),
+                           # TODO: we could also support "StereoSGBM" but it needs initialization arguments
+                           "feature_extractors": ("ORB", "BRISK", "KAZE", "AKAZE")}
 
         # parameters registry
         self.p = {"find": {}, "tmatch": {}, "fextract": {}, "fmatch": {}, "fdetect": {}}

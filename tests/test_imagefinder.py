@@ -171,29 +171,29 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(finder.eq.get_backend("find"), "template")
         self.assertEqual(finder.eq.get_backend("tmatch"), "autopy")
 
-        # test that a parameter of BRIEF (the current and default extractor)
-        # is present in parameters while a parameter of FREAK is not present
-        self.assertTrue(finder.eq.p["fextract"].has_key("bytes"))
-        self.assertFalse(finder.eq.p["fextract"].has_key("nbOctave"))
+        # test that a parameter of ORB (the current and default extractor)
+        # is present in parameters while a parameter of KAZE is not present
+        self.assertTrue(finder.eq.p["fextract"].has_key("MaxFeatures"))
+        self.assertFalse(finder.eq.p["fextract"].has_key("NOctaves"))
 
         finder.eq.configure_backend(find_image="feature", feature_detect="ORB",
-                                    feature_extract="FREAK", feature_match="BruteForce")
+                                    feature_extract="KAZE", feature_match="BruteForce")
         self.assertEqual(finder.eq.get_backend("find"), "feature")
         self.assertEqual(finder.eq.get_backend("fdetect"), "ORB")
-        self.assertEqual(finder.eq.get_backend("fextract"), "FREAK")
+        self.assertEqual(finder.eq.get_backend("fextract"), "KAZE")
         self.assertEqual(finder.eq.get_backend("fmatch"), "BruteForce")
 
-        # test that a parameter of FREAK (the new extractor) is now present
-        # while the parameter of BRIEF is not present anymore
-        self.assertTrue(finder.eq.p["fextract"].has_key("nbOctave"))
-        self.assertTrue(finder.eq.p["fextract"].has_key("nbOctave"))
+        # test that a parameter of KAZE (the new extractor) is now present
+        # while the parameter of ORB is not present anymore
+        self.assertTrue(finder.eq.p["fextract"].has_key("NOctaves"))
+        self.assertFalse(finder.eq.p["fextract"].has_key("MaxFeatures"))
 
         # check consistency of all unchanged options
         finder.eq.configure_backend(find_image=None, template_match="ccorr_normed")
         self.assertEqual(finder.eq.get_backend("find"), "feature")
         self.assertEqual(finder.eq.get_backend("tmatch"), "ccorr_normed")
         self.assertEqual(finder.eq.get_backend("fdetect"), "ORB")
-        self.assertEqual(finder.eq.get_backend("fextract"), "FREAK")
+        self.assertEqual(finder.eq.get_backend("fextract"), "KAZE")
         self.assertEqual(finder.eq.get_backend("fmatch"), "BruteForce")
 
     def test_features_viewport(self):
