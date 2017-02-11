@@ -60,7 +60,7 @@ class Settings:
     @staticmethod
     def click_delay(delay=None):
         """Timeout before mouse click."""
-        if delay == None:
+        if delay is None:
             return Settings._click_delay
         else:
             Settings._click_delay = delay
@@ -68,7 +68,7 @@ class Settings:
     @staticmethod
     def delay_after_drag(delay=None):
         """Timeout before drag operation."""
-        if delay == None:
+        if delay is None:
             return Settings._drag_delay
         else:
             Settings._drag_delay = delay
@@ -76,7 +76,7 @@ class Settings:
     @staticmethod
     def delay_before_drop(delay=None):
         """Timeout before drop operation."""
-        if delay == None:
+        if delay is None:
             return Settings._drop_delay
         else:
             Settings._drop_delay = delay
@@ -84,7 +84,7 @@ class Settings:
     @staticmethod
     def delay_before_keys(delay=None):
         """Timeout before key press operation."""
-        if delay == None:
+        if delay is None:
             return Settings._keys_delay
         else:
             Settings._keys_delay = delay
@@ -92,7 +92,7 @@ class Settings:
     @staticmethod
     def delay_between_keys(delay=None):
         """Timeout between key type operations."""
-        if delay == None:
+        if delay is None:
             return Settings._type_delay
         else:
             Settings._type_delay = delay
@@ -102,7 +102,7 @@ class Settings:
         """
         Frequency of the image matching attempts (to reduce overhead on the CPU).
         """
-        if delay == None:
+        if delay is None:
             return Settings._rescan_speed_on_find
         else:
             Settings._rescan_speed_on_find = delay
@@ -118,7 +118,7 @@ class Settings:
 
         The use of this is to allow you to perform some configuration first.
         """
-        if value == None:
+        if value is None:
             return Settings._screen_autoconnect
         elif value == True or value == False:
             Settings._screen_autoconnect = value
@@ -134,7 +134,7 @@ class Settings:
         Warning: The characters will be forcefully preprocessed for the
         autopy-nix (capital and special) and vncdotool (capital) backends.
         """
-        if value == None:
+        if value is None:
             if Settings.desktop_control_backend() == "autopy-nix":
                 return True
             elif Settings.desktop_control_backend() == "vncdotool":
@@ -151,7 +151,7 @@ class Settings:
         """
         Perform an extra dump of the needle on matching error.
         """
-        if value == None:
+        if value is None:
             return Settings._save_needle_on_error
         elif value == True or value == False:
             Settings._save_needle_on_error = value
@@ -165,7 +165,7 @@ class Settings:
 
         See the image logging documentation for more details.
         """
-        if level == None:
+        if level is None:
             return Settings._image_logging_level
         else:
             Settings._image_logging_level = level
@@ -175,7 +175,7 @@ class Settings:
         """
         String for relative path of the image logging steps.
         """
-        if dest == None:
+        if dest is None:
             return Settings._image_logging_destination
         else:
             Settings._image_logging_destination = dest
@@ -186,7 +186,7 @@ class Settings:
         Integer to determine the number of digits when enumerating the image
         logging steps, e.g. width=3 for 001, 002, etc.
         """
-        if width == None:
+        if width is None:
             return Settings._image_logging_step_width
         else:
             Settings._image_logging_step_width = width
@@ -198,7 +198,7 @@ class Settings:
         no compression to 9 for maximum compression (used to save space and
         reduce the disk space needed for image logging).
         """
-        if quality == None:
+        if quality is None:
             return Settings._image_quality
         else:
             Settings._image_quality = quality
@@ -220,7 +220,7 @@ class Settings:
         Warning: To use a particular backend you need to satisfy its dependencies,
         i.e. the backend has to be installed or you will have unsatisfied imports.
         """
-        if name == None:
+        if name is None:
             return Settings._desktop_control_backend
         else:
             if name not in ["autopy-win", "autopy-nix", "qemu", "vncdotool"]:
@@ -243,7 +243,7 @@ class Settings:
         Warning: To use a particular backend you need to satisfy its dependencies,
         i.e. the backend has to be installed or you will have unsatisfied imports.
         """
-        if name == None:
+        if name is None:
             return Settings._find_image_backend
         else:
             Settings._find_image_backend = name
@@ -254,7 +254,7 @@ class Settings:
         Possible backends: autopy, sqdiff, ccorr, ccoeff, sqdiff_normed,
         ccorr_normed, ccoeff_normed.
         """
-        if name == None:
+        if name is None:
             return Settings._template_match_backend
         else:
             Settings._template_match_backend = name
@@ -265,7 +265,7 @@ class Settings:
         Possible backends: BruteForce, BruteForce-L1, BruteForce-Hamming,
         BruteForce-Hamming(2), in-house-raw, in-house-region.
         """
-        if name == None:
+        if name is None:
             return Settings._feature_detect_backend
         else:
             Settings._feature_detect_backend = name
@@ -275,7 +275,7 @@ class Settings:
         """
         Possible backends: ORB, FAST, STAR, GFTT, HARRIS, Dense, oldSURF.
         """
-        if name == None:
+        if name is None:
             return Settings._feature_extract_backend
         else:
             Settings._feature_extract_backend = name
@@ -285,7 +285,7 @@ class Settings:
         """
         Possible backends: ORB, BRIEF, FREAK.
         """
-        if name == None:
+        if name is None:
             return Settings._feature_match_backend
         else:
             Settings._feature_match_backend = name

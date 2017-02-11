@@ -149,9 +149,9 @@ class ImageLogger:
 
     def log_locations(self, lvl, locations, hotmap=None,
                       radius=2, r=255, g=255, b=255):
-        if len(self.hotmaps) == 0 and hotmap == None:
+        if len(self.hotmaps) == 0 and hotmap is None:
             raise MissingHotmapError
-        elif hotmap == None:
+        elif hotmap is None:
             hotmap = self.hotmaps[-1]
 
         if lvl < self.logging_level:
@@ -175,7 +175,7 @@ class ImageLogger:
             shutil.rmtree(ImageLogger.logging_destination)
             os.mkdir(ImageLogger.logging_destination)
 
-        if self.needle.filename == None:
+        if self.needle.filename is None:
             self.needle.filename = "noname"
         needle_name = os.path.basename(self.needle.filename)
         needle_name = "imglog%s-1needle-%s" % (self.printable_step,
@@ -184,7 +184,7 @@ class ImageLogger:
                                    needle_name)
         self.needle.save(needle_path)
 
-        if self.haystack.filename == None:
+        if self.haystack.filename is None:
             self.haystack.filename = "noname.png"
         haystack_name = os.path.basename(self.haystack.filename)
         haystack_name = "imglog%s-2haystack-%s" % (self.printable_step,

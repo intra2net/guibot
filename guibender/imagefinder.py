@@ -66,7 +66,7 @@ class ImageFinder:
         to the haystack that could be used for clicking, hovering,
         etc. (blue).
         """
-        if equalizer == None:
+        if equalizer is None:
             self.eq = CVEqualizer()
         else:
             self.eq = equalizer
@@ -503,7 +503,7 @@ class ImageFinder:
                                              hotmap_region)
                 result[j][i] = self.imglog.similarities[-1]
 
-                if res == None:
+                if res is None:
                     log.debug("No acceptable match in region %s", (i, j))
                     continue
                 else:

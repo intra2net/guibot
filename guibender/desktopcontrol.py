@@ -40,7 +40,7 @@ class DesktopControl:
         self._mousemap = None
         self._modmap = None
 
-        if equalizer == None:
+        if equalizer is None:
             self.eq = DCEqualizer()
         else:
             self.eq = equalizer
