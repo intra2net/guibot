@@ -144,13 +144,13 @@ class ImageTest(unittest.TestCase):
         image = Image(self.file_all_shapes)
 
         second_image = Image(self.file_all_shapes)
-        self.assertEqual(image.pil_image, second_image.pil_image)
+        self.assertIs(image.pil_image, second_image.pil_image)
 
         # Clear image cache the hard way
         Image()._cache.clear()
 
         third_image = Image(self.file_all_shapes)
-        self.assertNotEqual(image.pil_image, third_image.pil_image)
+        self.assertIsNot(image.pil_image, third_image.pil_image)
 
 if __name__ == '__main__':
     unittest.main()
