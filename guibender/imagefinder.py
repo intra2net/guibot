@@ -177,7 +177,7 @@ class ImageFinder(LocalSettings):
         log.log(0, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
-        self.params[category]["similarity"] = CVParameter(0.9, 0.0, 1.0, 0.1, 0.1)
+        self.params[category]["similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
         log.log(0, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend=None, category="find", reset=False):
@@ -1180,7 +1180,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
         self.params[category] = {}
         self.params[category]["backend"] = backend
-        self.params[category]["front_similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
+        self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0, 0.1, 0.1)
 
     def configure_backend(self, backend=None, category="hybrid", reset=False):
         """
