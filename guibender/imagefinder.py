@@ -1243,7 +1243,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
         feature_maxima = []
         is_feature_poor = False
-        for upleft in template_maxima:
+        for i, upleft in enumerate(template_maxima):
             up = upleft.y
             down = min(haystack.height, up + needle.height)
             left = upleft.x
@@ -1257,12 +1257,13 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
             hotmap_region = hotmap_region.copy()
             res = self._project_features(frame_points, ngray, haystack_region,
                                          feature_similarity, hotmap_region)
-            if res != None:
+            # if the feature matching succeeded or is worse than satisfactory template matching
+            if res != None or (self.imglog.similarities[-1] > 0.0 and
+                               self.imglog.similarities[-1] < self.imglog.similarities[i] and
+                               self.imglog.similarities[i] > feature_similarity):
                 # take the template matching location rather than the feature one
                 # for stability (they should ultimately be the same)
-                #location = (left, up)
-                location = (left + self.imglog.locations[-1][0],
-                            up + self.imglog.locations[-1][1])
+                location = (left, up)
                 self.imglog.locations[-1] = location
 
                 feature_maxima.append([self.imglog.hotmaps[-1],
@@ -1271,9 +1272,11 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
                 # stitch back for a better final image logging
                 hcanvas[up:down, left:right] = hotmap_region
 
+            # if similarity is not zero but we have no result, we failed the comparison
             elif self.imglog.similarities[-1] == 0.0:
                 is_feature_poor = True
 
+        # if at least one match is feature poor, we cannot rely on feature matching
         if is_feature_poor:
             log.warn("Feature poor needle detected, falling back to template matching")
             # NOTE: this has knowledge of the internal workings of the _template_find_all
@@ -1284,7 +1287,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
             feature_maxima = []
             for i, _ in enumerate(template_maxima):
                 # test the template match also against the actual required similarity
-                if self.imglog.similarities[i] > feature_similarity:
+                if self.imglog.similarities[i] >= feature_similarity:
                     feature_maxima.append([self.imglog.hotmaps[i],
                                            self.imglog.similarities[i],
                                            self.imglog.locations[i]])
