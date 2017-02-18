@@ -16,20 +16,23 @@
 
 
 class GuiBenderError(Exception):
-
     """GuiBender exception base class"""
 
 
 class FileNotFoundError(GuiBenderError):
-
     """Exception raised when a picture file cannot be found on disc"""
 
 
 class FindError(GuiBenderError):
-
     """Exception raised when an Image cannot be found on the screen"""
 
     def __init__(self, failed_image=None):
+        """
+        Build the exception possibly providing the failed image.
+
+        :param failed_image: the image that wasn't found
+        :type failed_iamge: :py:class:`image.Image` or None
+        """
         if failed_image:
             message = "The image %s could not be found on the screen" % failed_image
         else:
@@ -38,10 +41,15 @@ class FindError(GuiBenderError):
 
 
 class NotFindError(GuiBenderError):
-
     """Exception raised when an Image can be found on the screen but should not be"""
 
     def __init__(self, failed_image=None):
+        """
+        Build the exception possibly providing the failed image.
+
+        :param failed_image: the image that was found
+        :type failed_iamge: :py:class:`image.Image` or None
+        """
         if failed_image:
             message = "The image %s was found on the screen while it was not expected" % failed_image
         else:
@@ -50,15 +58,12 @@ class NotFindError(GuiBenderError):
 
 
 class ImageFinderMethodError(GuiBenderError):
-
     """Exception raised when a non-existent method is used for finding an image"""
 
 
 class MissingHotmapError(GuiBenderError):
-
     """Exception raised when an attempt to access a non-existent hotmap in the image logger is made"""
 
 
 class UninitializedBackend(GuiBenderError):
-
     """Exception raised when a region is created within an empty screen (a disconnected desktop control backend)"""

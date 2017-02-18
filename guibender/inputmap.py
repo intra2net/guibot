@@ -16,8 +16,14 @@
 
 
 class Key:
+    """Helper to contain all key mappings for a specific DC backend."""
 
     def __init__(self, backend):
+        """
+        Build an instance containing the key map for a specific DC backend.
+
+        :param str backend: name identifier for the backend
+        """
         if backend in ["autopy-win", "autopy-nix"]:
             import autopy
             # commented out keys are not supported by autopy
@@ -264,6 +270,14 @@ class Key:
             self.KP_DECIMAL = None
 
     def to_string(self, key):
+        """
+        Provide with a text representation of a desired key
+        according to the current BC backend.
+
+        :param str key: selected key name according to the current backend
+        :returns: text representation of the selected key
+        :rtype: str
+        """
         return {self.ENTER: "Enter",
                 self.TAB: "Tab",
                 self.ESC: "Esc",
@@ -320,8 +334,14 @@ class Key:
 
 
 class KeyModifier:
+    """Helper to contain all modifier key mappings for a specific DC backend."""
 
     def __init__(self, backend):
+        """
+        Build an instance containing the modifier key map for a specific DC backend.
+
+        :param str backend: name identifier for the backend
+        """
         if backend in ["autopy-win", "autopy-nix"]:
             import autopy
             self.MOD_NONE = autopy.key.MOD_NONE
@@ -346,15 +366,30 @@ class KeyModifier:
             self.MOD_META = 'meta'
 
     def to_string(self, key):
+        """
+        Provide with a text representation of a desired modifier key
+        according to the current BC backend.
+
+        :param str key: selected modifier name according to the current backend
+        :returns: text representation of the selected modifier
+        :rtype: str
+        """
         return {self.MOD_NONE: "None",
                 self.MOD_CTRL: "Ctrl",
                 self.MOD_ALT: "Alt",
                 self.MOD_SHIFT: "Shift",
                 self.MOD_META: "Meta"}[key]
 
+
 class MouseButton:
+    """Helper to contain all mouse button mappings for a specific DC backend."""
 
     def __init__(self, backend):
+        """
+        Build an instance containing the mouse button map for a specific DC backend.
+
+        :param str backend: name identifier for the backend
+        """
         if backend in ["autopy-win", "autopy-nix"]:
             import autopy
             self.LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
@@ -370,6 +405,14 @@ class MouseButton:
             self.CENTER_BUTTON = 2
 
     def to_string(self, key):
+        """
+        Provide with a text representation of a desired mouse button
+        according to the current BC backend.
+
+        :param str key: selected mouse button according to the current backend
+        :returns: text representation of the selected mouse button
+        :rtype: str
+        """
         return {self.LEFT_BUTTON: "MouseLeft",
                 self.RIGHT_BUTTON: "MouseRight",
                 self.CENTER_BUTTON: "MouseCenter"}[key]

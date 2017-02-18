@@ -28,12 +28,27 @@ from settings import CVEqualizer
 
 
 class Image:
+    """
+    Container for image data supporting caching, clicking target,
+    file operations, and preprocessing.
+    """
 
     _cache = {}
 
     def __init__(self, image_filename=None,
                  pil_image=None, match_settings=None,
                  use_cache=True):
+        """
+        Build an image object.
+
+        :param image_filename: name of the image file if any
+        :type image_filename: str or None
+        :param pil_image: image data - use cache or recreate if none
+        :type pil_image: :py:class:`PIL.Image` or None
+        :param match_settings: predefined configuration for the CV backend if any
+        :type match_settings: :py:class:`settings.CVEqualizer` or None
+        :param bool use_cache: whether to cache image data for better performance
+        """
         self._filename = image_filename
         self.match_settings = match_settings
         self._pil_image = pil_image
@@ -61,7 +76,6 @@ class Image:
                         self._cache[self.filename] = self._pil_image
             if match_settings is None:
                 match_file = self.filename[:-4] + ".match"
-                # print match_file, self.filename
                 if not os.path.exists(match_file):
                     self.match_settings = CVEqualizer()
                 else:
@@ -75,30 +89,61 @@ class Image:
             self._height = self._pil_image.size[1]
 
     def __str__(self):
+        """Provide the image filename."""
         return os.path.basename(self.filename).replace(".png", "")
 
-    def copy(self):
-        copy_settings = copy.deepcopy(self.match_settings)
-        selfcopy = copy.copy(self)
-        selfcopy.match_settings = copy_settings
-        return selfcopy
-
     def get_filename(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: filename of the image
+        :rtype: str
+        """
         return self._filename
 
     def get_width(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: width of the image
+        :rtype: int
+        """
         return self._width
 
     def get_height(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: height of the image
+        :rtype: int
+        """
         return self._height
 
     def get_pil_image(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: image data of the image
+        :rtype: :py:class:`PIL.Image`
+        """
         return self._pil_image
 
     def get_similarity(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: similarity required for the image to be matched
+        :rtype: float
+        """
         return self.match_settings.p["find"]["similarity"].value
 
     def get_target_offset(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: offset with respect to the image center (used for clicking)
+        :rtype: :py:class:`location.Location`
+        """
         return self._target_center_offset
 
     filename = property(fget=get_filename)
@@ -108,21 +153,67 @@ class Image:
     similarity = property(fget=get_similarity)
     target_center_offset = property(fget=get_target_offset)
 
-    def with_similarity(self, new_similarity):
-        new_image = self.copy()
-        new_image.match_settings.p["find"]["similarity"].value = new_similarity
-        return new_image
+    def copy(self):
+        """
+        Perform a copy of the image data and match settings.
+
+        :returns: copy of the current image (with settings)
+        :rtype: :py:class:`image.Image`
+        """
+        copy_settings = copy.deepcopy(self.match_settings)
+        selfcopy = copy.copy(self)
+        selfcopy.match_settings = copy_settings
+        return selfcopy
 
     def with_target_offset(self, xpos, ypos):
+        """
+        Perform a copy of the image data without match settings
+        and with a newly defined target offset.
+
+        :param int xpos: new offset in the x direction
+        :param int ypos: new offset in the y direction
+        :returns: copy of the current image with new target offset
+        :rtype: :py:class:`image.Image`
+        """
         new_image = self.copy()
 
         new_image.target_center_offset = Location(xpos, ypos)
         return new_image
 
+    def with_similarity(self, new_similarity):
+        """
+        Perform a copy of the image data without match settings
+        and with a newly defined required similarity.
+
+        :param float new_similarity: new required similarity
+        :returns: copy of the current image with new similarity
+        :rtype: :py:class:`image.Image`
+        """
+        new_image = self.copy()
+        new_image.match_settings.p["find"]["similarity"].value = new_similarity
+        return new_image
+
     def exact(self):
+        """
+        Perform a copy of the image data without match settings
+        and with a maximum required similarity.
+
+        :returns: copy of the current image with maximum similarity
+        :rtype: :py:class:`image.Image`
+        """
         return self.with_similarity(1.0)
 
     def save(self, filename):
+        """
+        Save image to a file.
+
+        :param str filename: name for the image file
+        :returns: copy of the current image with the new filename
+        :rtype: :py:class:`image.Image`
+
+        The image is compressed upon saving with a PNG compression setting
+        specified by :py:func:`settings.Settings.image_quality`.
+        """
         self.pil_image.save(filename, compress_level=Settings.image_quality())
         if self.use_own_settings:
             self.match_settings.to_match_file(filename[:-4])
@@ -134,10 +225,13 @@ class Image:
 
     def preprocess(self, gray=False):
         """
-        Convert the Image() object into compatible numpy array
-        and into grayscale if the gray parameter is True.
+        Convert the image into a compatible numpy array used for matching.
 
-        This format is used by the ImageFinder and ImageLogger modules.
+        :param bool gray: whether to also convert the image into grayscale
+        :returns: converted image
+        :rtype: :py:class:`numpy.ndarray`
+
+        This format is used by the CV backend.
         """
         searchable_image = numpy.array(self._pil_image)
         # convert RGB to BGR

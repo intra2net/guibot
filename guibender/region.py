@@ -31,16 +31,29 @@ log = logging.getLogger('guibender.region')
 
 
 class Region(object):
+    """
+    Region of the screen supporting vertex and nearby region selection,
+    validation of expected images, and mouse and keyboard control.
+    """
 
     def __init__(self, xpos=0, ypos=0, width=0, height=0,
                  dc=None, cv=None):
         """
-        Initialize a region from xpos to xpos+width and from ypos to
-        ypos+height with desktop control backend defined by 'dc' and
-        computer vision backend defined by 'cv'.
+        Build a region object from upleft to downright vertex coordinates.
 
-        If any of the backends is not defined a new will be initiated
-        using the parameters defined in Settings for the initialization.
+        :param int xpos: x coordinate of the upleft vertex of the region
+        :param int ypos: y coordinate of the upleft vertex of the region
+        :param int width: width of the region (xpos+width for downright vertex x)
+        :param int height: height of the region (ypos+height for downright vertex y)
+        :param dc: DC backend used for any desktop control
+        :type dc: :py:class:`desktopcontrol.DesktopControl` or None
+        :param cv: CV backend used for any image finding
+        :type cv: :py:class:`imagefinder.ImageFinder` or None
+
+        If any of the backends is not defined a new one will be initiated
+        using the parameters defined in :py:class:`settings.Settings`.
+        If `width` or `height` remains zero, it will be set to the maximum
+        available within the screen space.
         """
         if dc is None:
             dc = DesktopControl()
@@ -107,41 +120,110 @@ class Region(object):
             self._height = screen_height - self._ypos
 
     def get_x(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: x coordinate of the upleft vertex of the region
+        :rtype: int
+        """
         return self._xpos
 
     def get_y(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: y coordinate of the upleft vertex of the region
+        :rtype: int
+        """
         return self._ypos
 
     def get_width(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: width of the region (xpos+width for downright vertex x)
+        :rtype: int
+        """
         return self._width
 
     def get_height(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: height of the region (ypos+height for downright vertex y)
+        :rtype: int
+        """
         return self._height
 
     def get_center(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: center of the region
+        :rtype: :py:class:`location.Location`
+        """
         xpos = (self._width - self._xpos) / 2
         ypos = (self._height - self._ypos) / 2
 
         return Location(xpos, ypos)
 
     def get_top_left(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: upleft vertex of the region
+        :rtype: :py:class:`location.Location`
+        """
         return Location(self._xpos, self._ypos)
 
     def get_top_right(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: upright vertex of the region
+        :rtype: :py:class:`location.Location`
+        """
         return Location(self._xpos + self._width, self._ypos)
 
     def get_bottom_left(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: downleft vertex of the region
+        :rtype: :py:class:`location.Location`
+        """
         return Location(self._xpos, self._ypos + self._height)
 
     def get_bottom_right(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: downright vertex of the region
+        :rtype: :py:class:`location.Location`
+        """
         return Location(self._xpos + self._width, self._ypos + self._height)
 
     def is_empty(self):
+        """
+        Check if the region is empty, i.e.
+        with upleft vertex at zero and zero size.
+
+        :returns: whether the region is empty
+        :rtype: bool
+        """
         return (self._xpos == 0 and self._ypos == 0
                 and self._width == 0 and self._height == 0)
 
     """Main region methods"""
     def nearby(self, rrange=50):
+        """
+        Obtain a region containing the previous one but enlarged
+        by a number of pixels on each side.
+
+        :param int rrange: number of pixels to add
+        :returns: new region enlarged by `rrange` on all sides
+        :rtype: :py:class:`Region`
+        """
         log.debug("Checking nearby the current region")
         new_xpos = self._xpos - rrange
         if new_xpos < 0:
@@ -159,6 +241,14 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     def above(self, rrange=0):
+        """
+        Obtain a region containing the previous one but enlarged
+        by a number of pixels on the upper side.
+
+        :param int rrange: number of pixels to add
+        :returns: new region enlarged by `rrange` on upper side
+        :rtype: :py:class:`Region`
+        """
         log.debug("Checking above the current region")
         if rrange == 0:
             new_ypos = 0
@@ -175,6 +265,14 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     def below(self, rrange=0):
+        """
+        Obtain a region containing the previous one but enlarged
+        by a number of pixels on the lower side.
+
+        :param int rrange: number of pixels to add
+        :returns: new region enlarged by `rrange` on lower side
+        :rtype: :py:class:`Region`
+        """
         log.debug("Checking below the current region")
         if rrange == 0:
             rrange = self.dc_backend.get_height()
@@ -186,6 +284,14 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     def left(self, rrange=0):
+        """
+        Obtain a region containing the previous one but enlarged
+        by a number of pixels on the left side.
+
+        :param int rrange: number of pixels to add
+        :returns: new region enlarged by `rrange` on left side
+        :rtype: :py:class:`Region`
+        """
         log.debug("Checking left of the current region")
         if rrange == 0:
             new_xpos = 0
@@ -202,6 +308,14 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     def right(self, rrange=0):
+        """
+        Obtain a region containing the previous one but enlarged
+        by a number of pixels on the right side.
+
+        :param int rrange: number of pixels to add
+        :returns: new region enlarged by `rrange` on right side
+        :rtype: :py:class:`Region`
+        """
         log.debug("Checking right of the current region")
         if rrange == 0:
             rrange = self.dc_backend.get_width()
@@ -214,11 +328,24 @@ class Region(object):
 
     """Image expect methods"""
     def get_last_match(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: last match obtained from finding an image within the region
+        :rtype: :py:class:`match.Match`
+        """
         return self._last_match
 
     def find(self, image, timeout=10):
         """
         Find an image on the screen.
+
+        :param image: image to look for
+        :type image: str or :py:class:`image.Image`
+        :param int timeout: timeout before giving up
+        :returns: match obtained from finding the image within the region
+        :rtype: :py:class:`match.Match`
+        :raises: :py:class:`errors.FindError` if no match is found
 
         This method is the main entrance to all our image finding capabilities
         and is the milestone for all image expect methods.
@@ -256,6 +383,15 @@ class Region(object):
     def find_all(self, image, timeout=10, allow_zero=False):
         """
         Find multiples of an image on the screen.
+
+        :param image: image to look for
+        :type image: str or :py:class:`image.Image`
+        :param int timeout: timeout before giving up
+        :param bool allow_zero: whether to allow zero matches or raise error
+        :returns: matches obtained from finding the image within the region
+        :rtype: [:py:class:`match.Match`]
+        :raises: :py:class:`errors.FindError` if no matches are found
+                 and zero matches are not allowed
 
         This method is similar the one above but allows for more than one match.
         """
@@ -296,7 +432,12 @@ class Region(object):
     def sample(self, image):
         """
         Sample the similarity between and image and the screen,
-        i.e. the probability that the image is on the screen.
+        i.e. an empirical probability that the image is on the screen.
+
+        :param image: image to look for
+        :type image: str or :py:class:`image.Image`
+        :returns: similarity with best match on the screen
+        :rtype: float
         """
         log.debug("Looking for image %s", image)
         if isinstance(image, basestring):
@@ -314,6 +455,13 @@ class Region(object):
         """
         Check if an image exists on the screen using the image matching
         success as a threshold for the existence.
+
+        :param image: image to look for
+        :type image: str or :py:class:`image.Image`
+        :param int timeout: timeout before giving up
+        :returns: match obtained from finding the image within the region
+                  or nothing if no match is found
+        :rtype: :py:class:`match.Match` or None
         """
         log.debug("Checking if %s is present", image)
         try:
@@ -326,6 +474,13 @@ class Region(object):
         """
         Wait for an image to appear (be matched) with a given timeout
         as failing tolerance.
+
+        :param image: image to look for
+        :type image: str or :py:class:`image.Image`
+        :param int timeout: timeout before giving up
+        :returns: match obtained from finding the image within the region
+        :rtype: :py:class:`match.Match`
+        :raises: :py:class:`errors.FindError` if no match is found
         """
         log.info("Waiting for %s", image)
         return self.find(image, timeout)
@@ -334,6 +489,13 @@ class Region(object):
         """
         Wait for an image to disappear (be unmatched, i.e. matched
         without success) with a given timeout as failing tolerance.
+
+        :param image: image to look for
+        :type image: str or :py:class:`image.Image`
+        :param int timeout: timeout before giving up
+        :returns: whether the image disappeared from the region
+        :rtype: bool
+        :raises: :py:class:`errors.NotFindError` if match is still found
         """
         log.info("Waiting for %s to vanish", image)
         expires = time.time() + timeout
@@ -353,10 +515,14 @@ class Region(object):
         """
         Wait for a number of seconds and continue the nested call chain.
 
-        This method can be used as both a way to compactly wait for some time
-        while not breaking the call chain. e.g.
+        :param int timeout: timeout to wait for
+        :returns: self
+        :rtype: :py:class:`Region`
 
-        aregion.hover('abox').idle(1).click('aboxwithinthebox')
+        This method can be used as both a way to compactly wait for some time
+        while not breaking the call chain. e.g.::
+
+            aregion.hover('abox').idle(1).click('aboxwithinthebox')
 
         and as a way to conveniently perform timeout in between actions.
         """
@@ -366,14 +532,22 @@ class Region(object):
 
     def get_mouse_location(self):
         """
-        Obtain the mouse location as a Location object.
+        Getter for readonly attribute.
+
+        :returns: mouse location
+        :rtype: :py:class:`location.Location`
         """
         return self.dc_backend.get_mouse_location()
 
     def hover(self, image_or_location):
         """
-        Hover the mouse over a Location, Match, Image or string (image name)
-        object and return a resulting Match object in case of search.
+        Hover the mouse over an image or location.
+
+        :param image_or_location: image or location to hover to
+        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`image.Image`
+        :returns: match from finding the image or nothing if hovering over a known location
+        :rtype: :py:class:`match.Match` or None
         """
         log.info("Hovering over %s", image_or_location)
 
@@ -399,9 +573,21 @@ class Region(object):
 
     def click(self, image_or_location, modifiers=None):
         """
-        Click over a variety of object types (like hover) using
-        the left mouse button and optionally holding special keys
-        (a list of key modifiers, e.g. [KeyModifier.MOD_CTRL, 'x']).
+        Click on an image or location using the left mouse button and
+        optionally holding special keys.
+
+        :param image_or_location: image or location to click on
+        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`image.Image`
+        :param modifiers: special keys to hold during clicking
+                         (see :py:class:`inputmap.KeyModifier` for extensive list)
+        :type modifiers: [str]
+        :returns: match from finding the image or nothing if clicking on a known location
+        :rtype: :py:class:`match.Match` or None
+
+        The special keys refer to a list of key modifiers, e.g.::
+
+            self.click('my_image', [KeyModifier.MOD_CTRL, 'x']).
         """
         match = self.hover(image_or_location)
         log.info("Clicking at %s", image_or_location)
@@ -412,9 +598,10 @@ class Region(object):
 
     def right_click(self, image_or_location, modifiers=None):
         """
-        Click over a variety of object types (like hover) using
-        the right mouse button and optionally holding special keys
-        (like click).
+        Click on an image or location using the right mouse button and
+        optionally holding special keys.
+
+        Arguments and return values are analogical to :py:func:`Region.click`.
         """
         match = self.hover(image_or_location)
         log.info("Right clicking at %s", image_or_location)
@@ -425,9 +612,10 @@ class Region(object):
 
     def double_click(self, image_or_location, modifiers=None):
         """
-        Double click over a variety of object types (like hover) using
-        the left mouse button and optionally holding special keys
-        (like click).
+        Double click on an image or location using the left mouse button
+        and optionally holding special keys.
+
+        Arguments and return values are analogical to :py:func:`Region.click`.
         """
         match = self.hover(image_or_location)
         log.info("Double clicking at %s", image_or_location)
@@ -438,8 +626,16 @@ class Region(object):
 
     def mouse_down(self, image_or_location, button=None):
         """
-        Hold down a mouse button specified by 'button' over a
-        variety of object types (like hover).
+        Hold down an arbitrary mouse button on an image or location.
+
+        :param image_or_location: image or location to toggle on
+        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`image.Image`
+        :param button: button index depending on backend (default is left button)
+                       (see :py:class:`inputmap.MouseButton` for extensive list)
+        :type button: int or None
+        :returns: match from finding the image or nothing if toggling on a known location
+        :rtype: :py:class:`match.Match` or None
         """
         if button is None:
             button = self.LEFT_BUTTON
@@ -450,8 +646,16 @@ class Region(object):
 
     def mouse_up(self, image_or_location, button=None):
         """
-        Release a mouse button specified by 'button' over a
-        variety of object types (like hover).
+        Release an arbitrary mouse button on an image or location.
+
+        :param image_or_location: image or location to toggle on
+        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`image.Image`
+        :param button: button index depending on backend (default is left button)
+                       (see :py:class:`inputmap.MouseButton` for extensive list)
+        :type button: int or None
+        :returns: match from finding the image or nothing if toggling on a known location
+        :rtype: :py:class:`match.Match` or None
         """
         if button is None:
             button = self.LEFT_BUTTON
@@ -462,8 +666,19 @@ class Region(object):
 
     def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
         """
-        Drag from and drop at a variety of object types (like hover)
-        optionally holding special keys (like click).
+        Drag from and drop at an image or location optionally holding special keys.
+
+        :param src_image_or_location: image or location to drag from
+        :type src_image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                     str or :py:class:`image.Image`
+        :param dst_image_or_location: image or location to drop at
+        :type dst_image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                     str or :py:class:`image.Image`
+        :param modifiers: special keys to hold during dragging and dropping
+                         (see :py:class:`inputmap.KeyModifier` for extensive list)
+        :type modifiers: [str]
+        :returns: match from finding the image or nothing if dropping at a known location
+        :rtype: :py:class:`match.Match` or None
         """
         self.drag_from(src_image_or_location, modifiers)
         match = self.drop_at(dst_image_or_location, modifiers)
@@ -471,8 +686,10 @@ class Region(object):
 
     def drag_from(self, image_or_location, modifiers=None):
         """
-        Drag from a variety of object types (like hover) optionally
-        holding special keys (like click).
+        Drag from an image or location optionally holding special keys.
+
+        Arguments and return values are analogical to :py:func:`Region.drag_drop`
+        but with `image_or_location` as `src_image_or_location`.
         """
         match = self.hover(image_or_location)
 
@@ -490,8 +707,10 @@ class Region(object):
 
     def drop_at(self, image_or_location, modifiers=None):
         """
-        Drop at a variety of object types (like hover) optionally
-        holding special keys (like click).
+        Drop at an image or location optionally holding special keys.
+
+        Arguments and return values are analogical to :py:func:`Region.drag_drop`
+        but with `image_or_location` as `dst_image_or_location`.
         """
         match = self.hover(image_or_location)
         time.sleep(Settings.delay_before_drop())
@@ -503,19 +722,23 @@ class Region(object):
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
             self.dc_backend.keys_toggle(modifiers, False)
-            #self.dc_backend.keys_toggle(["Ctrl"], False)
 
         return match
 
     """Keyboard methods"""
     def press_keys(self, keys):
         """
-        This method types a single key or a list of keys simultaneously.
+        Press a single key or a list of keys simultaneously.
 
-        Therefore press_keys([Key.ENTER]) is equivalent to press_keys(Key.ENTER).
-        Other options are
-            press_keys([Key.CTRL, 'X'])
-            press_keys(['a', 'b', 3])
+        :param keys: characters or special keys depending on the backend
+                     (see :py:class:`inputmap.Key` for extensive list)
+        :type keys: [str] or str (possibly special keys in both cases)
+
+        Thus, the line ``self.press_keys([Key.ENTER])`` is equivalent to
+        the line ``self.press_keys(Key.ENTER)``. Other examples are::
+
+            self.press_keys([Key.CTRL, 'X'])
+            self.press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
         time.sleep(Settings.delay_before_keys())
@@ -524,10 +747,11 @@ class Region(object):
 
     def press_at(self, keys, image_or_location):
         """
-        This method types a single key or a list of keys simultaneously
+        Press a single key or a list of keys simultaneously
         at a specified image or location.
 
-        This method is similar to press_keys above.
+        This method is similar to :py:func:`Region.press_keys` but
+        with an extra argument like :py:func:`Region.click`.
         """
         keys_list = self._parse_keys(keys, image_or_location)
         match = self.click(image_or_location)
@@ -571,18 +795,23 @@ class Region(object):
 
     def type_text(self, text, modifiers=None):
         """
-        This method specializes in typing a list of consecutive character keys
-        (string text without special keys) or a list of strings.
+        Type a list of consecutive character keys (without special keys).
 
-        Therefore type_text(['hello']) is equivalent to type_text('hello').
-        Other options are
-            type_text('ab3') # compare with press_keys()
-            type_text(['Hello', ' ', 'user3614']) # in cases with appending
+        :param text: characters or strings (independent of the backend)
+        :type text: [str] or str (no special keys in both cases)
+        :param modifiers: special keys to hold during typing
+                         (see :py:class:`inputmap.KeyModifier` for extensive list)
+        :type modifiers: [str]
 
-        Special keys are only allowed as modifiers here, call 'press_keys'
-        multiple times for consecutively typing special keys.
+        Thus, the line ``self.type_text(['hello'])`` is equivalent to
+        the line ``self.type_text('hello')``. Other examples are::
 
-        Modifiers is a list equivalent to the one in press_keys().
+            self.type_text('ab3') # compare with press_keys()
+            self.type_text(['Hello', ' ', 'user3614']) # in cases with appending
+
+        Special keys are only allowed as modifiers here - simply call
+        :py:func:`Region.press_keys` multiple times for consecutively
+        typing special keys.
         """
         text_list = self._parse_text(text)
         time.sleep(Settings.delay_before_keys())
@@ -595,11 +824,11 @@ class Region(object):
 
     def type_at(self, text, image_or_location, modifiers=None):
         """
-        This method specializes in typing a list of consecutive character keys
-        (string text without special keys) or a list of strings at a specified
-        image or location.
+        Type a list of consecutive character keys (without special keys)
+        at a specified image or location.
 
-        This method is similar to type_text above.
+        This method is similar to :py:func:`Region.type_text` but
+        with an extra argument like :py:func:`Region.click`.
         """
         text_list = self._parse_text(text, image_or_location)
         match = None

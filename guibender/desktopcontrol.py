@@ -28,8 +28,18 @@ from location import Location
 
 
 class DesktopControl:
+    """
+    Desktop control backend, responsible for performing desktop operations
+    like mouse clicking, key pressing, text typing, etc.
+    """
 
     def __init__(self, equalizer=None):
+        """
+        Build a desktop control backend.
+
+        :param equalizer: configuration for the backend
+        :type equalizer: :py:class:`settings.DCEqualizer` or None
+        """
         self._screen = None
         self._backend_obj = None
         self._width = None
@@ -48,21 +58,58 @@ class DesktopControl:
             self.connect_screen()
 
     def get_width(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: width of the connected screen
+        :rtype: int
+        """
         return self._width
 
     def get_height(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: height of the connected screen
+        :rtype: int
+        """
         return self._height
 
     def get_keymap(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: map of keys to be used for the connected screen
+        :rtype: :py:class:`inputmap.Key`
+        """
         return self._keymap
 
     def get_mousemap(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: map of mouse buttons to be used for the connected screen
+        :rtype: :py:class:`inputmap.MouseButton`
+        """
         return self._mousemap
 
     def get_modmap(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: map of modifier keys to be used for the connected screen
+        :rtype: :py:class:`inputmap.KeyModifier`
+        """
         return self._modmap
 
     def connect_screen(self):
+        """
+        Select a backend for the instance, synchronizing configuration
+        like screen size, key map, mouse pointer handling, etc.
+
+        The object that carries this configuration is called screen and
+        is created and later on managed by the instance equalizer `eq`.
+        """
         # apply any configuration in the equalizer to the backend
         self._screen = self.eq.sync_backend_to_params(self._screen)
 
@@ -85,6 +132,15 @@ class DesktopControl:
             self.mouse_move(Location(0, 0), smooth=False)
 
     def capture_screen(self, *args):
+        """
+        Get the current screen as image.
+
+        :param args: region's (x, y, width, height) or a region object or
+                     nothing to obtain an image of the full screen
+        :type args: [int] or :py:class:`region.Region` or None
+        :returns: image of the current screen
+        :rtype: :py:class:`image.Image`
+        """
         if len(args) == 4:
             xpos = args[0]
             ypos = args[1]
@@ -142,6 +198,12 @@ class DesktopControl:
         return Image(None, pil_image)
 
     def get_mouse_location(self):
+        """
+        Get the current mouse location.
+
+        :returns: location of the mouse pointer
+        :rtype: :py:class:`location.Location`
+        """
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
             pos = self._backend_obj.mouse.get_pos()
             return Location(pos[0], pos[1])
@@ -149,6 +211,13 @@ class DesktopControl:
             return self._pointer
 
     def mouse_move(self, location, smooth=True):
+        """
+        Move the mouse to a desired location.
+
+        :param location: location on the screen to move to
+        :type location: :py:class:`location.Location`
+        :param bool smooth: whether to sue smooth transition or just teleport the mouse
+        """
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
             # TODO: sometimes this is not pixel perfect, i.e.
             # need to investigate the autopy source later on
@@ -170,6 +239,13 @@ class DesktopControl:
             self._pointer = location
 
     def mouse_click(self, modifiers=None):
+        """
+        Click the left mouse button at the current mouse location.
+
+        :param modifiers: special keys to hold during clicking
+                         (see :py:class:`inputmap.KeyModifier` for extensive list)
+        :type modifiers: [str]
+        """
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
@@ -188,6 +264,13 @@ class DesktopControl:
             self.keys_toggle(modifiers, False)
 
     def mouse_right_click(self, modifiers=None):
+        """
+        Click the right mouse button at the current mouse location.
+
+        :param modifiers: special keys to hold during clicking
+                         (see :py:class:`inputmap.KeyModifier` for extensive list)
+        :type modifiers: [str]
+        """
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
@@ -200,6 +283,13 @@ class DesktopControl:
             self.keys_toggle(modifiers, False)
 
     def mouse_double_click(self, modifiers=None):
+        """
+        Double click the left mouse button at the current mouse location.
+
+        :param modifiers: special keys to hold during clicking
+                         (see :py:class:`inputmap.KeyModifier` for extensive list)
+        :type modifiers: [str]
+        """
         timeout = Settings.click_delay()
         if modifiers != None:
             self.keys_toggle(modifiers, True)
@@ -223,6 +313,12 @@ class DesktopControl:
             self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button):
+        """
+        Hold down a mouse button.
+
+        :param int button: button index depending on backend
+                           (see :py:class:`inputmap.MouseButton` for extensive list)
+        """
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
             self._backend_obj.mouse.toggle(True, button)
         elif self.eq.get_backend() == "qemu":
@@ -233,6 +329,12 @@ class DesktopControl:
             self._backend_obj.mouseDown(button)
 
     def mouse_up(self, button):
+        """
+        Release a mouse button.
+
+        :param int button: button index depending on backend
+                           (see :py:class:`inputmap.MouseButton` for extensive list)
+        """
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
             self._backend_obj.mouse.toggle(False, button)
         elif self.eq.get_backend() == "qemu":
@@ -243,6 +345,14 @@ class DesktopControl:
             self._backend_obj.mouseUp(button)
 
     def keys_toggle(self, keys, up_down):
+        """
+        Hold down or release together all provided keys.
+
+        :param keys: characters or special keys depending on the backend
+                     (see :py:class:`inputmap.Key` for extensive list)
+        :type keys: [str] or str (no special keys in the second case)
+        :param bool up_down: hold down if true else release
+        """
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
             for key in keys:
                 self._backend_obj.key.toggle(key, up_down)
@@ -282,10 +392,26 @@ class DesktopControl:
                     self._backend_obj.keyUp(key)
 
     def keys_press(self, keys):
+        """
+        Press (hold down and release) together all provided keys.
+
+        :param keys: characters or special keys depending on the backend
+                     (see :py:class:`inputmap.Key` for extensive list)
+        :type keys: [str] or str (no special keys in the second case)
+        """
         self.keys_toggle(keys, True)
         self.keys_toggle(keys, False)
 
     def keys_type(self, text, modifiers):
+        """
+        Type (press consecutively) all provided keys.
+
+        :param text: characters only (no special keys allowed)
+        :type text: [str] or str (second case is preferred and first redundant)
+        :param modifiers: special keys to hold during typing
+                         (see :py:class:`inputmap.KeyModifier` for extensive list)
+        :type modifiers: [str]
+        """
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 

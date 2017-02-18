@@ -14,9 +14,12 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# Frontend with simple procedural API allowing the use of a module instead of
-# the GuiBender object (creating and running the GuiBender object internally).
+"""
+Frontend with simple procedural API allowing the use of a module instead of
+the :py:class:`guibender.GuiBender` object (creating and running this same
+object internally). All the methods delegate their calls to this object so
+for information about the API please refer to it and :py:class:`region.Region`.
+"""
 
 from guibender import GuiBender
 

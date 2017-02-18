@@ -36,16 +36,14 @@ log = logging.getLogger('guibender.imagefinder')
 
 
 class ImageFinder:
-
     """
-    The image finder contains all image matching functionality.
+    Interface for all image matching functionality and backends.
 
     It offers both template matching and feature matching algorithms
     through autopy or through the OpenCV library as well as a hybrid
-    approach. The image finding methods include finding of one or
-    all matches above the similarity defined as:
-
-        self.eq.p["find"]["similarity"]
+    approach. The image finding methods include finding one or all
+    matches above the similarity defined in the configuration of each
+    backend.
 
     There are many more parameters that could contribute for a good
     match in this "find" category or in other categories. They can
@@ -54,17 +52,10 @@ class ImageFinder:
 
     def __init__(self, equalizer=None):
         """
-        Initiates the image finder and its CV backend equalizer.
+        Build an image finder and its CV backend equalizer.
 
-        The image logging consists of saving the last hotmap. If the
-        template matching method was used, the hotmap is a finger
-        print of the matching in the entire haystack. Its lighter
-        areas are places where the needle was matched better. If the
-        feature matching method was used, the hotmap contains the
-        matched needle features in the haystack (green), the ones
-        that were not matched (red), and the points in needle projected
-        to the haystack that could be used for clicking, hovering,
-        etc. (blue).
+        :param equalizer: configuration for the backend
+        :type equalizer: :py:class:`settings.CVEqualizer` or None
         """
         if equalizer is None:
             self.eq = CVEqualizer()
@@ -77,13 +68,17 @@ class ImageFinder:
 
     def find(self, needle, haystack, multiple=False):
         """
-        Finds an image in another and returns a Location() object
-        or None using the backend algorithms and parameters
-        defined in the "find" category.
+        Find an image in another and returns its location using
+        the backend algorithms and parameters defined in the "find"
+        category.
 
-        @param haystack: an Image() to look in
-        @param needle: an Image() to look for
-        @param multiple: retrieve all matches
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :param bool multiple: whether to find all matches
+        :returns: all found matches (one from most algorithms)
+        :rtype: [:py:class:`location.Location`]
         """
         self.imglog.needle = needle
         self.imglog.haystack = haystack
@@ -111,12 +106,19 @@ class ImageFinder:
 
     def _template_find_all(self, needle, haystack):
         """
-        Finds all needle images in a haystack image.
+        EXTRA DOCSTRING: Template matching backend (multiple).
+
+        Find all needle images in a haystack image.
+
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :returns: all found matches (one from most algorithms)
+        :rtype: [:py:class:`location.Location`]
 
         The only available backend group for this is template matching.
         The only available template matching methods are: opencv
-
-        Returns a list of Location objects for all matches or None in not found.
         """
         if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
@@ -206,9 +208,16 @@ class ImageFinder:
 
     def _template_find(self, needle, haystack):
         """
+        EXTRA DOCSTRING: Template matching backend.
+
         Finds a needle image in a haystack image using template matching.
 
-        Returns a Location object for the match or None in not found.
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :returns: found match or nothing if not found
+        :rtype: :py:class:`location.Location` or None
 
         Available template matching methods are: autopy, opencv
         """
@@ -284,9 +293,16 @@ class ImageFinder:
 
     def _feature_find(self, needle, haystack):
         """
+        EXTRA DOCSTRING: Feature matching backend.
+
         Finds a needle image in a haystack image using feature matching.
 
-        Returns a Location object for the match or None in not found.
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :returns: found match or nothing if not found
+        :rtype: :py:class:`location.Location` or None
 
         Available methods are: a combination of feature detector,
         extractor, and matcher
@@ -307,8 +323,18 @@ class ImageFinder:
 
     def _hybrid_find(self, needle, haystack, multiple=False):
         """
+        EXTRA DOCSTRING: Hybrid matching backend.
+
         Use template matching to deal with feature dense regions
-        and guide a final feature matching.
+        and guide a final feature matching stage.
+
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :param bool multiple: whether to find all matches
+        :returns: all found matches if multiple are sought else one found match (else None)
+        :rtype: [:py:class:`location.Location`] or :py:class:`location.Location` or None
 
         Feature matching is robust at small regions not too abundant
         of features where template matching is too picky. Template
@@ -424,30 +450,38 @@ class ImageFinder:
 
     def _hybrid2to1_find(self, needle, haystack):
         """
+        EXTRA DOCSTRING: Hybrid matching backend (2to1).
+
         Two thirds feature matching and one third template matching.
         Divide the haystack into x,y subregions and perform feature
         matching once for each dx,dy translation of each subregion.
 
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+
+        .. todo:: Standardize return values before documenting.
+
         This method uses advantages of both template and feature
         matching in order to locate the needle.
 
-        Warning: If this search is intensive (you use small frequent
-        subregions) please disable or reduce the image logging.
+        .. warning:: If this search is intensive (you use small frequent
+            subregions) please disable or reduce the image logging.
 
-        Note: Currently this method is dangerous due to a possible
-        memory leak. Therefore avoid getting closer to a more normal
-        template matching or any small size and delta (x,y and dx,dy) that
-        will cause too many match attempts.
+        .. todo:: Currently this method is dangerous due to a possible
+            memory leak. Therefore avoid getting closer to a more normal
+            template matching or any small size and delta (x,y and dx,dy) that
+            will cause too many match attempts.
 
-        Examples:
-            1) Normal template matching:
+        Example for normal template matching::
 
-                find_2to1hybrid(n, h, s, n.width, n.height, 1, 1)
+            find_2to1hybrid(n, h, s, n.width, n.height, 1, 1)
 
-            2) Divide the screen into four quadrants and jump with distance
-            halves of these quadrants:
+        Example to divide the screen into four quadrants and jump with distance
+        halves of these quadrants::
 
-                find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
+            find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
         """
         # accumulate one template and multiple feature cases
         ImageLogger.accumulate_logging = True
@@ -521,6 +555,8 @@ class ImageFinder:
     def _project_features(self, locations_in_needle, ngray, hgray,
                           similarity, hotmap_canvas=None):
         """
+        EXTRA DOCSTRING: Feature matching backend - wrapper.
+
         Wrapper for the internal feature detection, matching and location
         projection used by all public feature matching functions.
         """
@@ -569,6 +605,8 @@ class ImageFinder:
 
     def _detect_features(self, ngray, hgray, detect, extract):
         """
+        EXTRA DOCSTRING: Feature matching backend - detection/extraction stage (1).
+
         Detect all keypoints and calculate their respective decriptors.
         """
         nkeypoints, hkeypoints = [], []
@@ -634,6 +672,8 @@ class ImageFinder:
     def _match_features(self, nkeypoints, ndescriptors,
                         hkeypoints, hdescriptors, match):
         """
+        EXTRA DOCSTRING: Feature matching backend - matching stage (2).
+
         Match two sets of keypoints based on their descriptors.
         """
         def ratio_test(matches):
@@ -740,25 +780,23 @@ class ImageFinder:
 
     def _project_locations(self, locations_in_needle, mnkp, mhkp):
         """
+        EXTRA DOCSTRING: Feature matching backend - projecting stage (3).
+
         Calculate the projection of points from the needle in the
         haystack using random sample consensus and the matched
         keypoints between the needle and the haystack.
 
-        Returns a list of (x,y) tuples of the respective locations
-        in the haystack.
+        In particular, take the locations in the need as (x,y) tuples
+        for each point, the matched needle keypoints, and the matched
+        haystack keypoints and return a list of (x,y) tuples of the
+        respective locations in the haystack. Also, set the final
+        similarity and returned location in the hotmap.
 
-        Also sets the final similarity and returned location in
-        the hotmap.
-
-        Warning: The returned location is always the projected
-        point at (0,0) needle coordinates as in template matching,
-        i.e. the upper left corner of the image. In case of wild
-        transformations of the needle in the haystack this has to
-        be reconsidered and the needle center becomes obligatory.
-
-        @param locations_in_needle: (x,y) tuples for each point
-        @param mnkp: matched needle keypoints
-        @param mhkp: matched haystack keypoints
+        .. warning:: The returned location is always the projected
+            point at (0,0) needle coordinates as in template matching,
+            i.e. the upper left corner of the image. In case of wild
+            transformations of the needle in the haystack this has to
+            be reconsidered and the needle center becomes obligatory.
         """
         # check matches consistency
         assert len(mnkp) == len(mhkp)
@@ -809,6 +847,8 @@ class ImageFinder:
 
     def _match_template(self, needle, haystack, nocolor, match):
         """
+        EXTRA DOCSTRING: Template matching backend - wrapper.
+
         Match a color or grayscale needle image using the OpenCV
         template matching methods.
         """
@@ -836,11 +876,10 @@ class ImageFinder:
         return match
 
 
+# TODO: our custom feature matching backend needs more serious reworking
+# before it even makes sense to get properly documented
 class InHouseCV(ImageFinder):
-
-    """
-    ImageFinder backend with in-house CV algorithms.
-    """
+    """Feature matching backend with in-house CV algorithms."""
 
     def __init__(self):
         """Initiate thee CV backend attributes."""
@@ -883,8 +922,7 @@ class InHouseCV(ImageFinder):
 
         @param refinements: number of points to relocate
         @param recalc_interval: recalculation on a number of refinements
-        @param variants_k: kNN parameter for to limit the alternative variants
-            of a badly positioned feature
+        @param variants_k: kNN parameter for to limit the alternative variants of a badly positioned feature
         @param variants_ratio: internal ratio test for knnMatch autostop (see below)
 
         TODO: handle a subset of matches (ignoring some matches if not all features are detected)

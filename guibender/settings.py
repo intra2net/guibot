@@ -34,6 +34,14 @@ from inputmap import Key, KeyModifier, MouseButton
 
 
 class Settings:
+    """
+    Handler for default configuration present in all
+    cases where no specific value is set.
+
+    The methods of this class are shared among
+    all of its instances.
+    """
+
     # operational parameters shared between all instances
     _click_delay = 0.1
     _drag_delay = 0.5
@@ -58,63 +66,99 @@ class Settings:
     _feature_match_backend = "BruteForce-Hamming"
 
     @staticmethod
-    def click_delay(delay=None):
-        """Timeout before mouse click."""
-        if delay is None:
+    def click_delay(value=None):
+        """
+        Getter/setter for property attribute.
+
+        :param value: time interval between two clicks in a double click
+        :type value: float or None
+        :returns: current value if no argument was passed otherwise only sets it
+        :rtype: float or None
+        """
+        if value is None:
             return Settings._click_delay
         else:
-            Settings._click_delay = delay
+            Settings._click_delay = value
 
     @staticmethod
-    def delay_after_drag(delay=None):
-        """Timeout before drag operation."""
-        if delay is None:
+    def delay_after_drag(value=None):
+        """
+        Same as :py:func:`Settings.click_delay` but with
+
+        :param value: timeout before drag operation
+        """
+        if value is None:
             return Settings._drag_delay
         else:
-            Settings._drag_delay = delay
+            Settings._drag_delay = value
 
     @staticmethod
-    def delay_before_drop(delay=None):
-        """Timeout before drop operation."""
-        if delay is None:
+    def delay_before_drop(value=None):
+        """
+        Same as :py:func:`Settings.click_delay` but with
+
+        :param value: timeout before drop operation
+        """
+        if value is None:
             return Settings._drop_delay
         else:
-            Settings._drop_delay = delay
+            Settings._drop_delay = value
 
     @staticmethod
-    def delay_before_keys(delay=None):
-        """Timeout before key press operation."""
-        if delay is None:
+    def delay_before_keys(value=None):
+        """
+        Same as :py:func:`Settings.click_delay` but with
+
+        :param value: timeout before key press operation
+        """
+        if value is None:
             return Settings._keys_delay
         else:
-            Settings._keys_delay = delay
+            Settings._keys_delay = value
 
     @staticmethod
-    def delay_between_keys(delay=None):
-        """Timeout between key type operations."""
-        if delay is None:
+    def delay_between_keys(value=None):
+        """
+        Same as :py:func:`Settings.click_delay` but with
+
+        :param value: time interval between two consecutively typed keys
+        """
+        if value is None:
             return Settings._type_delay
         else:
-            Settings._type_delay = delay
+            Settings._type_delay = value
 
     @staticmethod
-    def rescan_speed_on_find(delay=None):
+    def rescan_speed_on_find(value=None):
         """
-        Frequency of the image matching attempts (to reduce overhead on the CPU).
+        Same as :py:func:`Settings.click_delay` but with
+
+        :param value: time interval between two image matching attempts
+                      (used to reduce overhead on the CPU)
         """
-        if delay is None:
+        if value is None:
             return Settings._rescan_speed_on_find
         else:
-            Settings._rescan_speed_on_find = delay
+            Settings._rescan_speed_on_find = value
 
     @staticmethod
     def screen_autoconnect(value=None):
         """
-        Perform a complete initialization of the desktop control, connecting to
-        the backend (screen) selected in the Settings._desktop_control_backend.
+        Getter/setter for property attribute.
 
-        If disabled, you have to connect before performing any GUI operations:
-        region.dc_backend.connect_screen()
+        :param value: whether to perform complete initialization of the
+                      desktop control backend
+        :type value: bool or None
+        :returns: current value if no argument was passed otherwise only sets it
+        :rtype: bool or None
+        :raises: :py:class:`ValueError` is value is not boolean or None
+
+        Complete initialization includes connecting to the backend (screen)
+        selected in the `_desktop_control_backend`.
+
+        If disabled, you have to connect before performing any GUI operations::
+
+            region.dc_backend.connect_screen()
 
         The use of this is to allow you to perform some configuration first.
         """
@@ -128,11 +172,13 @@ class Settings:
     @staticmethod
     def preprocess_special_chars(value=None):
         """
-        Preprocess capital and special characters and handle them internally
-        (automatic replacement of shift modifier key).
+        Same as :py:func:`Settings.screen_autoconnect` but with
 
-        Warning: The characters will be forcefully preprocessed for the
-        autopy-nix (capital and special) and vncdotool (capital) backends.
+        :param value: whether to preprocess capital and special characters and
+                      handle them internally
+
+        .. warning:: The characters will be forcefully preprocessed for the
+            autopy-nix (capital and special) and vncdotool (capital) backends.
         """
         if value is None:
             if Settings.desktop_control_backend() == "autopy-nix":
@@ -149,7 +195,9 @@ class Settings:
     @staticmethod
     def save_needle_on_error(value=None):
         """
-        Perform an extra dump of the needle on matching error.
+        Same as :py:func:`Settings.screen_autoconnect` but with
+
+        :param value: whether to perform an extra needle dump on matching error
         """
         if value is None:
             return Settings._save_needle_on_error
@@ -159,149 +207,194 @@ class Settings:
             raise ValueError
 
     @staticmethod
-    def image_logging_level(level=None):
+    def image_logging_level(value=None):
         """
-        Possible values: similar to the python logging module.
+        Getter/setter for property attribute.
 
-        See the image logging documentation for more details.
+        :param value: logging level similar to the python logging module
+        :type value: int or None
+        :returns: current value if no argument was passed otherwise only sets it
+        :rtype: int or None
+
+        .. seealso:: See the image logging documentation for more details.
         """
-        if level is None:
+        if value is None:
             return Settings._image_logging_level
         else:
-            Settings._image_logging_level = level
+            Settings._image_logging_level = value
 
     @staticmethod
-    def image_logging_destination(dest=None):
+    def image_logging_step_width(value=None):
         """
-        String for relative path of the image logging steps.
-        """
-        if dest is None:
-            return Settings._image_logging_destination
-        else:
-            Settings._image_logging_destination = dest
+        Same as :py:func:`Settings.image_logging_level` but with
 
-    @staticmethod
-    def image_logging_step_width(width=None):
+        :param value: number of digits when enumerating the image
+                      logging steps, e.g. value=3 for 001, 002, etc.
         """
-        Integer to determine the number of digits when enumerating the image
-        logging steps, e.g. width=3 for 001, 002, etc.
-        """
-        if width is None:
+        if value is None:
             return Settings._image_logging_step_width
         else:
-            Settings._image_logging_step_width = width
+            Settings._image_logging_step_width = value
 
     @staticmethod
-    def image_quality(quality=None):
+    def image_quality(value=None):
         """
-        Integer to determine the quality of the image dumps ranging from 0 for
-        no compression to 9 for maximum compression (used to save space and
-        reduce the disk space needed for image logging).
+        Same as :py:func:`Settings.image_logging_level` but with
+
+        :param value: quality of the image dumps ranging from 0 for no compression
+                      to 9 for maximum compression (used to save space and reduce
+                      the disk space needed for image logging)
         """
-        if quality is None:
+        if value is None:
             return Settings._image_quality
         else:
-            Settings._image_quality = quality
+            Settings._image_quality = value
 
     @staticmethod
-    def desktop_control_backend(name=None):
+    def image_logging_destination(value=None):
         """
-        Possible backends:
-           - autopy-win, autopy-nix - Windows, Linux (and OS X) compatible with
+        Getter/setter for property attribute.
+
+        :param value: relative path of the image logging steps
+        :type value: str or None
+        :returns: current value if no argument was passed otherwise only sets it
+        :rtype: str or None
+        """
+        if value is None:
+            return Settings._image_logging_destination
+        else:
+            Settings._image_logging_destination = value
+
+    @staticmethod
+    def desktop_control_backend(value=None):
+        """
+        Same as :py:func:`Settings.image_logging_destination` but with
+
+        :param value: name of the desktop control backend
+        :raises: :py:class:`ValueError` if value is not among the supported backends
+
+        Supported backends:
+           * autopy-win, autopy-nix - Windows, Linux (and OS X) compatible with
                                       both the GUI actions and their calls
                                       executed on the same machine.
-           - qemu - guest OS independent with GUI actions on a virtual machine
+           * qemu - guest OS independent with GUI actions on a virtual machine
                     through Qemu Monitor object (provided by Autotest) and
                     their calls on the host machine.
-           - vncdotool - guest OS independent or Linux remote OS with GUI
+           * vncdotool - guest OS independent or Linux remote OS with GUI
                          actions on a remote machine through vnc and their
                          calls on a vnc client machine.
 
-        Warning: To use a particular backend you need to satisfy its dependencies,
-        i.e. the backend has to be installed or you will have unsatisfied imports.
+        .. warning:: To use a particular backend you need to satisfy its dependencies,
+            i.e. the backend has to be installed or you will have unsatisfied imports.
         """
-        if name is None:
+        if value is None:
             return Settings._desktop_control_backend
         else:
-            if name not in ["autopy-win", "autopy-nix", "qemu", "vncdotool"]:
-                raise ValueError("Unsupported backend for GUI actions '%s'" % name)
-            Settings._desktop_control_backend = name
+            if value not in ["autopy-win", "autopy-nix", "qemu", "vncdotool"]:
+                raise ValueError("Unsupported backend for GUI actions '%s'" % value)
+            Settings._desktop_control_backend = value
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
     @staticmethod
-    def find_image_backend(name=None):
+    def find_image_backend(value=None):
         """
-        Possible backends:
-            - template - template matching using correlation coefficients,
+        Same as :py:func:`Settings.image_logging_destination` but with
+
+        :param value: name of the computer vision backend
+
+        Supported backends:
+            * template - template matching using correlation coefficients,
                          square difference or the default autopy matching.
-            - feature - feature matching using a mixture of feature detection,
+            * feature - feature matching using a mixture of feature detection,
                         extraction and matching algorithms.
-            - hybrid - a mixture of template and feature matching where the
+            * hybrid - a mixture of template and feature matching where the
                        first is used as necessary and the second as sufficient stage.
 
-        Warning: To use a particular backend you need to satisfy its dependencies,
-        i.e. the backend has to be installed or you will have unsatisfied imports.
+        .. warning:: To use a particular backend you need to satisfy its dependencies,
+            i.e. the backend has to be installed or you will have unsatisfied imports.
         """
-        if name is None:
+        if value is None:
             return Settings._find_image_backend
         else:
-            Settings._find_image_backend = name
+            Settings._find_image_backend = value
 
     @staticmethod
-    def template_match_backend(name=None):
+    def template_match_backend(value=None):
         """
-        Possible backends: autopy, sqdiff, ccorr, ccoeff, sqdiff_normed,
+        Same as :py:func:`Settings.image_logging_destination` but with
+
+        :param value: name of the template matching backend
+
+        Supported backends: autopy, sqdiff, ccorr, ccoeff, sqdiff_normed,
         ccorr_normed, ccoeff_normed.
         """
-        if name is None:
+        if value is None:
             return Settings._template_match_backend
         else:
-            Settings._template_match_backend = name
+            Settings._template_match_backend = value
 
     @staticmethod
-    def feature_detect_backend(name=None):
+    def feature_detect_backend(value=None):
         """
-        Possible backends: BruteForce, BruteForce-L1, BruteForce-Hamming,
+        Same as :py:func:`Settings.image_logging_destination` but with
+
+        :param value: name of the feature detection backend
+
+        Supported  backends: BruteForce, BruteForce-L1, BruteForce-Hamming,
         BruteForce-Hamming(2), in-house-raw, in-house-region.
         """
-        if name is None:
+        if value is None:
             return Settings._feature_detect_backend
         else:
-            Settings._feature_detect_backend = name
+            Settings._feature_detect_backend = value
 
     @staticmethod
-    def feature_extract_backend(name=None):
+    def feature_extract_backend(value=None):
         """
-        Possible backends: ORB, FAST, STAR, GFTT, HARRIS, Dense, oldSURF.
+        Same as :py:func:`Settings.image_logging_destination` but with
+
+        :param value: name of the feature extraction backend
+
+        Supported backends: ORB, FAST, STAR, GFTT, HARRIS, Dense, oldSURF.
         """
-        if name is None:
+        if value is None:
             return Settings._feature_extract_backend
         else:
-            Settings._feature_extract_backend = name
+            Settings._feature_extract_backend = value
 
     @staticmethod
-    def feature_match_backend(name=None):
+    def feature_match_backend(value=None):
         """
-        Possible backends: ORB, BRIEF, FREAK.
+        Same as :py:func:`Settings.image_logging_destination` but with
+
+        :param value: name of the feature matching backend
+
+        Supported backends: ORB, BRIEF, FREAK.
         """
-        if name is None:
+        if value is None:
             return Settings._feature_match_backend
         else:
-            Settings._feature_match_backend = name
+            Settings._feature_match_backend = value
 
 
 class DCEqualizer:
+    """
+    Container for the desktop control backend configuration,
+    responsible for making the backend behave according to this
+    configuration as well as for providing information about it.
+    """
 
     def __init__(self):
         """
-        Initialize a class for the desktop control backend configuration.
+        Build a container for the desktop control backend configuration.
 
         This class is similar to the computer vision backend configuration
         one but is simpler due to the lack of categories.
 
-        A parameter can be accessed as follows:
-        print self.p["vnc_hostname"]
+        A parameter can be accessed as follows::
+
+            print self.p["vnc_hostname"]
         """
         self.algorithms = ("autopy-nix", "autopy-win", "qemu", "vncdotool")
         self.p = {}
@@ -310,13 +403,22 @@ class DCEqualizer:
         self.configure_backend(Settings.desktop_control_backend())
 
     def get_backend(self):
+        """
+        Method for compatibility with :py:class:`CVEqualizer`.
+
+        :returns: name of the current DC backend
+        :rtype: str or None
+        """
         log.log(0, "desktop_control %s", self._current)
         return self._current
 
     def configure_backend(self, name, *args):
         """
-        Change the type and parameters of a backend for the
-        desktop control.
+        Change the type and parameters of a backend for the desktop control.
+
+        :param str name: name of the new DC backend
+        :param args: arguments for the new DC backend
+        :type args: (str, int) or int or :py:class:`qemu_monitor.Monitor` (see Autotest)
         """
         self._current = name
         self._new_params(name)
@@ -348,9 +450,15 @@ class DCEqualizer:
             self.p["vnc_port"] = 0
         log.log(0, "%s %s\n", new, self.p)
 
-    def sync_backend_to_params(self, backend):
+    def sync_backend_to_params(self, backend=None):
         """
-        Synchronize the desktop control backend with the equalizer.
+        Synchronize the desktop control backend with the equalizer configuration.
+
+        :param backend: preconfigured screen if any
+        :type backend: :py:class:`DCScreen` or None
+        :returns: new or synchronized screen
+        :rtype: :py:class:`DCScreen`
+        :raises: :py:class:`ValueError` if current backend is 'qemu' and no monitor is selected
         """
         if backend is None:
             backend = DCScreen()
@@ -394,10 +502,10 @@ class DCEqualizer:
 
 
 class DCScreen:
-
-    """A class for a synchronizable backend with the equalizer."""
+    """A class for a synchronizable backend with the DC equalizer."""
 
     def __init__(self):
+        """Build a desktop control screen."""
         self.backend = None
         self.pointer = (0, 0)
         self.width = 0
@@ -408,30 +516,35 @@ class DCScreen:
 
 
 class CVEqualizer:
+    """
+    Container for the computer vision backend configuration,
+    responsible for making the backend behave according to this
+    configuration as well as for providing information about it.
+    """
 
     def __init__(self):
         """
-        Initiates the CV equalizer with default algorithm configuration.
+        Build a container for the computer vision backend configuration.
 
         Available algorithms can be seen in the `algorithms` attribute
         whose keys are the algorithm types and values are the members of
         these types.
 
         External (image finder) parameters:
-            detect filter - works for certain detectors and
+            * detect filter - works for certain detectors and
                 determines how many initial features are
                 detected in an image (e.g. hessian threshold for
                 SURF detector)
-            match filter - determines what part of all matches
+            * match filter - determines what part of all matches
                 returned by feature matcher remain good matches
-            project filter - determines what part of the good
+            * project filter - determines what part of the good
                 matches are considered inliers
-            ratio test - boolean for whether to perform a ratio test
-            symmetry test - boolean for whether to perform a symmetry test
+            * ratio test - boolean for whether to perform a ratio test
+            * symmetry test - boolean for whether to perform a symmetry test
 
-        Note: SURF and SIFT are proprietary algorithms and are not available
-        by default in newer OpenCV versions (>3.0).
-        Note: "in-house-raw" performs regular knn matching, but "in-house-region"
+        .. note:: SURF and SIFT are proprietary algorithms and are not available
+            by default in newer OpenCV versions (>3.0).
+        .. todo:: "in-house-raw" performs regular knn matching, but "in-house-region"
             performs a special filtering and replacement of matches based on
             positional information (it does not have ratio and symmetry tests
             and assumes that the needle is transformed preserving the relative
@@ -463,6 +576,13 @@ class CVEqualizer:
                                feature_match=Settings.feature_match_backend())
 
     def get_backend(self, category):
+        """
+        Getter for backend attributes.
+
+        :param str category: supported category, see `algorithms`
+        :returns: current (sub)backend for the selected category
+        :rtype: str
+        """
         full_names = {"find": "find_methods",
                       "tmatch": "template_matchers",
                       "fdetect": "feature_detectors",
@@ -472,6 +592,14 @@ class CVEqualizer:
         return self.algorithms[full_names[category]][self._current[category]]
 
     def set_backend(self, category, value):
+        """
+        Setter for backend attributes.
+
+        :param str category: supported category, see `algorithms`
+        :param str value: supported category backend, see `algorithms[category]`
+        :raises: :py:class:`ImageFinderMethodError` if `value` is not among the
+                 supported category backends
+        """
         full_names = {"find": "find_methods",
                       "tmatch": "template_matchers",
                       "fdetect": "feature_detectors",
@@ -487,8 +615,9 @@ class CVEqualizer:
                           feature_detect=None, feature_extract=None,
                           feature_match=None):
         """
-        Change some or all of the algorithms used as backend for the
-        image finder.
+        Change some or all of the algorithms used as backend for the image finder.
+
+        All parameters are strings supported in `algorithms` or None (no change).
         """
         if find_image != None:
             log.log(0, "Setting main backend to %s", find_image)
@@ -595,10 +724,16 @@ class CVEqualizer:
 
     def sync_backend_to_params(self, backend, category):
         """
-        Synchronize the desktop control backend with the equalizer.
+        Synchronize the computer vision backend with the equalizer configuration.
+
+        :param backend: supported category backend, see `algorithms[category]`
+        :type backend: external backend class depending on the category backend choice
+        :param str category: supported category, see `algorithms`
+        :returns: synchronized category backend
+        :rtype: external backend class depending on the category backend choice
 
         In particular, synchronize the inner OpenCV parameters of detectors,
-        extractors, and matchers with the equalizer.
+        extractors, and matchers with the equalizer configuration.
         """
         if (category == "find" or category == "tmatch" or
                 (category == "fdetect" and self.get_backend(category) == "oldSURF")):
@@ -632,13 +767,13 @@ class CVEqualizer:
 
     def can_calibrate(self, mark, category):
         """
-        Use this method to fix the parameters for a given
-        backend algorithm, i.e. disallow the calibrator to
-        change them.
+        Fix the parameters for a given category backend algorithm,
+        i.e. disallow the calibrator to change them.
 
-        @param mark: boolean for whether to mark for calibration
-        @param category: the backend algorithm category whose parameters
-        are marked
+        :param bool mark: whether to mark for calibration
+        :param str category: backend category whose parameters are marked
+        :raises: :py:class:`ImageFinderMethodError` if `category` is not among the
+                 supported backend categories
         """
         if category not in self.p:
             raise ImageFinderMethodError
@@ -651,7 +786,12 @@ class CVEqualizer:
                 param.fixed = not mark
 
     def from_match_file(self, filename_without_extention):
-        """Read the equalizer from a .match file with the given filename."""
+        """
+        Read the configuration from a .match file with the given filename.
+
+        :param str filename_without_extention: match filename for the configuration
+        :raises: :py:class:`IOError` if the respective match file couldn't be read
+        """
         parser = config.RawConfigParser()
         # preserve case sensitivity
         parser.optionxform = str
@@ -679,7 +819,11 @@ class CVEqualizer:
         #    print("Please change or remove the config file.")
 
     def to_match_file(self, filename_without_extention):
-        """Write the equalizer in a .match file with the given filename."""
+        """
+        Write the configuration in a .match file with the given filename.
+
+        :param str filename_without_extention: match filename for the configuration
+        """
         parser = config.RawConfigParser()
         # preserve case sensitivity
         parser.optionxform = str
@@ -699,13 +843,26 @@ class CVEqualizer:
 
 
 class CVParameter:
-
-    """A class for a single parameter from the equalizer."""
+    """A class for a single parameter from the CV equalizer."""
 
     def __init__(self, value,
                  min_val=None, max_val=None,
                  delta=1.0, tolerance=0.1,
                  fixed=True):
+        """
+        Build a computer vision parameter.
+
+        :param value: value of the parameter
+        :type value: bool or int or float or None
+        :param min_val: lower boundary for the parameter range
+        :type min_val: int or float or None
+        :param max_val: upper boundary for the parameter range
+        :type max_val: int or float or None
+        :param float delta: delta for the calibration
+                            (no calibration if `delta` < `tolerance`)
+        :param float tolerance: tolerance of calibration
+        :param bool fixed: whether the parameter is prevented from calibration
+        """
         self.value = value
         self.delta = delta
         self.tolerance = tolerance
@@ -728,11 +885,25 @@ class CVParameter:
         self.fixed = fixed
 
     def __repr__(self):
+        """
+        Provide a representation of the parameter for storing and reporting.
+
+        :returns: special syntax representation of the parameter
+        :rtype: str
+        """
         return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s'>"
                 % (self.value, self.range[0], self.range[1], self.delta, self.tolerance, self.fixed))
 
     @staticmethod
     def from_string(raw):
+        """
+        Parse a CV parameter from string.
+
+        :param str raw: string representation for the parameter
+        :returns: parameter parsed from the representation
+        :rtype: :py:class:`CVParameter`
+        :raises: :py:class:`ValueError` if unsupported type is encountered
+        """
         args = []
         string_args = re.match(r"<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
                                r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",

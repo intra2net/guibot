@@ -23,41 +23,42 @@ log = logging.getLogger('guibender.calibrator')
 
 
 class Calibrator:
-
     """
-    This class provides with a group of methods to facilitate and
-    automate the selection of algorithms and parameters that are most
-    successful for a custom image.
+    Provides with a group of methods to facilitate and automate the selection
+    of algorithms and parameters that are most suitable for a given preselected
+    image matching pair.
 
-    All methods perform benchmarking and calibration of an ImageFinder
-    for a given needle Image() and haystack Image().
+    Use the benchmarking method to choose the best algorithm to find your image.
+    Use the calibration method to find the best parameters if you have already
+    chosen the algorithm.
     """
 
     def benchmark(self, haystack, needle, imagefinder,
                   calibration=True, refinements=10):
         """
-        Performs benchmarking on all available algorithms and returns a list of
-        (method, success, coordinates, time) tuples sorted according to
-        similarity (success).
-
-        Use this method to choose the best algorithm to find your specific image
-        (or image category). Use the "calibrate" method to find the best parameters
-        if you have already chosen the algorithm.
-
-        Note: This method already uses calibrate internally to provide the best
-        outcome for each compared method (optimal success). You will not gain
-        the same result if you don't calibrate the parameters. To turn the calibration
-        off and benchmark with your selected parameters, change the "calibration"
-        function argument.
-
-        Note: Methods that are supported by OpenCV but currently don't work are
-        excluded from the dictionary. The dictionary can thus also be used
-        to assess what are the available and working methods besides their success
+        Perform benchmarking on all available algorithms of an image finder
         for a given needle and haystack.
 
-        @param imagefinder: the ImageFinder instance to use for the benchmarking
-        @param calibration: whether to use calibration
-        @param refinements: number of refinements allowed to improve calibration
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param imagefinder: CV backend to benchmark
+        :type imagefinder: :py:class:`imagefinder.ImageFinder`
+        :param bool calibration: whether to use calibration
+        :param int refinements: number of refinements allowed to improve calibration
+        :returns: list of (method, similarity, location, time) tuples sorted according to similarity
+        :rtype: [(str, float, :py:class:`location.Location`, float)]
+
+        This method already uses :py:func:`Calibrator.calibrate` internally
+        to provide the best outcome for each compared method (optimal success).
+        To turn the calibration off and benchmark with your selected parameters,
+        set the `calibration` argument to false.
+
+        .. note:: Methods that are supported by OpenCV but currently don't work are
+            excluded from the dictionary. The dictionary can thus also be used to
+            assess what are the available and working methods besides their success
+            for a given `needle` and `haystack`.
         """
         results = []
         log.info("Performing benchmarking %s calibration and %s refinements",
@@ -145,21 +146,26 @@ class Calibrator:
     def calibrate(self, haystack, needle, imagefinder,
                   refinements=10, max_exec_time=0.5):
         """
-        Calibrates the available parameters (the equalizer) of an image
-        finder for a given needle and haystack.
+        Calibrate the available parameters (configuration or equalizer) of
+        an image finder for a given needle and haystack.
 
-        Returns the minimized error (in terms of similarity) for the given
-        maximal execution time (in seconds) and number of refinements.
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param imagefinder: CV backend to calibrate
+        :type imagefinder: :py:class:`imagefinder.ImageFinder`
+        :param int refinements: maximal number of refinements
+        :param float max_exec_time: maximum seconds for a matching attempt
+        :returns: minimized error (in terms of similarity)
+        :rtype: float
 
-        Note: This method calibrates only parameters that are not protected
-        from calibration, i.e. that have "fixed" attribute set to False.
+        This method calibrates only parameters that are not protected
+        from calibration, i.e. that have `fixed` attribute set to false.
         In order to set all parameters of a background algorithm for calibration
-        use the "can_calibrate" method of the equalizer first.
+        use the :py:func:`settings.CVEqualizer.can_calibrate` method first.
         """
         def run(params):
-            """
-            Internal custom function to evaluate error for a given set of parameters.
-            """
             imagefinder.eq.parameters = params
 
             start_time = time.time()
@@ -189,17 +195,20 @@ class Calibrator:
 
     def twiddle(self, params, run_function, max_attempts):
         """
-        Function to optimize a set of parameters for a minimal returned error.
+        Optimize a set of parameters for a minimal matching error.
 
-        @param parameters: a list of parameter triples of the form (min, start, max)
-        @param run_function: a function that accepts a list of tested parameters
-        and returns the error that should be minimized
-        @param tolerance: minimal parameter delta (uncertainty interval)
-        @param max_attempts: maximal number of refinements to reach the parameter
-        delta below the tolerance.
+        :param params: configuration for the CV backend
+        :type params: {str, {str, :py:class:`settings.CVParameter`}}
+        :param run_function: a function that accepts a list of tested parameters
+                             and returns the error that should be minimized
+        :type run_function: function
+        :param int max_attempts: maximal number of refinements to reach
+                                 the parameter delta below the tolerance
+        :returns: the configuration with the minimal error
+        :rtype: ({str, {str, :py:class:`settings.CVParameter`}}, float)
 
-        Special credits for this approach should be given to Prof. Sebastian Thrun,
-        who explained it in his Artificial Intelligence for Robotics class.
+        .. note:: Special credits for this approach should be given to Prof. Sebastian
+            Thrun, who explained it in his Artificial Intelligence for Robotics class.
         """
         deltas = {}
         for category in params.keys():
