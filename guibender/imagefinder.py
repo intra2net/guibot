@@ -35,7 +35,7 @@ import logging
 log = logging.getLogger('guibender.imagefinder')
 
 
-class ImageFinder:
+class ImageFinder(object):
     """
     Interface for all image matching functionality and backends.
 

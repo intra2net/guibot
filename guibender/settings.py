@@ -33,13 +33,19 @@ from errors import *
 from inputmap import Key, KeyModifier, MouseButton
 
 
-class Settings:
+class Settings(type):
     """
-    Handler for default configuration present in all
-    cases where no specific value is set.
+    Metaclass used for the definition of static properties (the settings).
 
-    The methods of this class are shared among
-    all of its instances.
+    We overwrite the name of the class in order to avoid documenting
+    all settings here and adding an empty actual class. Instead, the resulting
+    documentation contains just the settings class (using this as metaclass)
+    and all settings respectively. In this way the front user should not worry
+    about such implementation detail and simply use the provided properties.
+
+    For those that like to think about it nonetheless: All methods of the
+    resulting settings class are therefore static since they are methods of
+    a class object, i.e. a metaclass instance.
     """
 
     # operational parameters shared between all instances
@@ -65,8 +71,7 @@ class Settings:
     _feature_extract_backend = "ORB"
     _feature_match_backend = "BruteForce-Hamming"
 
-    @staticmethod
-    def click_delay(value=None):
+    def click_delay(self, value=None):
         """
         Getter/setter for property attribute.
 
@@ -82,8 +87,7 @@ class Settings:
     #: time interval between two clicks in a double click
     click_delay = property(fget=click_delay, fset=click_delay)
 
-    @staticmethod
-    def delay_after_drag(value=None):
+    def delay_after_drag(self, value=None):
         """
         Same as :py:func:`Settings.click_delay` but with
 
@@ -96,8 +100,7 @@ class Settings:
     #: timeout before drag operation
     delay_after_drag = property(fget=delay_after_drag, fset=delay_after_drag)
 
-    @staticmethod
-    def delay_before_drop(value=None):
+    def delay_before_drop(self, value=None):
         """
         Same as :py:func:`Settings.click_delay` but with
 
@@ -110,8 +113,7 @@ class Settings:
     #: timeout before drop operation
     delay_before_drop = property(fget=delay_before_drop, fset=delay_before_drop)
 
-    @staticmethod
-    def delay_before_keys(value=None):
+    def delay_before_keys(self, value=None):
         """
         Same as :py:func:`Settings.click_delay` but with
 
@@ -124,8 +126,7 @@ class Settings:
     #: timeout before key press operation
     delay_before_keys = property(fget=delay_before_keys, fset=delay_before_keys)
 
-    @staticmethod
-    def delay_between_keys(value=None):
+    def delay_between_keys(self, value=None):
         """
         Same as :py:func:`Settings.click_delay` but with
 
@@ -138,8 +139,7 @@ class Settings:
     #: time interval between two consecutively typed keys
     delay_between_keys = property(fget=delay_between_keys, fset=delay_between_keys)
 
-    @staticmethod
-    def rescan_speed_on_find(value=None):
+    def rescan_speed_on_find(self, value=None):
         """
         Same as :py:func:`Settings.click_delay` but with
 
@@ -153,8 +153,7 @@ class Settings:
     #: time interval between two image matching attempts (used to reduce overhead on the CPU)
     rescan_speed_on_find = property(fget=rescan_speed_on_find, fset=rescan_speed_on_find)
 
-    @staticmethod
-    def screen_autoconnect(value=None):
+    def screen_autoconnect(self, value=None):
         """
         Getter/setter for property attribute.
 
@@ -183,8 +182,7 @@ class Settings:
     #: whether to perform complete initialization of the desktop control backend
     screen_autoconnect = property(fget=screen_autoconnect, fset=screen_autoconnect)
 
-    @staticmethod
-    def preprocess_special_chars(value=None):
+    def preprocess_special_chars(self, value=None):
         """
         Same as :py:func:`Settings.screen_autoconnect` but with
 
@@ -208,8 +206,7 @@ class Settings:
     #: whether to preprocess capital and special characters and handle them internally
     preprocess_special_chars = property(fget=preprocess_special_chars, fset=preprocess_special_chars)
 
-    @staticmethod
-    def save_needle_on_error(value=None):
+    def save_needle_on_error(self, value=None):
         """
         Same as :py:func:`Settings.screen_autoconnect` but with
 
@@ -224,8 +221,7 @@ class Settings:
     #: whether to perform an extra needle dump on matching error
     save_needle_on_error = property(fget=save_needle_on_error, fset=save_needle_on_error)
 
-    @staticmethod
-    def image_logging_level(value=None):
+    def image_logging_level(self, value=None):
         """
         Getter/setter for property attribute.
 
@@ -243,8 +239,7 @@ class Settings:
     #: logging level similar to the python logging module
     image_logging_level = property(fget=image_logging_level, fset=image_logging_level)
 
-    @staticmethod
-    def image_logging_step_width(value=None):
+    def image_logging_step_width(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_level` but with
 
@@ -258,8 +253,7 @@ class Settings:
     #: number of digits when enumerating the image logging steps, e.g. value=3 for 001, 002, etc.
     image_logging_step_width = property(fget=image_logging_step_width, fset=image_logging_step_width)
 
-    @staticmethod
-    def image_quality(value=None):
+    def image_quality(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_level` but with
 
@@ -275,8 +269,7 @@ class Settings:
     # (used to save space and reduce the disk space needed for image logging)
     image_quality = property(fget=image_quality, fset=image_quality)
 
-    @staticmethod
-    def image_logging_destination(value=None):
+    def image_logging_destination(self, value=None):
         """
         Getter/setter for property attribute.
 
@@ -292,8 +285,7 @@ class Settings:
     #: relative path of the image logging steps
     image_logging_destination = property(fget=image_logging_destination, fset=image_logging_destination)
 
-    @staticmethod
-    def desktop_control_backend(value=None):
+    def desktop_control_backend(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_destination` but with
 
@@ -325,8 +317,7 @@ class Settings:
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
-    @staticmethod
-    def find_image_backend(value=None):
+    def find_image_backend(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_destination` but with
 
@@ -350,8 +341,7 @@ class Settings:
     #: name of the computer vision backend
     find_image_backend = property(fget=find_image_backend, fset=find_image_backend)
 
-    @staticmethod
-    def template_match_backend(value=None):
+    def template_match_backend(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_destination` but with
 
@@ -367,8 +357,7 @@ class Settings:
     #: name of the template matching backend
     template_match_backend = property(fget=template_match_backend, fset=template_match_backend)
 
-    @staticmethod
-    def feature_detect_backend(value=None):
+    def feature_detect_backend(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_destination` but with
 
@@ -384,8 +373,7 @@ class Settings:
     #: name of the feature detection backend
     feature_detect_backend = property(fget=feature_detect_backend, fset=feature_detect_backend)
 
-    @staticmethod
-    def feature_extract_backend(value=None):
+    def feature_extract_backend(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_destination` but with
 
@@ -400,8 +388,7 @@ class Settings:
     #: name of the feature extraction backend
     feature_extract_backend = property(fget=feature_extract_backend, fset=feature_extract_backend)
 
-    @staticmethod
-    def feature_match_backend(value=None):
+    def feature_match_backend(self, value=None):
         """
         Same as :py:func:`Settings.image_logging_destination` but with
 
@@ -417,7 +404,18 @@ class Settings:
     feature_match_backend = property(fget=feature_match_backend, fset=feature_match_backend)
 
 
-class DCEqualizer:
+class Settings(object):
+    """
+    Handler for default configuration present in all
+    cases where no specific value is set.
+
+    The methods of this class are shared among
+    all of its instances.
+    """
+    __metaclass__ = Settings
+
+
+class DCEqualizer(object):
     """
     Container for the desktop control backend configuration,
     responsible for making the backend behave according to this
@@ -540,7 +538,7 @@ class DCEqualizer:
         return backend
 
 
-class DCScreen:
+class DCScreen(object):
     """A class for a synchronizable backend with the DC equalizer."""
 
     def __init__(self):
@@ -554,7 +552,7 @@ class DCScreen:
         self.modmap = None
 
 
-class CVEqualizer:
+class CVEqualizer(object):
     """
     Container for the computer vision backend configuration,
     responsible for making the backend behave according to this
@@ -881,7 +879,7 @@ class CVEqualizer:
             parser.write(configfile)
 
 
-class CVParameter:
+class CVParameter(object):
     """A class for a single parameter from the CV equalizer."""
 
     def __init__(self, value,

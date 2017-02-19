@@ -15,7 +15,7 @@
 #
 
 
-class Location:
+class Location(object):
     """Simple location on a 2D surface, region, or screen."""
 
     def __init__(self, xpos=0, ypos=0):

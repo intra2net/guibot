@@ -17,7 +17,7 @@ import os
 from errors import *
 
 
-class ImagePath:
+class ImagePath(object):
     """
     Handler for currently used image paths or
     sources of images with a desired name.

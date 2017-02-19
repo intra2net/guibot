@@ -24,7 +24,7 @@ import cv2
 import numpy
 
 
-class ImageLogger:
+class ImageLogger(object):
     """
     Logger for the image matching process with the help of images.
 

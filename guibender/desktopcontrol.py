@@ -27,7 +27,7 @@ from image import Image
 from location import Location
 
 
-class DesktopControl:
+class DesktopControl(object):
     """
     Desktop control backend, responsible for performing desktop operations
     like mouse clicking, key pressing, text typing, etc.

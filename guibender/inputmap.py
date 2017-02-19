@@ -15,7 +15,7 @@
 #
 
 
-class Key:
+class Key(object):
     """Helper to contain all key mappings for a specific DC backend."""
 
     def __init__(self, backend):
@@ -333,7 +333,7 @@ class Key:
                 self.MENU: "Menu"}[key]
 
 
-class KeyModifier:
+class KeyModifier(object):
     """Helper to contain all modifier key mappings for a specific DC backend."""
 
     def __init__(self, backend):
@@ -381,7 +381,7 @@ class KeyModifier:
                 self.MOD_META: "Meta"}[key]
 
 
-class MouseButton:
+class MouseButton(object):
     """Helper to contain all mouse button mappings for a specific DC backend."""
 
     def __init__(self, backend):

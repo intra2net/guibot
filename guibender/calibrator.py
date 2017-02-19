@@ -22,7 +22,7 @@ import logging
 log = logging.getLogger('guibender.calibrator')
 
 
-class Calibrator:
+class Calibrator(object):
     """
     Provides with a group of methods to facilitate and automate the selection
     of algorithms and parameters that are most suitable for a given preselected

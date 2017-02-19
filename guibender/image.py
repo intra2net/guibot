@@ -27,7 +27,7 @@ from imagepath import ImagePath
 from settings import CVEqualizer
 
 
-class Image:
+class Image(object):
     """
     Container for image data supporting caching, clicking target,
     file operations, and preprocessing.
