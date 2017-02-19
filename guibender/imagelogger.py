@@ -268,8 +268,9 @@ class ImageLogger(object):
         self.needle.save(needle_path)
 
         if self.haystack.filename is None:
-            self.haystack.filename = "noname.png"
-        haystack_name = os.path.basename(self.haystack.filename)
+            haystack_name = "noname.png"
+        else:
+            haystack_name = os.path.basename(self.haystack.filename)
         haystack_name = "imglog%s-2haystack-%s" % (self.printable_step,
                                                    haystack_name)
         haystack_path = os.path.join(ImageLogger.logging_destination,

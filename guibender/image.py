@@ -61,26 +61,26 @@ class Image(object):
         self._height = 0
         self._target_center_offset = Location(0, 0)
 
-        if self.filename is not None and (pil_image is None or match_settings is None):
-            if not os.path.exists(self.filename):
-                self.filename = ImagePath().search(self.filename)
+        if self._filename is not None and (pil_image is None or match_settings is None):
+            if not os.path.exists(self._filename):
+                self._filename = ImagePath().search(self._filename)
 
             if pil_image is None:
                 # TODO: check if mtime of the file changed -> cache dirty?
-                if use_cache and self.filename in self._cache:
-                    self._pil_image = self._cache[self.filename]
+                if use_cache and self._filename in self._cache:
+                    self._pil_image = self._cache[self._filename]
                 else:
                     # load and cache image
-                    self._pil_image = PIL.Image.open(self.filename).convert('RGB')
+                    self._pil_image = PIL.Image.open(self._filename).convert('RGB')
                     if use_cache:
-                        self._cache[self.filename] = self._pil_image
+                        self._cache[self._filename] = self._pil_image
             if match_settings is None:
-                match_file = self.filename[:-4] + ".match"
+                match_file = self._filename[:-4] + ".match"
                 if not os.path.exists(match_file):
                     self.match_settings = CVEqualizer()
                 else:
                     self.match_settings = CVEqualizer()
-                    self.match_settings.from_match_file(self.filename[:-4])
+                    self.match_settings.from_match_file(self._filename[:-4])
                     self.use_own_settings = True
 
         # Set width and height
@@ -90,7 +90,7 @@ class Image(object):
 
     def __str__(self):
         """Provide the image filename."""
-        return os.path.basename(self.filename).replace(".png", "")
+        return os.path.basename(self._filename).replace(".png", "")
 
     def get_filename(self):
         """
@@ -179,7 +179,7 @@ class Image(object):
         """
         new_image = self.copy()
 
-        new_image.target_center_offset = Location(xpos, ypos)
+        new_image._target_center_offset = Location(xpos, ypos)
         return new_image
 
     def with_similarity(self, new_similarity):
@@ -221,7 +221,7 @@ class Image(object):
             self.match_settings.to_match_file(filename[:-4])
 
         new_image = self.copy()
-        new_image.filename = filename
+        new_image._filename = filename
 
         return new_image
 
