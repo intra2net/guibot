@@ -343,3 +343,29 @@ texinfo_documents = [
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 #
 # texinfo_no_detailmenu = False
+
+# Show doc of class AND of constructor
+autoclass_content = 'class'  # 'both' not needed if special-members is used
+                             # as default flag
+autodoc_default_flags = ['members', 'special-members', 'undoc-members',
+                         'show-inheritance']
+
+# want to keep __init__ members but exclude other special members
+def skip_class_members(app, what, name, obj, skip, options):
+    if skip:
+        # do skip
+        return True
+    if what not in ('class', 'exception'):
+        # following rules only apply to class members
+        return False
+    if name in ('__weakref__', '__dict__', '__module__', '__doc__'):
+        # always skip these since they are usually not present in source code
+        return True
+    # skip getters and setters for the sake of properties
+    if name.startswith("get_") or name.startswith("set_"):
+        return True
+    return False
+
+def setup(app):
+    # custom setup to include constructors to be documented
+    app.connect('autodoc-skip-member', skip_class_members)
