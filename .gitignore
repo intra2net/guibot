@@ -8,6 +8,10 @@ log*.png
 *.log
 *.cfg
 
+# Sphinx documentation generation
+doc/api/_build
+*.rst
+
 # Backup files and stuff from patches
 *.orig
 *.rej
