@@ -79,6 +79,8 @@ class Settings:
             return Settings._click_delay
         else:
             Settings._click_delay = value
+    #: time interval between two clicks in a double click
+    click_delay = property(fget=click_delay, fset=click_delay)
 
     @staticmethod
     def delay_after_drag(value=None):
@@ -91,6 +93,8 @@ class Settings:
             return Settings._drag_delay
         else:
             Settings._drag_delay = value
+    #: timeout before drag operation
+    delay_after_drag = property(fget=delay_after_drag, fset=delay_after_drag)
 
     @staticmethod
     def delay_before_drop(value=None):
@@ -103,6 +107,8 @@ class Settings:
             return Settings._drop_delay
         else:
             Settings._drop_delay = value
+    #: timeout before drop operation
+    delay_before_drop = property(fget=delay_before_drop, fset=delay_before_drop)
 
     @staticmethod
     def delay_before_keys(value=None):
@@ -115,6 +121,8 @@ class Settings:
             return Settings._keys_delay
         else:
             Settings._keys_delay = value
+    #: timeout before key press operation
+    delay_before_keys = property(fget=delay_before_keys, fset=delay_before_keys)
 
     @staticmethod
     def delay_between_keys(value=None):
@@ -127,6 +135,8 @@ class Settings:
             return Settings._type_delay
         else:
             Settings._type_delay = value
+    #: time interval between two consecutively typed keys
+    delay_between_keys = property(fget=delay_between_keys, fset=delay_between_keys)
 
     @staticmethod
     def rescan_speed_on_find(value=None):
@@ -140,6 +150,8 @@ class Settings:
             return Settings._rescan_speed_on_find
         else:
             Settings._rescan_speed_on_find = value
+    #: time interval between two image matching attempts (used to reduce overhead on the CPU)
+    rescan_speed_on_find = property(fget=rescan_speed_on_find, fset=rescan_speed_on_find)
 
     @staticmethod
     def screen_autoconnect(value=None):
@@ -168,6 +180,8 @@ class Settings:
             Settings._screen_autoconnect = value
         else:
             raise ValueError
+    #: whether to perform complete initialization of the desktop control backend
+    screen_autoconnect = property(fget=screen_autoconnect, fset=screen_autoconnect)
 
     @staticmethod
     def preprocess_special_chars(value=None):
@@ -181,9 +195,9 @@ class Settings:
             autopy-nix (capital and special) and vncdotool (capital) backends.
         """
         if value is None:
-            if Settings.desktop_control_backend() == "autopy-nix":
+            if Settings.desktop_control_backend == "autopy-nix":
                 return True
-            elif Settings.desktop_control_backend() == "vncdotool":
+            elif Settings.desktop_control_backend == "vncdotool":
                 return None
             else:
                 return Settings._preprocess_special_chars
@@ -191,6 +205,8 @@ class Settings:
             Settings._preprocess_special_chars = value
         else:
             raise ValueError
+    #: whether to preprocess capital and special characters and handle them internally
+    preprocess_special_chars = property(fget=preprocess_special_chars, fset=preprocess_special_chars)
 
     @staticmethod
     def save_needle_on_error(value=None):
@@ -205,6 +221,8 @@ class Settings:
             Settings._save_needle_on_error = value
         else:
             raise ValueError
+    #: whether to perform an extra needle dump on matching error
+    save_needle_on_error = property(fget=save_needle_on_error, fset=save_needle_on_error)
 
     @staticmethod
     def image_logging_level(value=None):
@@ -222,6 +240,8 @@ class Settings:
             return Settings._image_logging_level
         else:
             Settings._image_logging_level = value
+    #: logging level similar to the python logging module
+    image_logging_level = property(fget=image_logging_level, fset=image_logging_level)
 
     @staticmethod
     def image_logging_step_width(value=None):
@@ -235,6 +255,8 @@ class Settings:
             return Settings._image_logging_step_width
         else:
             Settings._image_logging_step_width = value
+    #: number of digits when enumerating the image logging steps, e.g. value=3 for 001, 002, etc.
+    image_logging_step_width = property(fget=image_logging_step_width, fset=image_logging_step_width)
 
     @staticmethod
     def image_quality(value=None):
@@ -249,6 +271,9 @@ class Settings:
             return Settings._image_quality
         else:
             Settings._image_quality = value
+    #: quality of the image dumps ranging from 0 for no compression to 9 for maximum compression
+    # (used to save space and reduce the disk space needed for image logging)
+    image_quality = property(fget=image_quality, fset=image_quality)
 
     @staticmethod
     def image_logging_destination(value=None):
@@ -264,6 +289,8 @@ class Settings:
             return Settings._image_logging_destination
         else:
             Settings._image_logging_destination = value
+    #: relative path of the image logging steps
+    image_logging_destination = property(fget=image_logging_destination, fset=image_logging_destination)
 
     @staticmethod
     def desktop_control_backend(value=None):
@@ -293,6 +320,8 @@ class Settings:
             if value not in ["autopy-win", "autopy-nix", "qemu", "vncdotool"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
             Settings._desktop_control_backend = value
+    #: name of the desktop control backend
+    desktop_control_backend = property(fget=desktop_control_backend, fset=desktop_control_backend)
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
@@ -318,6 +347,8 @@ class Settings:
             return Settings._find_image_backend
         else:
             Settings._find_image_backend = value
+    #: name of the computer vision backend
+    find_image_backend = property(fget=find_image_backend, fset=find_image_backend)
 
     @staticmethod
     def template_match_backend(value=None):
@@ -333,6 +364,8 @@ class Settings:
             return Settings._template_match_backend
         else:
             Settings._template_match_backend = value
+    #: name of the template matching backend
+    template_match_backend = property(fget=template_match_backend, fset=template_match_backend)
 
     @staticmethod
     def feature_detect_backend(value=None):
@@ -348,6 +381,8 @@ class Settings:
             return Settings._feature_detect_backend
         else:
             Settings._feature_detect_backend = value
+    #: name of the feature detection backend
+    feature_detect_backend = property(fget=feature_detect_backend, fset=feature_detect_backend)
 
     @staticmethod
     def feature_extract_backend(value=None):
@@ -362,6 +397,8 @@ class Settings:
             return Settings._feature_extract_backend
         else:
             Settings._feature_extract_backend = value
+    #: name of the feature extraction backend
+    feature_extract_backend = property(fget=feature_extract_backend, fset=feature_extract_backend)
 
     @staticmethod
     def feature_match_backend(value=None):
@@ -376,6 +413,8 @@ class Settings:
             return Settings._feature_match_backend
         else:
             Settings._feature_match_backend = value
+    #: name of the feature matching backend
+    feature_match_backend = property(fget=feature_match_backend, fset=feature_match_backend)
 
 
 class DCEqualizer:
@@ -400,11 +439,11 @@ class DCEqualizer:
         self.p = {}
         self._current = None
 
-        self.configure_backend(Settings.desktop_control_backend())
+        self.configure_backend(Settings.desktop_control_backend)
 
     def get_backend(self):
         """
-        Method for compatibility with :py:class:`CVEqualizer`.
+        Method for compatibility with :py:class:`CVEqualizer` (however nonextended getter).
 
         :returns: name of the current DC backend
         :rtype: str or None
@@ -486,7 +525,7 @@ class DCEqualizer:
             logging.getLogger('twisted').setLevel(logging.ERROR)
             from vncdotool import api
             backend.backend = api.connect('%s:%i' % (self.p["vnc_hostname"], self.p["vnc_port"]))
-            if Settings.preprocess_special_chars():
+            if Settings.preprocess_special_chars:
                 backend.backend.factory.force_caps = True
             # screen size
             with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
@@ -569,15 +608,15 @@ class CVEqualizer:
 
         # default algorithms
         self._current = {}
-        self.configure_backend(find_image=Settings.find_image_backend(),
-                               template_match=Settings.template_match_backend(),
-                               feature_detect=Settings.feature_detect_backend(),
-                               feature_extract=Settings.feature_extract_backend(),
-                               feature_match=Settings.feature_match_backend())
+        self.configure_backend(find_image=Settings.find_image_backend,
+                               template_match=Settings.template_match_backend,
+                               feature_detect=Settings.feature_detect_backend,
+                               feature_extract=Settings.feature_extract_backend,
+                               feature_match=Settings.feature_match_backend)
 
     def get_backend(self, category):
         """
-        Getter for backend attributes.
+        Extended getter for backend attributes.
 
         :param str category: supported category, see `algorithms`
         :returns: current (sub)backend for the selected category
@@ -593,7 +632,7 @@ class CVEqualizer:
 
     def set_backend(self, category, value):
         """
-        Setter for backend attributes.
+        Extended setter for backend attributes.
 
         :param str category: supported category, see `algorithms`
         :param str value: supported category backend, see `algorithms[category]`

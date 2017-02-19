@@ -56,8 +56,8 @@ class ImageTest(unittest.TestCase):
         image = Image(self.file_all_shapes)
 
         target_offset = image.target_center_offset
-        self.assertEqual(0, target_offset.get_x())
-        self.assertEqual(0, target_offset.get_y())
+        self.assertEqual(0, target_offset.x)
+        self.assertEqual(0, target_offset.y)
 
         new_image = image.with_target_offset(100, 30)
         self.assertEqual(image.filename, new_image.filename)
@@ -68,13 +68,13 @@ class ImageTest(unittest.TestCase):
         self.assertNotEqual(image.target_center_offset, new_image.target_center_offset)
 
         target_offset = new_image.target_center_offset
-        self.assertEqual(100, target_offset.get_x())
-        self.assertEqual(30, target_offset.get_y())
+        self.assertEqual(100, target_offset.x)
+        self.assertEqual(30, target_offset.y)
 
         # check it's unchanged in the original
         target_offset = image.target_center_offset
-        self.assertEqual(0, target_offset.get_x())
-        self.assertEqual(0, target_offset.get_y())
+        self.assertEqual(0, target_offset.x)
+        self.assertEqual(0, target_offset.y)
 
     def test_similarity(self):
         image = Image(self.file_all_shapes)

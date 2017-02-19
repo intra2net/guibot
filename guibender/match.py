@@ -51,6 +51,16 @@ class Match(region.Region):
         # (worst type of) error so call it explicitly here using str(self._target) or formatting
         return "%s (match)" % self._target
 
+    def get_target(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: target location to click on if clicking on the match
+        :rtype: :py:class:`location.Location`
+        """
+        return self._target
+    target = property(fget=get_target)
+
     def calc_click_point(self, xpos, ypos, width, height, offset):
         """
         Calculate target location to click on if clicking on the match.
@@ -66,18 +76,9 @@ class Match(region.Region):
         """
         center_region = region.Region(0, 0, width, height,
                                       dc=self.dc_backend, cv=self.cv_backend)
-        click_center = center_region.get_center()
+        click_center = center_region.center
 
-        target_xpos = xpos + click_center.get_x() + offset.get_x()
-        target_ypos = ypos + click_center.get_y() + offset.get_y()
+        target_xpos = xpos + click_center.x + offset.x
+        target_ypos = ypos + click_center.y + offset.y
 
         return Location(target_xpos, target_ypos)
-
-    def get_target(self):
-        """
-        Getter for readonly attribute.
-
-        :returns: target location to click on if clicking on the match
-        :rtype: :py:class:`location.Location`
-        """
-        return self._target

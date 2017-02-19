@@ -100,6 +100,7 @@ class Image:
         :rtype: str
         """
         return self._filename
+    filename = property(fget=get_filename)
 
     def get_width(self):
         """
@@ -109,6 +110,7 @@ class Image:
         :rtype: int
         """
         return self._width
+    width = property(fget=get_width)
 
     def get_height(self):
         """
@@ -118,6 +120,7 @@ class Image:
         :rtype: int
         """
         return self._height
+    height = property(fget=get_height)
 
     def get_pil_image(self):
         """
@@ -127,6 +130,7 @@ class Image:
         :rtype: :py:class:`PIL.Image`
         """
         return self._pil_image
+    pil_image = property(fget=get_pil_image)
 
     def get_similarity(self):
         """
@@ -136,8 +140,9 @@ class Image:
         :rtype: float
         """
         return self.match_settings.p["find"]["similarity"].value
+    similarity = property(fget=get_similarity)
 
-    def get_target_offset(self):
+    def get_target_center_offset(self):
         """
         Getter for readonly attribute.
 
@@ -145,13 +150,7 @@ class Image:
         :rtype: :py:class:`location.Location`
         """
         return self._target_center_offset
-
-    filename = property(fget=get_filename)
-    width = property(fget=get_width)
-    height = property(fget=get_height)
-    pil_image = property(fget=get_pil_image)
-    similarity = property(fget=get_similarity)
-    target_center_offset = property(fget=get_target_offset)
+    target_center_offset = property(fget=get_target_center_offset)
 
     def copy(self):
         """
@@ -214,7 +213,7 @@ class Image:
         The image is compressed upon saving with a PNG compression setting
         specified by :py:func:`settings.Settings.image_quality`.
         """
-        self.pil_image.save(filename, compress_level=Settings.image_quality())
+        self.pil_image.save(filename, compress_level=Settings.image_quality)
         if self.use_own_settings:
             self.match_settings.to_match_file(filename[:-4])
 

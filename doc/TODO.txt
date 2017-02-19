@@ -1,7 +1,7 @@
 MAIN
 --------------------------------------
 - Integrate some of the visualization code in the test_imagefinder into the
-  ImageLogger and make improve its unit testing. Check the function draw_needle_features
+  ImageLogger and improve its unit testing. Check the function draw_needle_features
   for any further detail.
 
 - Maximum difference between the similarity obtained from the template and from the
@@ -26,9 +26,6 @@ MAIN
   It is not important how many are the final matches, but how credible they are.
   The final homography only requires 4 matches (fundamental matrix requires 8).
   Figure out a similarity parameter that reflects this reliability.
-
-- Turn the getter methods at various classes into properties to make them more pythonic
-  and preserve the restricted accessibility.
 
 - Still reconsider whether to return the (0,0) needle point or its center since
   wild transformations are possible and defining the clicking point as (+n,+n)

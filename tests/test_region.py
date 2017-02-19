@@ -49,24 +49,24 @@ class RegionTest(unittest.TestCase):
 
     def tearDown(self):
         self.close_windows()
-        if os.path.exists(Settings.image_logging_destination()):
-            shutil.rmtree(Settings.image_logging_destination())
+        if os.path.exists(Settings.image_logging_destination):
+            shutil.rmtree(Settings.image_logging_destination)
 
     def test_basic(self):
-        screen_width = DesktopControl().get_width()
-        screen_height = DesktopControl().get_height()
+        screen_width = DesktopControl().width
+        screen_height = DesktopControl().height
 
         region = Region()
-        self.assertEqual(0, region.get_x())
-        self.assertEqual(0, region.get_y())
-        self.assertEqual(screen_width, region.get_width())
-        self.assertEqual(screen_height, region.get_height())
+        self.assertEqual(0, region.x)
+        self.assertEqual(0, region.y)
+        self.assertEqual(screen_width, region.width)
+        self.assertEqual(screen_height, region.height)
 
         region = Region(10, 20, 300, 200)
-        self.assertEqual(10, region.get_x())
-        self.assertEqual(20, region.get_y())
-        self.assertEqual(300, region.get_width())
-        self.assertEqual(200, region.get_height())
+        self.assertEqual(10, region.x)
+        self.assertEqual(20, region.y)
+        self.assertEqual(300, region.width)
+        self.assertEqual(200, region.height)
 
     def wait_end(self, subprocess_pipe, timeout=30):
         expires = time.time() + timeout
@@ -116,20 +116,20 @@ class RegionTest(unittest.TestCase):
         region = Region()
         match = region.find(Image('shape_blue_circle'))
 
-        self.assertEqual(165, match.get_width())
-        self.assertEqual(151, match.get_height())
+        self.assertEqual(165, match.width)
+        self.assertEqual(151, match.height)
 
         # Match again - this time just pass a filename
         match = region.find('shape_pink_box')
-        self.assertEqual(69, match.get_width())
-        self.assertEqual(48, match.get_height())
+        self.assertEqual(69, match.width)
+        self.assertEqual(48, match.height)
 
         # Test get_last_match()
-        last_match = region.get_last_match()
-        self.assertEqual(last_match.get_x(), match.get_x())
-        self.assertEqual(last_match.get_y(), match.get_y())
-        self.assertEqual(last_match.get_width(), match.get_width())
-        self.assertEqual(last_match.get_height(), match.get_height())
+        last_match = region.last_match
+        self.assertEqual(last_match.x, match.x)
+        self.assertEqual(last_match.y, match.y)
+        self.assertEqual(last_match.width, match.width)
+        self.assertEqual(last_match.height, match.height)
 
     def test_find_target_offset(self):
         self.show_image('all_shapes.png')
@@ -138,13 +138,13 @@ class RegionTest(unittest.TestCase):
 
         # Positive target offset
         match_offset = Region().find(Image('shape_blue_circle.png').with_target_offset(200, 100))
-        self.assertEqual(match.get_target().get_x() + 200, match_offset.get_target().get_x())
-        self.assertEqual(match.get_target().get_y() + 100, match_offset.get_target().get_y())
+        self.assertEqual(match.target.x + 200, match_offset.target.x)
+        self.assertEqual(match.target.y + 100, match_offset.target.y)
 
         # Positive target offset
         match_offset = Region().find(Image('shape_blue_circle.png').with_target_offset(-50, -30))
-        self.assertEqual(match.get_target().get_x() - 50, match_offset.get_target().get_x())
-        self.assertEqual(match.get_target().get_y() - 30, match_offset.get_target().get_y())
+        self.assertEqual(match.target.x - 50, match_offset.target.x)
+        self.assertEqual(match.target.y - 30, match_offset.target.y)
 
     def test_find_error(self):
         try:
@@ -180,8 +180,8 @@ class RegionTest(unittest.TestCase):
         greenbox = Image('shape_green_box')
         matches = Region().find_all(greenbox)
         self.assertEqual(len(matches), 1)
-        self.assertEqual(67, matches[0].get_width())
-        self.assertEqual(52, matches[0].get_height())
+        self.assertEqual(67, matches[0].width)
+        self.assertEqual(52, matches[0].height)
 
         redbox = Image('shape_red_box')
         matches = Region().find_all(redbox)
@@ -189,8 +189,8 @@ class RegionTest(unittest.TestCase):
         for match in matches:
             Region().hover(match)
             time.sleep(0.5)
-            self.assertEqual(68, match.get_width())
-            self.assertEqual(56, match.get_height())
+            self.assertEqual(68, match.width)
+            self.assertEqual(56, match.height)
 
         pinkbox = Image('shape_pink_box')
 
@@ -203,8 +203,8 @@ class RegionTest(unittest.TestCase):
         for match in matches:
             Region().hover(match)
             time.sleep(0.5)
-            self.assertEqual(69, match.get_width())
-            self.assertEqual(48, match.get_height())
+            self.assertEqual(69, match.width)
+            self.assertEqual(48, match.height)
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
@@ -215,8 +215,8 @@ class RegionTest(unittest.TestCase):
         for match in matches:
             Region().hover(match)
             time.sleep(0.5)
-            self.assertEqual(69, match.get_width())
-            self.assertEqual(48, match.get_height())
+            self.assertEqual(69, match.width)
+            self.assertEqual(48, match.height)
 
     def test_sample(self):
         self.show_image('all_shapes')
@@ -268,7 +268,7 @@ class RegionTest(unittest.TestCase):
         self.show_image('all_shapes')
         region = Region()
         match = region.find(Image('shape_blue_circle'))
-        match.hover(match.get_target())
+        match.hover(match.target)
 
         # Hover over Image with 50% similarity
         region.cv_backend.eq.p["find"]["similarity"].value = 0.5
@@ -380,17 +380,17 @@ class RegionTest(unittest.TestCase):
     def test_get_mouse_location(self):
         Region().hover(Location(0, 0))
 
-        pos = Region().get_mouse_location()
+        pos = Region().mouse_location
         # Exact match currently not possible, autopy is not pixel perfect.
-        self.assertTrue(pos.get_x() < 5)
-        self.assertTrue(pos.get_y() < 5)
+        self.assertTrue(pos.x < 5)
+        self.assertTrue(pos.y < 5)
 
         Region().hover(Location(30, 20))
 
-        pos = Region().get_mouse_location()
+        pos = Region().mouse_location
         # Exact match currently not possible, autopy is not pixel perfect.
-        self.assertTrue(pos.get_x() > 25 and pos.get_x() < 35)
-        self.assertTrue(pos.get_y() > 15 and pos.get_y() < 25)
+        self.assertTrue(pos.x > 25 and pos.x < 35)
+        self.assertTrue(pos.y > 15 and pos.y < 25)
 
 
 if __name__ == '__main__':

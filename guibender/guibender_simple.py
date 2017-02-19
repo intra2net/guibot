@@ -23,17 +23,9 @@ for information about the API please refer to it and :py:class:`region.Region`.
 
 from guibender import GuiBender
 
+# accessible attributes of this module
 guibender = GuiBender()
-
-# return main guibender object
-
-
-def get_guibender():
-    return guibender
-
-
-def last_match():
-    return guibender.get_last_match()
+last_match = guibender.last_match
 
 
 def add_image_path(directory):

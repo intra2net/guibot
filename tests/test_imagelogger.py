@@ -36,10 +36,10 @@ class ImageLoggerTest(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.logpath = os.path.join(common_test.unittest_dir, 'tmp')
-        self.prev_logpath = Settings.image_logging_destination()
-        Settings.image_logging_level(0)
-        Settings.image_logging_destination(self.logpath)
-        Settings.image_logging_step_width(4)
+        self.prev_logpath = Settings.image_logging_destination
+        Settings.image_logging_level = 0
+        Settings.image_logging_destination = self.logpath
+        Settings.image_logging_step_width = 4
 
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
@@ -53,9 +53,9 @@ class ImageLoggerTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(self):
-        Settings.image_logging_level(logging.ERROR)
-        Settings.image_logging_destination(self.prev_logpath)
-        Settings.image_logging_step_width(3)
+        Settings.image_logging_level = logging.ERROR
+        Settings.image_logging_destination = self.prev_logpath
+        Settings.image_logging_step_width = 3
 
     def _get_matches_in(self, pattern, list):
         return [match.group(0) for el in list for match in [re.search(pattern, el)] if match]

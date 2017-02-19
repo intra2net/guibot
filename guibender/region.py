@@ -67,39 +67,39 @@ class Region(object):
         self._xpos = xpos
         self._ypos = ypos
 
-        if width == 0 and self.dc_backend.get_width() is not None:
-            self._width = self.dc_backend.get_width()
+        if width == 0 and self.dc_backend.width is not None:
+            self._width = self.dc_backend.width
         else:
             self._width = width
 
-        if height == 0 and self.dc_backend.get_height() is not None:
-            self._height = self.dc_backend.get_height()
+        if height == 0 and self.dc_backend.height is not None:
+            self._height = self.dc_backend.height
         else:
             self._height = height
 
-        if self.is_empty():
+        if self.is_empty:
             raise UninitializedBackend
         else:
             self._ensure_screen_clipping()
 
-        mouse_map = self.dc_backend.get_mousemap()
+        mouse_map = self.dc_backend.mousemap
         for mouse_button in dir(mouse_map):
             if mouse_button.endswith('_BUTTON'):
                 setattr(self, mouse_button, getattr(mouse_map, mouse_button))
 
-        key_map = self.dc_backend.get_keymap()
+        key_map = self.dc_backend.keymap
         for key in dir(key_map):
             if not key.startswith('__') and key != "to_string":
                 setattr(self, key, getattr(key_map, key))
 
-        mod_map = self.dc_backend.get_modmap()
+        mod_map = self.dc_backend.modmap
         for modifier_key in dir(mod_map):
             if modifier_key.startswith('MOD_'):
                 setattr(self, modifier_key, getattr(mod_map, modifier_key))
 
     def _ensure_screen_clipping(self):
-        screen_width = self.dc_backend.get_width()
-        screen_height = self.dc_backend.get_height()
+        screen_width = self.dc_backend.width
+        screen_height = self.dc_backend.height
 
         if self._xpos < 0:
             self._xpos = 0
@@ -127,6 +127,7 @@ class Region(object):
         :rtype: int
         """
         return self._xpos
+    x = property(fget=get_x)
 
     def get_y(self):
         """
@@ -136,6 +137,7 @@ class Region(object):
         :rtype: int
         """
         return self._ypos
+    y = property(fget=get_y)
 
     def get_width(self):
         """
@@ -145,6 +147,7 @@ class Region(object):
         :rtype: int
         """
         return self._width
+    width = property(fget=get_width)
 
     def get_height(self):
         """
@@ -154,6 +157,7 @@ class Region(object):
         :rtype: int
         """
         return self._height
+    height = property(fget=get_height)
 
     def get_center(self):
         """
@@ -166,6 +170,7 @@ class Region(object):
         ypos = (self._height - self._ypos) / 2
 
         return Location(xpos, ypos)
+    center = property(fget=get_center)
 
     def get_top_left(self):
         """
@@ -175,6 +180,7 @@ class Region(object):
         :rtype: :py:class:`location.Location`
         """
         return Location(self._xpos, self._ypos)
+    top_left = property(fget=get_top_left)
 
     def get_top_right(self):
         """
@@ -184,6 +190,7 @@ class Region(object):
         :rtype: :py:class:`location.Location`
         """
         return Location(self._xpos + self._width, self._ypos)
+    top_right = property(fget=get_top_right)
 
     def get_bottom_left(self):
         """
@@ -193,6 +200,7 @@ class Region(object):
         :rtype: :py:class:`location.Location`
         """
         return Location(self._xpos, self._ypos + self._height)
+    bottom_left = property(fget=get_bottom_left)
 
     def get_bottom_right(self):
         """
@@ -202,17 +210,39 @@ class Region(object):
         :rtype: :py:class:`location.Location`
         """
         return Location(self._xpos + self._width, self._ypos + self._height)
+    bottom_right = property(fget=get_bottom_right)
 
     def is_empty(self):
         """
-        Check if the region is empty, i.e.
-        with upleft vertex at zero and zero size.
+        Getter for readonly attribute.
 
-        :returns: whether the region is empty
+        :returns: whether the region is empty, i.e.
+            with upleft vertex at zero and zero size
         :rtype: bool
         """
         return (self._xpos == 0 and self._ypos == 0
                 and self._width == 0 and self._height == 0)
+    is_empty = property(fget=is_empty)
+
+    def get_last_match(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: last match obtained from finding an image within the region
+        :rtype: :py:class:`match.Match`
+        """
+        return self._last_match
+    last_match = property(fget=get_last_match)
+
+    def get_mouse_location(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: mouse location
+        :rtype: :py:class:`location.Location`
+        """
+        return self.dc_backend.get_mouse_location()
+    mouse_location = property(fget=get_mouse_location)
 
     """Main region methods"""
     def nearby(self, rrange=50):
@@ -275,7 +305,7 @@ class Region(object):
         """
         log.debug("Checking below the current region")
         if rrange == 0:
-            rrange = self.dc_backend.get_height()
+            rrange = self.dc_backend.height
 
         new_height = self._height + rrange
 
@@ -318,7 +348,7 @@ class Region(object):
         """
         log.debug("Checking right of the current region")
         if rrange == 0:
-            rrange = self.dc_backend.get_width()
+            rrange = self.dc_backend.width
 
         new_width = self._width + rrange
 
@@ -327,15 +357,6 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     """Image expect methods"""
-    def get_last_match(self):
-        """
-        Getter for readonly attribute.
-
-        :returns: last match obtained from finding an image within the region
-        :rtype: :py:class:`match.Match`
-        """
-        return self._last_match
-
     def find(self, image, timeout=10):
         """
         Find an image on the screen.
@@ -360,16 +381,16 @@ class Region(object):
 
             found_pic = self.cv_backend.find(image, screen_capture)
             if found_pic is not None:
-                self._last_match = match.Match(self._xpos + found_pic.get_x(),
-                                               self._ypos + found_pic.get_y(), image,
+                self._last_match = match.Match(self._xpos + found_pic.x,
+                                               self._ypos + found_pic.y, image,
                                                self.dc_backend, self.cv_backend)
                 return self._last_match
 
             elif time.time() > timeout_limit:
-                if Settings.save_needle_on_error():
+                if Settings.save_needle_on_error:
                     if not os.path.exists(ImageLogger.logging_destination):
                         os.mkdir(ImageLogger.logging_destination)
-                    dump_path = Settings.image_logging_destination()
+                    dump_path = Settings.image_logging_destination
                     hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
@@ -378,7 +399,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(Settings.rescan_speed_on_find())
+                time.sleep(Settings.rescan_speed_on_find)
 
     def find_all(self, image, timeout=10, allow_zero=False):
         """
@@ -409,8 +430,8 @@ class Region(object):
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
-                    last_matches.append(match.Match(self._xpos + found_pic.get_x(),
-                                                    self._ypos + found_pic.get_y(), image,
+                    last_matches.append(match.Match(self._xpos + found_pic.x,
+                                                    self._ypos + found_pic.y, image,
                                                     self.dc_backend, self.cv_backend))
                 self._last_match = found_pics[-1]
                 return last_matches
@@ -419,7 +440,7 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    if Settings.save_needle_on_error():
+                    if Settings.save_needle_on_error:
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
                         image.save('/tmp/guibender_last_finderror_needle.png')
@@ -427,7 +448,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(Settings.rescan_speed_on_find())
+                time.sleep(Settings.rescan_speed_on_find)
 
     def sample(self, image):
         """
@@ -530,15 +551,6 @@ class Region(object):
         time.sleep(timeout)
         return self
 
-    def get_mouse_location(self):
-        """
-        Getter for readonly attribute.
-
-        :returns: mouse location
-        :rtype: :py:class:`location.Location`
-        """
-        return self.dc_backend.get_mouse_location()
-
     def hover(self, image_or_location):
         """
         Hover the mouse over an image or location.
@@ -553,7 +565,7 @@ class Region(object):
 
         # Handle Match
         try:
-            self.dc_backend.mouse_move(image_or_location.get_target())
+            self.dc_backend.mouse_move(image_or_location.target)
             return None
         except AttributeError:
             pass
@@ -567,7 +579,7 @@ class Region(object):
 
         # Find image
         match = self.find(image_or_location)
-        self.dc_backend.mouse_move(match.get_target())
+        self.dc_backend.mouse_move(match.target)
 
         return match
 
@@ -701,7 +713,7 @@ class Region(object):
 
         log.info("Dragging %s", image_or_location)
         self.dc_backend.mouse_down(self.LEFT_BUTTON)
-        time.sleep(Settings.delay_after_drag())
+        time.sleep(Settings.delay_after_drag)
 
         return match
 
@@ -713,7 +725,7 @@ class Region(object):
         but with `image_or_location` as `dst_image_or_location`.
         """
         match = self.hover(image_or_location)
-        time.sleep(Settings.delay_before_drop())
+        time.sleep(Settings.delay_before_drop)
 
         log.info("Dropping at %s", image_or_location)
         self.dc_backend.mouse_up(self.LEFT_BUTTON)
@@ -741,7 +753,7 @@ class Region(object):
             self.press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
-        time.sleep(Settings.delay_before_keys())
+        time.sleep(Settings.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return self
 
@@ -755,7 +767,7 @@ class Region(object):
         """
         keys_list = self._parse_keys(keys, image_or_location)
         match = self.click(image_or_location)
-        time.sleep(Settings.delay_before_keys())
+        time.sleep(Settings.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return match
 
@@ -767,7 +779,7 @@ class Region(object):
         if isinstance(keys, int) or isinstance(keys, basestring):
             key = keys
             try:
-                log.info("Pressing key '%s'%s", self.dc_backend.get_keymap().to_string(key), at_str)
+                log.info("Pressing key '%s'%s", self.dc_backend.keymap.to_string(key), at_str)
             # if not a special key (i.e. if a character key)
             except KeyError:
                 if isinstance(key, int):
@@ -780,7 +792,7 @@ class Region(object):
             key_strings = []
             for key in keys:
                 try:
-                    key_strings.append(self.dc_backend.get_keymap().to_string(key))
+                    key_strings.append(self.dc_backend.keymap.to_string(key))
                 except KeyError:
                     if isinstance(key, int):
                         key = str(key)
@@ -814,7 +826,7 @@ class Region(object):
         typing special keys.
         """
         text_list = self._parse_text(text)
-        time.sleep(Settings.delay_before_keys())
+        time.sleep(Settings.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
@@ -834,7 +846,7 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-        time.sleep(Settings.delay_before_keys())
+        time.sleep(Settings.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]

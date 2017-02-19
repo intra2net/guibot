@@ -21,7 +21,7 @@ from imagelogger import ImageLogger
 from errors import *
 
 # TODO: make it possible to define per image finder specific CV backend
-if Settings.find_image_backend() == "template" and Settings.template_match_backend() == "autopy":
+if Settings.find_image_backend == "template" and Settings.template_match_backend == "autopy":
     from autopy import bitmap
     from tempfile import NamedTemporaryFile
 else:
@@ -367,9 +367,9 @@ class ImageFinder:
         feature_maxima = []
         is_feature_poor = False
         for upleft in template_maxima:
-            up = upleft.get_y()
+            up = upleft.y
             down = min(haystack.height, up + needle.height)
-            left = upleft.get_x()
+            left = upleft.x
             right = min(haystack.width, left + needle.width)
             log.log(0, "Maximum up-down is %s and left-right is %s",
                     (up, down), (left, right))

@@ -53,6 +53,10 @@ class GuiBenderProxy(GuiBender):
             self._pyroDaemon.register(obj)
         return obj
 
+    def get_mouse_location(self):
+        # override a property
+        return self._proxify(super(GuiBenderProxy, self).get_mouse_location())
+
     def find(self, image, timeout=10):
         return self._proxify(super(GuiBenderProxy, self).find(image, timeout))
 
@@ -74,9 +78,6 @@ class GuiBenderProxy(GuiBender):
 
     def wait_vanish(self, image, timeout=30):
         return self._proxify(super(GuiBenderProxy, self).wait_vanish(image, timeout))
-
-    def get_mouse_location(self):
-        return self._proxify(super(GuiBenderProxy, self).get_mouse_location())
 
     def hover(self, image_or_location):
         return self._proxify(super(GuiBenderProxy, self).hover(image_or_location))

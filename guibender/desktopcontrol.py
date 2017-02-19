@@ -54,7 +54,7 @@ class DesktopControl:
             self.eq = DCEqualizer()
         else:
             self.eq = equalizer
-        if Settings.screen_autoconnect():
+        if Settings.screen_autoconnect:
             self.connect_screen()
 
     def get_width(self):
@@ -65,6 +65,7 @@ class DesktopControl:
         :rtype: int
         """
         return self._width
+    width = property(fget=get_width)
 
     def get_height(self):
         """
@@ -74,6 +75,7 @@ class DesktopControl:
         :rtype: int
         """
         return self._height
+    height = property(fget=get_height)
 
     def get_keymap(self):
         """
@@ -83,6 +85,7 @@ class DesktopControl:
         :rtype: :py:class:`inputmap.Key`
         """
         return self._keymap
+    keymap = property(fget=get_keymap)
 
     def get_mousemap(self):
         """
@@ -92,6 +95,7 @@ class DesktopControl:
         :rtype: :py:class:`inputmap.MouseButton`
         """
         return self._mousemap
+    mousemap = property(fget=get_mousemap)
 
     def get_modmap(self):
         """
@@ -101,6 +105,21 @@ class DesktopControl:
         :rtype: :py:class:`inputmap.KeyModifier`
         """
         return self._modmap
+    modmap = property(fget=get_modmap)
+
+    def get_mouse_location(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: location of the mouse pointer
+        :rtype: :py:class:`location.Location`
+        """
+        if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
+            pos = self._backend_obj.mouse.get_pos()
+            return Location(pos[0], pos[1])
+        else:
+            return self._pointer
+    mouse_location = property(fget=get_mouse_location)
 
     def connect_screen(self):
         """
@@ -148,10 +167,10 @@ class DesktopControl:
             height = args[3]
         elif len(args) == 1:
             region = args[0]
-            xpos = region.get_x()
-            ypos = region.get_y()
-            width = region.get_width()
-            height = region.get_height()
+            xpos = region.x
+            ypos = region.y
+            width = region.width
+            height = region.height
         else:
             xpos = 0
             ypos = 0
@@ -197,19 +216,6 @@ class DesktopControl:
         os.unlink(filename)
         return Image(None, pil_image)
 
-    def get_mouse_location(self):
-        """
-        Get the current mouse location.
-
-        :returns: location of the mouse pointer
-        :rtype: :py:class:`location.Location`
-        """
-        if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
-            pos = self._backend_obj.mouse.get_pos()
-            return Location(pos[0], pos[1])
-        else:
-            return self._pointer
-
     def mouse_move(self, location, smooth=True):
         """
         Move the mouse to a desired location.
@@ -222,20 +228,20 @@ class DesktopControl:
             # TODO: sometimes this is not pixel perfect, i.e.
             # need to investigate the autopy source later on
             if smooth:
-                self._backend_obj.mouse.smooth_move(location.get_x(), location.get_y())
+                self._backend_obj.mouse.smooth_move(location.x, location.y)
             else:
-                self._backend_obj.mouse.move(location.get_x(), location.get_y())
+                self._backend_obj.mouse.move(location.x, location.y)
         elif self.eq.get_backend() == "qemu":
             if smooth:
                 # TODO: implement smooth mouse move?
                 pass
-            self._backend_obj.mouse_move(location.get_x(), location.get_y())
+            self._backend_obj.mouse_move(location.x, location.y)
             self._pointer = location
         elif self.eq.get_backend() == "vncdotool":
             if smooth:
-                self._backend_obj.mouseDrag(location.get_x(), location.get_y(), step=30)
+                self._backend_obj.mouseDrag(location.x, location.y, step=30)
             else:
-                self._backend_obj.mouseMove(location.get_x(), location.get_y())
+                self._backend_obj.mouseMove(location.x, location.y)
             self._pointer = location
 
     def mouse_click(self, modifiers=None):
@@ -290,7 +296,7 @@ class DesktopControl:
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
         """
-        timeout = Settings.click_delay()
+        timeout = Settings.click_delay
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         if self.eq.get_backend() in ["autopy-win", "autopy-nix"]:
@@ -421,13 +427,13 @@ class DesktopControl:
             capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             for part in text:
                 for char in str(part):
-                    if char in shift_chars and Settings.preprocess_special_chars():
+                    if char in shift_chars and Settings.preprocess_special_chars:
                         self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                    elif char in capital_chars and Settings.preprocess_special_chars():
+                    elif char in capital_chars and Settings.preprocess_special_chars:
                         self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
                     else:
                         self._backend_obj.key.tap(char)
-                    time.sleep(Settings.delay_between_keys())
+                    time.sleep(Settings.delay_between_keys)
                 # TODO: Fix autopy to handle international chars and other stuff so
                 # that both the Linux and Windows version are reduced to autopy.key
                 # autopy.key.type_string(text)
@@ -465,12 +471,12 @@ class DesktopControl:
                 for char in str(part):
                     if qemu_escape_map.has_key(char):
                         char = qemu_escape_map[char]
-                    elif capital_chars.has_key(char) and Settings.preprocess_special_chars():
+                    elif capital_chars.has_key(char) and Settings.preprocess_special_chars:
                         char = "shift-%s" % capital_chars[char]
-                    elif special_chars.has_key(char) and Settings.preprocess_special_chars():
+                    elif special_chars.has_key(char) and Settings.preprocess_special_chars:
                         char = "shift-%s" % special_chars[char]
                     self._backend_obj.sendkey(char, hold_time=1)
-                    time.sleep(Settings.delay_between_keys())
+                    time.sleep(Settings.delay_between_keys)
         elif self.eq.get_backend() == "vncdotool":
             for part in text:
                 for char in str(part):
@@ -482,7 +488,7 @@ class DesktopControl:
                         char = 'space'
                     elif char == "\n":
                         char = 'return'
-                    time.sleep(Settings.delay_between_keys())
+                    time.sleep(Settings.delay_between_keys)
                     self._backend_obj.keyPress(char)
 
         if modifiers != None:
