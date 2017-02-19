@@ -166,8 +166,8 @@ class Region(object):
         :returns: center of the region
         :rtype: :py:class:`location.Location`
         """
-        xpos = (self._width - self._xpos) / 2
-        ypos = (self._height - self._ypos) / 2
+        xpos = self._xpos + self._width / 2
+        ypos = self._ypos + self._height / 2
 
         return Location(xpos, ypos)
     center = property(fget=get_center)
@@ -216,12 +216,10 @@ class Region(object):
         """
         Getter for readonly attribute.
 
-        :returns: whether the region is empty, i.e.
-            with upleft vertex at zero and zero size
+        :returns: whether the region is empty, i.e. has zero size
         :rtype: bool
         """
-        return (self._xpos == 0 and self._ypos == 0
-                and self._width == 0 and self._height == 0)
+        return self._width == 0 and self._height == 0
     is_empty = property(fget=is_empty)
 
     def get_last_match(self):

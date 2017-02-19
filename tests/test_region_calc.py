@@ -28,8 +28,8 @@ class RegionTest(unittest.TestCase):
         region = Region(10, 20, 300, 200)
 
         center = region.center
-        self.assertEqual(145, center.x)
-        self.assertEqual(90, center.y)
+        self.assertEqual(160, center.x)
+        self.assertEqual(120, center.y)
 
         top_left = region.top_left
         self.assertEqual(10, top_left.x)

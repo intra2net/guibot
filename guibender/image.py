@@ -148,6 +148,9 @@ class Image:
 
         :returns: offset with respect to the image center (used for clicking)
         :rtype: :py:class:`location.Location`
+
+        This clicking target is set in the image in order to be customizable,
+        it is then taken when matching to produce a clicking target for a match.
         """
         return self._target_center_offset
     target_center_offset = property(fget=get_target_center_offset)
