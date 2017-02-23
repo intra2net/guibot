@@ -19,8 +19,6 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
-# import main package here to be able to import all sphinx-apidoc imported modules
-import guibender
 
 # -- General configuration ------------------------------------------------
 
@@ -33,6 +31,7 @@ import guibender
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinx.ext.intersphinx',
     'sphinx.ext.todo',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
@@ -350,6 +349,9 @@ autoclass_content = 'class'  # 'both' not needed if special-members is used
 autodoc_default_flags = ['members', 'special-members', 'undoc-members',
                          'show-inheritance']
 
+# Sort by source (instead of alphabetically)
+autodoc_member_order = 'bysource'
+
 # want to keep __init__ members but exclude other special members
 def skip_class_members(app, what, name, obj, skip, options):
     if skip:
@@ -369,3 +371,5 @@ def skip_class_members(app, what, name, obj, skip, options):
 def setup(app):
     # custom setup to include constructors to be documented
     app.connect('autodoc-skip-member', skip_class_members)
+    # import main package here to be able to import all sphinx-apidoc imported modules
+    import guibender
