@@ -38,9 +38,10 @@ class GuiBender(Region):
         :type dc: :py:class:`desktopcontrol.DesktopControl` or None
         :param cv: CV backend used for any image finding
         :type cv: :py:class:`imagefinder.ImageFinder` or None
+
+        We will initialize with default region of full screen and default
+        desktop control and computer vision backends if none are provided.
         """
-        # initialize with default region of full screen and own
-        # desktop control and computer vision backends
         super(GuiBender, self).__init__(dc=dc, cv=cv)
 
         self.imagepath = ImagePath()

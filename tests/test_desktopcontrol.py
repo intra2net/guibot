@@ -20,7 +20,9 @@ import shutil
 import unittest
 import common_test
 
-from desktopcontrol import DesktopControl
+# TODO: these tests are done only on the simplest backend
+# since we need special setup for the rest
+from desktopcontrol import AutoPyDesktopControl
 from region import Region
 from settings import Settings
 
@@ -32,13 +34,13 @@ class DesktopControlTest(unittest.TestCase):
             shutil.rmtree(Settings.image_logging_destination)
 
     def test_basic(self):
-        desktop = DesktopControl()
+        desktop = AutoPyDesktopControl()
 
         self.assertTrue(desktop.width > 0)
         self.assertTrue(desktop.height > 0)
 
     def test_capture(self):
-        desktop = DesktopControl()
+        desktop = AutoPyDesktopControl()
         screen_width = desktop.width
         screen_height = desktop.height
 
@@ -59,7 +61,7 @@ class DesktopControlTest(unittest.TestCase):
         self.assertEquals(200, captured.height)
 
     def test_capture_clipping(self):
-        desktop = DesktopControl()
+        desktop = AutoPyDesktopControl()
         screen_width = desktop.width
         screen_height = desktop.height
 

@@ -24,7 +24,7 @@ from tempfile import NamedTemporaryFile
 
 import common_test
 from settings import Settings
-from imagefinder import ImageFinder
+from imagefinder import *
 from imagelogger import ImageLogger
 from imagepath import ImagePath
 from image import Image
@@ -74,7 +74,10 @@ class ImageLoggerTest(unittest.TestCase):
         settings = needle.match_settings
         settings.configure_backend(find_image=backend)
 
-        finder = ImageFinder()
+        if backend == "template":
+            finder = TemplateMatcher()
+        elif backend == "feature":
+            finder = FeatureMatcher()
         finder.find(needle, haystack)
 
         dump_files = os.listdir(self.logpath)
@@ -127,7 +130,7 @@ class ImageLoggerTest(unittest.TestCase):
         settings = needle.match_settings
         settings.configure_backend(find_image="template")
 
-        finder = ImageFinder()
+        finder = TemplateMatcher()
         finder.find(needle, haystack, multiple=True)
 
         dump_files = os.listdir(self.logpath)
@@ -172,7 +175,7 @@ class ImageLoggerTest(unittest.TestCase):
         settings.p["find"]["front_similarity"].value = 0.3
         settings.p["find"]["similarity"].value = 0.6
 
-        finder = ImageFinder()
+        finder = HybridMatcher()
         finder.find(needle, haystack)
 
         dump_files = os.listdir(self.logpath)

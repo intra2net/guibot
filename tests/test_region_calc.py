@@ -19,7 +19,7 @@ import unittest
 import common_test
 
 from region import Region
-from desktopcontrol import DesktopControl
+from desktopcontrol import AutoPyDesktopControl
 
 
 class RegionTest(unittest.TestCase):
@@ -48,7 +48,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(220, bottom_right.y)
 
     def test_screen_clipping(self):
-        screen = DesktopControl()
+        screen = AutoPyDesktopControl()
         screen_width = screen.width
         screen_height = screen.height
 
@@ -69,7 +69,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(screen_height - region.y, region.height)
 
     def test_nearby(self):
-        screen = DesktopControl()
+        screen = AutoPyDesktopControl()
         screen_width = screen.width
         screen_height = screen.height
 
@@ -93,7 +93,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.height)
 
     def test_nearby_clipping(self):
-        screen = DesktopControl()
+        screen = AutoPyDesktopControl()
         screen_width = screen.width
         screen_height = screen.height
 
@@ -146,7 +146,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(110, region.height)
 
     def test_below(self):
-        screen_height = DesktopControl().height
+        screen_height = AutoPyDesktopControl().height
 
         region = Region(200, 100, 20, 10).below(50)
         self.assertEqual(200, region.x)
@@ -188,7 +188,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.height)
 
     def test_right(self):
-        screen_width = DesktopControl().width
+        screen_width = AutoPyDesktopControl().width
 
         region = Region(200, 100, 20, 10).right(50)
         self.assertEqual(200, region.x)

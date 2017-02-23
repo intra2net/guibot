@@ -27,7 +27,7 @@ from imagepath import ImagePath
 from location import Location
 from region import Region
 from match import Match
-from desktopcontrol import DesktopControl
+from desktopcontrol import AutoPyDesktopControl
 from image import Image
 from inputmap import Key
 from errors import *
@@ -53,8 +53,8 @@ class RegionTest(unittest.TestCase):
             shutil.rmtree(Settings.image_logging_destination)
 
     def test_basic(self):
-        screen_width = DesktopControl().width
-        screen_height = DesktopControl().height
+        screen_width = AutoPyDesktopControl().width
+        screen_height = AutoPyDesktopControl().height
 
         region = Region()
         self.assertEqual(0, region.x)

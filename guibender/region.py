@@ -16,14 +16,13 @@
 import time
 import os
 
-# interconnected classes - import only their modules
-# to avoid circular reference
+# interconnected classes - carefully avoid circular reference
+import imagefinder
+import desktopcontrol
 from settings import Settings
-from desktopcontrol import DesktopControl
 from errors import *
 from location import Location
 from image import Image
-from imagefinder import ImageFinder
 from imagelogger import ImageLogger
 
 import logging
@@ -56,9 +55,22 @@ class Region(object):
         available within the screen space.
         """
         if dc is None:
-            dc = DesktopControl()
+            if Settings.desktop_control_backend == "autopy":
+                dc = desktopcontrol.AutoPyDesktopControl()
+            elif Settings.desktop_control_backend == "qemu":
+                dc = desktopcontrol.QemuDesktopControl()
+            elif Settings.desktop_control_backend == "vncdotool":
+                dc = desktopcontrol.VNCDoToolDesktopControl()
         if cv is None:
-            cv = ImageFinder()
+            if Settings.find_image_backend == "autopy":
+                cv = imagefinder.AutoPyMatcher()
+            elif Settings.find_image_backend == "template":
+                cv = imagefinder.TemplateMatcher()
+            elif Settings.find_image_backend == "feature":
+                cv = imagefinder.FeatureMatcher()
+            elif Settings.find_image_backend == "hybrid":
+                cv = imagefinder.HybridMatcher()
+
         # since the backends are read/write make them public attributes
         self.dc_backend = dc
         self.cv_backend = cv
@@ -377,8 +389,9 @@ class Region(object):
         while True:
             screen_capture = self.dc_backend.capture_screen(self)
 
-            found_pic = self.cv_backend.find(image, screen_capture)
-            if found_pic is not None:
+            found_pics = self.cv_backend.find(image, screen_capture)
+            if len(found_pics) > 0:
+                found_pic = found_pics[0]
                 self._last_match = match.Match(self._xpos + found_pic.x,
                                                self._ypos + found_pic.y, image,
                                                self.dc_backend, self.cv_backend)

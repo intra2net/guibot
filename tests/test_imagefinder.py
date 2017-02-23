@@ -26,15 +26,15 @@ from tempfile import NamedTemporaryFile
 
 import common_test
 from settings import Settings
-from imagefinder import ImageFinder
 from calibrator import Calibrator
 from imagepath import ImagePath
 from location import Location
 from region import Region
 from match import Match
-from desktopcontrol import DesktopControl
+from desktopcontrol import AutoPyDesktopControl
 from image import Image
 from errors import *
+from imagefinder import *
 
 
 class ImageFinderTest(unittest.TestCase):
@@ -149,9 +149,9 @@ class ImageFinderTest(unittest.TestCase):
         finder.image_logging = logging
         if match_settings != None:
             finder.eq = match_settings
-        match = finder.find(needle, haystack)
-        self.assertIsNotNone(match, "The original needle image "
-                             "should be matched in the screen.")
+        matches = finder.find(needle, haystack)
+        self.assertGreater(len(matches), 0, "The original needle image "
+                         "should be matched in the screen.")
         #hotmap_file = os.path.join('log_haystack.png')
         #self.show_image(hotmap_file, title)
 
@@ -215,24 +215,24 @@ class ImageFinderTest(unittest.TestCase):
 
     def test_template_viewport(self):
         needle = Image('n_ibs')
-        needle.match_settings.configure_backend(find_image="template")
+        needle.match_settings = TemplateMatcher()
 
         self.show_image('h_ibs_viewport')
         time.sleep(2)
-        haystack = DesktopControl().capture_screen()
+        haystack = AutoPyDesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
         finder = ImageFinder()
         finder.eq = needle.match_settings
-        match = finder.find(needle, haystack)
-        self.assertIsNone(match, "Template matching should fail finding "
-                          "viewport transformed image.")
+        matches = finder.find(needle, haystack)
+        self.assertEqual(len(matches), 0, "Template matching should fail finding "
+                         "viewport transformed image.")
 
     def test_features_screen(self):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
         time.sleep(2)
-        haystack = DesktopControl().capture_screen()
+        haystack = AutoPyDesktopControl().capture_screen()
 
         #self.draw_needle_features(needle, haystack, needle.match_settings)
         self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
@@ -243,15 +243,15 @@ class ImageFinderTest(unittest.TestCase):
         needle = Image('n_ibs')
         self.show_image('h_ibs_viewport')
         time.sleep(2)
-        haystack = DesktopControl().capture_screen()
+        haystack = AutoPyDesktopControl().capture_screen()
 
         # test hovering over viewport needle
         finder = ImageFinder()
         finder.eq = needle.match_settings
-        match = finder.find(needle, haystack)
-        self.assertIsNotNone(match, "The viewport transformed image "
-                             "should be matched in the screen.")
-        Region().hover(match)
+        matches = finder.find(needle, haystack)
+        self.assertGreater(len(matches), 0, "The viewport transformed image "
+                           "should be matched in the screen.")
+        Region().hover(matches[0])
 
     def test_features_no_match(self):
         needle = Image('n_ibs')
@@ -260,13 +260,13 @@ class ImageFinderTest(unittest.TestCase):
         finder = ImageFinder()
         needle.match_settings.p["find"]["similarity"].value = 0.5
         finder.eq = needle.match_settings
-        match = finder.find(needle, haystack)
+        matches = finder.find(needle, haystack)
 
         needle.match_settings.p["find"]["similarity"].value = 0.0
         self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
                                   needle.match_settings, 10)
-        self.assertIsNone(match, "No transformed needle is present "
-                          "and should be found in the haystack.")
+        self.assertEqual(len(matches), 0, "No transformed needle is present "
+                         "and should be found in the haystack.")
 
     def test_feature_text_shapes(self):
         needle = Image('shape_text')

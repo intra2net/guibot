@@ -20,13 +20,9 @@ from location import Location
 from imagelogger import ImageLogger
 from errors import *
 
-# TODO: make it possible to define per image finder specific CV backend
-if Settings.find_image_backend == "template" and Settings.template_match_backend == "autopy":
-    from autopy import bitmap
-    from tempfile import NamedTemporaryFile
-else:
-    # TODO: OpenCV is required for 95% of the backends so we need to improve the image
-    # logging and overall image manipulation in order to be able to truly avoid it
+# TODO: OpenCV is required for 95% of the backends so we need to improve the image
+# logging and overall image manipulation in order to be able to truly localize its importing
+if Settings.find_image_backend != "autopy":
     import cv2
     import math
     import numpy
@@ -37,16 +33,14 @@ log = logging.getLogger('guibender.imagefinder')
 
 class ImageFinder(object):
     """
-    Interface for all image matching functionality and backends.
+    Base for all image matching functionality and backends.
 
-    It offers both template matching and feature matching algorithms
-    through autopy or through the OpenCV library as well as a hybrid
-    approach. The image finding methods include finding one or all
-    matches above the similarity defined in the configuration of each
-    backend.
+    It has implementations with both template matching and feature matching
+    algorithms through AutoPy or through the OpenCV library as well as a
+    hybrid approach. The image finding methods include finding one or all
+    matches above the similarity defined in the configuration of each backend.
 
-    There are many more parameters that could contribute for a good
-    match in this "find" category or in other categories. They can
+    There are many parameters that could contribute for a good match. They can
     all be manually adjusted or automatically calibrated.
     """
 
@@ -68,17 +62,37 @@ class ImageFinder(object):
 
     def find(self, needle, haystack, multiple=False):
         """
-        Find an image in another and returns its location using
-        the backend algorithms and parameters defined in the "find"
-        category.
+        Find all needle images in a haystack image.
 
         :param needle: image to look for
         :type needle: :py:class:`image.Image`
         :param haystack: image to look in
         :type haystack: :py:class:`image.Image`
         :param bool multiple: whether to find all matches
-        :returns: all found matches (one from most algorithms)
+        :returns: all found matches (one in most use cases)
         :rtype: [:py:class:`location.Location`]
+        :raises: :py:class:`NotImplementedError` if the base class method is called
+        """
+        raise NotImplementedError("Abstract method call - call implementation of this class")
+
+
+class AutoPyMatcher(ImageFinder):
+    """Simple matching backend provided by AutoPy."""
+
+    def __init__(self):
+        """Build a CV backend using AutoPy."""
+        super(AutoPyMatcher, self).__init__(CVEqualizer("autopy"))
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        :raises: :py:class:`NotImplementedError` if expecting multiple matches
+
+        See base method for details.
+
+        .. warning:: AutoPy has a bug when finding multiple matches
+                     so this is currently not supported.
         """
         self.imglog.needle = needle
         self.imglog.haystack = haystack
@@ -89,48 +103,80 @@ class ImageFinder(object):
             general_settings = self.eq
             self.eq = needle.match_settings
 
-        if self.eq.get_backend("find") == "template" and multiple:
-            matches = self._template_find_all(needle, haystack)
-        elif self.eq.get_backend("find") == "template":
-            matches = self._template_find(needle, haystack)
-        elif self.eq.get_backend("find") == "feature":
-            matches = self._feature_find(needle, haystack)
-        elif self.eq.get_backend("find") == "hybrid":
-            matches = self._hybrid_find(needle, haystack, multiple)
+        if multiple:
+            raise NotImplementedError("The backend algorithm AutoPy does not support "
+                                      "multiple matches on screen")
+        from autopy import bitmap
+        from tempfile import NamedTemporaryFile
+
+        # prepare a canvas solely for image logging
+        self.imglog.hotmaps.append(haystack.preprocess())
+
+        if needle.filename in self._bitmapcache:
+            autopy_needle = self._bitmapcache[needle.filename]
         else:
-            raise ImageFinderMethodError
+            # load and cache it
+            # TODO: Use in-memory conversion
+            autopy_needle = bitmap.Bitmap.open(needle.filename)
+            self._bitmapcache[needle.filename] = autopy_needle
+
+        # TODO: Use in-memory conversion
+        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            haystack.save(f.name)
+            autopy_screenshot = bitmap.Bitmap.open(f.name)
+
+        autopy_tolerance = 1.0 - self.eq.p["find"]["similarity"].value
+        log.debug("Performing autopy template matching with tolerance %s (color)",
+                  autopy_tolerance)
+
+        # TODO: since only the coordinates are available and fuzzy areas of
+        # matches are returned we need to ask autopy team for returning
+        # the matching rates as well
+        coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
+        log.debug("Best acceptable match starting at %s", coord)
+
+        if coord is not None:
+            self.imglog.locations.append(coord)
+            self.imglog.log(30, "autopy")
+            matches = [Location(coord[0], coord[1])]
+        else:
+            self.imglog.log(30, "autopy")
+            matches = []
 
         if needle.use_own_settings:
             self.eq = general_settings
+
         return matches
 
-    def _template_find_all(self, needle, haystack):
+
+class TemplateMatcher(ImageFinder):
+    """Template matching backend provided by OpenCV."""
+
+    def __init__(self):
+        """Build a CV backend using OpenCV's template matching."""
+        super(TemplateMatcher, self).__init__(CVEqualizer("template"))
+
+    def find(self, needle, haystack, multiple=False):
         """
-        EXTRA DOCSTRING: Template matching backend (multiple).
+        Custom implementation of the base method.
 
-        Find all needle images in a haystack image.
+        :raises: :py:class:`ImageFinderMethodError` if the choice of template
+                 matches is not among the supported ones
 
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
-        :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
-        :returns: all found matches (one from most algorithms)
-        :rtype: [:py:class:`location.Location`]
-
-        The only available backend group for this is template matching.
-        The only available template matching methods are: opencv
+        See base method for details.
         """
+        self.imglog.needle = needle
+        self.imglog.haystack = haystack
+        self.imglog.dump_matched_images()
+
+        if needle.use_own_settings:
+            log.debug("Using special needle settings for matching")
+            general_settings = self.eq
+            self.eq = needle.match_settings
+
         if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
             raise ImageFinderMethodError
-
-        # autopy template matching for _template_find_all is replaced by ccoeff_normed
-        # since it is inefficient and returns match clouds
-        if self.eq.get_backend("tmatch") == "autopy":
-            logging.warning("The backend algorithm autopy does not support "
-                            "multiple matches on screen")
-            match_template = "ccoeff_normed"
-        else:
-            match_template = self.eq.get_backend("tmatch")
+        match_template = self.eq.get_backend("tmatch")
         no_color = self.eq.p["find"]["nocolor"].value
         log.debug("Performing opencv-%s multiple template matching %s color",
                   match_template, "without" if no_color else "with")
@@ -152,6 +198,11 @@ class ImageFinder(object):
                 # TODO: check whether _template_find_all would work propemultiple for sqdiff
                 maxVal = 1 - minVal
                 maxLoc = minLoc
+            # BUG: Due to an OpenCV bug sqdiff_normed might return a similarity > 1.0
+            # although it must be normalized (i.e. between 0 and 1) so patch this and
+            # other possible similar bugs
+            maxVal = max(maxVal, 0.0)
+            maxVal = min(maxVal, 1.0)
             log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
                       str(maxVal), similarity, str(maxLoc))
 
@@ -204,109 +255,74 @@ class ImageFinder(object):
         log.debug("A total of %i matches found", len(maxima))
         self.imglog.log(30, "template")
 
+        if needle.use_own_settings:
+            self.eq = general_settings
         return maxima
 
-    def _template_find(self, needle, haystack):
+    def _match_template(self, needle, haystack, nocolor, match):
         """
-        EXTRA DOCSTRING: Template matching backend.
+        EXTRA DOCSTRING: Template matching backend - wrapper.
 
-        Finds a needle image in a haystack image using template matching.
-
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
-        :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
-        :returns: found match or nothing if not found
-        :rtype: :py:class:`location.Location` or None
-
-        Available template matching methods are: autopy, opencv
+        Match a color or grayscale needle image using the OpenCV
+        template matching methods.
         """
-        if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
-            raise ImageFinderMethodError
-
-        elif self.eq.get_backend("tmatch") == "autopy":
-            # prepare a canvas solely for image logging
-            self.imglog.hotmaps.append(haystack.preprocess())
-
-            if needle.filename in self._bitmapcache:
-                autopy_needle = self._bitmapcache[needle.filename]
-            else:
-                # load and cache it
-                # TODO: Use in-memory conversion
-                autopy_needle = bitmap.Bitmap.open(needle.filename)
-                self._bitmapcache[needle.filename] = autopy_needle
-
-            # TODO: Use in-memory conversion
-            with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-                haystack.save(f.name)
-                autopy_screenshot = bitmap.Bitmap.open(f.name)
-
-                autopy_tolerance = 1.0 - self.eq.p["find"]["similarity"].value
-                log.debug("Performing autopy template matching with tolerance %s (color)",
-                          autopy_tolerance)
-                # TODO: since only the coordinates are available
-                # and fuzzy areas of matches are returned we need
-                # to ask autopy team for returning the matching rates
-                # as well
-                coord = autopy_screenshot.find_bitmap(autopy_needle, autopy_tolerance)
-                log.debug("Best acceptable match starting at %s", coord)
-
-                if coord is not None:
-                    self.imglog.locations.append(coord)
-                    self.imglog.log(30, "autopy")
-                    return Location(coord[0], coord[1])
-            self.imglog.log(30, "autopy")
+        # Sanity check: Needle size must be smaller than haystack
+        if haystack.width < needle.width or haystack.height < needle.height:
+            log.warning("The size of the searched image (%sx%s) is smaller than its region (%sx%s)",
+                        needle.width, needle.height, haystack.width, haystack.height)
             return None
 
+        methods = {"sqdiff": cv2.TM_SQDIFF, "sqdiff_normed": cv2.TM_SQDIFF_NORMED,
+                   "ccorr": cv2.TM_CCORR, "ccorr_normed": cv2.TM_CCORR_NORMED,
+                   "ccoeff": cv2.TM_CCOEFF, "ccoeff_normed": cv2.TM_CCOEFF_NORMED}
+        if match not in methods.keys():
+            raise ImageFinderMethodError
+
+        if nocolor:
+            gray_needle = needle.preprocess(gray=True)
+            gray_haystack = haystack.preprocess(gray=True)
+            match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
         else:
-            match_template = self.eq.get_backend("tmatch")
-            no_color = self.eq.p["find"]["nocolor"].value
-            similarity = self.eq.p["find"]["similarity"].value
-            log.debug("Performing opencv-%s template matching %s color",
-                      match_template, "without" if no_color else "with")
-            result = self._match_template(needle, haystack, no_color, match_template)
-            hotmap = self.imglog.hotmap_from_template(result)
-            self.imglog.hotmaps.append(hotmap)
+            opencv_needle = needle.preprocess(gray=False)
+            opencv_haystack = haystack.preprocess(gray=False)
+            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
 
-            minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
-            # switch max and min for sqdiff and sqdiff_normed
-            if self.eq.get_backend("tmatch") in ("sqdiff", "sqdiff_normed"):
-                maxVal = 1 - minVal
-                maxLoc = minLoc
-            # BUG: Due to an OpenCV bug sqdiff_normed might return a similarity > 1.0
-            # although it must be normalized (i.e. between 0 and 1) so patch this and
-            # other possible similar bugs
-            maxVal = max(maxVal, 0.0)
-            maxVal = min(maxVal, 1.0)
-            log.debug('Best match with value %s (similarity %s) and starting at %s',
-                      str(maxVal), similarity, str(maxLoc))
-            self.imglog.similarities.append(maxVal)
-            self.imglog.locations.append(maxLoc)
-            self.imglog.log(30, "template")
+        return match
 
-            acceptable = maxVal > similarity
-            log.debug('Best match %s acceptable', "is" if acceptable else "is not")
-            if acceptable:
-                return Location(maxLoc[0], maxLoc[1])
-            else:
-                return None
 
-    def _feature_find(self, needle, haystack):
+class FeatureMatcher(ImageFinder):
+    """Feature matching backend provided by OpenCV."""
+
+    def __init__(self):
+        """Build a CV backend using OpenCV's feature matching."""
+        super(FeatureMatcher, self).__init__(CVEqualizer("feature"))
+
+    def find(self, needle, haystack, multiple=False):
         """
-        EXTRA DOCSTRING: Feature matching backend.
+        Custom implementation of the base method.
 
-        Finds a needle image in a haystack image using feature matching.
+        :raises: :py:class:`NotImplementedError` if expecting multiple matches
 
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
-        :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
-        :returns: found match or nothing if not found
-        :rtype: :py:class:`location.Location` or None
+        See base method for details.
+
+        .. warning:: Finding multiple matches is currently not supported.
 
         Available methods are: a combination of feature detector,
-        extractor, and matcher
+        extractor, and matcher.
         """
+        self.imglog.needle = needle
+        self.imglog.haystack = haystack
+        self.imglog.dump_matched_images()
+
+        if needle.use_own_settings:
+            log.debug("Using special needle settings for matching")
+            general_settings = self.eq
+            self.eq = needle.match_settings
+
+        if multiple:
+            raise NotImplementedError("The backend algorithm AutoPy does not support "
+                                      "multiple matches on screen")
+
         ngray = needle.preprocess(gray=True)
         hgray = haystack.preprocess(gray=True)
         hcanvas = haystack.preprocess(gray=False)
@@ -318,239 +334,14 @@ class ImageFinder(object):
                              (needle.width, needle.height)])
 
         similarity = self.eq.p["find"]["similarity"].value
-        return self._project_features(frame_points, ngray, hgray,
-                                      similarity, hcanvas)
+        coord = self._project_features(frame_points, ngray, hgray,
+                                       similarity, hcanvas)
+        matches = [Location(coord[0], coord[1])] if coord is not None else []
 
-    def _hybrid_find(self, needle, haystack, multiple=False):
-        """
-        EXTRA DOCSTRING: Hybrid matching backend.
+        if needle.use_own_settings:
+            self.eq = general_settings
 
-        Use template matching to deal with feature dense regions
-        and guide a final feature matching stage.
-
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
-        :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
-        :param bool multiple: whether to find all matches
-        :returns: all found matches if multiple are sought else one found match (else None)
-        :rtype: [:py:class:`location.Location`] or :py:class:`location.Location` or None
-
-        Feature matching is robust at small regions not too abundant
-        of features where template matching is too picky. Template
-        matching is good at large feature abundant regions and can be
-        used as a heuristic for the feature matching.
-        """
-        # accumulate one template and multiple feature cases
-        ImageLogger.accumulate_logging = True
-
-        # use a different lower similarity for the template matching
-        template_similarity = self.eq.p["find"]["front_similarity"].value
-        feature_similarity = self.eq.p["find"]["similarity"].value
-        log.debug("Using hybrid matching with template similarity %s "
-                  "and feature similarity %s", template_similarity,
-                  feature_similarity)
-
-        self.eq.p["find"]["similarity"].value = template_similarity
-        template_maxima = self._template_find_all(needle, haystack)
-
-        self.eq.p["find"]["similarity"].value = feature_similarity
-        ngray = needle.preprocess(gray=True)
-        hgray = haystack.preprocess(gray=True)
-        hcanvas = haystack.preprocess(gray=False)
-
-        frame_points = []
-        frame_points.append((needle.width / 2, needle.height / 2))
-        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
-                             (needle.width, needle.height)])
-
-        feature_maxima = []
-        is_feature_poor = False
-        for upleft in template_maxima:
-            up = upleft.y
-            down = min(haystack.height, up + needle.height)
-            left = upleft.x
-            right = min(haystack.width, left + needle.width)
-            log.log(0, "Maximum up-down is %s and left-right is %s",
-                    (up, down), (left, right))
-
-            haystack_region = hgray[up:down, left:right]
-            haystack_region = haystack_region.copy()
-            hotmap_region = hcanvas[up:down, left:right]
-            hotmap_region = hotmap_region.copy()
-            res = self._project_features(frame_points, ngray, haystack_region,
-                                         feature_similarity, hotmap_region)
-            if res != None:
-                # take the template matching location rather than the feature one
-                # for stability (they should ultimately be the same)
-                #location = (left, up)
-                location = (left + self.imglog.locations[-1][0],
-                            up + self.imglog.locations[-1][1])
-                self.imglog.locations[-1] = location
-
-                feature_maxima.append([self.imglog.hotmaps[-1],
-                                       self.imglog.similarities[-1],
-                                       self.imglog.locations[-1]])
-                # stitch back for a better final image logging
-                hcanvas[up:down, left:right] = hotmap_region
-
-            elif self.imglog.similarities[-1] == 0.0:
-                is_feature_poor = True
-
-        if is_feature_poor:
-            log.warn("Feature poor needle detected, falling back to template matching")
-            # NOTE: this has knowledge of the internal workings of the _template_find_all
-            # template matching and more specifically that it orders the matches starting
-            # with the best (this is ok, since this is also internal method)
-            # NOTE: the needle can only be feature poor if there is at lease one
-            # template matching
-            feature_maxima = []
-            for i, _ in enumerate(template_maxima):
-                # test the template match also against the actual required similarity
-                if self.imglog.similarities[i] > feature_similarity:
-                    feature_maxima.append([self.imglog.hotmaps[i],
-                                           self.imglog.similarities[i],
-                                           self.imglog.locations[i]])
-
-        # release the accumulated logging from subroutines
-        ImageLogger.accumulate_logging = False
-        if len(feature_maxima) == 0:
-            log.debug("No acceptable match with the given feature similarity %s",
-                      feature_similarity)
-            # NOTE: handle cases when the matching failed at the feature stage, i.e. dump
-            # a hotmap for debugging also in this case
-            if len(self.imglog.similarities) > 1:
-                self.imglog.hotmaps.append(hcanvas)
-                self.imglog.similarities.append(self.imglog.similarities[len(template_maxima)])
-                self.imglog.locations.append(self.imglog.locations[len(template_maxima)])
-            self.imglog.log(30, "hybrid")
-            if multiple:
-                return []
-            else:
-                return None
-
-        # NOTE: the best of all found will always be logged but if multiple matches
-        # are allowed they will all be present on the dumped final canvas
-        best_acceptable = max(feature_maxima, key=lambda x: x[1])
-        self.imglog.hotmaps.append(hcanvas)
-        self.imglog.similarities.append(best_acceptable[1])
-        self.imglog.locations.append(best_acceptable[2])
-        if multiple:
-            locations = []
-            for maximum in feature_maxima:
-                locations.append(Location(*maximum[2]))
-            self.imglog.log(30, "hybrid")
-            return locations
-        else:
-            log.debug("Best acceptable match with similarity %s starting at %s",
-                      self.imglog.similarities[-1], self.imglog.locations[-1])
-            location = Location(*self.imglog.locations[-1])
-            self.imglog.log(30, "hybrid")
-            return location
-
-    def _hybrid2to1_find(self, needle, haystack):
-        """
-        EXTRA DOCSTRING: Hybrid matching backend (2to1).
-
-        Two thirds feature matching and one third template matching.
-        Divide the haystack into x,y subregions and perform feature
-        matching once for each dx,dy translation of each subregion.
-
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
-        :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
-
-        .. todo:: Standardize return values before documenting.
-
-        This method uses advantages of both template and feature
-        matching in order to locate the needle.
-
-        .. warning:: If this search is intensive (you use small frequent
-            subregions) please disable or reduce the image logging.
-
-        .. todo:: Currently this method is dangerous due to a possible
-            memory leak. Therefore avoid getting closer to a more normal
-            template matching or any small size and delta (x,y and dx,dy) that
-            will cause too many match attempts.
-
-        Example for normal template matching::
-
-            find_2to1hybrid(n, h, s, n.width, n.height, 1, 1)
-
-        Example to divide the screen into four quadrants and jump with distance
-        halves of these quadrants::
-
-            find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
-        """
-        # accumulate one template and multiple feature cases
-        ImageLogger.accumulate_logging = True
-
-        x = self.eq.p["find"]["x"].value
-        y = self.eq.p["find"]["y"].value
-        dx = self.eq.p["find"]["dx"].value
-        dy = self.eq.p["find"]["dy"].value
-        log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
-                  x, y, dx, dy)
-
-        ngray = needle.preprocess(gray=True)
-        hgray = haystack.preprocess(gray=True)
-        hcanvas = haystack.preprocess(gray=False)
-
-        frame_points = []
-        frame_points.append((needle.width / 2, needle.height / 2))
-        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
-                             (needle.width, needle.height)])
-
-        # the translation distance cannot be larger than the haystack
-        dx = min(dx, haystack.width)
-        dy = min(dy, haystack.height)
-        nx = int(math.ceil(float(max(haystack.width - x, 0)) / dx) + 1)
-        ny = int(math.ceil(float(max(haystack.height - y, 0)) / dy) + 1)
-        log.debug("Dividing haystack into %ix%i pieces", nx, ny)
-        result = numpy.zeros((ny, nx))
-
-        locations = {}
-        for i in range(nx):
-            for j in range(ny):
-                left = i * dx
-                right = min(haystack.width, i * dx + x)
-                up = j * dy
-                down = min(haystack.height, j * dy + y)
-                log.debug("Region up-down is %s and left-right is %s",
-                          (up, down), (left, right))
-
-                haystack_region = hgray[up:down, left:right]
-                haystack_region = haystack_region.copy()
-                hotmap_region = hcanvas[up:down, left:right]
-                hotmap_region = hotmap_region.copy()
-
-                # uncomment this block in order to view the filling of the results
-                # (marked with 1.0 when filled) and the different ndarray shapes
-                #result[j][i] = 1.0
-                log.log(0, "%s", result)
-                log.log(0, "shapes: hcanvas %s, hgray %s, ngray %s, res %s\n",
-                        hcanvas.shape, hgray.shape, ngray.shape, result.shape)
-
-                res = self._project_features(frame_points, ngray, haystack_region,
-                                             self.eq.p["find"]["similarity"].value,
-                                             hotmap_region)
-                result[j][i] = self.imglog.similarities[-1]
-
-                if res is None:
-                    log.debug("No acceptable match in region %s", (i, j))
-                    continue
-                else:
-                    locations[(j, i)] = (left + self.imglog.locations[-1][0],
-                                         up + self.imglog.locations[-1][1])
-                    self.imglog.locations[-1] = locations[(j, i)]
-                    log.debug("Acceptable best match with similarity %s starting at %s in region %s",
-                              self.imglog.similarities[-1], locations[(j, i)], (i, j))
-
-        # release the accumulated logging from subroutines
-        ImageLogger.accumulate_logging = False
-        self.imglog.log(30, "2to1")
-        return result, locations
+        return matches
 
     def _project_features(self, locations_in_needle, ngray, hgray,
                           similarity, hotmap_canvas=None):
@@ -845,52 +636,276 @@ class ImageFinder(object):
 
         return projected
 
-    def _match_template(self, needle, haystack, nocolor, match):
-        """
-        EXTRA DOCSTRING: Template matching backend - wrapper.
 
-        Match a color or grayscale needle image using the OpenCV
-        template matching methods.
-        """
-        # Sanity check: Needle size must be smaller than haystack
-        if haystack.width < needle.width or haystack.height < needle.height:
-            log.warning("The size of the searched image (%sx%s) is smaller than its region (%sx%s)",
-                        needle.width, needle.height, haystack.width, haystack.height)
-            return None
+class HybridMatcher(TemplateMatcher, FeatureMatcher):
+    """
+    Hybrid matcher using both OpenCV's template and feature matching.
 
-        methods = {"sqdiff": cv2.TM_SQDIFF, "sqdiff_normed": cv2.TM_SQDIFF_NORMED,
-                   "ccorr": cv2.TM_CCORR, "ccorr_normed": cv2.TM_CCORR_NORMED,
-                   "ccoeff": cv2.TM_CCOEFF, "ccoeff_normed": cv2.TM_CCOEFF_NORMED}
-        if match not in methods.keys():
-            raise ImageFinderMethodError
-
-        if nocolor:
-            gray_needle = needle.preprocess(gray=True)
-            gray_haystack = haystack.preprocess(gray=True)
-            match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
-        else:
-            opencv_needle = needle.preprocess(gray=False)
-            opencv_haystack = haystack.preprocess(gray=False)
-            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
-
-        return match
-
-
-# TODO: our custom feature matching backend needs more serious reworking
-# before it even makes sense to get properly documented
-class InHouseCV(ImageFinder):
-    """Feature matching backend with in-house CV algorithms."""
+    Feature matching is robust at small regions not too abundant
+    of features where template matching is too picky. Template
+    matching is good at large feature abundant regions and can be
+    used as a heuristic for the feature matching. The current matcher
+    will perform template matching first and then feature matching on
+    the survived template matches to select among them one more time.
+    """
 
     def __init__(self):
-        """Initiate thee CV backend attributes."""
-        self.detector = cv2.ORB_create()
-        self.extractor = cv2.ORB_create()
+        """Build a CV backend using OpenCV's template and feature matching."""
+        # call the grandparent constructor only
+        ImageFinder.__init__(self, CVEqualizer("hybrid"))
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+
+        Use template matching to deal with feature dense regions
+        and guide a final feature matching stage.
+        """
+        # accumulate one template and multiple feature cases
+        ImageLogger.accumulate_logging = True
+
+        # use a different lower similarity for the template matching
+        template_similarity = self.eq.p["find"]["front_similarity"].value
+        feature_similarity = self.eq.p["find"]["similarity"].value
+        log.debug("Using hybrid matching with template similarity %s "
+                  "and feature similarity %s", template_similarity,
+                  feature_similarity)
+
+        self.eq.p["find"]["similarity"].value = template_similarity
+        # call specifically the template find variant here
+        template_maxima = TemplateMatcher.find(self, needle, haystack, True)
+
+        self.eq.p["find"]["similarity"].value = feature_similarity
+        ngray = needle.preprocess(gray=True)
+        hgray = haystack.preprocess(gray=True)
+        hcanvas = haystack.preprocess(gray=False)
+
+        frame_points = []
+        frame_points.append((needle.width / 2, needle.height / 2))
+        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
+                             (needle.width, needle.height)])
+
+        feature_maxima = []
+        is_feature_poor = False
+        for upleft in template_maxima:
+            up = upleft.y
+            down = min(haystack.height, up + needle.height)
+            left = upleft.x
+            right = min(haystack.width, left + needle.width)
+            log.log(0, "Maximum up-down is %s and left-right is %s",
+                    (up, down), (left, right))
+
+            haystack_region = hgray[up:down, left:right]
+            haystack_region = haystack_region.copy()
+            hotmap_region = hcanvas[up:down, left:right]
+            hotmap_region = hotmap_region.copy()
+            res = self._project_features(frame_points, ngray, haystack_region,
+                                         feature_similarity, hotmap_region)
+            if res != None:
+                # take the template matching location rather than the feature one
+                # for stability (they should ultimately be the same)
+                #location = (left, up)
+                location = (left + self.imglog.locations[-1][0],
+                            up + self.imglog.locations[-1][1])
+                self.imglog.locations[-1] = location
+
+                feature_maxima.append([self.imglog.hotmaps[-1],
+                                       self.imglog.similarities[-1],
+                                       self.imglog.locations[-1]])
+                # stitch back for a better final image logging
+                hcanvas[up:down, left:right] = hotmap_region
+
+            elif self.imglog.similarities[-1] == 0.0:
+                is_feature_poor = True
+
+        if is_feature_poor:
+            log.warn("Feature poor needle detected, falling back to template matching")
+            # NOTE: this has knowledge of the internal workings of the _template_find_all
+            # template matching and more specifically that it orders the matches starting
+            # with the best (this is ok, since this is also internal method)
+            # NOTE: the needle can only be feature poor if there is at lease one
+            # template matching
+            feature_maxima = []
+            for i, _ in enumerate(template_maxima):
+                # test the template match also against the actual required similarity
+                if self.imglog.similarities[i] > feature_similarity:
+                    feature_maxima.append([self.imglog.hotmaps[i],
+                                           self.imglog.similarities[i],
+                                           self.imglog.locations[i]])
+
+        # release the accumulated logging from subroutines
+        ImageLogger.accumulate_logging = False
+        if len(feature_maxima) == 0:
+            log.debug("No acceptable match with the given feature similarity %s",
+                      feature_similarity)
+            # NOTE: handle cases when the matching failed at the feature stage, i.e. dump
+            # a hotmap for debugging also in this case
+            if len(self.imglog.similarities) > 1:
+                self.imglog.hotmaps.append(hcanvas)
+                self.imglog.similarities.append(self.imglog.similarities[len(template_maxima)])
+                self.imglog.locations.append(self.imglog.locations[len(template_maxima)])
+            self.imglog.log(30, "hybrid")
+            return []
+
+        # NOTE: the best of all found will always be logged but if multiple matches
+        # are allowed they will all be present on the dumped final canvas
+        best_acceptable = max(feature_maxima, key=lambda x: x[1])
+        self.imglog.hotmaps.append(hcanvas)
+        self.imglog.similarities.append(best_acceptable[1])
+        self.imglog.locations.append(best_acceptable[2])
+        locations = []
+        for maximum in feature_maxima:
+            locations.append(Location(*maximum[2]))
+        self.imglog.log(30, "hybrid")
+        return locations
+
+
+class Hybrid2to1Matcher(TemplateMatcher, FeatureMatcher):
+    """
+    Hybrid matcher using both OpenCV's template and feature matching.
+
+    Two thirds feature matching and one third template matching.
+    Divide the haystack into x,y subregions and perform feature
+    matching once for each dx,dy translation of each subregion.
+
+    .. warning:: This matcher is currently not supported by our configuration.
+    """
+
+    def __init__(self):
+        """Build a CV backend using OpenCV's template and feature matching."""
+        # call the grandparent constructor only
+        ImageFinder.__init__(self, CVEqualizer("hybrid2to1"))
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+
+        .. warning:: If this search is intensive (you use small frequent
+            subregions) please disable or reduce the image logging.
+
+        .. todo:: Currently this method is dangerous due to a possible
+            memory leak. Therefore avoid getting closer to a more normal
+            template matching or any small size and delta (x,y and dx,dy) that
+            will cause too many match attempts.
+
+        Example for normal template matching::
+
+            find_2to1hybrid(n, h, s, n.width, n.height, 1, 1)
+
+        Example to divide the screen into four quadrants and jump with distance
+        halves of these quadrants::
+
+            find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
+        """
+        # accumulate one template and multiple feature cases
+        ImageLogger.accumulate_logging = True
+
+        x = self.eq.p["find"]["x"].value
+        y = self.eq.p["find"]["y"].value
+        dx = self.eq.p["find"]["dx"].value
+        dy = self.eq.p["find"]["dy"].value
+        log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
+                  x, y, dx, dy)
+
+        ngray = needle.preprocess(gray=True)
+        hgray = haystack.preprocess(gray=True)
+        hcanvas = haystack.preprocess(gray=False)
+
+        frame_points = []
+        frame_points.append((needle.width / 2, needle.height / 2))
+        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
+                             (needle.width, needle.height)])
+
+        # the translation distance cannot be larger than the haystack
+        dx = min(dx, haystack.width)
+        dy = min(dy, haystack.height)
+        nx = int(math.ceil(float(max(haystack.width - x, 0)) / dx) + 1)
+        ny = int(math.ceil(float(max(haystack.height - y, 0)) / dy) + 1)
+        log.debug("Dividing haystack into %ix%i pieces", nx, ny)
+        result = numpy.zeros((ny, nx))
+
+        locations = {}
+        locations_flat = []
+        for i in range(nx):
+            for j in range(ny):
+                left = i * dx
+                right = min(haystack.width, i * dx + x)
+                up = j * dy
+                down = min(haystack.height, j * dy + y)
+                log.debug("Region up-down is %s and left-right is %s",
+                          (up, down), (left, right))
+
+                haystack_region = hgray[up:down, left:right]
+                haystack_region = haystack_region.copy()
+                hotmap_region = hcanvas[up:down, left:right]
+                hotmap_region = hotmap_region.copy()
+
+                # uncomment this block in order to view the filling of the results
+                # (marked with 1.0 when filled) and the different ndarray shapes
+                #result[j][i] = 1.0
+                log.log(0, "%s", result)
+                log.log(0, "shapes: hcanvas %s, hgray %s, ngray %s, res %s\n",
+                        hcanvas.shape, hgray.shape, ngray.shape, result.shape)
+
+                res = self._project_features(frame_points, ngray, haystack_region,
+                                             self.eq.p["find"]["similarity"].value,
+                                             hotmap_region)
+                result[j][i] = self.imglog.similarities[-1]
+
+                if res is None:
+                    log.debug("No acceptable match in region %s", (i, j))
+                    continue
+                else:
+                    locations[(j, i)] = Location(left + self.imglog.locations[-1][0],
+                                                 up + self.imglog.locations[-1][1])
+                    locations_flat.append(locations[(j, i)])
+                    self.imglog.locations[-1] = locations[(j, i)]
+                    log.debug("Acceptable best match with similarity %s starting at %s in region %s",
+                              self.imglog.similarities[-1], locations[(j, i)], (i, j))
+
+        # release the accumulated logging from subroutines
+        ImageLogger.accumulate_logging = False
+        self.imglog.log(30, "2to1")
+        return locations_flat
+
+
+class CustomMatcher(ImageFinder):
+    """
+    Custom matching backend with in-house CV algorithms.
+
+    .. warning:: This matcher is currently not supported by our configuration.
+    """
+
+    def __init__(self):
+        """Build a CV backend using custom matching."""
+        super(CustomMatcher, self).__init__(CVEqualizer("custom"))
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+
+        .. todo:: This custom feature matching backend needs more serious reworking
+                  before it even makes sense to get properly documented.
+        """
+        raise NotImplementedError("No custom matcher is currently implemented completely")
 
     def detect_features(self, needle, haystack):
         """
-        In-house feature detect algorithm - currently not fully implemented!
+        In-house feature detection algorithm.
 
-        The current MSER might not be used in the actual implementation.
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+
+        .. warning:: This method is currently not fully implemented. The current
+                     MSER might not be used in the actual implementation.
         """
         opencv_haystack = haystack.preprocess()
         opencv_needle = needle.preprocess()
@@ -908,25 +923,28 @@ class InHouseCV(ImageFinder):
         cv2.polylines(opencv_haystack, hhulls, 1, (0, 255, 0))
         cv2.polylines(opencv_needle, nhulls, 1, (0, 255, 0))
 
-        return None
-
     def regionMatch(self, desc1, desc2, kp1, kp2,
                     refinements=50, recalc_interval=10,
                     variants_k=100, variants_ratio=0.33):
         """
         Use location information to better decide on matched features.
 
+        :param desc1: descriptors of the first image
+        :param desc2: descriptors of the second image
+        :param kp1: key points of the first image
+        :param kp2: key points of the second image
+        :param int refinements: number of points to relocate
+        :param int recalc_interval: recalculation on a number of refinements
+        :param int variants_k: kNN parameter for to limit the alternative variants of a badly positioned feature
+        :param float variants_ratio: internal ratio test for knnMatch autostop (see below)
+        :returns: obtained matches
+
         The knn distance is now only a heuristic for the search of best
         matched set as is information on relative location with regard
         to the other matches.
 
-        @param refinements: number of points to relocate
-        @param recalc_interval: recalculation on a number of refinements
-        @param variants_k: kNN parameter for to limit the alternative variants of a badly positioned feature
-        @param variants_ratio: internal ratio test for knnMatch autostop (see below)
-
-        TODO: handle a subset of matches (ignoring some matches if not all features are detected)
-        TODO: disable kernel mapping (multiple needle feature mapped to a single haystack feature)
+        .. todo:: handle a subset of matches (ignoring some matches if not all features are detected)
+        .. todo:: disable kernel mapping (multiple needle feature mapped to a single haystack feature)
         """
         def ncoord(match):
             return kp1[match.queryIdx].pt
@@ -1055,19 +1073,17 @@ class InHouseCV(ImageFinder):
 
     def knnMatch(self, desc1, desc2, k=1, desc4kp=1, autostop=0.0):
         """
-        In-house feature matching algorithm taking needle and haystack
-        keypoints and their descriptors and returning a list of DMatch
-        tuples (first and second best match).
-
         Performs k-Nearest Neighbor matching.
 
-        @param desc1, desc1: descriptors of the matched images
-        @param k: categorization up to k-th nearest neighbor
-        @param desc4kp: legacy parameter for the old SURF() feature detector
-        where desc4kp = len(desc2) / len(kp2) or analogically len(desc1) / len(kp1)
-        i.e. needle row 5 is a descriptor vector for needle keypoint 5
-        @param autostop: stop automatically if the ratio (dist to k)/(dist to k+1)
-        is close to 0, i.e. the k+1-th neighbor is too far.
+        :param desc1: descriptors of the first image
+        :param desc2: descriptors of the second image
+        :param int k: categorization up to k-th nearest neighbor
+        :param int desc4kp: legacy parameter for the old SURF() feature detector where
+                            desc4kp = len(desc2) / len(kp2) or analogically len(desc1) / len(kp1)
+                            i.e. needle row 5 is a descriptor vector for needle keypoint 5
+        :param float autostop: stop automatically if the ratio (dist to k)/(dist to k+1)
+                               is close to 0, i.e. the k+1-th neighbor is too far.
+        :returns: obtained matches
         """
         if desc4kp > 1:
             desc1 = numpy.array(desc1, dtype=numpy.float32).reshape((-1, desc4kp))

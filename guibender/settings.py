@@ -30,7 +30,7 @@ from tempfile import NamedTemporaryFile
 import cv2
 
 from errors import *
-from inputmap import Key, KeyModifier, MouseButton
+import inputmap
 
 
 class Settings(type):
@@ -64,7 +64,7 @@ class Settings(type):
     _image_quality = 3
 
     # backends shared between all instances
-    _desktop_control_backend = "autopy-nix"
+    _desktop_control_backend = "autopy"
     _find_image_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
@@ -190,15 +190,10 @@ class Settings(type):
                       handle them internally
 
         .. warning:: The characters will be forcefully preprocessed for the
-            autopy-nix (capital and special) and vncdotool (capital) backends.
+            autopy on linux (capital and special) and vncdotool (capital) backends.
         """
         if value is None:
-            if Settings.desktop_control_backend == "autopy-nix":
-                return True
-            elif Settings.desktop_control_backend == "vncdotool":
-                return None
-            else:
-                return Settings._preprocess_special_chars
+            return Settings._preprocess_special_chars
         elif value == True or value == False:
             Settings._preprocess_special_chars = value
         else:
@@ -293,9 +288,8 @@ class Settings(type):
         :raises: :py:class:`ValueError` if value is not among the supported backends
 
         Supported backends:
-           * autopy-win, autopy-nix - Windows, Linux (and OS X) compatible with
-                                      both the GUI actions and their calls
-                                      executed on the same machine.
+           * autopy - Windows, Linux (and OS X) compatible with both the GUI
+                      actions and their calls executed on the same machine.
            * qemu - guest OS independent with GUI actions on a virtual machine
                     through Qemu Monitor object (provided by Autotest) and
                     their calls on the host machine.
@@ -309,7 +303,7 @@ class Settings(type):
         if value is None:
             return Settings._desktop_control_backend
         else:
-            if value not in ["autopy-win", "autopy-nix", "qemu", "vncdotool"]:
+            if value not in ["autopy", "qemu", "vncdotool"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
             Settings._desktop_control_backend = value
     #: name of the desktop control backend
@@ -422,9 +416,12 @@ class DCEqualizer(object):
     configuration as well as for providing information about it.
     """
 
-    def __init__(self):
+    def __init__(self, backend=None):
         """
         Build a container for the desktop control backend configuration.
+
+        :param backend: name of a preselected backend
+        :type backend: str or None
 
         This class is similar to the computer vision backend configuration
         one but is simpler due to the lack of categories.
@@ -433,11 +430,12 @@ class DCEqualizer(object):
 
             print self.p["vnc_hostname"]
         """
-        self.algorithms = ("autopy-nix", "autopy-win", "qemu", "vncdotool")
+        self.algorithms = ("autopy", "qemu", "vncdotool")
         self.p = {}
         self._current = None
 
-        self.configure_backend(Settings.desktop_control_backend)
+        if backend is not None:
+            self.configure_backend(backend)
 
     def get_backend(self):
         """
@@ -473,17 +471,16 @@ class DCEqualizer(object):
     def _new_params(self, new):
         """Update the parameters dictionary according to a new backend method."""
         self.p = {}
-        if new == "autopy-nix":
-            pass
-        elif new == "autopy-wind":
-            pass
+        if new == "autopy":
+            # autopy has diffrent problems on different OS so specify it
+            self.p["os_type"] = "linux"
         elif new == "qemu":
-            # qemu monitor object in case qemu backend is used.
+            # qemu monitor object in case qemu backend is used
             self.p["qemu_monitor"] = None
         elif new == "vncdotool":
-            # hostname of the vnc server in case vncdotool backend is used.
+            # hostname of the vnc server in case vncdotool backend is used
             self.p["vnc_hostname"] = "localhost"
-            # port of the vnc server in case vncdotool backend is used.
+            # port of the vnc server in case vncdotool backend is used
             self.p["vnc_port"] = 0
         log.log(0, "%s %s\n", new, self.p)
 
@@ -499,14 +496,17 @@ class DCEqualizer(object):
         """
         if backend is None:
             backend = DCScreen()
-        if self.get_backend() in ["autopy-win", "autopy-nix"]:
+        if self.backend == "autopy":
             import autopy
             backend.backend = autopy
             # screen size
             screen_size = backend.backend.screen.get_size()
             backend.width = screen_size[0]
             backend.height = screen_size[1]
-        elif self.get_backend() == "qemu":
+            backend.keymap = inputmap.AutoPyKey()
+            backend.modmap = inputmap.AutoPyKeyModifier()
+            backend.mousemap = inputmap.AutoPyMouseButton()
+        elif self.backend == "qemu":
             backend.backend = self.p["qemu_monitor"]
             if backend.backend is None:
                 raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
@@ -518,13 +518,16 @@ class DCEqualizer(object):
             os.unlink(filename)
             backend.width = screen.size[0]
             backend.height = screen.size[1]
-        elif self.get_backend() == "vncdotool":
+            backend.keymap = inputmap.QemuKey()
+            backend.modmap = inputmap.QemuKeyModifier()
+            backend.mousemap = inputmap.QemuMouseButton()
+        elif self.backend == "vncdotool":
             logging.getLogger('vncdotool').setLevel(logging.ERROR)
             logging.getLogger('twisted').setLevel(logging.ERROR)
             from vncdotool import api
             backend.backend = api.connect('%s:%i' % (self.p["vnc_hostname"], self.p["vnc_port"]))
-            if Settings.preprocess_special_chars:
-                backend.backend.factory.force_caps = True
+            # for special characters preprocessing for the vncdotool
+            backend.backend.factory.force_caps = True
             # screen size
             with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
                 filename = f.name
@@ -532,9 +535,9 @@ class DCEqualizer(object):
             os.unlink(filename)
             backend.width = screen.width
             backend.height = screen.height
-        backend.keymap = Key(self.get_backend())
-        backend.mousemap = MouseButton(self.get_backend())
-        backend.modmap = KeyModifier(self.get_backend())
+            backend.keymap = inputmap.VNCDoToolKey()
+            backend.modmap = inputmap.VNCDoToolKeyModifier()
+            backend.mousemap = inputmap.VNCDoToolMouseButton()
         return backend
 
 
@@ -559,9 +562,12 @@ class CVEqualizer(object):
     configuration as well as for providing information about it.
     """
 
-    def __init__(self):
+    def __init__(self, backend=None):
         """
         Build a container for the computer vision backend configuration.
+
+        :param backend: name of a preselected backend
+        :type backend: str or None
 
         Available algorithms can be seen in the `algorithms` attribute
         whose keys are the algorithm types and values are the members of
@@ -589,8 +595,8 @@ class CVEqualizer(object):
             but scaling for example is supported)
         """
         # currently fully compatible methods
-        self.algorithms = {"find_methods": ("template", "feature", "hybrid"),
-                           "template_matchers": ("autopy", "sqdiff", "ccorr",
+        self.algorithms = {"find_methods": ("autopy", "template", "feature", "hybrid"),
+                           "template_matchers": ("sqdiff", "ccorr",
                                                  "ccoeff", "sqdiff_normed",
                                                  "ccorr_normed", "ccoeff_normed"),
                            "feature_matchers": ("BruteForce", "BruteForce-L1", "BruteForce-Hamming",
@@ -606,11 +612,12 @@ class CVEqualizer(object):
 
         # default algorithms
         self._current = {}
-        self.configure_backend(find_image=Settings.find_image_backend,
-                               template_match=Settings.template_match_backend,
-                               feature_detect=Settings.feature_detect_backend,
-                               feature_extract=Settings.feature_extract_backend,
-                               feature_match=Settings.feature_match_backend)
+        if backend is not None:
+            self.configure_backend(find_image=backend,
+                                   template_match=Settings.template_match_backend,
+                                   feature_detect=Settings.feature_detect_backend,
+                                   feature_extract=Settings.feature_extract_backend,
+                                   feature_match=Settings.feature_match_backend)
 
     def get_backend(self, category):
         """

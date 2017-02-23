@@ -19,7 +19,7 @@ import unittest
 import pprint
 
 import common_test
-from imagefinder import ImageFinder
+from imagefinder import FeatureMatcher
 from calibrator import Calibrator
 from imagepath import ImagePath
 from image import Image
@@ -34,8 +34,8 @@ class CalibratorTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
-        finder = ImageFinder()
-        finder.image_logging = 10
+        finder = FeatureMatcher()
+        finder.imglog.logging_level = 10
         finder.eq.configure_backend(find_image="feature")
         for category in calibrate_backends:
             finder.eq.can_calibrate(True, category)
