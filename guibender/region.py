@@ -19,7 +19,7 @@ import os
 # interconnected classes - carefully avoid circular reference
 import imagefinder
 import desktopcontrol
-from settings import Settings
+from settings import GlobalSettings
 from errors import *
 from location import Location
 from image import Image
@@ -48,27 +48,28 @@ class Region(object):
         :type dc: :py:class:`desktopcontrol.DesktopControl` or None
         :param cv: CV backend used for any image finding
         :type cv: :py:class:`imagefinder.ImageFinder` or None
+        :raises: :py:class:`UninitializedBackendError` if the region is empty
 
         If any of the backends is not defined a new one will be initiated
-        using the parameters defined in :py:class:`settings.Settings`.
+        using the parameters defined in :py:class:`settings.GlobalSettings`.
         If `width` or `height` remains zero, it will be set to the maximum
         available within the screen space.
         """
         if dc is None:
-            if Settings.desktop_control_backend == "autopy":
+            if GlobalSettings.desktop_control_backend == "autopy":
                 dc = desktopcontrol.AutoPyDesktopControl()
-            elif Settings.desktop_control_backend == "qemu":
+            elif GlobalSettings.desktop_control_backend == "qemu":
                 dc = desktopcontrol.QemuDesktopControl()
-            elif Settings.desktop_control_backend == "vncdotool":
+            elif GlobalSettings.desktop_control_backend == "vncdotool":
                 dc = desktopcontrol.VNCDoToolDesktopControl()
         if cv is None:
-            if Settings.find_image_backend == "autopy":
+            if GlobalSettings.find_image_backend == "autopy":
                 cv = imagefinder.AutoPyMatcher()
-            elif Settings.find_image_backend == "template":
+            elif GlobalSettings.find_image_backend == "template":
                 cv = imagefinder.TemplateMatcher()
-            elif Settings.find_image_backend == "feature":
+            elif GlobalSettings.find_image_backend == "feature":
                 cv = imagefinder.FeatureMatcher()
-            elif Settings.find_image_backend == "hybrid":
+            elif GlobalSettings.find_image_backend == "hybrid":
                 cv = imagefinder.HybridMatcher()
 
         # since the backends are read/write make them public attributes
@@ -90,7 +91,7 @@ class Region(object):
             self._height = height
 
         if self.is_empty:
-            raise UninitializedBackend
+            raise UninitializedBackendError
         else:
             self._ensure_screen_clipping()
 
@@ -398,10 +399,10 @@ class Region(object):
                 return self._last_match
 
             elif time.time() > timeout_limit:
-                if Settings.save_needle_on_error:
+                if GlobalSettings.save_needle_on_error:
                     if not os.path.exists(ImageLogger.logging_destination):
                         os.mkdir(ImageLogger.logging_destination)
-                    dump_path = Settings.image_logging_destination
+                    dump_path = GlobalSettings.image_logging_destination
                     hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
@@ -410,7 +411,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(Settings.rescan_speed_on_find)
+                time.sleep(GlobalSettings.rescan_speed_on_find)
 
     def find_all(self, image, timeout=10, allow_zero=False):
         """
@@ -451,7 +452,7 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    if Settings.save_needle_on_error:
+                    if GlobalSettings.save_needle_on_error:
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
                         image.save('/tmp/guibender_last_finderror_needle.png')
@@ -459,7 +460,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(Settings.rescan_speed_on_find)
+                time.sleep(GlobalSettings.rescan_speed_on_find)
 
     def sample(self, image):
         """
@@ -724,7 +725,7 @@ class Region(object):
 
         log.info("Dragging %s", image_or_location)
         self.dc_backend.mouse_down(self.LEFT_BUTTON)
-        time.sleep(Settings.delay_after_drag)
+        time.sleep(GlobalSettings.delay_after_drag)
 
         return match
 
@@ -736,7 +737,7 @@ class Region(object):
         but with `image_or_location` as `dst_image_or_location`.
         """
         match = self.hover(image_or_location)
-        time.sleep(Settings.delay_before_drop)
+        time.sleep(GlobalSettings.delay_before_drop)
 
         log.info("Dropping at %s", image_or_location)
         self.dc_backend.mouse_up(self.LEFT_BUTTON)
@@ -764,7 +765,7 @@ class Region(object):
             self.press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
-        time.sleep(Settings.delay_before_keys)
+        time.sleep(GlobalSettings.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return self
 
@@ -778,7 +779,7 @@ class Region(object):
         """
         keys_list = self._parse_keys(keys, image_or_location)
         match = self.click(image_or_location)
-        time.sleep(Settings.delay_before_keys)
+        time.sleep(GlobalSettings.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return match
 
@@ -837,7 +838,7 @@ class Region(object):
         typing special keys.
         """
         text_list = self._parse_text(text)
-        time.sleep(Settings.delay_before_keys)
+        time.sleep(GlobalSettings.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
@@ -857,7 +858,7 @@ class Region(object):
         match = None
         if image_or_location != None:
             match = self.click(image_or_location)
-        time.sleep(Settings.delay_before_keys)
+        time.sleep(GlobalSettings.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]

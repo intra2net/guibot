@@ -128,11 +128,11 @@ and define their serialization methods.
     security problems at the moment made us prefer the serpent serializer paying
     for it with some extra setup steps and functions below.
 """
-exceptions = [errors.ImageFinderMethodError]
+exceptions = [errors.UnsupportedBackendError]
 
 def serialize_custom_error(class_obj):
     """
-    Serialization method for the :py:class:`errors.ImageFinderMethodError`
+    Serialization method for the :py:class:`errors.UnsupportedBackendError`
     which was chosen just as a sample.
 
     :param class_obj: class object for the serialized error class

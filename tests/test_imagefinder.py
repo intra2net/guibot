@@ -25,7 +25,7 @@ import cv2
 from tempfile import NamedTemporaryFile
 
 import common_test
-from settings import Settings
+from settings import GlobalSettings
 from calibrator import Calibrator
 from imagepath import ImagePath
 from location import Location
@@ -41,7 +41,7 @@ class ImageFinderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        Settings.image_logging_level = 10
+        GlobalSettings.image_logging_level = 10
 
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
@@ -53,8 +53,8 @@ class ImageFinderTest(unittest.TestCase):
 
     def tearDown(self):
         self.close_windows()
-        if os.path.exists(Settings.image_logging_destination):
-            shutil.rmtree(Settings.image_logging_destination)
+        if os.path.exists(GlobalSettings.image_logging_destination):
+            shutil.rmtree(GlobalSettings.image_logging_destination)
 
     def wait_end(self, subprocess_pipe, timeout=30):
         expires = time.time() + timeout

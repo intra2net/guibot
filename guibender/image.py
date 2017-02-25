@@ -21,7 +21,7 @@ import PIL.Image
 import cv2
 import numpy
 
-from settings import Settings
+from settings import GlobalSettings
 from location import Location
 from imagepath import ImagePath
 from settings import CVEqualizer
@@ -214,9 +214,9 @@ class Image(object):
         :rtype: :py:class:`image.Image`
 
         The image is compressed upon saving with a PNG compression setting
-        specified by :py:func:`settings.Settings.image_quality`.
+        specified by :py:func:`settings.GlobalSettings.image_quality`.
         """
-        self.pil_image.save(filename, compress_level=Settings.image_quality)
+        self.pil_image.save(filename, compress_level=GlobalSettings.image_quality)
         if self.use_own_settings:
             self.match_settings.to_match_file(filename[:-4])
 

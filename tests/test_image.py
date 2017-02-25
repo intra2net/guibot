@@ -21,7 +21,7 @@ import common_test
 
 from tempfile import NamedTemporaryFile
 from image import Image
-from settings import CVEqualizer
+from settings import LocalSettings
 from errors import *
 
 
@@ -37,7 +37,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(300, image.height)
 
         self.assertTrue(image.filename.find('all_shapes.png') is not -1)
-        self.assertIsInstance(image.match_settings, CVEqualizer)
+        self.assertIsInstance(image.match_settings, LocalSettings)
         self.assertFalse(image.use_own_settings)
 
     def test_copy_object(self):

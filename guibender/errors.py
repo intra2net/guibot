@@ -57,7 +57,7 @@ class NotFindError(GuiBenderError):
         super(NotFindError, self).__init__(message)
 
 
-class ImageFinderMethodError(GuiBenderError):
+class UnsupportedBackendError(GuiBenderError):
     """Exception raised when a non-existent method is used for finding an image"""
 
 
@@ -65,5 +65,5 @@ class MissingHotmapError(GuiBenderError):
     """Exception raised when an attempt to access a non-existent hotmap in the image logger is made"""
 
 
-class UninitializedBackend(GuiBenderError):
+class UninitializedBackendError(GuiBenderError):
     """Exception raised when a region is created within an empty screen (a disconnected desktop control backend)"""

@@ -24,14 +24,14 @@ import common_test
 # since we need special setup for the rest
 from desktopcontrol import AutoPyDesktopControl
 from region import Region
-from settings import Settings
+from settings import GlobalSettings
 
 
 class DesktopControlTest(unittest.TestCase):
 
     def tearDown(self):
-        if os.path.exists(Settings.image_logging_destination):
-            shutil.rmtree(Settings.image_logging_destination)
+        if os.path.exists(GlobalSettings.image_logging_destination):
+            shutil.rmtree(GlobalSettings.image_logging_destination)
 
     def test_basic(self):
         desktop = AutoPyDesktopControl()

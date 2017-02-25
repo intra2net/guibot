@@ -17,7 +17,7 @@ import os
 import shutil
 
 from errors import *
-from settings import Settings
+from settings import GlobalSettings
 
 # TODO: try to use PIL functionality instead
 import cv2
@@ -48,12 +48,12 @@ class ImageLogger(object):
     accumulate_logging = False
 
     #: level for the image logging
-    logging_level = Settings.image_logging_level
+    logging_level = GlobalSettings.image_logging_level
     #: destination for the image logging in order to dump images
     #: (the executing code decides when to clean this directory)
-    logging_destination = Settings.image_logging_destination
+    logging_destination = GlobalSettings.image_logging_destination
     #: number of digits for the counter of logged steps
-    step_width = Settings.image_logging_step_width
+    step_width = GlobalSettings.image_logging_step_width
 
     def __init__(self):
         """Build an imagelogger object."""
@@ -65,10 +65,10 @@ class ImageLogger(object):
         self.locations = []
 
         # sync these static methods with the general settings at each use
-        ImageLogger.logging_level = Settings.image_logging_level
+        ImageLogger.logging_level = GlobalSettings.image_logging_level
         # NOTE: the executing code decides when to clean this directory
-        ImageLogger.logging_destination = Settings.image_logging_destination
-        ImageLogger.step_width = Settings.image_logging_step_width
+        ImageLogger.logging_destination = GlobalSettings.image_logging_destination
+        ImageLogger.step_width = GlobalSettings.image_logging_step_width
 
     def get_printable_step(self):
         """
@@ -288,7 +288,7 @@ class ImageLogger(object):
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
         path = os.path.join(ImageLogger.logging_destination, name)
-        cv2.imwrite(path, hotmap, [cv2.IMWRITE_PNG_COMPRESSION, Settings.image_quality])
+        cv2.imwrite(path, hotmap, [cv2.IMWRITE_PNG_COMPRESSION, GlobalSettings.image_quality])
 
     def hotmap_from_template(self, result):
         """

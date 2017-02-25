@@ -15,14 +15,14 @@
 #
 import PIL.Image
 
-from settings import Settings, CVEqualizer
+from settings import GlobalSettings, CVEqualizer
 from location import Location
 from imagelogger import ImageLogger
 from errors import *
 
 # TODO: OpenCV is required for 95% of the backends so we need to improve the image
 # logging and overall image manipulation in order to be able to truly localize its importing
-if Settings.find_image_backend != "autopy":
+if GlobalSettings.find_image_backend != "autopy":
     import cv2
     import math
     import numpy
@@ -160,7 +160,7 @@ class TemplateMatcher(ImageFinder):
         """
         Custom implementation of the base method.
 
-        :raises: :py:class:`ImageFinderMethodError` if the choice of template
+        :raises: :py:class:`UnsupportedBackendError` if the choice of template
                  matches is not among the supported ones
 
         See base method for details.
@@ -175,7 +175,7 @@ class TemplateMatcher(ImageFinder):
             self.eq = needle.match_settings
 
         if self.eq.get_backend("tmatch") not in self.eq.algorithms["template_matchers"]:
-            raise ImageFinderMethodError
+            raise UnsupportedBackendError
         match_template = self.eq.get_backend("tmatch")
         no_color = self.eq.p["find"]["nocolor"].value
         log.debug("Performing opencv-%s multiple template matching %s color",
@@ -276,7 +276,7 @@ class TemplateMatcher(ImageFinder):
                    "ccorr": cv2.TM_CCORR, "ccorr_normed": cv2.TM_CCORR_NORMED,
                    "ccoeff": cv2.TM_CCOEFF, "ccoeff_normed": cv2.TM_CCOEFF_NORMED}
         if match not in methods.keys():
-            raise ImageFinderMethodError
+            raise UnsupportedBackendError
 
         if nocolor:
             gray_needle = needle.preprocess(gray=True)
@@ -443,7 +443,7 @@ class FeatureMatcher(ImageFinder):
             (hkeypoints, hdescriptors) = extractor.compute(hgray, hkeypoints)
 
         else:
-            raise ImageFinderMethodError
+            raise UnsupportedBackendError
 
         # reduce keypoint coordinates to the original image size
         for nkeypoint in nkeypoints:
@@ -522,7 +522,7 @@ class FeatureMatcher(ImageFinder):
             matcher = cv2.DescriptorMatcher_create(match)
             matcher = self.eq.sync_backend_to_params(matcher, "fmatch")
         else:
-            raise ImageFinderMethodError
+            raise UnsupportedBackendError
 
         # find and filter matches through tests
         if match == "in-house-region":

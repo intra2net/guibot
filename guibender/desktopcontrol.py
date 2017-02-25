@@ -370,7 +370,7 @@ class AutoPyDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = Settings.click_delay
+        timeout = GlobalSettings.click_delay
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         self._backend_obj.mouse.click(self._mousemap.LEFT_BUTTON)
@@ -419,13 +419,13 @@ class AutoPyDesktopControl(DesktopControl):
             capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             for part in text:
                 for char in str(part):
-                    if char in shift_chars and Settings.preprocess_special_chars:
+                    if char in shift_chars and GlobalSettings.preprocess_special_chars:
                         self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                    elif char in capital_chars and Settings.preprocess_special_chars:
+                    elif char in capital_chars and GlobalSettings.preprocess_special_chars:
                         self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
                     else:
                         self._backend_obj.key.tap(char)
-                    time.sleep(Settings.delay_between_keys)
+                    time.sleep(GlobalSettings.delay_between_keys)
                 # TODO: Fix AutoPy to handle international chars and other stuff so
                 # that both the Linux and Windows version are reduced to autopy.key
                 # autopy.key.type_string(text)
@@ -522,7 +522,7 @@ class QemuDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = Settings.click_delay
+        timeout = GlobalSettings.click_delay
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
@@ -614,12 +614,12 @@ class QemuDesktopControl(DesktopControl):
             for char in str(part):
                 if qemu_escape_map.has_key(char):
                     char = qemu_escape_map[char]
-                elif capital_chars.has_key(char) and Settings.preprocess_special_chars:
+                elif capital_chars.has_key(char) and GlobalSettings.preprocess_special_chars:
                     char = "shift-%s" % capital_chars[char]
-                elif special_chars.has_key(char) and Settings.preprocess_special_chars:
+                elif special_chars.has_key(char) and GlobalSettings.preprocess_special_chars:
                     char = "shift-%s" % special_chars[char]
                 self._backend_obj.sendkey(char, hold_time=1)
-                time.sleep(Settings.delay_between_keys)
+                time.sleep(GlobalSettings.delay_between_keys)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
@@ -707,7 +707,7 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = Settings.click_delay
+        timeout = GlobalSettings.click_delay
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
@@ -775,7 +775,7 @@ class VNCDoToolDesktopControl(DesktopControl):
                     char = 'space'
                 elif char == "\n":
                     char = 'return'
-                time.sleep(Settings.delay_between_keys)
+                time.sleep(GlobalSettings.delay_between_keys)
                 self._backend_obj.keyPress(char)
 
         if modifiers != None:
