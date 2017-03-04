@@ -392,11 +392,10 @@ class AutoPyMatcher(ImageFinder):
 
         if coord is not None:
             self.imglog.locations.append(coord)
-            self.imglog.log(30, "autopy")
             matches = [Location(coord[0], coord[1])]
         else:
-            self.imglog.log(30, "autopy")
             matches = []
+        self.imglog.log(30, "autopy")
 
         return matches
 
@@ -471,10 +470,13 @@ class TemplateMatcher(ImageFinder):
                   match_template, "without" if no_color else "with")
         result = self._match_template(needle, haystack, no_color, match_template)
         if result is None:
-            log.debug('_match_template() returned no result.')
+            log.warning("OpenCV's template matching returned no result")
             return []
+        # switch max and min for sqdiff and sqdiff_normed (to always look for max)
+        if self.params["template"]["backend"] in ("sqdiff", "sqdiff_normed"):
+            result = 1.0 - result
 
-        universal_hotmap = self.imglog.hotmap_from_template(result)
+        universal_hotmap = result * 255.0
 
         # extract maxima once for each needle size region
         similarity = self.params["find"]["similarity"].value
@@ -482,16 +484,10 @@ class TemplateMatcher(ImageFinder):
         while True:
 
             minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
-            # switch max and min for sqdiff and sqdiff_normed
-            if self.params["template"]["backend"] in ("sqdiff", "sqdiff_normed"):
-                # TODO: check whether _template_find_all would work propemultiple for sqdiff
-                maxVal = 1 - minVal
-                maxLoc = minLoc
             # BUG: Due to an OpenCV bug sqdiff_normed might return a similarity > 1.0
             # although it must be normalized (i.e. between 0 and 1) so patch this and
             # other possible similar bugs
-            maxVal = max(maxVal, 0.0)
-            maxVal = min(maxVal, 1.0)
+            maxVal = min(max(maxVal, 0.0), 1.0)
             log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
                       str(maxVal), similarity, str(maxLoc))
 
@@ -503,11 +499,14 @@ class TemplateMatcher(ImageFinder):
                 log.debug("Best match is not acceptable")
                 break
             else:
-                log.debug("Best match is acceptable")
                 self.imglog.similarities.append(maxVal)
                 self.imglog.locations.append(maxLoc)
                 self.imglog.hotmaps.append(universal_hotmap)
+                log.debug("Best match is acceptable")
                 maxima.append(Location(maxLoc[0], maxLoc[1]))
+                if similarity == 0.0:
+                    # return just one match if no similarity requirement
+                    break
 
             res_w = haystack.width - needle.width + 1
             res_h = haystack.height - needle.height + 1
@@ -523,37 +522,22 @@ class TemplateMatcher(ImageFinder):
                     match_y0, match_y1, 0, res_h)
 
             # clean found image to look for next safe distance match
-            for i in range(max(maxLoc[0] - int(0.5 * needle.width), 0),
-                           min(maxLoc[0] + int(0.5 * needle.width), res_w)):
-                for j in range(max(maxLoc[1] - int(0.5 * needle.height), 0),
-                               min(maxLoc[1] + int(0.5 * needle.height), res_h)):
+            result[match_y0:match_y1,match_x0:match_x1] = 0.0
 
-                    log.log(0, "hw%s,hh%s - %s,%s,%s", haystack.width, needle.width, maxLoc[0],
-                            maxLoc[0] - int(0.5 * needle.width), max(maxLoc[0] - int(0.5 * needle.width), 0))
-                    log.log(0, "hw%s,nw%s - %s,%s,%s", haystack.width, needle.width, maxLoc[0],
-                            maxLoc[0] + int(0.5 * needle.width), min(maxLoc[0] + int(0.5 * needle.width), 0))
-                    log.log(0, "hh%s,nh%s - %s,%s,%s", haystack.height, needle.height, maxLoc[1],
-                            maxLoc[1] - int(0.5 * needle.height), max(maxLoc[1] - int(0.5 * needle.height), 0))
-                    log.log(0, "hh%s,nh%s - %s,%s,%s", haystack.height, needle.height, maxLoc[1],
-                            maxLoc[1] + int(0.5 * needle.height), min(maxLoc[1] + int(0.5 * needle.height), 0))
-                    log.log(0, "index at %s %s in %s %s", j, i, len(result), len(result[0]))
-
-                    result[j][i] = 0.0
             log.log(0, "Total maxima up to the point are %i", len(maxima))
-            log.log(0, "maxLoc was %s and is now %s", maxVal, result[maxLoc[1], maxLoc[0]])
         log.debug("A total of %i matches found", len(maxima))
         self.imglog.log(30, "template")
 
         return maxima
 
-    def _match_template(self, needle, haystack, nocolor, match):
+    def _match_template(self, needle, haystack, nocolor, method):
         """
         EXTRA DOCSTRING: Template matching backend - wrapper.
 
         Match a color or grayscale needle image using the OpenCV
         template matching methods.
         """
-        # Sanity check: Needle size must be smaller than haystack
+        # sanity check: needle size must be smaller than haystack
         if haystack.width < needle.width or haystack.height < needle.height:
             log.warning("The size of the searched image (%sx%s) is smaller than its region (%sx%s)",
                         needle.width, needle.height, haystack.width, haystack.height)
@@ -562,17 +546,17 @@ class TemplateMatcher(ImageFinder):
         methods = {"sqdiff": cv2.TM_SQDIFF, "sqdiff_normed": cv2.TM_SQDIFF_NORMED,
                    "ccorr": cv2.TM_CCORR, "ccorr_normed": cv2.TM_CCORR_NORMED,
                    "ccoeff": cv2.TM_CCOEFF, "ccoeff_normed": cv2.TM_CCOEFF_NORMED}
-        if match not in methods.keys():
-            raise UnsupportedBackendError
+        if method not in methods.keys():
+            raise UnsupportedBackendError("Supported algorithms are in conflict")
 
         if nocolor:
             gray_needle = needle.preprocess(gray=True)
             gray_haystack = haystack.preprocess(gray=True)
-            match = cv2.matchTemplate(gray_haystack, gray_needle, methods[match])
+            match = cv2.matchTemplate(gray_haystack, gray_needle, methods[method])
         else:
             opencv_needle = needle.preprocess(gray=False)
             opencv_haystack = haystack.preprocess(gray=False)
-            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[match])
+            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[method])
 
         return match
 

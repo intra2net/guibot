@@ -290,17 +290,6 @@ class ImageLogger(object):
         path = os.path.join(ImageLogger.logging_destination, name)
         cv2.imwrite(path, hotmap, [cv2.IMWRITE_PNG_COMPRESSION, GlobalSettings.image_quality])
 
-    def hotmap_from_template(self, result):
-        """
-        Produce a hotmap (grayscale image) from an array of similarities.
-
-        :param result: array of similarities obtained from template matching
-        :type result: :py:class:`numpy.ndarray`
-        :returns: scaled grayscale image that can be visualized or drawn into
-        :rtype: :py:class:`numpy.ndarray`
-        """
-        return result * 255.0
-
     def clear(self):
         """Clear all accumulated logging including hotmaps, similarities, and locations."""
         self.needle = None
