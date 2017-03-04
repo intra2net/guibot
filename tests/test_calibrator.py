@@ -80,11 +80,9 @@ class CalibratorTest(unittest.TestCase):
         return
         haystack = Image('all_shapes')
         needle = Image('all_shapes')
-
-        finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        results = calibrator.benchmark(haystack, needle, calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
@@ -99,11 +97,9 @@ class CalibratorTest(unittest.TestCase):
     def test_benchmark_feature_poor_image(self):
         haystack = Image('all_shapes')
         needle = Image('shape_blue_circle')
-
-        finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        results = calibrator.benchmark(haystack, needle, calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
@@ -117,11 +113,9 @@ class CalibratorTest(unittest.TestCase):
         return
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')
-
-        finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        results = calibrator.benchmark(haystack, needle, calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
