@@ -16,13 +16,7 @@
 #
 import os
 import unittest
-import time
-import subprocess
-import glob
 import shutil
-
-import cv2
-from tempfile import NamedTemporaryFile
 
 import common_test
 from settings import GlobalSettings
@@ -41,119 +35,13 @@ class ImageFinderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        GlobalSettings.image_logging_level = 10
-
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
-
-        self.script_show = os.path.join(common_test.unittest_dir, 'qt4_image.py')
-
-    def setUp(self):
-        self.shown_pictures = []
+        GlobalSettings.image_logging_level = 0
 
     def tearDown(self):
-        self.close_windows()
         if os.path.exists(GlobalSettings.image_logging_destination):
             shutil.rmtree(GlobalSettings.image_logging_destination)
-
-    def wait_end(self, subprocess_pipe, timeout=30):
-        expires = time.time() + timeout
-
-        while True:
-            exit_code = subprocess_pipe.poll()
-            if exit_code is not None:
-                return exit_code
-
-            if time.time() > expires:
-                self.fail('Program did not close on time. Ignoring')
-                break
-
-            time.sleep(0.2)
-
-    def show_image(self, filename, title="show_image"):
-        filename = self.imagepath.search(filename)
-        self.shown_pictures.append(subprocess.Popen(['python',
-                                                    self.script_show,
-                                                    filename, title]))
-
-    def close_windows(self):
-        time.sleep(2)
-        for window in self.shown_pictures:
-            window.terminate()
-            self.wait_end(window)
-
-            # Hack to make sure app is really closed
-            time.sleep(0.5)
-
-        self.shown_pictures = []
-
-    # TODO: integrate this to ImageLogger and add
-    # more actual assertion to all this unittests
-
-    def draw_needle_features(self, needle, haystack,
-                             match_settings=None, logging=20):
-        finder = ImageFinder()
-        finder.image_logging = logging
-        if match_settings != None:
-            finder.eq = match_settings
-        self.algorithms = (finder.eq.get_backend("fdetect"),
-                           finder.eq.get_backend("fextract"),
-                           finder.eq.get_backend("fmatch"))
-
-        # use private methods for unit testing to visualize internal structure
-        ngray = finder._prepare_image(needle, gray=True)
-        hgray = finder._prepare_image(haystack, gray=True)
-        opencv_needle = finder._prepare_image(needle)
-        nkp, ndc, hkp, hdc = finder._detect_features(ngray, hgray,
-                                                     detect=self.algorithms[0],
-                                                     extract=self.algorithms[1])
-        mnkp, mhkp = finder._match_features(nkp, ndc, hkp, hdc,
-                                            match=self.algorithms[2])
-        # print "matched %s\\%s in haystack with %s\\%s in needle" % (len(mhkp), len(hkp),
-        #                                                            len(mnkp), len(nkp))
-        self.assertEqual(len(mhkp), len(mnkp), "The matched keypoints in the haystack and "
-                         "the image should be equal.")
-        # this rule does not apply to the haystack since it may be scaled and reduced in size
-        self.assertGreaterEqual(len(nkp), len(mnkp), "The matched keypoints in the needle "
-                                "should be fewer than all detected keypoints in the needle")
-        self.assertGreaterEqual(len(mhkp), 4, "Minimum of 4 keypoints should be matched in "
-                                "the haystack while %s were matched" % len(mhkp))
-        self.assertGreaterEqual(len(mnkp), 4, "Minimum of 4 keypoints should be matched in "
-                                "the needle while %s were matched" % len(mnkp))
-
-        # draw focus point as well as matched and unmatched features
-        for kp in nkp:
-            if kp in mnkp:
-                color = (0, 255, 0)
-            else:
-                color = (0, 0, 255)
-            x, y = kp.pt
-            cv2.circle(opencv_needle, (int(x), int(y)), 2, color, -1)
-        (ocx, ocy) = (needle.width / 2, needle.height / 2)
-        cv2.circle(opencv_needle, (int(ocx), int(ocy)), 4, (255, 0, 0), -1)
-
-        needle_file = os.path.join(common_test.unittest_dir, 'images/', 'needle.png')
-        cv2.imwrite(needle_file, opencv_needle)
-        self.show_image(needle_file, "needle")
-
-        # if these functions are fixed in the future, they could simplify the
-        # code since the drawn image can directly be shown and saved only if
-        # needed (while imshow works here, destroyAllWindows fails)
-        #cv2.imshow("needle", opencv_needle)
-        # cv2.waitKey(5000)
-        # cv2.destroyAllWindows()
-
-    def draw_haystack_hotmap(self, haystack, needle, title,
-                             match_settings=None, logging=20):
-        finder = ImageFinder()
-        finder.image_logging = logging
-        if match_settings != None:
-            finder = match_settings
-        matches = finder.find(needle, haystack)
-        self.assertGreater(len(matches), 0, "The original needle image "
-                         "should be matched in the screen.")
-        #hotmap_file = os.path.join('log_haystack.png')
-        #self.show_image(hotmap_file, title)
 
     def test_configure_backend(self):
         finder = ImageFinder()
@@ -208,102 +96,129 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(finder.params["fextract"]["backend"], "ORB")
         self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce-Hamming")
 
-    def test_features_viewport(self):
-        needle = Image('n_ibs')
-        haystack = Image('h_ibs_viewport')
-        #self.draw_needle_features(needle, haystack, needle.match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "basic viewport",
-                                  needle.match_settings, 10)
-        time.sleep(2)
+    def test_autopy_same(self):
+        finder = AutoPyMatcher()
+        finder.params["find"]["similarity"].value = 1.0
+        matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
+        self.assertEqual(len(matches), 1)
+        # AutoPy returns +1 pixel for both axes
+        self.assertEqual(matches[0].x, 105)
+        self.assertEqual(matches[0].y, 11)
 
-    def test_features_rotation(self):
-        needle = Image('n_ibs')
-        haystack = Image('h_ibs_rotated')
-        #self.draw_needle_features(needle, haystack, needle.match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "rotated + viewport",
-                                  needle.match_settings, 10)
-        time.sleep(2)
+    def test_autopy_nomatch(self):
+        finder = AutoPyMatcher()
+        finder.params["find"]["similarity"].value = 0.25
+        matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+        self.assertEqual(len(matches), 0)
 
-    def test_features_scaling(self):
-        needle = Image('n_ibs')
-        haystack = Image('h_ibs_scaled')
-        #self.draw_needle_features(needle, haystack, needle.match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "scaled + viewport",
-                                  needle.match_settings, 10)
-        time.sleep(2)
+    def test_template_same(self):
+        finder = TemplateMatcher()
+        finder.params["find"]["similarity"].value = 1.0
+        for template in finder.algorithms["template_matchers"]:
+            # one of the backend is not perfect for this case
+            if template == "sqdiff_normed":
+                finder.params["find"]["similarity"].value = 0.99
+            finder.configure_backend(template, "template")
+            matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
+            self.assertEqual(len(matches), 1)
+            self.assertEqual(matches[0].x, 104)
+            self.assertEqual(matches[0].y, 10)
 
-    def test_template_viewport(self):
-        needle = Image('n_ibs')
-        needle.match_settings = TemplateMatcher()
+    def test_template_nomatch(self):
+        finder = TemplateMatcher()
+        finder.params["find"]["similarity"].value = 0.25
+        for template in finder.algorithms["template_matchers"]:
+            # one of the backend is too tolerant for this case
+            if template == "ccorr_normed":
+                continue
+            finder.configure_backend(template, "template")
+            matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+            # test template matching failure to validate needle difficulty
+            self.assertEqual(len(matches), 0)
 
-        self.show_image('h_ibs_viewport')
-        time.sleep(2)
-        haystack = AutoPyDesktopControl().capture_screen()
+    def test_template_nocolor(self):
+        finder = TemplateMatcher()
+        # template matching without color is not perfect
+        finder.params["find"]["similarity"].value = 0.99
+        for template in finder.algorithms["template_matchers"]:
+            finder.configure_backend(template, "template")
+            finder.params["template"]["nocolor"].value = True
+            matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
+            # test template matching failure to validate needle difficulty
+            self.assertEqual(len(matches), 1)
+            self.assertEqual(matches[0].x, 104)
+            self.assertEqual(matches[0].y, 10)
 
-        # test template matching failure to validate needle difficulty
-        finder = needle.match_settings
-        matches = finder.find(needle, haystack)
-        self.assertEqual(len(matches), 0, "Template matching should fail finding "
-                         "viewport transformed image.")
-
-    def test_features_screen(self):
-        needle = Image('n_ibs')
-        self.show_image('h_ibs_viewport')
-        time.sleep(2)
-        haystack = AutoPyDesktopControl().capture_screen()
-
-        #self.draw_needle_features(needle, haystack, needle.match_settings)
-        self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
-                                  needle.match_settings, 10)
-        time.sleep(2)
-
-    def test_features_mouse_hover(self):
-        needle = Image('n_ibs')
-        self.show_image('h_ibs_viewport')
-        time.sleep(2)
-        haystack = AutoPyDesktopControl().capture_screen()
-
-        # test hovering over viewport needle
-        finder = needle.match_settings
-        matches = finder.find(needle, haystack)
-        self.assertGreater(len(matches), 0, "The viewport transformed image "
-                           "should be matched in the screen.")
-        Region().hover(matches[0])
-
-    def test_features_no_match(self):
-        needle = Image('n_ibs')
-        haystack = Image('all_shapes')
-
-        needle.match_settings.params["find"]["similarity"].value = 0.5
-        finder = needle.match_settings
-        matches = finder.find(needle, haystack)
-
-        needle.match_settings.params["find"]["similarity"].value = 0.0
-        self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
-                                  needle.match_settings, 10)
-        self.assertEqual(len(matches), 0, "No transformed needle is present "
-                         "and should be found in the haystack.")
-
-    def test_feature_text_shapes(self):
-        needle = Image('shape_text')
-        haystack = Image('all_shapes')
-
+    def test_feature_same(self):
         finder = FeatureMatcher()
-        finder.params["find"]["similarity"].value = 0.0
-        finder.params["fdetect"]["nzoom"].value = 4.0
+        finder.params["find"]["similarity"].value = 1.0
+        for feature in finder.algorithms["feature_projectors"]:
+            for fdetect in finder.algorithms["feature_detectors"]:
+                for fextract in finder.algorithms["feature_extractors"]:
+                    for fmatch in finder.algorithms["feature_matchers"]:
+                        finder.configure_backend(feature, "feature")
+                        finder.configure(feature_detect=fdetect,
+                                         feature_extract=fextract,
+                                         feature_match=fmatch)
+                        # also with customized synchronization to the configuration
+                        finder.synchronize_backend(feature, "feature")
+                        finder.synchronize(feature_detect=fdetect,
+                                           feature_extract=fextract,
+                                           feature_match=fmatch)
+                        matches = finder.find(Image('n_ibs'), Image('n_ibs'))
+                        self.assertEqual(len(matches), 1)
+                        self.assertEqual(matches[0].x, 0)
+                        self.assertEqual(matches[0].y, 0)
 
-        #self.draw_needle_features(needle, haystack, settings)
-        self.draw_haystack_hotmap(haystack, needle, "shape text", finder)
-        # sleet to see image log better
-        time.sleep(2)
+    def test_feature_nomatch(self):
+        finder = FeatureMatcher()
+        finder.params["find"]["similarity"].value = 0.25
+        for feature in finder.algorithms["feature_projectors"]:
+            for fdetect in finder.algorithms["feature_detectors"]:
+                for fextract in finder.algorithms["feature_extractors"]:
+                    for fmatch in finder.algorithms["feature_matchers"]:
+                        finder.configure_backend(feature, "feature")
+                        finder.configure(feature_detect=fdetect,
+                                         feature_extract=fextract,
+                                         feature_match=fmatch)
+                        # also with customized synchronization to the configuration
+                        finder.synchronize_backend(feature, "feature")
+                        finder.synchronize(feature_detect=fdetect,
+                                           feature_extract=fextract,
+                                           feature_match=fmatch)
+                        matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+                        self.assertEqual(len(matches), 0)
+
+    def test_feature_scaling(self):
+        finder = FeatureMatcher()
+        finder.params["find"]["similarity"].value = 0.25
+        matches = finder.find(Image('n_ibs'), Image('h_ibs_scaled'))
+        self.assertEqual(len(matches), 1)
+        self.assertAlmostEqual(matches[0].x, 39, delta=5)
+        self.assertAlmostEqual(matches[0].y, 222, delta=5)
+
+    def test_feature_rotation(self):
+        finder = FeatureMatcher()
+        finder.params["find"]["similarity"].value = 0.45
+        matches = finder.find(Image('n_ibs'), Image('h_ibs_rotated'))
+        self.assertEqual(len(matches), 1)
+        self.assertAlmostEqual(matches[0].x, 435, delta=5)
+        self.assertAlmostEqual(matches[0].y, 447, delta=5)
+
+    def test_feature_viewport(self):
+        finder = FeatureMatcher()
+        finder.params["find"]["similarity"].value = 0.5
+        matches = finder.find(Image('n_ibs'), Image('h_ibs_viewport'))
+        self.assertEqual(len(matches), 1)
+        self.assertAlmostEqual(matches[0].x, 68, delta=5)
+        self.assertAlmostEqual(matches[0].y, 18, delta=5)
 
     def test_feature_text_basic(self):
         needle = Image('word')
         haystack = Image('sentence_sans')
         settings = needle.match_settings
 
-        #self.draw_needle_features(needle, haystack, settings)
-        self.draw_haystack_hotmap(haystack, needle, "sans", settings)
+        self.match_images(haystack, needle, "feature", "sans", settings)
         # sleet to see image log better
         time.sleep(2)
 
@@ -312,8 +227,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_bold')
         settings = needle.match_settings
 
-        #self.draw_needle_features(needle, haystack, settings)
-        self.draw_haystack_hotmap(haystack, needle, "bold", settings)
+        self.match_images(haystack, needle, "feature", "bold", settings)
         # sleet to see image log better
         time.sleep(2)
 
@@ -322,8 +236,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_italic')
         settings = needle.match_settings
 
-        #self.draw_needle_features(needle, haystack, settings)
-        self.draw_haystack_hotmap(haystack, needle, "italic", settings)
+        self.match_images(haystack, needle, "feature", "italic", settings)
         # sleet to see image log better
         time.sleep(2)
 
@@ -332,8 +245,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_larger')
         settings = needle.match_settings
 
-        #self.draw_needle_features(needle, haystack, settings)
-        self.draw_haystack_hotmap(haystack, needle, "larger", settings)
+        self.match_images(haystack, needle, "feature", "larger", settings)
         # sleet to see image log better
         time.sleep(2)
 
@@ -342,10 +254,27 @@ class ImageFinderTest(unittest.TestCase):
         haystack = Image('sentence_font')
         settings = needle.match_settings
 
-        #self.draw_needle_features(needle, haystack, settings)
-        self.draw_haystack_hotmap(haystack, needle, "font", settings)
+        self.match_images(haystack, needle, "feature", "font", settings)
         # sleet to see image log better
         time.sleep(2)
+
+    def test_hybrid_same(self):
+        finder = HybridMatcher()
+        finder.params["find"]["similarity"].value = 1.0
+        for hybrid in finder.algorithms["hybrid_matchers"]:
+            finder.configure_backend(hybrid, "hybrid")
+            matches = finder.find(Image('n_ibs'), Image('n_ibs'))
+            self.assertEqual(len(matches), 1)
+            self.assertEqual(matches[0].x, 0)
+            self.assertEqual(matches[0].y, 0)
+
+    def test_hybrid_nomatch(self):
+        finder = HybridMatcher()
+        finder.params["find"]["similarity"].value = 0.25
+        for hybrid in finder.algorithms["hybrid_matchers"]:
+            finder.configure_backend(hybrid, "hybrid")
+            matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+            self.assertEqual(len(matches), 0)
 
 
 if __name__ == '__main__':
