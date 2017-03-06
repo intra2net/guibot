@@ -292,7 +292,6 @@ class Calibrator(object):
         return (best_params, best_error)
 
     def _get_last_criteria(self, finder, total_time):
-        assert len(finder.imglog.similarities) == len(finder.imglog.locations)
         if len(finder.imglog.similarities) > 0:
             similarity = finder.imglog.similarities[-1]
             location = finder.imglog.locations[-1]

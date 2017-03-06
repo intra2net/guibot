@@ -685,10 +685,16 @@ class FeatureMatcher(ImageFinder):
         self.params[category]["backend"] = backend
 
         if category == "feature":
+            # 0 for homography, 1 for fundamental matrix
+            self.params[category]["projectionMethod"] = CVParameter(0, 0, 1, None)
             self.params[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 10.0, 1.0)
+            self.params[category]["minDetectedFeatures"] = CVParameter(4, 1, None)
+            self.params[category]["minMatchedFeatures"] = CVParameter(4, 1, None)
+            # 0 for matched/detected ratio, 1 for projected/matched ratio
+            self.params[category]["similarityRatio"] = CVParameter(1, 0, 1, None)
         elif category == "fdetect":
-            self.params[category]["nzoom"] = CVParameter(4.0, 1.0, 10.0, 1.0, 1.0)
-            self.params[category]["hzoom"] = CVParameter(4.0, 1.0, 10.0, 1.0, 1.0)
+            self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
+            self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
 
             if backend == "oldSURF":
                 self.params[category]["oldSURFdetect"] = CVParameter(85)
@@ -927,19 +933,23 @@ class FeatureMatcher(ImageFinder):
                                                    self.params["fdetect"]["backend"],
                                                    self.params["fextract"]["backend"])
 
-        if len(nkp) < 4 or len(hkp) < 4:
+        min_features = self.params["feature"]["minDetectedFeatures"].value
+        if len(nkp) < min_features or len(hkp) < min_features:
             log.debug("No acceptable best match after feature detection: "
-                      "only %s needle and %s haystack features detected",
-                      len(nkp), len(hkp))
+                      "only %s\%s needle and %s\%s haystack features detected",
+                      len(nkp), min_features, len(hkp), min_features)
             self.imglog.log(40)
             return None
 
         mnkp, mhkp = self._match_features(nkp, ndc, hkp, hdc,
                                           self.params["fmatch"]["backend"])
 
-        if self.imglog.similarities[-1] < similarity or len(mnkp) < 4:
-            log.debug("No acceptable best match after feature matching: "
-                      "best match similarity %s is less than required %s",
+        min_features = self.params["feature"]["minMatchedFeatures"].value
+        if self.imglog.similarities[-1] < similarity or len(mnkp) < min_features:
+            log.debug("No acceptable best match after feature matching:\n"
+                      "- matched features %s of %s required\n"
+                      "- best match similarity %s of %s required",
+                      len(mnkp), min_features,
                       self.imglog.similarities[-1], similarity)
             self.imglog.log(40)
             return None
@@ -971,14 +981,10 @@ class FeatureMatcher(ImageFinder):
         import cv2
         if nfactor > 1.0:
             log.debug("Zooming x%i needle", nfactor)
-            new_shape = (int(ngray.shape[0] * nfactor), int(ngray.shape[1] * nfactor))
-            log.log(0, "%s -> %s", ngray.shape, new_shape)
-            ngray = cv2.resize(ngray, new_shape)
+            ngray = cv2.resize(ngray, None, fx=nfactor, fy=nfactor)
         if hfactor > 1.0:
             log.debug("Zooming x%i haystack", hfactor)
-            new_shape = (int(hgray.shape[0] * hfactor), int(hgray.shape[1] * hfactor))
-            log.log(0, "%s -> %s", hgray.shape, new_shape)
-            hgray = cv2.resize(hgray, new_shape)
+            hgray = cv2.resize(hgray, None, fx=hfactor, fy=hfactor)
 
         if detect == "oldSURF":
             # build the old surf feature detector
@@ -1003,7 +1009,8 @@ class FeatureMatcher(ImageFinder):
             (hkeypoints, hdescriptors) = self._extractor.compute(hgray, hkeypoints)
 
         else:
-            raise UnsupportedBackendError
+            raise UnsupportedBackendError("Feature detector %s is not among the supported"
+                                          "ones %s" % (detect, self.algorithms[self.categories["fdetect"]]))
 
         # reduce keypoint coordinates to the original image size
         for nkeypoint in nkeypoints:
@@ -1077,7 +1084,8 @@ class FeatureMatcher(ImageFinder):
             # build matcher and match feature vectors
             self.synchronize_backend(category="fmatch")
         else:
-            raise UnsupportedBackendError
+            raise UnsupportedBackendError("Feature detector %s is not among the supported"
+                                          "ones %s" % (match, self.algorithms[self.categories["fmatch"]]))
 
         # find and filter matches through tests
         if match == "in-house-region":
@@ -1116,8 +1124,9 @@ class FeatureMatcher(ImageFinder):
         mhkp_locations = [mhkp.pt for mhkp in match_hkeypoints]
         self._log_features(10, mhkp_locations, self.imglog.hotmaps[-3], 2, 255, 255, 0)
 
-        # update the current achieved similarity
         match_similarity = float(len(match_nkeypoints)) / float(len(nkeypoints))
+        # update the current achieved similarity if matching similarity is used:
+        # won't be updated anymore if self.params["feature"]["similarityRatio"].value == 0
         self.imglog.similarities[-1] = match_similarity
         log.log(0, "%s\\%s -> %f", len(match_nkeypoints),
                 len(nkeypoints), match_similarity)
@@ -1151,13 +1160,18 @@ class FeatureMatcher(ImageFinder):
         import numpy
         # homography and fundamental matrix as options - homography is considered only
         # for rotation but currently gives better results than the fundamental matrix
-        H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
-                                     numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
-                                     self.params["feature"]["ransacReprojThreshold"].value)
-        # H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
-        #                                 numpy.array([kp.pt for kp in mhkp]),
-        #                                 method = cv2.RANSAC, param1 = 10.0,
-        #                                 param2 = 0.9)
+        if self.params["feature"]["projectionMethod"].value == 0:
+            H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
+                                         numpy.array([kp.pt for kp in mhkp]), cv2.RANSAC,
+                                         self.params["feature"]["ransacReprojThreshold"].value)
+        elif self.params["feature"]["projectionMethod"].value == 1:
+            H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
+                                             numpy.array([kp.pt for kp in mhkp]),
+                                             method = cv2.RANSAC, param1 = 10.0,
+                                             param2 = 0.9)
+        else:
+            raise ValueError("Unsupported projection method - use 0 for homography and "
+                             "1 for fundamentlal matrix")
 
         # measure total used features for the projected focus point
         if H is None or mask is None:
@@ -1183,10 +1197,11 @@ class FeatureMatcher(ImageFinder):
             projected.append((int(mx), int(my)))
 
         ransac_similarity = float(len(true_matches)) / float(len(mnkp))
-        # override the match similarity with a more precise one
-        self.imglog.similarities[-1] = ransac_similarity
+        if self.params["feature"]["similarityRatio"].value == 1:
+            # override the match similarity if projectin-based similarity is preferred
+            self.imglog.similarities[-1] = ransac_similarity
         log.log(0, "%s\\%s -> %f", len(true_matches), len(mnkp), ransac_similarity)
-        self.imglog.locations = projected
+        self.imglog.locations.extend(projected)
 
         return projected
 
@@ -1336,11 +1351,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
         final_hotmap = numpy.array(haystack.pil_image)
 
-        frame_points = []
-        frame_points.append((needle.width / 2, needle.height / 2))
-        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
-                             (needle.width, needle.height)])
-
+        frame_points = [(0, 0)]
         feature_maxima = []
         is_feature_poor = False
         for i, upleft in enumerate(template_maxima):
