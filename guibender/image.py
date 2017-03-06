@@ -16,6 +16,10 @@
 import copy
 import os
 import PIL.Image
+try:
+    import configparser as config
+except ImportError:
+    import ConfigParser as config
 
 # TODO: try to use PIL functionality instead
 import cv2
@@ -24,7 +28,7 @@ import numpy
 from settings import GlobalSettings
 from location import Location
 from imagepath import ImagePath
-from settings import CVEqualizer
+from imagefinder import *
 
 
 class Image(object):
@@ -46,7 +50,7 @@ class Image(object):
         :param pil_image: image data - use cache or recreate if none
         :type pil_image: :py:class:`PIL.Image` or None
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`settings.CVEqualizer` or None
+        :type match_settings: :py:class:`imagefinder.ImageFinder` or None
         :param bool use_cache: whether to cache image data for better performance
         """
         self._filename = image_filename
@@ -77,10 +81,9 @@ class Image(object):
             if match_settings is None:
                 match_file = self._filename[:-4] + ".match"
                 if not os.path.exists(match_file):
-                    self.match_settings = CVEqualizer()
+                    self.match_settings = ImageFinder()
                 else:
-                    self.match_settings = CVEqualizer()
-                    self.match_settings.from_match_file(self._filename[:-4])
+                    self.match_settings = self.from_match_file(self._filename[:-4])
                     self.use_own_settings = True
 
         # Set width and height
@@ -139,7 +142,7 @@ class Image(object):
         :returns: similarity required for the image to be matched
         :rtype: float
         """
-        return self.match_settings.p["find"]["similarity"].value
+        return self.match_settings.params["find"]["similarity"].value
     similarity = property(fget=get_similarity)
 
     def get_target_center_offset(self):
@@ -192,7 +195,7 @@ class Image(object):
         :rtype: :py:class:`image.Image`
         """
         new_image = self.copy()
-        new_image.match_settings.p["find"]["similarity"].value = new_similarity
+        new_image.match_settings.params["find"]["similarity"].value = new_similarity
         return new_image
 
     def exact(self):
@@ -224,6 +227,49 @@ class Image(object):
         new_image._filename = filename
 
         return new_image
+
+    def from_match_file(self, filename_without_extention):
+        """
+        Read the configuration from a .match file with the given filename.
+
+        :param str filename_without_extention: match filename for the configuration
+        :returns: image finder with the parsed (and generated) settings
+        :rtype: :py:class:`imagefinder.ImageFinder`
+        :raises: :py:class:`IOError` if the respective match file couldn't be read
+        """
+        parser = config.RawConfigParser()
+        # preserve case sensitivity
+        parser.optionxform = str
+
+        success = parser.read("%s.match" % filename_without_extention)
+        # if no file is found throw an exception
+        if len(success) == 0:
+            raise IOError("Match file is corrupted and cannot be read")
+        if not parser.has_section("find"):
+            raise IOError("No image matching configuration can be found")
+        try:
+            backend_name = parser.get("find", 'backend')
+        except config.NoOptionError:
+            backend_name = GlobalSettings.find_image_backend
+
+        if backend_name == "autopy":
+            finder = AutoPyMatcher()
+        elif backend_name == "template":
+            finder = TemplateMatcher()
+        elif backend_name == "feature":
+            finder = FeatureMatcher()
+        elif backend_name == "hybrid":
+            finder = HybridMatcher()
+        finder.from_match_file(filename_without_extention)
+        return finder
+
+    def to_match_file(self, filename_without_extention):
+        """
+        Write the configuration in a .match file with the given filename.
+
+        :param str filename_without_extention: match filename for the configuration
+        """
+        self.match_settings.to_match_file(filename_without_extention)
 
     def preprocess(self, gray=False):
         """

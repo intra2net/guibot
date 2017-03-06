@@ -16,21 +16,10 @@
 
 import re
 import os
-try:
-    import configparser as config
-except ImportError:
-    import ConfigParser as config
 import logging
 log = logging.getLogger('guibender.settings')
 
-import PIL.Image
-from tempfile import NamedTemporaryFile
-
-# TODO: make this OpenCV independent with the rest
-import cv2
-
 from errors import *
-import inputmap
 
 
 class GlobalSettings(type):
@@ -417,481 +406,103 @@ class LocalSettings(object):
     information about them and the current parameters.
     """
 
-    def __init__(self, dc_backend=None, cv_backend=None):
+    def __init__(self, configure=True, synchronize=True):
         """
         Build a container for the entire backend configuration.
 
-        :param dc_backend: name of a preselected desktop control backend
-        :type dc_backend: str or None
-        :param cv_backend: name of a preselected computer vision backend
-        :type cv_backend: str or None
-        :raises: :py:class:`ValueError` if a backend is not among the supported backends
+        :param bool configure: whether to also generate configuration
+        :param bool synchronize: whether to also apply configuration
 
         Available algorithms can be seen in the `algorithms` attribute
         whose keys are the algorithm types and values are the members of
-        these types.
-
-        .. note:: SURF and SIFT are proprietary algorithms and are not available
-            by default in newer OpenCV versions (>3.0).
+        these types. The algorithm types are shortened as `categories`.
 
         A parameter can be accessed as follows (example)::
 
-            print self.p["control"]["vnc_hostname"]
-
-        External (image finder) parameters are:
-            * detect filter - works for certain detectors and
-                determines how many initial features are
-                detected in an image (e.g. hessian threshold for
-                SURF detector)
-            * match filter - determines what part of all matches
-                returned by feature matcher remain good matches
-            * project filter - determines what part of the good
-                matches are considered inliers
-            * ratio test - boolean for whether to perform a ratio test
-            * symmetry test - boolean for whether to perform a symmetry test
-
-        .. todo:: "in-house-raw" performs regular knn matching, but "in-house-region"
-            performs a special filtering and replacement of matches based on
-            positional information (it does not have ratio and symmetry tests
-            and assumes that the needle is transformed preserving the relative
-            positions of each pair of matches, i.e. no rotation is allowed,
-            but scaling for example is supported)
+            print self.params["control"]["vnc_hostname"]
         """
-        # available and currently fully compatible methods and their extra categories
-        self.algorithms = {"control_methods" : ("autopy", "qemu", "vncdotool"),
-                           "find_methods": ("autopy", "template", "feature", "hybrid"),
-                           "template_matchers": ("", "sqdiff", "ccorr",
-                                                 "ccoeff", "sqdiff_normed",
-                                                 "ccorr_normed", "ccoeff_normed"),
-                           "feature_matchers": ("BruteForce", "BruteForce-L1", "BruteForce-Hamming",
-                                                "BruteForce-Hamming(2)"),
-                           "feature_detectors": ("ORB", "BRISK", "KAZE", "AKAZE", "MSER",
-                                                 "AgastFeatureDetector", "FastFeatureDetector", "GFTTDetector",
-                                                 "SimpleBlobDetector", "oldSURF"),
-                           # TODO: we could also support "StereoSGBM" but it needs initialization arguments
-                           "feature_extractors": ("ORB", "BRISK", "KAZE", "AKAZE")}
-        self.categories = {"control": "control_methods",
-                           "find": "find_methods",
-                           "tmatch": "template_matchers",
-                           "fdetect": "feature_detectors",
-                           "fextract": "feature_extractors",
-                           "fmatch": "feature_matchers"}
+        self.categories = {}
+        self.algorithms = {}
+        self.params = {}
 
-        # parameters registry and selection
-        self.p = {}
+        self.categories["type"] = "backend_types"
+        self.algorithms["backend_types"] = ("cv", "dc")
 
-        # default parameters shared among all backends
-        self.params_from_backend_name(dc_backend, cv_backend)
+        if configure:
+            self.__configure_backend()
+        if synchronize:
+            self.__synchronize_backend()
 
-    def params_from_backend_name(self, dc_backend=None, cv_backend=None):
-        """
-        Obtain parameters dictionary for given backends.
-
-        :param dc_backend: name of a preselected desktop control backend
-        :type dc_backend: str or None
-        :param cv_backend: name of a preselected computer vision backend
-        :type cv_backend: str or None
-
-        The two minimal categories are for the desktop control and
-        computer vision respectively.
-        """
-        self.params_from_backend_name_and_category("control", dc_backend)
-        self.params_from_backend_name_and_category("find", cv_backend)
-
-        # additional parameters for the current CV backend
-        if cv_backend == "autopy":
+    def __configure_backend(self, backend=None, category="type", reset=False):
+        if category != "type":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            # reset makes no sense here since this is the base configuration
             pass
-        elif cv_backend == "template":
-            self.params_from_backend_name_and_category("tmatch", GlobalSettings.template_match_backend)
-        elif cv_backend == "feature":
-            self.params_from_backend_name_and_category("fdetect", GlobalSettings.feature_detect_backend)
-            self.params_from_backend_name_and_category("fextract", GlobalSettings.feature_extract_backend)
-            self.params_from_backend_name_and_category("fmatch", GlobalSettings.feature_match_backend)
-        elif cv_backend == "hybrid":
-            self.params_from_backend_name_and_category("tmatch", GlobalSettings.template_match_backend)
-            self.params_from_backend_name_and_category("fdetect", GlobalSettings.feature_detect_backend)
-            self.params_from_backend_name_and_category("fextract", GlobalSettings.feature_extract_backend)
-            self.params_from_backend_name_and_category("fmatch", GlobalSettings.feature_match_backend)
+        if backend is None:
+            backend = "cv"
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
+                                          "%s" % (backend, self.algorithms[self.categories[category]]))
 
-    def params_from_backend_name_and_category(self, category, subbackend=None):
+        self.params[category] = {}
+        self.params[category]["backend"] = backend
+
+    def configure_backend(self, backend=None, category="type", reset=False):
         """
-        Obtain parameters dictionary for a given category subbackend method.
+        Generate configuration dictionary for a given backend.
 
-        :param str category: supported category, see `algorithms`
-        :param subbackend: name of a preselected backend, see `algorithms[category]`
-        :type subbackend: str or None
-        :raises: :py:class:`UnsupportedBackendError` if `category` is not among the
-                 supported categories or `subbackend` is not among the supported backends
-                 for the category (and is not `None`)
+        :param backend: name of a preselected backend, see `algorithms[category]`
+        :type backend: str or None
+        :param str category: category for the backend, see `algorithms.keys()`
+        :param bool reset: whether to (re)set all parent configurations as well
+        :raises: :py:class:`UnsupportedBackendError` if `backend` is not among
+                 the supported backends for the category (and is not `None`) or
+                 the category is not found
         """
-        if category not in self.categories.keys():
-            raise UnsupportedBackendError
-        if subbackend is not None and subbackend not in self.algorithms[self.categories[category]]:
-            raise UnsupportedBackendError
-        log.log(0, "Setting subbackend for %s to %s", category, subbackend)
-        self.p[category] = {}
-        if category == "control":
-            if subbackend == "autopy":
-                # autopy has diffrent problems on different OS so specify it
-                self.p[category]["os_type"] = "linux"
-            elif subbackend == "qemu":
-                # qemu monitor object in case qemu backend is used
-                self.p[category]["qemu_monitor"] = None
-            elif subbackend == "vncdotool":
-                # hostname of the vnc server in case vncdotool backend is used
-                self.p[category]["vnc_hostname"] = "localhost"
-                # port of the vnc server in case vncdotool backend is used
-                self.p[category]["vnc_port"] = 0
-        elif category == "find":
-            self.p[category]["similarity"] = CVParameter(0.9, 0.0, 1.0, 0.1, 0.1)
-            if subbackend in ("feature", "hybrid"):
-                self.p[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 10.0, 1.0)
-            if subbackend in ("template", "hybrid"):
-                self.p[category]["nocolor"] = CVParameter(False)
-            if subbackend == "hybrid":
-                self.p[category]["front_similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
-            # although it is currently not available
-            elif subbackend == "2to1hybrid":
-                self.p[category]["x"] = CVParameter(1000, 1, None)
-                self.p[category]["y"] = CVParameter(1000, 1, None)
-                self.p[category]["dx"] = CVParameter(100, 1, None)
-                self.p[category]["dy"] = CVParameter(100, 1, None)
-            return
-        elif category == "tmatch":
-            return
-        elif category == "fdetect":
-            self.p[category]["nzoom"] = CVParameter(4.0, 1.0, 10.0, 1.0, 1.0)
-            self.p[category]["hzoom"] = CVParameter(4.0, 1.0, 10.0, 1.0, 1.0)
+        self.__configure_backend(backend, category, reset)
 
-            if subbackend == "oldSURF":
-                self.p[category]["oldSURFdetect"] = CVParameter(85)
-                return
-            else:
-                feature_detector_create = getattr(cv2, "%s_create" % subbackend)
-                subbackend_backend = feature_detector_create()
+    def configure(self, reset=True):
+        """
+        Generate configuration dictionary for all backends.
 
-        elif category == "fextract":
-            descriptor_extractor_create = getattr(cv2, "%s_create" % subbackend)
-            subbackend_backend = descriptor_extractor_create()
-        elif category == "fmatch":
-            if subbackend == "in-house-region":
-                self.p[category]["refinements"] = CVParameter(50, 1, None)
-                self.p[category]["recalc_interval"] = CVParameter(10, 1, None)
-                self.p[category]["variants_k"] = CVParameter(100, 1, None)
-                self.p[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0)
-                return
-            else:
-                self.p[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1)
-                self.p[category]["ratioTest"] = CVParameter(False)
-                self.p[category]["symmetryTest"] = CVParameter(False)
+        :param bool reset: whether to (re)set all parent configurations as well
 
-                # no other parameters are used for the in-house-raw matching
-                if subbackend == "in-house-raw":
-                    return
-                else:
+        If multiple categories are available and just some of them are configured,
+        the rest will be reset to defaults. To configure specific category without
+        changing others, use :py:function:`configure`.
+        """
+        self.configure_backend(reset=reset)
 
-                    # BUG: a bug of OpenCV leads to crash if parameters
-                    # are extracted from the matcher interface although
-                    # the API supports it - skip fmatch for now
-                    return
+    def __synchronize_backend(self, backend=None, category="type", reset=False):
+        if category != "type":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            # reset makes no sense here since this is the base configuration
+            pass
+        # no backend object to sync to
+        backend = "cv" if backend is None else backend
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
-                    # NOTE: descriptor matcher creation is kept the old way while feature
-                    # detection and extraction not - example of the untidy maintenance of OpenCV
-                    new_backend = cv2.DescriptorMatcher_create(subbackend)
-
-        # additional parameters are provided by OpenCV in all these cases
-        if category in ["fdetect", "fextract", "fmatch"]:
-
-            # examine the interface of the OpenCV backend
-            log.log(0, "%s %s", new_backend, dir(new_backend))
-            for attribute in dir(new_backend):
-                if not attribute.startswith("get"):
-                    continue
-                param = attribute.replace("get", "")
-                get_param = getattr(new_backend, attribute)
-                val = get_param()
-                if type(val) not in [bool, int, float, type(None)]:
-                    continue
-
-                # give more information about some better known parameters
-                if category in ("fdetect", "fextract") and param == "firstLevel":
-                    self.p[category][param] = CVParameter(val, 0, 100)
-                elif category in ("fdetect", "fextract") and param == "nFeatures":
-                    self.p[category][param] = CVParameter(val, delta=100)
-                elif category in ("fdetect", "fextract") and param == "WTA_K":
-                    self.p[category][param] = CVParameter(val, 2, 4)
-                elif category in ("fdetect", "fextract") and param == "scaleFactor":
-                    self.p[category][param] = CVParameter(val, 1.01, 2.0)
-                else:
-                    self.p[category][param] = CVParameter(val)
-                log.debug("%s=%s", param, val)
-
-        log.log(0, "%s %s\n", category, self.p[category])
-
-    def sync_backend_object_to_params(self, category, subbackend=None):
+    def synchronize_backend(self, backend=None, category="type", reset=False):
         """
         Synchronize a category backend with the equalizer configuration.
 
-        :param str category: supported category, see `algorithms`
-        :param subbackend: supported category backend, see `algorithms[category]`
-        :type subbackend: external backend class depending on the category backend choice
-                          (e.g. :py:class:`DCScreen` for the "control" category)
-        :returns: synchronized category backend
-        :rtype: external backend class depending on the category backend choice
-                (e.g. :py:class:`DCScreen` for the "control" category)
-        :raises: :py:class:`ValueError` if control backend is 'qemu' and no monitor is selected
+        :param backend: name of a preselected backend, see `algorithms[category]`
+        :type backend: str or None
+        :param str category: category for the backend, see `algorithms.keys()`
+        :param bool reset: whether to (re)sync all parent backends as well
+        :raises: :py:class:`UnsupportedBackendError` if  the category is not found
+        :raises: :py:class:`UninitializedBackendError` if there is no backend object
+                 that is configured with and with the required name
         """
-        if category == "control":
-            if subbackend is None:
-                screen = DCScreen()
-            else:
-                screen = subbackend
-            if self._selected == "autopy":
-                import autopy
-                screen.backend = autopy
-                # screen size
-                screen_size = screen.backend.screen.get_size()
-                screen.width = screen_size[0]
-                screen.height = screen_size[1]
-                screen.keymap = inputmap.AutoPyKey()
-                screen.modmap = inputmap.AutoPyKeyModifier()
-                screen.mousemap = inputmap.AutoPyMouseButton()
-            elif self._selected == "qemu":
-                screen.backend = self.p[category]["qemu_monitor"]
-                if screen.backend is None:
-                    raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
-                # screen size
-                with NamedTemporaryFile(prefix='guibender', suffix='.ppm') as f:
-                    filename = f.name
-                screen.backend.screendump(filename=filename, debug=True)
-                screen = PIL.Image.open(filename)
-                os.unlink(filename)
-                screen.width = screen.size[0]
-                screen.height = screen.size[1]
-                screen.keymap = inputmap.QemuKey()
-                screen.modmap = inputmap.QemuKeyModifier()
-                screen.mousemap = inputmap.QemuMouseButton()
-            elif self._selected == "vncdotool":
-                logging.getLogger('vncdotool').setLevel(logging.ERROR)
-                logging.getLogger('twisted').setLevel(logging.ERROR)
-                from vncdotool import api
-                screen.backend = api.connect('%s:%i' % (self.p[category]["vnc_hostname"],
-                                                        self.p[category]["vnc_port"]))
-                # for special characters preprocessing for the vncdotool
-                screen.backend.factory.force_caps = True
-                # screen size
-                with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
-                    filename = f.name
-                screen = screen.backend.captureScreen(filename)
-                os.unlink(filename)
-                screen.width = screen.width
-                screen.height = screen.height
-                screen.keymap = inputmap.VNCDoToolKey()
-                screen.modmap = inputmap.VNCDoToolKeyModifier()
-                screen.mousemap = inputmap.VNCDoToolMouseButton()
-            return screen
-        elif (category == "find" or category == "tmatch" or
-                (category == "fdetect" and self.get_backend(category) == "oldSURF")):
-            return subbackend
-        elif category == "fmatch":
-            # no internal OpenCV parameters to sync with
-            if self.get_backend(category) in ("in-house-raw", "in-house-region"):
-                return subbackend
+        self.__synchronize_backend(backend, category, reset)
 
-            # BUG: a bug of OpenCV leads to crash if parameters
-            # are extracted from the matcher interface although
-            # the API supports it - skip fmatch for now
-            else:
-                return subbackend
-        else:
-            for attribute in dir(subbackend):
-                if not attribute.startswith("get"):
-                    continue
-                param = attribute.replace("get", "")
-                if param in self.p[category]:
-                    val = self.p[category][param].value
-                    set_attribute = attribute.replace("get", "set")
-                    # some getters might not have corresponding setters
-                    if not hasattr(subbackend, set_attribute):
-                        continue
-                    set_param = getattr(subbackend, set_attribute)
-                    set_param(val)
-                    log.log(0, "Synced %s to %s", param, val)
-                    self.p[category][param].value = val
-            return subbackend
-
-    def can_calibrate(self, category, mark):
+    def synchronize(self, reset=True):
         """
-        Fix the parameters for a given category backend algorithm,
-        i.e. disallow the calibrator to change them.
+        Synchronize all backends with the current configuration dictionary.
 
-        :param bool mark: whether to mark for calibration
-        :param str category: backend category whose parameters are marked
-        :raises: :py:class:`UnsupportedBackendError` if `category` is not among the
-                 supported backend categories
+        :param bool reset: whether to (re)sync all parent backends as well
         """
-        if category not in self.p:
-            raise UnsupportedBackendError
-        # control settings cannot be calibrated
-        if category == "control":
-            return
-
-        for param in self.p[category].values():
-            # BUG: force fix parameters that have internal bugs
-            if category == "fextract" and param == "bytes":
-                param.fixed = True
-            else:
-                param.fixed = not mark
-
-    def from_match_file(self, filename_without_extention):
-        """
-        Read the configuration from a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        :raises: :py:class:`IOError` if the respective match file couldn't be read
-        """
-        parser = config.RawConfigParser()
-        # preserve case sensitivity
-        parser.optionxform = str
-
-        success = parser.read("%s.match" % filename_without_extention)
-        # if no file is found throw an exception
-        if len(success) == 0:
-            raise IOError
-
-        for category in self.p.keys():
-            if parser.has_section(category):
-                section_backend = parser.get(category, 'backend')
-                if section_backend != self.get_backend(category):
-                    self.set_backend(category, section_backend)
-                for option in parser.options(category):
-                    if option == "backend":
-                        continue
-                    param_string = parser.get(category, option)
-                    param = CVParameter.from_string(param_string)
-                    log.log(0, "%s %s", param_string, param)
-                    self.p[category][option] = param
-
-    def to_match_file(self, filename_without_extention):
-        """
-        Write the configuration in a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        """
-        parser = config.RawConfigParser()
-        # preserve case sensitivity
-        parser.optionxform = str
-
-        sections = self.p.keys()
-        for section in sections:
-            if not parser.has_section(section):
-                parser.add_section(section)
-            parser.set(section, 'backend', self.get_backend(section))
-            for option in self.p[section]:
-                log.log(0, "%s %s", section, option)
-                parser.set(section, option, self.p[section][option])
-
-        with open("%s.match" % filename_without_extention, 'w') as configfile:
-            configfile.write("# IMAGE MATCH DATA\n")
-            parser.write(configfile)
-
-
-class DCScreen(object):
-    """A class for a synchronizable backend with the DC equalizer."""
-
-    def __init__(self):
-        """Build a desktop control screen."""
-        self.backend = None
-        self.pointer = (0, 0)
-        self.width = 0
-        self.height = 0
-        self.keymap = None
-        self.mousemap = None
-        self.modmap = None
-
-
-class CVParameter(object):
-    """A class for a single parameter from the CV equalizer."""
-
-    def __init__(self, value,
-                 min_val=None, max_val=None,
-                 delta=1.0, tolerance=0.1,
-                 fixed=True):
-        """
-        Build a computer vision parameter.
-
-        :param value: value of the parameter
-        :type value: bool or int or float or None
-        :param min_val: lower boundary for the parameter range
-        :type min_val: int or float or None
-        :param max_val: upper boundary for the parameter range
-        :type max_val: int or float or None
-        :param float delta: delta for the calibration
-                            (no calibration if `delta` < `tolerance`)
-        :param float tolerance: tolerance of calibration
-        :param bool fixed: whether the parameter is prevented from calibration
-        """
-        self.value = value
-        self.delta = delta
-        self.tolerance = tolerance
-
-        # force specific tolerance and delta for bool and
-        # int parameters
-        if type(value) == bool:
-            self.delta = 0.0
-            self.tolerance = 1.0
-        elif type(value) == int:
-            self.delta = 1
-            self.tolerance = 0.9
-
-        if min_val != None:
-            assert value >= min_val
-        if max_val != None:
-            assert value <= max_val
-        self.range = (min_val, max_val)
-
-        self.fixed = fixed
-
-    def __repr__(self):
-        """
-        Provide a representation of the parameter for storing and reporting.
-
-        :returns: special syntax representation of the parameter
-        :rtype: str
-        """
-        return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s'>"
-                % (self.value, self.range[0], self.range[1], self.delta, self.tolerance, self.fixed))
-
-    @staticmethod
-    def from_string(raw):
-        """
-        Parse a CV parameter from string.
-
-        :param str raw: string representation for the parameter
-        :returns: parameter parsed from the representation
-        :rtype: :py:class:`CVParameter`
-        :raises: :py:class:`ValueError` if unsupported type is encountered
-        """
-        args = []
-        string_args = re.match(r"<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
-                               r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
-                               raw).group(1, 2, 3, 4, 5, 6)
-        for arg in string_args:
-            if arg == "None":
-                arg = None
-            elif arg == "True":
-                arg = True
-            elif arg == "False":
-                arg = False
-            elif re.match(r"\d+$", arg):
-                arg = int(arg)
-            elif re.match(r"[\d.]+", arg):
-                arg = float(arg)
-            else:
-                raise ValueError
-
-            log.log(0, "%s %s", arg, type(arg))
-            args.append(arg)
-
-        log.log(0, "%s", args)
-        return CVParameter(*args)
+        self.synchronize_backend(reset=reset)

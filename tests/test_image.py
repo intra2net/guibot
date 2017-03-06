@@ -21,7 +21,7 @@ import common_test
 
 from tempfile import NamedTemporaryFile
 from image import Image
-from settings import LocalSettings
+from imagefinder import ImageFinder, CVParameter
 from errors import *
 
 
@@ -37,7 +37,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(300, image.height)
 
         self.assertTrue(image.filename.find('all_shapes.png') is not -1)
-        self.assertIsInstance(image.match_settings, LocalSettings)
+        self.assertIsInstance(image.match_settings, ImageFinder)
         self.assertFalse(image.use_own_settings)
 
     def test_copy_object(self):
@@ -116,22 +116,26 @@ class ImageTest(unittest.TestCase):
             # print "%s.match" % f.name[:-4]
             os.unlink("%s.match" % f.name[:-4])
 
-            for category in returned_image.match_settings.p.keys():
-                self.assertIn(category, loaded_image.match_settings.p.keys())
-                for key in returned_image.match_settings.p[category].keys():
-                    self.assertIn(key, loaded_image.match_settings.p[category])
-                    self.assertAlmostEqual(returned_image.match_settings.p[category][key].value,
-                                           loaded_image.match_settings.p[category][key].value)
-                    self.assertEqual(returned_image.match_settings.p[category][key].range[0],
-                                     loaded_image.match_settings.p[category][key].range[0])
-                    self.assertEqual(returned_image.match_settings.p[category][key].range[1],
-                                     loaded_image.match_settings.p[category][key].range[1])
-                    self.assertEqual(returned_image.match_settings.p[category][key].delta,
-                                     loaded_image.match_settings.p[category][key].delta)
-                    self.assertEqual(returned_image.match_settings.p[category][key].tolerance,
-                                     loaded_image.match_settings.p[category][key].tolerance)
-                    self.assertEqual(returned_image.match_settings.p[category][key].fixed,
-                                     loaded_image.match_settings.p[category][key].fixed)
+            for category in returned_image.match_settings.params.keys():
+                self.assertIn(category, loaded_image.match_settings.params.keys())
+                for key in returned_image.match_settings.params[category].keys():
+                    self.assertIn(key, loaded_image.match_settings.params[category])
+                    if not isinstance(returned_image.match_settings.params[category][key], CVParameter):
+                        self.assertEqual(returned_image.match_settings.params[category][key],
+                                         loaded_image.match_settings.params[category][key])
+                        continue
+                    self.assertAlmostEqual(returned_image.match_settings.params[category][key].value,
+                                           loaded_image.match_settings.params[category][key].value)
+                    self.assertEqual(returned_image.match_settings.params[category][key].range[0],
+                                     loaded_image.match_settings.params[category][key].range[0])
+                    self.assertEqual(returned_image.match_settings.params[category][key].range[1],
+                                     loaded_image.match_settings.params[category][key].range[1])
+                    self.assertEqual(returned_image.match_settings.params[category][key].delta,
+                                     loaded_image.match_settings.params[category][key].delta)
+                    self.assertEqual(returned_image.match_settings.params[category][key].tolerance,
+                                     loaded_image.match_settings.params[category][key].tolerance)
+                    self.assertEqual(returned_image.match_settings.params[category][key].fixed,
+                                     loaded_image.match_settings.params[category][key].fixed)
 
     def test_nonexisting_image(self):
         try:

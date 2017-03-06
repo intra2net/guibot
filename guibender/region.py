@@ -89,11 +89,7 @@ class Region(object):
             self._height = self.dc_backend.height
         else:
             self._height = height
-
-        if self.is_empty:
-            raise UninitializedBackendError
-        else:
-            self._ensure_screen_clipping()
+        self._ensure_screen_clipping()
 
         mouse_map = self.dc_backend.mousemap
         for mouse_button in dir(mouse_map):
@@ -386,16 +382,24 @@ class Region(object):
             image = Image(image)
         log.debug("Looking for image %s", image)
 
+        if image.use_own_settings:
+            log.debug("Using special settings to match %s", image)
+            cv_backend = image.match_settings
+        else:
+            image.match_settings = self.cv_backend
+            cv_backend = self.cv_backend
+        dc_backend = self.dc_backend
+
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.dc_backend.capture_screen(self)
+            screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = self.cv_backend.find(image, screen_capture)
+            found_pics = cv_backend.find(image, screen_capture)
             if len(found_pics) > 0:
                 found_pic = found_pics[0]
                 self._last_match = match.Match(self._xpos + found_pic.x,
                                                self._ypos + found_pic.y, image,
-                                               self.dc_backend, self.cv_backend)
+                                               dc_backend, cv_backend)
                 return self._last_match
 
             elif time.time() > timeout_limit:
@@ -432,19 +436,26 @@ class Region(object):
             image = Image(image)
         log.debug("Looking for multiple occurrences of image %s", image)
 
+        if image.use_own_settings:
+            log.debug("Using special settings to match %s", image)
+            cv_backend = image.match_settings
+        else:
+            cv_backend = self.cv_backend
+        dc_backend = self.dc_backend
+
         # TODO: decide about updating the last_match attribute
         last_matches = []
         timeout_limit = time.time() + timeout
         while True:
-            screen_capture = self.dc_backend.capture_screen(self)
+            screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = self.cv_backend.find(image, screen_capture, multiple=True)
+            found_pics = cv_backend.find(image, screen_capture, multiple=True)
 
             if len(found_pics) > 0:
                 for found_pic in found_pics:
                     last_matches.append(match.Match(self._xpos + found_pic.x,
                                                     self._ypos + found_pic.y, image,
-                                                    self.dc_backend, self.cv_backend))
+                                                    dc_backend, cv_backend))
                 self._last_match = found_pics[-1]
                 return last_matches
 
@@ -478,9 +489,9 @@ class Region(object):
         image = image.with_similarity(0.0)
         image.use_own_settings = True
         ImageLogger.accumulate_logging = True
-        self.find(image)
+        match = self.find(image)
+        similarity = match.similarity
         ImageLogger.accumulate_logging = False
-        similarity = self.cv_backend.imglog.similarities[-1]
         self.cv_backend.imglog.clear()
         return similarity
 

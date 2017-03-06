@@ -148,46 +148,65 @@ class ImageFinderTest(unittest.TestCase):
         finder = ImageFinder()
         finder.image_logging = logging
         if match_settings != None:
-            finder.eq = match_settings
+            finder = match_settings
         matches = finder.find(needle, haystack)
         self.assertGreater(len(matches), 0, "The original needle image "
                          "should be matched in the screen.")
         #hotmap_file = os.path.join('log_haystack.png')
         #self.show_image(hotmap_file, title)
 
-    def test_configure_find(self):
+    def test_configure_backend(self):
         finder = ImageFinder()
-        finder.eq.configure_backend(find_image="feature")
-        self.assertEqual(finder.eq.get_backend("find"), "feature")
+        finder.configure_backend("feature")
+        self.assertEqual(finder.params["find"]["backend"], "feature")
 
-        finder.eq.configure_backend(find_image="template", template_match="autopy")
-        self.assertEqual(finder.eq.get_backend("find"), "template")
-        self.assertEqual(finder.eq.get_backend("tmatch"), "autopy")
+        finder = AutoPyMatcher()
+        finder.configure()
+        self.assertEqual(finder.params["find"]["backend"], "autopy")
 
+        finder = TemplateMatcher()
+        finder.configure_backend("ccoeff_normed", reset=True)
+        self.assertEqual(finder.params["find"]["backend"], "template")
+        self.assertEqual(finder.params["template"]["backend"], "ccoeff_normed")
+
+        finder = FeatureMatcher()
+        finder.configure()
         # test that a parameter of ORB (the current and default extractor)
         # is present in parameters while a parameter of KAZE is not present
-        self.assertTrue(finder.eq.p["fextract"].has_key("MaxFeatures"))
-        self.assertFalse(finder.eq.p["fextract"].has_key("NOctaves"))
+        self.assertTrue(finder.params["fextract"].has_key("MaxFeatures"))
+        self.assertFalse(finder.params["fextract"].has_key("NOctaves"))
 
-        finder.eq.configure_backend(find_image="feature", feature_detect="ORB",
-                                    feature_extract="KAZE", feature_match="BruteForce")
-        self.assertEqual(finder.eq.get_backend("find"), "feature")
-        self.assertEqual(finder.eq.get_backend("fdetect"), "ORB")
-        self.assertEqual(finder.eq.get_backend("fextract"), "KAZE")
-        self.assertEqual(finder.eq.get_backend("fmatch"), "BruteForce")
+        finder = HybridMatcher()
+        finder.configure(feature_detect="ORB", feature_extract="KAZE", feature_match="BruteForce")
+        self.assertEqual(finder.params["find"]["backend"], "hybrid")
+        self.assertEqual(finder.params["template"]["backend"], "ccoeff_normed")
+        self.assertEqual(finder.params["feature"]["backend"], "mixed")
+        self.assertEqual(finder.params["fdetect"]["backend"], "ORB")
+        self.assertEqual(finder.params["fextract"]["backend"], "KAZE")
+        self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce")
 
         # test that a parameter of KAZE (the new extractor) is now present
         # while the parameter of ORB is not present anymore
-        self.assertTrue(finder.eq.p["fextract"].has_key("NOctaves"))
-        self.assertFalse(finder.eq.p["fextract"].has_key("MaxFeatures"))
+        self.assertTrue(finder.params["fextract"].has_key("NOctaves"))
+        self.assertFalse(finder.params["fextract"].has_key("MaxFeatures"))
 
         # check consistency of all unchanged options
-        finder.eq.configure_backend(find_image=None, template_match="ccorr_normed")
-        self.assertEqual(finder.eq.get_backend("find"), "feature")
-        self.assertEqual(finder.eq.get_backend("tmatch"), "ccorr_normed")
-        self.assertEqual(finder.eq.get_backend("fdetect"), "ORB")
-        self.assertEqual(finder.eq.get_backend("fextract"), "KAZE")
-        self.assertEqual(finder.eq.get_backend("fmatch"), "BruteForce")
+        finder.configure_backend("ccorr_normed", "template")
+        self.assertEqual(finder.params["find"]["backend"], "hybrid")
+        self.assertEqual(finder.params["template"]["backend"], "ccorr_normed")
+        self.assertEqual(finder.params["feature"]["backend"], "mixed")
+        self.assertEqual(finder.params["fdetect"]["backend"], "ORB")
+        self.assertEqual(finder.params["fextract"]["backend"], "KAZE")
+        self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce")
+
+        # check reset to defaults
+        finder.configure(template_match="sqdiff_normed")
+        self.assertEqual(finder.params["find"]["backend"], "hybrid")
+        self.assertEqual(finder.params["template"]["backend"], "sqdiff_normed")
+        self.assertEqual(finder.params["feature"]["backend"], "mixed")
+        self.assertEqual(finder.params["fdetect"]["backend"], "ORB")
+        self.assertEqual(finder.params["fextract"]["backend"], "ORB")
+        self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce-Hamming")
 
     def test_features_viewport(self):
         needle = Image('n_ibs')
@@ -222,8 +241,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = AutoPyDesktopControl().capture_screen()
 
         # test template matching failure to validate needle difficulty
-        finder = ImageFinder()
-        finder.eq = needle.match_settings
+        finder = needle.match_settings
         matches = finder.find(needle, haystack)
         self.assertEqual(len(matches), 0, "Template matching should fail finding "
                          "viewport transformed image.")
@@ -246,8 +264,7 @@ class ImageFinderTest(unittest.TestCase):
         haystack = AutoPyDesktopControl().capture_screen()
 
         # test hovering over viewport needle
-        finder = ImageFinder()
-        finder.eq = needle.match_settings
+        finder = needle.match_settings
         matches = finder.find(needle, haystack)
         self.assertGreater(len(matches), 0, "The viewport transformed image "
                            "should be matched in the screen.")
@@ -257,12 +274,11 @@ class ImageFinderTest(unittest.TestCase):
         needle = Image('n_ibs')
         haystack = Image('all_shapes')
 
-        finder = ImageFinder()
-        needle.match_settings.p["find"]["similarity"].value = 0.5
-        finder.eq = needle.match_settings
+        needle.match_settings.params["find"]["similarity"].value = 0.5
+        finder = needle.match_settings
         matches = finder.find(needle, haystack)
 
-        needle.match_settings.p["find"]["similarity"].value = 0.0
+        needle.match_settings.params["find"]["similarity"].value = 0.0
         self.draw_haystack_hotmap(haystack, needle, "screen + viewport",
                                   needle.match_settings, 10)
         self.assertEqual(len(matches), 0, "No transformed needle is present "
@@ -272,13 +288,12 @@ class ImageFinderTest(unittest.TestCase):
         needle = Image('shape_text')
         haystack = Image('all_shapes')
 
-        settings = needle.match_settings
-        settings.configure_backend(find_image="feature")
-        settings.p["find"]["similarity"].value = 0.0
-        settings.p["fdetect"]["nzoom"].value = 4.0
+        finder = FeatureMatcher()
+        finder.params["find"]["similarity"].value = 0.0
+        finder.params["fdetect"]["nzoom"].value = 4.0
 
         #self.draw_needle_features(needle, haystack, settings)
-        self.draw_haystack_hotmap(haystack, needle, "shape text", settings)
+        self.draw_haystack_hotmap(haystack, needle, "shape text", finder)
         # sleet to see image log better
         time.sleep(2)
 

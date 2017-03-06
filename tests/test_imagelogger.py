@@ -70,9 +70,6 @@ class ImageLoggerTest(unittest.TestCase):
 
         needle = Image(needle_name)
         haystack = Image(haystack_name)
-        needle.use_own_settings = True
-        settings = needle.match_settings
-        settings.configure_backend(find_image=backend)
 
         if backend == "template":
             finder = TemplateMatcher()
@@ -126,9 +123,6 @@ class ImageLoggerTest(unittest.TestCase):
     def test_findall_match(self):
         needle = Image('shape_red_box')
         haystack = Image('all_shapes')
-        needle.use_own_settings = True
-        settings = needle.match_settings
-        settings.configure_backend(find_image="template")
 
         finder = TemplateMatcher()
         finder.find(needle, haystack, multiple=True)
@@ -169,13 +163,10 @@ class ImageLoggerTest(unittest.TestCase):
     def test_hybrid_match(self):
         needle = Image('word')
         haystack = Image('sentence_font')
-        needle.use_own_settings = True
-        settings = needle.match_settings
-        settings.configure_backend(find_image="hybrid")
-        settings.p["find"]["front_similarity"].value = 0.3
-        settings.p["find"]["similarity"].value = 0.6
 
         finder = HybridMatcher()
+        finder.params["find"]["similarity"].value = 0.6
+        finder.params["hybrid"]["front_similarity"].value = 0.3
         finder.find(needle, haystack)
 
         dump_files = os.listdir(self.logpath)

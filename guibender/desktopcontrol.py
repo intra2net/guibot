@@ -22,40 +22,42 @@ log = logging.getLogger('guibender.desktopcontrol')
 import PIL.Image
 from tempfile import NamedTemporaryFile
 
-from settings import Settings, DCEqualizer
+import inputmap
+from settings import GlobalSettings, LocalSettings
 from image import Image
 from location import Location
+from errors import *
 
 
-class DesktopControl(object):
+class DesktopControl(LocalSettings):
     """
     Desktop control backend, responsible for performing desktop operations
     like mouse clicking, key pressing, text typing, etc.
     """
 
-    def __init__(self, equalizer=None):
-        """
-        Build a desktop control backend.
+    def __init__(self, configure=True, synchronize=True):
+        """Build a desktop control backend."""
+        super(DesktopControl, self).__init__(configure=False, synchronize=False)
 
-        :param equalizer: configuration for the backend
-        :type equalizer: :py:class:`settings.DCEqualizer` or None
-        """
-        self._screen = None
+        # available and currently fully compatible methods
+        self.categories["control"] = "control_methods"
+        self.algorithms["control_methods"] = ("autopy", "qemu", "vncdotool")
+
+        # other attributes
         self._backend_obj = None
-        self._width = None
-        self._height = None
+        self._width = 0
+        self._height = 0
         # NOTE: some backends require mouse pointer reinitialization so compensate for it
-        self._pointer = None
+        self._pointer = Location(0, 0)
         self._keymap = None
-        self._mousemap = None
         self._modmap = None
+        self._mousemap = None
 
-        if equalizer is None:
-            self.eq = DCEqualizer()
-        else:
-            self.eq = equalizer
-        if Settings.screen_autoconnect:
-            self.connect_screen()
+        # additional preparation
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
 
     def get_width(self):
         """
@@ -117,25 +119,49 @@ class DesktopControl(object):
         return self._pointer
     mouse_location = property(fget=get_mouse_location)
 
-    def connect_screen(self):
+    def __configure_backend(self, backend=None, category="control", reset=False):
+        if category != "control":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(DesktopControl, self).configure_backend("dc", reset=True)
+        if backend is None:
+            backend = GlobalSettings.desktop_control_backend
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
+                                          "%s" % (backend, self.algorithms[self.categories[category]]))
+
+        log.log(0, "Setting backend for %s to %s", category, backend)
+        self.params[category] = {}
+        self.params[category]["backend"] = backend
+        log.log(0, "%s %s\n", category, self.params[category])
+
+    def configure_backend(self, backend=None, category="control", reset=False):
         """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="control", reset=False):
+        if category != "control":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(DesktopControl, self).synchronize_backend("dc", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+    def synchronize_backend(self, backend=None, category="type", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+
         Select a backend for the instance, synchronizing configuration
-        like screen size, key map, mouse pointer handling, etc.
-
-        The object that carries this configuration is called screen and
-        is created and later on managed by the instance equalizer `eq`.
+        like screen size, key map, mouse pointer handling, etc. The
+        object that carries this configuration is called screen.
         """
-        # apply any configuration in the equalizer to the backend
-        self._screen = self.eq.sync_backend_to_params(self._screen)
-
-        # unpack the screen contents here to use through shortcuts
-        self._backend_obj = self._screen.backend
-        self._width = self._screen.width
-        self._height = self._screen.height
-        self._pointer = Location(self._screen.pointer[0], self._screen.pointer[1])
-        self._keymap = self._screen.keymap
-        self._mousemap = self._screen.mousemap
-        self._modmap = self._screen.modmap
+        self.__synchronize_backend(backend, category, reset)
 
     def _region_from_args(self, *args):
         if len(args) == 4:
@@ -292,9 +318,13 @@ class AutoPyDesktopControl(DesktopControl):
     python library portable to Windows and Linux operating systems.
     """
 
-    def __init__(self):
+    def __init__(self, configure=True, synchronize=True):
         """Build a DC backend using AutoPy."""
-        super(AutoPyDesktopControl, self).__init__(DCEqualizer("autopy"))
+        super(AutoPyDesktopControl, self).__init__(configure=False, synchronize=False)
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
 
     def get_mouse_location(self):
         """
@@ -304,6 +334,48 @@ class AutoPyDesktopControl(DesktopControl):
         """
         pos = self._backend_obj.mouse.get_pos()
         return Location(pos[0], pos[1])
+
+    def __configure_backend(self, backend=None, category="autopy", reset=False):
+        if category != "autopy":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(AutoPyDesktopControl, self).configure_backend("autopy", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+        # autopy has diffrent problems on different OS so specify it
+        self.params[category]["os_type"] = "linux"
+
+    def configure_backend(self, backend=None, category="autopy", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="autopy", reset=False):
+        if category != "autopy":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(AutoPyDesktopControl, self).synchronize_backend("autopy", reset=True)
+
+        import autopy
+        self._backend_obj = autopy
+
+        self._width, self._height = self._backend_obj.screen.get_size()
+        self._pointer = self.get_mouse_location()
+        self._keymap = inputmap.AutoPyKey()
+        self._modmap = inputmap.AutoPyKeyModifier()
+        self._mousemap = inputmap.AutoPyMouseButton()
+
+    def synchronize_backend(self, backend=None, category="autopy", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
 
     def capture_screen(self, *args):
         """
@@ -413,7 +485,7 @@ class AutoPyDesktopControl(DesktopControl):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
-        if self.eq.p["os_type"] == "windows":
+        if self.params["autopy"]["os_type"] == "windows":
             shift_chars = ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
                            "_", "+", "{", "}", ":", "\"", "|", "<", ">", "?"]
             capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -429,7 +501,7 @@ class AutoPyDesktopControl(DesktopControl):
                 # TODO: Fix AutoPy to handle international chars and other stuff so
                 # that both the Linux and Windows version are reduced to autopy.key
                 # autopy.key.type_string(text)
-        elif self.eq.p["os_type"] == "linux":
+        elif self.params["autopy"]["os_type"] == "linux":
             for part in text:
                 # HACK: use xdotool to handle various character encoding
                 # TODO: remove alltogether rather than using "--delay milliseconds"
@@ -448,21 +520,71 @@ class QemuDesktopControl(DesktopControl):
               object (python) provided by a library like virt-test.
     """
 
-    def __init__(self):
+    def __init__(self, configure=True, synchronize=True):
         """Build a DC backend using Qemu."""
-        super(QemuDesktopControl, self).__init__(DCEqualizer("qemu"))
+        super(QemuDesktopControl, self).__init__(configure=False, synchronize=False)
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
 
-    def connect_screen(self):
+    def __configure_backend(self, backend=None, category="qemu", reset=False):
+        if category != "qemu":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(QemuDesktopControl, self).configure_backend("qemu", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+        # qemu monitor object in case qemu backend is used
+        self.params[category]["qemu_monitor"] = None
+
+    def configure_backend(self, backend=None, category="qemu", reset=False):
         """
         Custom implementation of the base method.
 
         See base method for details.
         """
-        super(AutopyDesktopControl, self).connect_screen()
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="qemu", reset=False):
+        if category != "qemu":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(QemuDesktopControl, self).synchronize_backend("qemu", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        self._backend_obj = self.params[category]["qemu_monitor"]
+        if self._backend_obj is None:
+            raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
+
+        # screen size
+        with NamedTemporaryFile(prefix='guibender', suffix='.ppm') as f:
+            filename = f.name
+        self._backend_obj.screendump(filename=filename, debug=True)
+        screen = PIL.Image.open(filename)
+        os.unlink(filename)
+        self._width, self._height = screen.size
 
         # sync pointer
         self.mouse_move(Location(self._width, self._height), smooth=False)
         self.mouse_move(Location(0, 0), smooth=False)
+        self._pointer = Location(0, 0)
+
+        self._keymap = inputmap.QemuKey()
+        self._modmap = inputmap.QemuKeyModifier()
+        self._mousemap = inputmap.QemuMouseButton()
+
+    def synchronize_backend(self, backend=None, category="qemu", reset=False):
+        """
+        Custom implementation of the base method.
+
+        :raises: :py:class:`ValueError` if control backend is 'qemu' and no monitor is selected
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
 
     def capture_screen(self, *args):
         """
@@ -631,24 +753,78 @@ class VNCDoToolDesktopControl(DesktopControl):
     thus portable to any guest OS that is accessible through a VNC/RFB protocol.
     """
 
-    def __init__(self):
+    def __init__(self, configure=True, synchronize=True):
         """Build a DC backend using VNCDoTool."""
-        super(VNCDoToolDesktopControl, self).__init__(DCEqualizer("vncdotool"))
+        super(VNCDoToolDesktopControl, self).__init__(configure=False, synchronize=False)
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
 
-    def connect_screen(self):
+    def __configure_backend(self, backend=None, category="vncdotool", reset=False):
+        if category != "vncdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(VNCDoToolDesktopControl, self).configure_backend("vncdotool", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+        # hostname of the vnc server in case vncdotool backend is used
+        self.params[category]["vnc_hostname"] = "localhost"
+        # port of the vnc server in case vncdotool backend is used
+        self.params[category]["vnc_port"] = 0
+
+    def configure_backend(self, backend=None, category="vncdotool", reset=False):
         """
         Custom implementation of the base method.
 
         See base method for details.
         """
-        super(AutopyDesktopControl, self).connect_screen()
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="vncdotool", reset=False):
+        if category != "vncdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(VNCDoToolDesktopControl, self).synchronize_backend("vncdotool", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        from vncdotool import api
+        self._backend_obj = api.connect('%s:%i' % (self.params[category]["vnc_hostname"],
+                                                   self.params[category]["vnc_port"]))
+        # for special characters preprocessing for the vncdotool
+        self._backend_obj.factory.force_caps = True
 
         # additional logging for vncdotool available so let's make use of it
         logging.getLogger('vncdotool.client').setLevel(10)
+        logging.getLogger('vncdotool').setLevel(logging.ERROR)
+        logging.getLogger('twisted').setLevel(logging.ERROR)
+
+        # screen size
+        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+            filename = f.name
+        screen = self._backend_obj.captureScreen(filename)
+        os.unlink(filename)
+        self._width = screen.width
+        self._height = screen.height
 
         # sync pointer
         self.mouse_move(Location(self._width, self._height), smooth=False)
         self.mouse_move(Location(0, 0), smooth=False)
+        self._pointer = Location(0, 0)
+
+        self._keymap = inputmap.VNCDoToolKey()
+        self._modmap = inputmap.VNCDoToolKeyModifier()
+        self._mousemap = inputmap.VNCDoToolMouseButton()
+
+    def synchronize_backend(self, backend=None, category="vncdotool", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
 
     def capture_screen(self, *args):
         """

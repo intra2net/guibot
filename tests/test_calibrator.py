@@ -36,9 +36,9 @@ class CalibratorTest(unittest.TestCase):
     def calibration_setUp(self, needle, haystack, calibrate_backends):
         finder = FeatureMatcher()
         finder.imglog.logging_level = 10
-        finder.eq.configure_backend(find_image="feature")
+        finder.configure()
         for category in calibrate_backends:
-            finder.eq.can_calibrate(True, category)
+            finder.can_calibrate(category, True)
         calibrator = Calibrator()
 
         haystack = Image(haystack)

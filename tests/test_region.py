@@ -196,8 +196,8 @@ class RegionTest(unittest.TestCase):
 
         # pink is similar to red, so the best fuzzy matches also
         # include the three red boxes when considering color
-        pinkbox.match_settings.p["find"]["similarity"].value = 0.5
-        pinkbox.match_settings.p["find"]["nocolor"].value = False
+        pinkbox.match_settings.params["find"]["similarity"].value = 0.5
+        pinkbox.match_settings.params["template"]["nocolor"].value = False
         matches = Region().find_all(pinkbox)
         self.assertEqual(len(matches), 4)
         for match in matches:
@@ -208,8 +208,8 @@ class RegionTest(unittest.TestCase):
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
-        pinkbox.match_settings.p["find"]["similarity"].value = 0.8
-        pinkbox.match_settings.p["find"]["nocolor"].value = True
+        pinkbox.match_settings.params["find"]["similarity"].value = 0.8
+        pinkbox.match_settings.params["template"]["nocolor"].value = True
         matches = Region().find_all(pinkbox)
         self.assertEqual(len(matches), 3)
         for match in matches:
@@ -271,7 +271,7 @@ class RegionTest(unittest.TestCase):
         match.hover(match.target)
 
         # Hover over Image with 50% similarity
-        region.cv_backend.eq.p["find"]["similarity"].value = 0.5
+        region.cv_backend.params["find"]["similarity"].value = 0.5
         region.hover(Image('shape_pink_box'))
 
     def test_click(self):

@@ -42,6 +42,10 @@ class Match(region.Region):
         """
         super(Match, self).__init__(xpos, ypos, image.width, image.height, dc, cv)
 
+        if cv is not None and len(cv.imglog.similarities) > 0:
+            self._similarity = cv.imglog.similarities[-1]
+        else:
+            self._similarity = 0.0
         target_offset = image.target_center_offset
         self._target = self.calc_click_point(xpos, ypos, self._width, self._height, target_offset)
 
@@ -50,6 +54,16 @@ class Match(region.Region):
         # NOTE: the __str__ of the Location instance self._target is not called which is a hidden
         # (worst type of) error so call it explicitly here using str(self._target) or formatting
         return "%s (match)" % self._target
+
+    def get_similarity(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: similarity the match was obtained with
+        :rtype: float
+        """
+        return self._similarity
+    similarity = property(fget=get_similarity)
 
     def get_target(self):
         """
