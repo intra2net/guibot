@@ -13,6 +13,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
+import os
 import re
 try:
     import configparser as config
@@ -146,7 +147,7 @@ class ImageFinder(LocalSettings):
 
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
-        self.algorithms["find_methods"] = ("autopy", "template", "feature", "hybrid")
+        self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature", "hybrid")
 
         # other attributes
         self.imglog = ImageLogger()
@@ -418,6 +419,257 @@ class AutoPyMatcher(ImageFinder):
             matches = []
         self.imglog.log(30)
         return matches
+
+
+class ContourMatcher(ImageFinder):
+    """
+    Contour matching backend provided by OpenCV.
+
+    Essentially, we will find all countours in a binary image,
+    preprocessed with Gaussian blur and adaptive threshold and return
+    the ones with area (size) similar to the searched image.
+    """
+
+    def __init__(self, configure=True, synchronize=True):
+        """Build a CV backend using OpenCV's contour matching."""
+        super(ContourMatcher, self).__init__(configure=False, synchronize=False)
+
+        # available and currently fully compatible methods
+        self.categories["contour"] = "contour_extractors"
+        self.categories["threshold"] = "threshold_filters"
+        self.algorithms["contour_extractors"] = ("mixed",)
+        self.algorithms["threshold_filters"] = ("normal", "adaptive", "canny")
+
+        # additional preparation (no synchronization available)
+        if configure:
+            self.__configure(reset=True)
+
+    def __configure_backend(self, backend=None, category="contour", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if category not in ["contour", "threshold"]:
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(ContourMatcher, self).configure_backend("contour", reset=True)
+        if category == "contour" and backend is None:
+            backend = "mixed"
+        elif category == "threshold" and backend is None:
+            backend = "adaptive"
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
+                                          "%s" % (backend, self.algorithms[self.categories[category]]))
+
+        log.log(0, "Setting backend for %s to %s", category, backend)
+        self.params[category] = {}
+        self.params[category]["backend"] = backend
+
+        if category == "contour":
+            # 1 RETR_EXTERNAL, 2 RETR_LIST, 3 RETR_CCOMP, 4 RETR_TREE
+            self.params[category]["retrievalMode"] = CVParameter(2, 1, 4)
+            # 1 CHAIN_APPROX_NONE, 2 CHAIN_APPROX_SIMPLE, 3 CHAIN_APPROX_TC89_L1, 4 CHAIN_APPROX_TC89_KCOS
+            self.params[category]["approxMethod"] = CVParameter(2, 1, 4)
+            self.params[category]["minArea"] = CVParameter(9, 0, None)
+            # 1 L1 method, 2 L2 method, 3 L3 method
+            self.params[category]["contoursMatch"] = CVParameter(1, 1, 3)
+        elif category == "threshold":
+            # 1 normal, 2 median, 3 gaussian, 4 none
+            self.params[category]["blurType"] = CVParameter(4, 1, 4)
+            self.params[category]["blurKernelSize"] = CVParameter(5, 1, None)
+            self.params[category]["blurKernelSigma"] = CVParameter(0, 0, None)
+            if backend == "normal":
+                self.params[category]["thresholdValue"] = CVParameter(122, 0, 255)
+                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
+                self.params[category]["thresholdType"] = CVParameter(1, 1, 5)
+            elif backend == "adaptive":
+                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
+                self.params[category]["adaptiveMethod"] = CVParameter(1, 1, 2)
+                self.params[category]["thresholdType"] = CVParameter(1, 1, 2)
+                self.params[category]["blockSize"] = CVParameter(11, 1, None)
+                self.params[category]["constant"] = CVParameter(2, 1, None)
+            elif backend == "canny":
+                self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None)
+                self.params[category]["threshold2"] = CVParameter(1000.0, 0.0, None)
+
+    def configure_backend(self, backend=None, category="contour", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __configure(self, threshold_filter=None, reset=True):
+        self.__configure_backend(category="contour", reset=reset)
+        self.__configure_backend(threshold_filter, "threshold")
+
+    def configure(self, threshold_filter=None, reset=True):
+        """
+        Custom implementation of the base method.
+
+        :param threshold_filter: name of a preselected backend
+        :type threshold_filter: str or None
+        """
+        self.__configure(threshold_filter, reset)
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+
+        First extract all contours from a binary (boolean, threshold) version of
+        the needle and haystack and then match the needle contours with one or
+        more sets of contours in the haystack image. The number of needle matches
+        depends on the set similarity and can be improved by requiring minimal
+        area for the contours to be considered.
+        """
+        needle.match_settings = self
+        needle.use_own_settings = True
+        self.imglog.needle = needle
+        self.imglog.haystack = haystack
+        self.imglog.dump_matched_images()
+
+        # class-specific dependencies
+        import cv2
+        import numpy
+
+        orig_needle = numpy.array(needle.pil_image)
+        thresh_needle = self._binarize_image(orig_needle, log=False)
+        countours_needle = thresh_needle.copy()
+        needle_contours = self._extract_contours(countours_needle, log=False)
+
+        orig_haystack = numpy.array(haystack.pil_image)
+        thresh_haystack = self._binarize_image(orig_haystack, log=True)
+        countours_haystack = thresh_haystack.copy()
+        haystack_contours = self._extract_contours(countours_haystack, log=True)
+
+        self.imglog.hotmaps.append(numpy.array(haystack.pil_image))
+
+        distances = numpy.ones((len(haystack_contours), len(needle_contours)))
+        for i, hcontour in enumerate(haystack_contours):
+            if cv2.contourArea(hcontour) < self.params["contour"]["minArea"].value:
+                continue
+            for j, ncontour in enumerate(needle_contours):
+                if cv2.contourArea(ncontour) < self.params["contour"]["minArea"].value:
+                    continue
+                distances[i,j] = cv2.matchShapes(hcontour, ncontour, self.params["contour"]["contoursMatch"].value, 0)
+                assert distances[i,j] >= 0.0
+
+        locations = []
+        nx, ny, nw, nh = cv2.boundingRect(numpy.concatenate(needle_contours, axis=0))
+        while True:
+            matching_haystack_contours = []
+            matching_haystack_distances = numpy.zeros(len(needle_contours))
+            for j in range(len(needle_contours)):
+                matching_haystack_distances[j] = numpy.min(distances[:,j])
+                index = numpy.where(distances[:,j] == matching_haystack_distances[j])
+                # we don't allow collapsing into the same needle contour, i.e.
+                # the map from the needle to the haystack contours is injective
+                # -> so here we cross the entire row rather than one value in it
+                distances[index[0][0],:] = numpy.max(distances[:,j])
+                matching_haystack_contours.append(haystack_contours[index[0][0]])
+            average_distance = numpy.average(matching_haystack_distances)
+            required_distance = 1.0 - self.params["find"]["similarity"].value
+            logging.debug("Average distance to next needle shape is %s of max allowed %s",
+                          average_distance, required_distance)
+            if average_distance > required_distance:
+                break
+            else:
+                shape = numpy.concatenate(matching_haystack_contours, axis=0)
+                x, y, w, h = cv2.boundingRect(shape)
+                # calculate needle upleft and downright points to return its (0,0) location
+                needle_upleft = (max(int((x-nx)*float(w)/nw), 0), max(int((y-ny)*float(h)/nh), 0))
+                needle_downright = (min(int(needle_upleft[0]+needle.width*float(w)/nw), haystack.width),
+                                    min(int(needle_upleft[1]+needle.height*float(h)/nh), haystack.height))
+                cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (0,0,0), 2)
+                cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (255,255,255), 1)
+                # NOTE: to extract the region of interest just do:
+                # roi = thresh_haystack[y:y+h,x:x+w]
+                self.imglog.similarities.append(1.0 - average_distance)
+                self.imglog.locations.append(needle_upleft)
+                locations.append(Location(*needle_upleft))
+
+        self.imglog.log(30)
+        return locations
+
+    def _binarize_image(self, image, log=False):
+        import cv2
+        # blur first in order to avoid unwonted edges caused from noise
+        blurSize = self.params["threshold"]["blurKernelSize"].value
+        blurDeviation = self.params["threshold"]["blurKernelSigma"].value
+        gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+        if self.params["threshold"]["blurType"].value == 1:
+            blur_image = cv2.blur(gray_image, (blurSize,blurSize))
+        elif self.params["threshold"]["blurType"].value == 2:
+            blur_image = cv2.medianBlur(gray_image, (blurSize,blurSize))
+        elif self.params["threshold"]["blurType"].value == 3:
+            blur_image = cv2.GaussianBlur(gray_image, (blurSize,blurSize), blurDeviation)
+        elif self.params["threshold"]["blurType"].value == 4:
+            blur_image = gray_image
+
+        # second stage: thresholding
+        if self.params["threshold"]["backend"] == "normal":
+            _, thresh_image = cv2.threshold(blur_image,
+                                             self.params["threshold"]["thresholdValue"].value,
+                                             self.params["threshold"]["thresholdMax"].value,
+                                             self.params["threshold"]["thresholdType"].value)
+        elif self.params["threshold"]["backend"] == "adaptive":
+            thresh_image = cv2.adaptiveThreshold(blur_image,
+                                                  self.params["threshold"]["thresholdMax"].value,
+                                                  self.params["threshold"]["adaptiveMethod"].value,
+                                                  self.params["threshold"]["thresholdType"].value,
+                                                  self.params["threshold"]["blockSize"].value,
+                                                  self.params["threshold"]["constant"].value)
+        elif self.params["threshold"]["backend"] == "canny":
+            thresh_image = cv2.Canny(blur_image,
+                                      self.params["threshold"]["threshold1"].value,
+                                      self.params["threshold"]["threshold2"].value)
+
+        if log:
+            self.imglog.hotmaps.append(thresh_image)
+        return thresh_image
+
+    def _extract_contours(self, countours_image, log=False):
+        import cv2
+        _, contours, hierarchy = cv2.findContours(countours_image,
+                                                  self.params["contour"]["retrievalMode"].value,
+                                                  self.params["contour"]["approxMethod"].value)
+        image_contours = [cv2.approxPolyDP(cnt, 3, True) for cnt in contours]
+        if log:
+            cv2.drawContours(countours_image, image_contours, -1, (255,255,255))
+            self.imglog.hotmaps.append(countours_image)
+        return image_contours
+
+    def log(self, lvl):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        self.imglog.dump_hotmap("imglog%s-3hotmap-threshold.png" % self.imglog.printable_step,
+                                self.imglog.hotmaps[0])
+        self.imglog.dump_hotmap("imglog%s-3hotmap-contours.png" % self.imglog.printable_step,
+                                self.imglog.hotmaps[1])
+
+        similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
+        self.imglog.dump_hotmap("imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity),
+                                self.imglog.hotmaps[-1])
+
+        self.imglog.clear()
+        ImageLogger.step += 1
 
 
 class TemplateMatcher(ImageFinder):

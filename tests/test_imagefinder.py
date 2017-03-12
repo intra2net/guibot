@@ -111,6 +111,34 @@ class ImageFinderTest(unittest.TestCase):
         matches = finder.find(Image('n_ibs'), Image('all_shapes'))
         self.assertEqual(len(matches), 0)
 
+    def test_contour_same(self):
+        finder = ContourMatcher()
+        # shape matching is not perfect
+        finder.params["find"]["similarity"].value = 0.99
+        for contour in finder.algorithms["contour_extractors"]:
+            for threshold in finder.algorithms["threshold_filters"]:
+                # TODO: this is still not implemented
+                if contour == "components":
+                    continue
+                finder.configure_backend(contour, "contour")
+                finder.configure_backend(threshold, "threshold")
+                finder.params["contour"]["minArea"].value = 100
+                matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
+                self.assertEqual(len(matches), 1)
+                self.assertEqual(matches[0].x, 104)
+                self.assertEqual(matches[0].y, 10)
+
+    def test_contour_nomatch(self):
+        finder = ContourMatcher()
+        finder.params["find"]["similarity"].value = 0.25
+        for contour in finder.algorithms["contour_extractors"]:
+            for threshold in finder.algorithms["threshold_filters"]:
+                finder.configure_backend(contour, "contour")
+                finder.configure_backend(threshold, "threshold")
+                finder.params["contour"]["minArea"].value = 100
+                matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+                self.assertEqual(len(matches), 0)
+
     def test_template_same(self):
         finder = TemplateMatcher()
         finder.params["find"]["similarity"].value = 1.0

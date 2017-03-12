@@ -117,6 +117,8 @@ class Target(object):
 
         if backend_name == "autopy":
             finder = AutoPyMatcher()
+        elif backend_name == "contour":
+            finder = ContourMatcher()
         elif backend_name == "template":
             finder = TemplateMatcher()
         elif backend_name == "feature":
