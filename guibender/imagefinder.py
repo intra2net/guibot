@@ -158,6 +158,7 @@ class ImageFinder(LocalSettings):
 
         # other attributes
         self.imglog = ImageLogger()
+        self.imglog.log = self.log
 
         # additional preparation (no synchronization available)
         if configure:
@@ -307,6 +308,29 @@ class ImageFinder(LocalSettings):
         """
         raise NotImplementedError("Abstract method call - call implementation of this class")
 
+    def log(self, lvl):
+        """
+        Log images with an arbitrary logging level.
+
+        :param int lvl: logging level for the message
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
+        name = "imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity)
+        self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
+
+        self.imglog.clear()
+        ImageLogger.step += 1
+
 
 class AutoPyMatcher(ImageFinder):
     """Simple matching backend provided by AutoPy."""
@@ -330,8 +354,6 @@ class AutoPyMatcher(ImageFinder):
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
-        # autopy has diffrent problems on different OS so specify it
-        self.params[category]["os_type"] = "linux"
 
     def configure_backend(self, backend=None, category="autopy", reset=False):
         """
@@ -392,10 +414,11 @@ class AutoPyMatcher(ImageFinder):
 
         if coord is not None:
             self.imglog.locations.append(coord)
+            self.imglog.similarities.append(1.0 - autopy_tolerance)
             matches = [Location(coord[0], coord[1])]
         else:
             matches = []
-        self.imglog.log(30, "autopy")
+        self.imglog.log(30)
 
         return matches
 
@@ -526,7 +549,7 @@ class TemplateMatcher(ImageFinder):
 
             log.log(0, "Total maxima up to the point are %i", len(maxima))
         log.debug("A total of %i matches found", len(maxima))
-        self.imglog.log(30, "template")
+        self.imglog.log(30)
 
         return maxima
 
@@ -559,6 +582,39 @@ class TemplateMatcher(ImageFinder):
             match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[method])
 
         return match
+
+    def log(self, lvl):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        for i in range(len(self.imglog.similarities)):
+            self.imglog.log_locations(30, [self.imglog.locations[i]], self.imglog.hotmaps[i],
+                                      int(30 * self.imglog.similarities[i]), 255, 255, 255,
+                                      draw_needle_box=False)
+            name = "imglog%s-3hotmap-template%s-%s.png" % (self.imglog.printable_step,
+                                                           i + 1, self.imglog.similarities[i])
+            self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
+        no_color = self.params["template"]["nocolor"].value
+        final_hotmap = self.imglog.haystack.preprocess(gray=no_color)
+        self.imglog.log_locations(30, self.imglog.locations, final_hotmap,
+                                  0, 255, 255, 255, draw_needle_box=True)
+        name = "imglog%s-3hotmap-template.png" % self.imglog.printable_step
+        self.imglog.dump_hotmap(name, final_hotmap)
+
+        self.imglog.clear()
+        ImageLogger.step += 1
 
 
 class FeatureMatcher(ImageFinder):
@@ -825,9 +881,9 @@ class FeatureMatcher(ImageFinder):
 
         # project more points for debugging purposes and image logging
         frame_points = []
-        frame_points.append((needle.width / 2, needle.height / 2))
         frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
                              (needle.width, needle.height)])
+        frame_points.append((needle.width / 2, needle.height / 2))
 
         similarity = self.params["find"]["similarity"].value
         coord = self._project_features(frame_points, ngray, hgray,
@@ -861,7 +917,7 @@ class FeatureMatcher(ImageFinder):
             log.debug("No acceptable best match after feature detection: "
                       "only %s needle and %s haystack features detected",
                       len(nkp), len(hkp))
-            self.imglog.log(40, "feature")
+            self.imglog.log(40)
             return None
 
         mnkp, mhkp = self._match_features(nkp, ndc, hkp, hdc,
@@ -871,20 +927,19 @@ class FeatureMatcher(ImageFinder):
             log.debug("No acceptable best match after feature matching: "
                       "best match similarity %s is less than required %s",
                       self.imglog.similarities[-1], similarity)
-            self.imglog.log(40, "feature")
+            self.imglog.log(40)
             return None
 
-        self._project_locations(locations_in_needle, mnkp, mhkp)
-
+        locations_in_haystack = self._project_locations(locations_in_needle, mnkp, mhkp)
         if self.imglog.similarities[-1] < similarity:
             log.debug("No acceptable best match after RANSAC projection: "
                       "best match similarity %s is less than required %s",
                       self.imglog.similarities[-1], similarity)
-            self.imglog.log(40, "feature")
+            self.imglog.log(40)
             return None
         else:
-            location = Location(*self.imglog.locations[-1])
-            self.imglog.log(30, "feature")
+            location = Location(*locations_in_haystack[0])
+            self.imglog.log(30)
             return location
 
     def _detect_features(self, ngray, hgray, detect, extract):
@@ -945,7 +1000,8 @@ class FeatureMatcher(ImageFinder):
         log.debug("Detected %s keypoints in needle and %s in haystack",
                   len(nkeypoints), len(hkeypoints))
         hkp_locations = [hkp.pt for hkp in hkeypoints]
-        self.imglog.log_locations(10, hkp_locations, None, 1, 0, 0, 255)
+        self.imglog.log_locations(10, hkp_locations, self.imglog.hotmaps[-1],
+                                  3, 255, 0, 0, draw_needle_box=False)
 
         return (nkeypoints, ndescriptors, hkeypoints, hdescriptors)
 
@@ -1042,7 +1098,8 @@ class FeatureMatcher(ImageFinder):
 
         # these matches are half the way to being good
         mhkp_locations = [mhkp.pt for mhkp in match_hkeypoints]
-        self.imglog.log_locations(10, mhkp_locations, None, 2, 0, 255, 255)
+        self.imglog.log_locations(10, mhkp_locations, self.imglog.hotmaps[-1],
+                                  2, 0, 255, 255, draw_needle_box=False)
 
         # update the current achieved similarity
         match_similarity = float(len(match_nkeypoints)) / float(len(nkeypoints))
@@ -1075,9 +1132,6 @@ class FeatureMatcher(ImageFinder):
         # check matches consistency
         assert len(mnkp) == len(mhkp)
 
-        # the match coordinates to be returned
-        locations_in_needle.append((0, 0))
-
         # homography and fundamental matrix as options - homography is considered only
         # for rotation but currently gives better results than the fundamental matrix
         H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
@@ -1099,7 +1153,8 @@ class FeatureMatcher(ImageFinder):
             if mask[i][0] == 1:
                 true_matches.append(kp)
         tmhkp_locations = [tmhkp.pt for tmhkp in true_matches]
-        self.imglog.log_locations(20, tmhkp_locations, None, 3, 0, 255, 0)
+        self.imglog.log_locations(20, tmhkp_locations, self.imglog.hotmaps[-1],
+                                  1, 0, 255, 0, draw_needle_box=False)
 
         # calculate and project all point coordinates in the needle
         projected = []
@@ -1115,9 +1170,38 @@ class FeatureMatcher(ImageFinder):
         # override the match similarity with a more precise one
         self.imglog.similarities[-1] = ransac_similarity
         log.log(0, "%s\\%s -> %f", len(true_matches), len(mnkp), ransac_similarity)
-        self.imglog.locations[-1] = locations_in_needle.pop()
+        self.imglog.locations = projected
 
         return projected
+
+    def log(self, lvl):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        name = "imglog%s-3hotmap-feature-%s.png" % (self.imglog.printable_step,
+                                                    self.imglog.similarities[-1])
+        self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
+
+        final_hotmap = self.imglog.haystack.preprocess(gray=False)
+        self.imglog.log_locations(30, self.imglog.locations, final_hotmap,
+                                  3, 0, 0, 255, draw_needle_box=False)
+        name = "imglog%s-3hotmap-feature.png" % self.imglog.printable_step
+        self.imglog.dump_hotmap(name, final_hotmap)
+
+        self.imglog.clear()
+        ImageLogger.step += 1
 
 
 class HybridMatcher(TemplateMatcher, FeatureMatcher):
@@ -1287,7 +1371,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
                 self.imglog.hotmaps.append(hcanvas)
                 self.imglog.similarities.append(self.imglog.similarities[len(template_maxima)])
                 self.imglog.locations.append(self.imglog.locations[len(template_maxima)])
-            self.imglog.log(30, "hybrid")
+            self.imglog.log(30)
             return []
 
         # NOTE: the best of all found will always be logged but if multiple matches
@@ -1299,8 +1383,54 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         locations = []
         for maximum in feature_maxima:
             locations.append(Location(*maximum[2]))
-        self.imglog.log(30, "hybrid")
+        self.imglog.log(30)
         return locations
+
+    def log(self, lvl):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        # knowing how the hybrid works this estimates
+        # the expected number of cases starting from 1 (i+1)
+        # to make sure the winner is the first alphabetically
+        candidate_num = len(self.imglog.similarities) / 2
+        for i in range(candidate_num):
+            self.imglog.log_locations(30, [self.imglog.locations[i]],
+                                      self.imglog.hotmaps[i],
+                                      30 * self.imglog.similarities[i], 255, 255, 255)
+            name = "imglog%s-3hotmap-hybrid-%stemplate-%s.png" % (self.imglog.printable_step,
+                                                                  i + 1, self.imglog.similarities[i])
+            self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
+            ii = candidate_num + i
+            self.imglog.log_locations(30, [self.imglog.locations[ii]],
+                                      self.imglog.hotmaps[ii],
+                                      4, 255, 0, 0)
+            name = "imglog%s-3hotmap-hybrid-%sfeature-%s.png" % (self.imglog.printable_step,
+                                                                 i + 1, self.imglog.similarities[ii])
+            self.imglog.dump_hotmap(name, self.imglog.hotmaps[ii])
+
+        if len(self.imglog.similarities) % 2 == 1:
+            self.imglog.log_locations(30, [self.imglog.locations[-1]],
+                                      self.imglog.hotmaps[-1],
+                                      6, 255, 0, 0)
+            name = "imglog%s-3hotmap-hybrid-%s.png" % (self.imglog.printable_step,
+                                                       self.imglog.similarities[-1])
+            self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
+
+        self.imglog.clear()
+        ImageLogger.step += 1
 
 
 class Hybrid2to1Matcher(HybridMatcher):
@@ -1453,8 +1583,32 @@ class Hybrid2to1Matcher(HybridMatcher):
 
         # release the accumulated logging from subroutines
         ImageLogger.accumulate_logging = False
-        self.imglog.log(30, "2to1")
+        self.imglog.log(30)
         return locations_flat
+
+    def log(self, lvl):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        for i in range(len(self.imglog.hotmaps)):
+            name = "imglog%s-3hotmap-2to1-subregion%s-%s.png" % (self.imglog.printable_step,
+                                                                 i, self.imglog.similarities[i])
+            self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
+
+        self.imglog.clear()
+        ImageLogger.step += 1
 
 
 class CustomMatcher(ImageFinder):

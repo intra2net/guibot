@@ -80,133 +80,29 @@ class ImageLogger(object):
         return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
     printable_step = property(fget=get_printable_step)
 
-    def debug(self, logtype):
-        """
-        Log images with a DEBUG logging level.
+    def debug(self):
+        """Log images with a DEBUG logging level."""
+        self.log(10)
 
-        :param str logtype: backend algorithm type to log from,
-                            see :py:func:`ImageLogger.log` for details
-        """
-        self.log(10, logtype)
+    def info(self):
+        """Log images with an INFO logging level."""
+        self.log(20)
 
-    def info(self, logtype):
-        """
-        Log images with an INFO logging level.
+    def warning(self):
+        """Log images with a WARNING logging level."""
+        self.log(30)
 
-        :param str logtype: backend algorithm type to log from,
-                            see :py:func:`ImageLogger.log` for details
-        """
-        self.log(20, logtype)
+    def error(self):
+        """Log images with an ERROR logging level."""
+        self.log(40)
 
-    def warning(self, logtype):
-        """
-        Log images with a WARNING logging level.
+    def critical(self):
+        """Log images with a CRITICAL logging level."""
+        self.log(50)
 
-        :param str logtype: backend algorithm type to log from,
-                            see :py:func:`ImageLogger.log` for details
-        """
-        self.log(30, logtype)
-
-    def error(self, logtype):
-        """
-        Log images with an ERROR logging level.
-
-        :param str logtype: backend algorithm type to log from,
-                            see :py:func:`ImageLogger.log` for details
-        """
-        self.log(40, logtype)
-
-    def critical(self, logtype):
-        """
-        Log images with a CRITICAL logging level.
-
-        :param str logtype: backend algorithm type to log from,
-                            see :py:func:`ImageLogger.log` for details
-        """
-        self.log(50, logtype)
-
-    def log(self, lvl, logtype):
-        """
-        Log images with an arbitrary logging level.
-
-        :param int lvl: logging level for the message
-        :param str logtype: backend algorithm type to log from,
-                            one of 'template', 'autopy', 'feature',
-                            'hybrid', and '2to1'
-        """
-        # below selected logging level
-        if lvl < self.logging_level:
-            return
-        # logging is being collected for a specific logtype
-        elif ImageLogger.accumulate_logging:
-            return
-
-        if logtype in "template":
-            for i in range(len(self.similarities)):
-                self.log_locations(30, [self.locations[i]], self.hotmaps[i],
-                                   30 * self.similarities[i], 255, 255, 255)
-                name = "imglog%s-3hotmap-%s%s-%s.png" % (self.printable_step,
-                                                         logtype, i + 1,
-                                                         self.similarities[i])
-                self.dump_hotmap(name, self.hotmaps[i])
-
-        elif logtype == "autopy":
-            self.log_locations(30, self.locations, 30, 0, 0, 0)
-            name = "imglog%s-3hotmap-%s.png" % (self.printable_step,
-                                                logtype)
-            self.dump_hotmap(name, self.hotmaps[-1])
-
-        elif logtype == "feature":
-            self.log_locations(30, [self.locations[-1]], self.hotmaps[-1],
-                               4, 255, 0, 0)
-            name = "imglog%s-3hotmap-%s-%s.png" % (self.printable_step,
-                                                   logtype,
-                                                   self.similarities[-1])
-            self.dump_hotmap(name, self.hotmaps[-1])
-
-        elif logtype == "hybrid":
-            # knowing how the hybrid works this estimates
-            # the expected number of cases starting from 1 (i+1)
-            # to make sure the winner is the first alphabetically
-            candidate_num = len(self.similarities) / 2
-            for i in range(candidate_num):
-                self.log_locations(30, [self.locations[i]],
-                                   self.hotmaps[i],
-                                   30 * self.similarities[i], 255, 255, 255)
-                name = "imglog%s-3hotmap-%s-%stemplate-%s.png" % (self.printable_step,
-                                                                  logtype, i + 1,
-                                                                  self.similarities[i])
-                self.dump_hotmap(name, self.hotmaps[i])
-                ii = candidate_num + i
-                self.log_locations(30, [self.locations[ii]],
-                                   self.hotmaps[ii],
-                                   4, 255, 0, 0)
-                name = "imglog%s-3hotmap-%s-%sfeature-%s.png" % (self.printable_step,
-                                                                 logtype, i + 1,
-                                                                 self.similarities[ii])
-                self.dump_hotmap(name, self.hotmaps[ii])
-
-            if len(self.similarities) % 2 == 1:
-                self.log_locations(30, [self.locations[-1]],
-                                   self.hotmaps[-1],
-                                   6, 255, 0, 0)
-                name = "imglog%s-3hotmap-%s-%s.png" % (self.printable_step,
-                                                       logtype,
-                                                       self.similarities[-1])
-                self.dump_hotmap(name, self.hotmaps[-1])
-
-        elif logtype == "2to1":
-            for i in range(len(self.hotmaps)):
-                name = "imglog%s-3hotmap-%s-subregion%s-%s.png" % (self.printable_step,
-                                                                   logtype, i,
-                                                                   self.similarities[i])
-                self.dump_hotmap(name, self.hotmaps[i])
-
-        self.clear()
-        ImageLogger.step += 1
-
-    def log_locations(self, lvl, locations, hotmap=None,
-                      radius=2, r=255, g=255, b=255):
+    def log_locations(self, lvl, locations, hotmap,
+                      radius=0, r=255, g=255, b=255,
+                      draw_needle_box=True):
         """
         Draw locations with an arbitrary logging level on a hotmap.
 
@@ -216,21 +112,19 @@ class ImageLogger(object):
         :param hotmap: image to draw on where the locations are found
         :type hotmap: :py:class:`numpy.ndarray`
         :param int radius: radius of each circle (preferably integer)
-        :param int r: red value of each circle
-        :param int g: green value of each circle
         :param int b: blue value of each circle
+        :param int g: green value of each circle
+        :param int r: red value of each circle
         """
-        if len(self.hotmaps) == 0 and hotmap is None:
-            raise MissingHotmapError
-        elif hotmap is None:
-            hotmap = self.hotmaps[-1]
-
         if lvl < self.logging_level:
             return
         for loc in locations:
             x, y = loc
-            color = (r, g, b)
-            cv2.circle(hotmap, (int(x), int(y)), int(radius), color)
+            color = (b, g, r)
+            cv2.circle(hotmap, (int(x), int(y)), radius, color)
+            if draw_needle_box:
+                cv2.rectangle(hotmap, (x, y), (x+self.needle.width, y+self.needle.height), (0, 0, 0), 2)
+                cv2.rectangle(hotmap, (x, y), (x+self.needle.width, y+self.needle.height), color, 1)
 
     def log_window(self, hotmap):
         """
