@@ -125,6 +125,8 @@ class Target(object):
             finder = FeatureMatcher()
         elif backend_name == "cascade":
             finder = CascadeMatcher()
+        elif backend_name == "text":
+            finder = TextMatcher()
         elif backend_name == "hybrid":
             finder = HybridMatcher()
         finder.from_match_file(filename_without_extention)
@@ -454,6 +456,30 @@ class Text(Target):
         super(Text, self).save(filename)
         with open(filename, "w") as f:
             f.write(self.value)
+
+    def distance_to(self, str2):
+        """
+        Approximate Hungarian distance.
+
+        :param str str2: string to compare to
+        :returns: string distance value
+        :rtype: float
+        """
+        str1 = self.value
+        import numpy
+        M = numpy.empty((len(str1) + 1, len(str2) + 1), numpy.int)
+
+        for a in range(0, len(str1)+1):
+            M[a,0] = a
+        for b in range(0, len(str2)+1):
+            M[0,b] = b
+
+        for a in range(1, len(str1)+1):  #(size_t a = 1; a <= NA; ++a):
+            for b in range(1, len(str2)+1):  #(size_t b = 1; b <= NB; ++b)
+                z = M[a-1,b-1] + (0 if str1[a-1] == str2[b-1] else 1)
+                M[a,b] = min(min(M[a-1,b] + 1, M[a,b-1] + 1), z)
+
+        return M[len(str1),len(str2)]
 
 
 class Pattern(Target):

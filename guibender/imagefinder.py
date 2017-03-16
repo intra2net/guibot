@@ -147,7 +147,8 @@ class ImageFinder(LocalSettings):
 
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
-        self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature", "cascade", "hybrid")
+        self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature",
+                                           "cascade", "text", "hybrid")
 
         # other attributes
         self.imglog = ImageLogger()
@@ -1095,8 +1096,6 @@ class FeatureMatcher(ImageFinder):
         """
         Custom implementation of the base method.
 
-        :param str category: supported category, see `algorithms`
-
         See base method for details.
         """
         self.__synchronize_backend(backend, category, reset)
@@ -1591,6 +1590,475 @@ class CascadeMatcher(ImageFinder):
         self.imglog.hotmaps.append(canvas)
         self.imglog.log(30)
         return locations
+
+
+class TextMatcher(ContourMatcher):
+    """
+    Text matching backend provided by OpenCV.
+
+    This matcher will find a text (string) needle in the haystack,
+    eventually relying on Tesseract or simpler kNN-based OCR,
+    using extremal regions or contours before recognition, and
+    returning a match if the string is among the recognized strings
+    using string metric similar to Hamming distance.
+
+    Extremal Region Filter algorithm described in:
+    Neumann L., Matas J.: Real-Time Scene Text Localization and Recognition, CVPR 2012
+    """
+
+    def __init__(self, configure=True, synchronize=True):
+        """Build a CV backend using OpenCV's text matching options."""
+        super(TextMatcher, self).__init__(configure=False, synchronize=False)
+
+        # available and currently fully compatible methods
+        self.categories["text"] = "text_matchers"
+        self.categories["tdetect"] = "text_detectors"
+        self.categories["ocr"] = "text_recognizers"
+        self.algorithms["text_matchers"] = ("mixed",)
+        self.algorithms["text_detectors"] = ("erstat", "contours", "components")
+        self.algorithms["text_recognizers"] = ("tesseract", "hmm", "beamSearch")
+
+        # other attributes
+        self.erc1 = None
+        self.erf1 = None
+        self.erc2 = None
+        self.erf2 = None
+        self.ocr = None
+
+        # additional preparation
+        if configure:
+            self.__configure(reset=True)
+        if synchronize:
+            self.__synchronize(reset=False)
+
+    def __configure_backend(self, backend=None, category="text", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        elif category in ["contour", "threshold"]:
+            ContourMatcher.configure_backend(self, backend, category, reset)
+            return
+
+        if reset:
+            ImageFinder.configure_backend(self, "text", reset=True)
+        if category == "text" and backend is None:
+            backend = "mixed"
+        elif category == "tdetect" and backend is None:
+            backend = "erstat"
+        elif category == "ocr" and backend is None:
+            backend = "tesseract"
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
+                                          "%s" % (backend, self.algorithms[self.categories[category]]))
+
+        log.log(0, "Setting backend for %s to %s", category, backend)
+        self.params[category] = {}
+        self.params[category]["backend"] = backend
+
+        if category == "text":
+            self.params[category]["datapath"] = CVParameter("misc")
+        elif category == "tdetect":
+            if backend == "erstat":
+                self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255)
+                self.params[category]["minArea"] = CVParameter(0.00025, 0.0, 1.0)
+                self.params[category]["maxArea"] = CVParameter(0.13, 0.0, 1.0)
+                self.params[category]["minProbability"] = CVParameter(0.4, 0.0, 1.0)
+                self.params[category]["nonMaxSuppression"] = CVParameter(True)
+                self.params[category]["minProbabilityDiff"] = CVParameter(0.1, 0.0, 1.0)
+                self.params[category]["minProbability2"] = CVParameter(0.3, 0.0, 1.0)
+            elif backend == "contours":
+                self.params[category]["maxArea"] = CVParameter(10000, 0, None)
+                self.params[category]["minWidth"] = CVParameter(3, 0, None)
+                self.params[category]["maxWidth"] = CVParameter(100, 0, None)
+                self.params[category]["minHeight"] = CVParameter(3, 0, None)
+                self.params[category]["maxHeight"] = CVParameter(100, 0, None)
+                self.params[category]["minAspectRatio"] = CVParameter(0.25, 0.0, 1.0)
+                self.params[category]["maxAspectRatio"] = CVParameter(1.0, 0.0, 1.0)
+                self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None)
+                self.params[category]["verticalVariance"] = CVParameter(10, 0, None)
+            elif backend == "components":
+                self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4)
+        elif category == "ocr":
+            if backend == "tesseract":
+                # eng, deu, etc. (ISO 639-3)
+                self.params[category]["language"] = CVParameter("eng")
+                self.params[category]["char_whitelist"] = CVParameter("0123456789abcdefghijklmnopqrst"
+                                                                      "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+            elif backend == "hmm":
+                # 1 NM 2 CNN as classifiers for hidden markov models (see OpenCV documentation)
+                self.params[category]["classifier"] = CVParameter(1, 1, 2)
+
+    def configure_backend(self, backend=None, category="text", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __configure(self, text_detector=None, text_recognizer=None,
+                    threshold_filter=None, reset=True):
+        self.__configure_backend(category="text", reset=reset)
+        self.__configure_backend(text_detector, "tdetect")
+        self.__configure_backend(text_recognizer, "ocr")
+        self.__configure_backend(category="contour")
+        self.__configure_backend(threshold_filter, "threshold")
+
+    def configure(self, text_detector=None, text_recognizer=None,
+                  threshold_filter=None, reset=True):
+        """
+        Custom implementation of the base method.
+
+        :param text_detector: name of a preselected backend
+        :type text_detector: str or None
+        :param text_recognizer: name of a preselected backend
+        :type text_recognizer: str or None
+        """
+        self.__configure(text_detector, text_recognizer, threshold_filter, reset)
+
+    def __synchronize_backend(self, backend=None, category="text", reset=False):
+        if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            ImageFinder.synchronize_backend(self, "text", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        import cv2
+        datapath = self.params["text"]["datapath"].value
+        if category == "text" or category in ["contour", "threshold"]:
+            # nothing to sync
+            return
+
+        elif category == "tdetect" and self.params["tdetect"]["backend"] == "erstat":
+            self.erc1 = cv2.text.loadClassifierNM1(os.path.join(datapath, 'trained_classifierNM1.xml'))
+            self.erf1 = cv2.text.createERFilterNM1(self.erc1,
+                                                   self.params["tdetect"]["thresholdDelta"].value,
+                                                   self.params["tdetect"]["minArea"].value,
+                                                   self.params["tdetect"]["maxArea"].value,
+                                                   self.params["tdetect"]["minProbability"].value,
+                                                   self.params["tdetect"]["nonMaxSuppression"].value,
+                                                   self.params["tdetect"]["minProbabilityDiff"].value)
+            self.erc2 = cv2.text.loadClassifierNM2(os.path.join(datapath, 'trained_classifierNM2.xml'))
+            self.erf2 = cv2.text.createERFilterNM2(self.erc2, self.params["tdetect"]["minProbability2"].value)
+        elif category == "tdetect":
+            # nothing to sync
+            return
+
+        elif category == "ocr":
+            if self.params["ocr"]["backend"] == "tesseract":
+                self.ocr = cv2.text.OCRTesseract_create(language=self.params["ocr"]["language"].value,
+                                                        char_whitelist=self.params["ocr"]["char_whitelist"].value)
+            elif self.params["ocr"]["backend"] in ["hmm", "beamSearch"]:
+
+                import numpy
+                # vocabulary is strictly related with the XML data so remains hardcoded here
+                vocabulary = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+                with open(os.path.join(datapath, 'OCRHMM_transitions_table.xml')) as f:
+                    transition_p_xml = f.read()
+                    transition_p_data = re.search("<data>(.*)</data>",
+                                                  transition_p_xml.replace("\n"," "))
+                    assert transition_p_data is not None, "Corrupted transition probability data"
+                transition_p = numpy.fromstring(transition_p_data.group(1).strip(), sep=' ').reshape(62,62)
+                emission_p = numpy.eye(62, dtype=numpy.float64)
+
+                if self.params["ocr"]["backend"] == "hmm":
+                    classifier_data = os.path.join(datapath, 'OCRHMM_knn_model_data.xml.gz')
+                    if self.params["ocr"]["classifier"].value == 1:
+                        classifier = cv2.text.loadOCRHMMClassifierNM(classifier_data)
+                    elif self.params["ocr"]["classifier"].value == 2:
+                        classifier = cv2.text.loadOCRHMMClassifierCNN(classifier_data)
+                    else:
+                        raise ValueError("Invalid classifier selected for OCR - must be NM or CNN")
+                    self.ocr = cv2.text.OCRHMMDecoder_create(classifier, vocabulary, transition_p, emission_p)
+                else:
+                    classifier_data = os.path.join(datapath, 'OCRBeamSearch_CNN_model_data.xml.gz')
+                    classifier = cv2.text.loadOCRBeamSearchClassifierCNN(classifier_data)
+                    self.ocr = cv2.text.OCRBeamSearchDecoder_create(classifier, vocabulary, transition_p, emission_p)
+            else:
+                raise ValueError("Invalid OCR backend '%s'" % self.params["ocr"]["backend"])
+
+    def synchronize_backend(self, backend=None, category="text", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
+
+    def __synchronize(self, text_detector=None, text_recognizer=None,
+                      threshold_filter=None, reset=True):
+        self.__synchronize_backend(category="text", reset=reset)
+        self.__synchronize_backend(text_detector, "tdetect")
+        self.__synchronize_backend(text_recognizer, "ocr")
+        self.__synchronize_backend(category="contour")
+        self.__synchronize_backend(threshold_filter, "threshold")
+
+    def synchronize(self, text_detector=None, text_recognizer=None,
+                    threshold_filter=None, reset=True):
+        """
+        Custom implementation of the base method.
+
+        :param text_detector: name of a preselected backend
+        :type text_detector: str or None
+        :param text_recognizer: name of a preselected backend
+        :type text_recognizer: str or None
+        """
+        self.__synchronize(text_detector, text_recognizer, threshold_filter, reset)
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        :param needle: target text to search for
+        :type needle: :py:class:`Text`
+
+        See base method for details.
+        """
+        needle.match_settings = self
+        needle.use_own_settings = True
+        self.imglog.needle = needle
+        self.imglog.haystack = haystack
+        self.imglog.dump_matched_images()
+
+        import cv2
+        import numpy
+        text_needle = needle.value
+        img_haystack = numpy.array(haystack.pil_image)
+        final_hotmap = numpy.array(haystack.pil_image)
+
+        # detect characters and group them into detected text
+        if self.params["tdetect"]["backend"] == "erstat":
+            text_regions = self._detect_text_erstat(haystack)
+        elif self.params["tdetect"]["backend"] == "contours":
+            text_regions = self._detect_text_contours(haystack)
+        elif self.params["tdetect"]["backend"] == "components":
+            text_regions = self._detect_text_components(haystack)
+
+        # perform optical character recognition on the final regions
+        locations = []
+        for text_box in text_regions:
+            text_img = img_haystack[text_box[1]:text_box[1]+text_box[3],text_box[0]:text_box[0]+text_box[2]]
+            text_img = self._binarize_image(text_img)
+            text_img = cv2.copyMakeBorder(text_img, 15, 15, 15, 15, cv2.BORDER_CONSTANT, 0)
+            self.imglog.hotmaps.append(text_img)
+
+            # BUG: we hit segfault when using the BeamSearch OCR backend so disallow it
+            if self.params["text"]["backend"] == "beamSearch":
+                raise NotImplementedError("Current version of BeamSearch segfaults so it's not yet available")
+            # TODO: can't do this in python - available ony in C++
+            #vector<Rect> boxes;
+            #vector<string> words;
+            #vector<float> confidences;
+            #output = ocr.run(group_img, &boxes, &words, &confidences, cv2.text.OCR_LEVEL_WORD)
+            output = self.ocr.run(text_img, cv2.text.OCR_LEVEL_WORD)
+            log.debug("OCR output = '%s'", output)
+
+            similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
+            log.debug("similarity = '%s'", similarity)
+            self.imglog.similarities.append(similarity)
+            if similarity >= self.params["find"]["similarity"].value:
+                self.imglog.locations.append((text_box[0], text_box[1]))
+                x, y, w, h = text_box
+                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0, 0, 0), 2)
+                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255, 255, 255), 1)
+                locations.append(Location(text_box[0], text_box[1]))
+
+        self.imglog.hotmaps.append(final_hotmap)
+        self.imglog.log(30)
+        return locations
+
+    def _detect_text_erstat(self, haystack):
+        import cv2
+        import numpy
+        img = numpy.array(haystack.pil_image)
+        char_canvas = numpy.array(haystack.pil_image)
+        text_canvas = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(char_canvas)
+        self.imglog.hotmaps.append(text_canvas)
+
+        # extract channels to be processed individually - B, G, R, lightness, and gradient magnitude
+        channels = cv2.text.computeNMChannels(img)
+        # append negative channels to detect ER- (bright regions over dark background) skipping the gradient channel
+        channel_num_without_grad = len(channels)-1
+        for i in range(0, channel_num_without_grad):
+            channels.append(255-channels[i])
+
+        char_regions = []
+        text_regions = []
+        # apply the default cascade classifier to each independent channel
+        log.debug("Extracting class specific extremal regions from %s channels", len(channels))
+        for i, channel in enumerate(channels):
+
+            # one liner for "erf1.run(channel)" then "erf2.run(channel)"
+            regions = cv2.text.detectRegions(channel, self.erf1, self.erf2)
+            logging.debug("A total of %s possible character regions found on channel %s", len(regions), i)
+            rects = [cv2.boundingRect(p.reshape(-1, 1, 2)) for p in regions]
+            for rect in rects:
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 255), 1)
+
+            if len(regions) == 0:
+                continue
+
+            region_groups = cv2.text.erGrouping(img, channel, [r.tolist() for r in regions])
+            logging.debug("A total of %s possible text regions found on channel %s", len(region_groups), i)
+            for rect in region_groups:
+                cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 255, 0), 1)
+
+            char_regions.extend(regions)
+            text_regions.extend(region_groups)
+
+        # produce a final set of nonintersecting text regions
+        final_regions = []
+        region_queue = [[region, True] for region in text_regions]
+        while True:
+            # nothing to do for just one region
+            if len(region_queue) < 2:
+                break
+            r1, flag1 = region_queue.pop(0)
+            if not flag1:
+                continue
+            for r2pair in region_queue:
+                r2, _ = r2pair
+                # if the two regions intersect
+                if (r1[0] < r2[0] + r2[2] and r1[0] + r1[2] > r2[0] and
+                        r1[1] < r2[1] + r2[3] and r1[1] + r1[3] > r2[1]):
+                    r1 = [min(r1[0], r2[0]), min(r1[1], r2[1]), max(r1[2], r2[2]), max(r1[3], r2[3])]
+                    # second region will no longer be considered
+                    r2pair[1] = False
+            # first region is now merged with all intersecting regions
+            final_regions.append(r1)
+        return final_regions
+
+    def _detect_text_contours(self, haystack):
+        import cv2
+        import numpy
+        img = numpy.array(haystack.pil_image)
+        char_canvas = numpy.array(haystack.pil_image)
+        text_canvas = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(char_canvas)
+        self.imglog.hotmaps.append(text_canvas)
+
+        thresh_haystack = self._binarize_image(img)
+        countours_haystack = thresh_haystack.copy()
+        haystack_contours = self._extract_contours(countours_haystack)
+
+        char_regions = []
+        for hcontour in haystack_contours:
+            x, y, w, h = cv2.boundingRect(hcontour)
+            if (cv2.contourArea(hcontour) < self.params["contour"]["minArea"].value or
+                cv2.contourArea(hcontour) > self.params["tdetect"]["maxArea"].value or
+                w < self.params["tdetect"]["minWidth"].value or
+                w > self.params["tdetect"]["maxWidth"].value or
+                h < self.params["tdetect"]["minHeight"].value or
+                h > self.params["tdetect"]["maxHeight"].value or
+                float(w)/h < self.params["tdetect"]["minAspectRatio"].value or
+                float(w)/h > self.params["tdetect"]["maxAspectRatio"].value):
+                continue
+            else:
+                cv2.rectangle(char_canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (x,y), (x+w,y+h), (0, 0, 255), 1)
+                char_regions.append([x, y, w, h])
+        char_regions = sorted(char_regions, key=lambda x:x[0])
+
+        # group characters into horizontally-correlated regions
+        text_regions = []
+        for region1 in char_regions:
+            # region was already merged
+            if region1 is None:
+                continue
+            for i, region2 in enumerate(char_regions):
+                # region is compared to itself or to merged region
+                if region1 == region2 or region2 is None:
+                    continue
+                x1, y1, w1, h1 = region1
+                x2, y2, w2, h2 = region2
+                dx, dy = self.params["tdetect"]["horizontalSpacing"], self.params["tdetect"]["verticalVariance"]
+                if abs(x1 + w1 - x2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < dy:
+                    region1 = [min(x1,x2), min(y1,y2), max(x1+w1,x2+w2)-min(x1,x2), max(y1+h1,y2+h2)-min(y1,y2)]
+                    char_regions[i] = None
+                    if i < len(char_regions) - 1:
+                        continue
+                x, y, w, h = region1
+                cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
+                cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 255), 1)
+                text_regions.append(region1)
+                break
+
+        return text_regions
+
+    def _detect_text_components(self, haystack):
+        import cv2
+        import numpy
+        img = numpy.array(haystack.pil_image)
+        char_canvas = numpy.array(haystack.pil_image)
+        text_canvas = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(char_canvas)
+        self.imglog.hotmaps.append(text_canvas)
+
+        connectivity = self.params["tdetect"]["connectivity"].value
+        label_num, label_img, stats, centroids = cv2.connectedComponentsWithStats(img, connectivity, cv2.CV_32S)
+        logging.debug("Detected %s component labels with centroids: %s", label_num,
+                      ", ".join([str((int(c[0]),int(c[1]))) for c in centroids]))
+        self.imglog.hotmaps.append(label_img * 255)
+        for i in range(label_num):
+            x, y = stats[i,cv2.CC_STAT_LEFT], stats[i,cv2.CC_STAT_TOP]
+            w, h = stats[i,cv2.CC_STAT_WIDTH], stats[i,cv2.CC_STAT_HEIGHT]
+            area = stats[i,cv2.CC_STAT_AREA]
+            if area < self.params["contour"]["minArea"].value:
+                continue
+            else:
+                rect = [x, y, w, h]
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 255), 1)
+
+        # TODO: log here since not fully implemented
+        self.imglog.hotmaps[-1] = cv2.normalize(label_img, label_img, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
+        self.imglog.log(30)
+        raise NotImplementedError("The connected components method for text detection needs more labels")
+
+        # TODO: alternatively use cvBlobsLib
+        myblobs = CBlobResult(binary_image, mask, 0, True)
+        myblobs.filter_blobs(325, 2000)
+        blob_count = myblobs.GetNumBlobs()
+
+    def log(self, lvl):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        self.imglog.dump_hotmap("imglog%s-3hotmap-char.png" % self.imglog.printable_step,
+                                self.imglog.hotmaps[0])
+        self.imglog.dump_hotmap("imglog%s-3hotmap-text.png" % self.imglog.printable_step,
+                                self.imglog.hotmaps[1])
+
+        for i in range(2, len(self.imglog.hotmaps)-1):
+            self.imglog.dump_hotmap("imglog%s-3hotmap-text%s-%s.png" % (self.imglog.printable_step, i-1,
+                                                                        self.imglog.similarities[i-2]),
+                                    self.imglog.hotmaps[i])
+
+        self.imglog.dump_hotmap("imglog%s-3hotmap.png" % self.imglog.printable_step,
+                                self.imglog.hotmaps[-1])
+
+        self.imglog.clear()
+        ImageLogger.step += 1
 
 
 class HybridMatcher(TemplateMatcher, FeatureMatcher):
