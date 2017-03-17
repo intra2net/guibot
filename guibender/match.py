@@ -46,8 +46,8 @@ class Match(region.Region):
             self._similarity = cv.imglog.similarities[-1]
         else:
             self._similarity = 0.0
-        target_offset = image.target_center_offset
-        self._target = self.calc_click_point(xpos, ypos, self._width, self._height, target_offset)
+        center_offset = image.center_offset
+        self._target = self.calc_click_point(xpos, ypos, self._width, self._height, center_offset)
 
     def __str__(self):
         """Provide the target location of the match distinguishing it from any location."""

@@ -50,12 +50,12 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.pil_image, my_copy.pil_image)
         self.assertEqual(image.width, my_copy.width)
         self.assertEqual(image.height, my_copy.height)
-        self.assertEqual(image.target_center_offset, my_copy.target_center_offset)
+        self.assertEqual(image.center_offset, my_copy.center_offset)
 
     def test_target_offset(self):
         image = Image(self.file_all_shapes)
 
-        target_offset = image.target_center_offset
+        target_offset = image.center_offset
         self.assertEqual(0, target_offset.x)
         self.assertEqual(0, target_offset.y)
 
@@ -65,14 +65,14 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
-        self.assertNotEqual(image.target_center_offset, new_image.target_center_offset)
+        self.assertNotEqual(image.center_offset, new_image.center_offset)
 
-        target_offset = new_image.target_center_offset
+        target_offset = new_image.center_offset
         self.assertEqual(100, target_offset.x)
         self.assertEqual(30, target_offset.y)
 
         # check it's unchanged in the original
-        target_offset = image.target_center_offset
+        target_offset = image.center_offset
         self.assertEqual(0, target_offset.x)
         self.assertEqual(0, target_offset.y)
 
@@ -89,7 +89,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.pil_image, new_image.pil_image)
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
-        self.assertEqual(image.target_center_offset, new_image.target_center_offset)
+        self.assertEqual(image.center_offset, new_image.center_offset)
 
     def test_exact(self):
         image = Image(self.file_all_shapes)

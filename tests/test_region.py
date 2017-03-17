@@ -131,7 +131,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(last_match.width, match.width)
         self.assertEqual(last_match.height, match.height)
 
-    def test_find_target_offset(self):
+    def test_find_center_offset(self):
         self.show_image('all_shapes.png')
 
         match = Region().find(Image('shape_blue_circle.png'))

@@ -289,8 +289,8 @@ class ImageFinder(LocalSettings):
         """
         Find all needle images in a haystack image.
 
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
+        :param needle: image, text, or pattern to look for
+        :type needle: :py:class:`image.Target`
         :param haystack: image to look in
         :type haystack: :py:class:`image.Image`
         :param bool multiple: whether to find all matches
@@ -1945,3 +1945,99 @@ class CustomMatcher(ImageFinder):
 
             matches.append(tuple(kmatches))
         return matches
+
+
+class ImageSetFinder(ImageFinder):
+    """
+    Match one of a set of images usually representing the same thing.
+
+    This matcher can work with any other matcher in the background.
+    What it will do is provide with alternatives if a match fails.
+
+    .. note:: This only works with matchers using image targets.
+    """
+
+    def __init__(self, configure=True, synchronize=True):
+        """Build an image set finder."""
+        super(ImageSetFinder, self).__init__(configure=False, synchronize=False)
+
+        # available and currently fully compatible methods
+        self.categories["set"] = "set_find_methods"
+        self.algorithms["set_find_methods"] = ("autopy", "contour", "template", "feature", "hybrid")
+
+        # other attributes
+        self._matcher = None
+
+        # additional preparation
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
+
+    def __configure_backend(self, backend=None, category="set", reset=False):
+        if category != "set":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            # backends are the same as the ones for the base class
+            super(ImageSetFinder, self).configure_backend(backend=backend, reset=True)
+        if backend is None:
+            backend = GlobalSettings.find_image_backend
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
+                                          "%s" % (backend, self.algorithms[self.categories[category]]))
+
+        self.params[category] = {}
+        self.params[category]["backend"] = backend
+
+    def configure_backend(self, backend=None, category="set", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="set", reset=False):
+        if category != "set":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            # backends are the same as the ones for the base class
+            super(ImageSetFinder, self).synchronize_backend(backend, reset=True)
+        if backend is None:
+            backend = GlobalSettings.find_image_backend
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        # this matcher will only work with image-based matchers
+        if backend == "autopy":
+            self._matcher = AutoPyMatcher()
+        elif backend == "contour":
+            self._matcher = ContourMatcher()
+        elif backend == "template":
+            self._matcher = TemplateMatcher()
+        elif backend == "feature":
+            self._matcher = FeatureMatcher()
+        elif backend == "hybrid":
+            self._matcher = HybridMatcher()
+
+    def synchronize_backend(self, backend=None, category="set", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
+
+    def find(self, needle, haystack):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+
+        .. todo:: This hasn't been fully integrated yet.
+        """
+        for image in needle:
+            matches = self._matcher.find(image, haystack)
+            if len(matches) > 0:
+                return matches
+        return []
