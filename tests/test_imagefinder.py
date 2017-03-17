@@ -368,6 +368,26 @@ class ImageFinderTest(unittest.TestCase):
             matches = finder.find(Image('n_ibs'), Image('all_shapes'))
             self.assertEqual(len(matches), 0)
 
+    def test_deep_same(self):
+        finder = DeepMatcher()
+        finder.params["find"]["similarity"].value = 1.0
+        # TODO: move these lines to examples where we can demonstrate training and testing
+        #finder.train(1, 'samples_images.pth', 'targets_images.pth', 'shape_blue_circle.pth')
+        #finder.test('samples_images.pth', 'targets_images.pth')
+        matches = finder.find(Pattern('shape_blue_circle.pth'), Image('all_shapes'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].x, 0)
+        self.assertEqual(matches[0].y, 0)
+
+    def test_deep_nomatch(self):
+        finder = DeepMatcher()
+        finder.params["find"]["similarity"].value = 0.25
+        # TODO: move these lines to examples where we can demonstrate training and testing
+        #finder.train(1, 'samples_images.pth', 'targets_images.pth', 'shape_blue_circle.pth')
+        #finder.test('samples_images.pth', 'targets_images.pth')
+        matches = finder.find(Pattern('n_ibs.pth'), Image('all_shapes'))
+        self.assertEqual(len(matches), 0)
+
 
 if __name__ == '__main__':
     unittest.main()

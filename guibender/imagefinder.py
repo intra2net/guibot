@@ -148,7 +148,7 @@ class ImageFinder(LocalSettings):
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
         self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature",
-                                           "cascade", "text", "hybrid")
+                                           "cascade", "text", "hybrid", "deep")
 
         # other attributes
         self.imglog = ImageLogger()
@@ -2468,6 +2468,340 @@ class Hybrid2to1Matcher(HybridMatcher):
             name = "imglog%s-3hotmap-2to1-subregion%s-%s.png" % (self.imglog.printable_step,
                                                                  i, self.imglog.similarities[i])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
+
+        self.imglog.clear()
+        ImageLogger.step += 1
+
+
+class DeepMatcher(ImageFinder):
+    """
+    Deep learning matching backend provided by PyTorch.
+
+    The current implementation contains a basic convolutional
+    neural network which can be trained to produce needle locations
+    from a haystack image.
+    """
+
+    def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
+        """Build a CV backend using OpenCV's text matching options."""
+        super(DeepMatcher, self).__init__(configure=False, synchronize=False)
+
+        # other attributes
+        self.net = None
+
+        # additional preparation
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
+
+    def __configure_backend(self, backend=None, category="deep", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if category != "deep":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(DeepMatcher, self).configure_backend("deep", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+
+        self.params[category]["use_cuda"] = CVParameter(False)
+        self.params[category]["batch_size"] = CVParameter(1000, 0, None)
+        self.params[category]["log_interval"] = CVParameter(10, 1, None)
+        self.params[category]["learning_rate"] = CVParameter(0.01, 0.0, 1.0)
+        self.params[category]["sgd_momentum"] = CVParameter(0.5, 0.0, 1.0)
+
+        self.params[category]["iwidth"] = CVParameter(150, 0, None)
+        self.params[category]["iheight"] = CVParameter(150, 0, None)
+        self.params[category]["owidth"] = CVParameter(15, 0, None)
+        self.params[category]["oheight"] = CVParameter(15, 0, None)
+
+        self.params[category]["channels_conv1"] = CVParameter(10, 1, None)
+        self.params[category]["kernel_conv1"] = CVParameter(5, 0, None)
+        self.params[category]["kernel_pool1"] = CVParameter(2, 0, None)
+        self.params[category]["channels_conv2"] = CVParameter(20, 1, None)
+        self.params[category]["kernel_conv2"] = CVParameter(5, 0, None)
+        self.params[category]["kernel_pool2"] = CVParameter(2, 0, None)
+        self.params[category]["outputs_linear1"] = CVParameter(50, 0, None)
+
+    def configure_backend(self, backend=None, category="deep", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="deep", reset=False):
+        if category != "deep":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(DeepMatcher, self).synchronize_backend("deep", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        # class-specific dependencies
+        import torch.nn as nn
+        import torch.nn.functional as F
+        f = self
+
+        class Net(nn.Module):
+            """Nested class for convolutional neural network."""
+
+            def __init__(self):
+                super(Net, self).__init__()
+
+                # short names for network parameters
+                iw, ih = f.params["deep"]["iwidth"].value, f.params["deep"]["iheight"].value
+                c1k, c1c = f.params["deep"]["kernel_conv1"].value, f.params["deep"]["channels_conv1"].value
+                c2k, c2c = f.params["deep"]["kernel_conv2"].value, f.params["deep"]["channels_conv2"].value
+                c1p, c2p = f.params["deep"]["kernel_pool1"].value, f.params["deep"]["kernel_pool2"].value
+                ow, oh = f.params["deep"]["owidth"].value, f.params["deep"]["oheight"].value
+
+                # calculate the number of inputs of the first linear layer
+                rw = ((iw - c1k + 1) / c1p - c2k + 1) / c2p
+                rh = ((ih - c1k + 1) / c1p - c2k + 1) / c2p
+                n = rw * rh * c2c
+
+                self.conv1 = nn.Conv2d(1, c1c, kernel_size=c1k)
+                self.conv2 = nn.Conv2d(c1c, c2c, kernel_size=c2k)
+                self.conv2_drop = nn.Dropout2d()
+                self.fc1 = nn.Linear(n, f.params["deep"]["outputs_linear1"].value)
+                # one extra class for no location
+                self.fc2 = nn.Linear(f.params["deep"]["outputs_linear1"].value, ow * oh + 1)
+
+            def forward(self, x):
+                x = self.conv1(x)
+                # max pooling with some kernel and stride downsamples using max
+                x = F.max_pool2d(x, f.params["deep"]["kernel_pool1"].value)
+                # rectifier linear unit (ReLu) is simply max(x,0)
+                x = F.relu(x)
+                # second convolutional layer
+                x = self.conv2_drop(self.conv2(x))
+                x = F.relu(F.max_pool2d(x, f.params["deep"]["kernel_pool2"].value))
+                # rearrange to flat layer (size = inputs of first linear layer)
+                x = x.view(-1, self.fc1.in_features)
+                x = F.relu(self.fc1(x))
+                # use dropout to avoid overfitting
+                x = F.dropout(x, training=self.training)
+                x = F.relu(self.fc2(x))
+                # softmax gives a vector of the same dimension with components sum of 1
+                x = F.log_softmax(x)
+                return x
+
+        self.net = Net()
+
+    def synchronize_backend(self, backend=None, category="deep", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        :param needle: target pattern (cascade) to search for
+        :type needle: :py:class:`Pattern`
+
+        See base method for details.
+        """
+        needle.match_settings = self
+        needle.use_own_settings = True
+        self.imglog.needle = needle
+        self.imglog.haystack = haystack
+        self.imglog.dump_matched_images()
+        # prepare a canvas solely for image logging
+        canvas = haystack.pil_image.copy()
+
+        # load .pth or .pkl data file if pretrained model is available
+        import torch
+        if needle.data_file is not None:
+            weights = torch.load(needle.data_file)
+            self.net.load_state_dict(weights)
+
+        # set the module in evaluation mode
+        self.net.eval()
+
+        # convert haystack data to tensor variable
+        import PIL
+        gray = haystack.pil_image.convert('L')
+        size = (self.params["deep"]["iwidth"].value, self.params["deep"]["iheight"].value)
+        gray.thumbnail(size, PIL.Image.ANTIALIAS)
+        gray_bg = PIL.Image.new('L', size, (255))
+        gray_bg.paste(gray,
+                      (int((size[0] - gray.size[0]) / 2),
+                       int((size[1] - gray.size[1]) / 2)))
+        gray = gray_bg
+        import numpy
+        gray = numpy.array(gray,
+                           dtype=numpy.float32).reshape((1, 1, # batch size and channel number
+                                                         self.params["deep"]["iwidth"].value,
+                                                         self.params["deep"]["iheight"].value))
+        from torch.autograd import Variable
+        data = Variable(torch.from_numpy(gray/255), volatile=True)
+
+        # send input to the network and get probability distribution over locations
+        output = self.net(data)
+        import torch.nn.functional as F
+        output = F.softmax(output)
+        hotmap = output.data[...,:-1].numpy().reshape(self.params["deep"]["oheight"].value,
+                                                      self.params["deep"]["owidth"].value)
+        self.imglog.hotmaps.append(hotmap*255)
+
+        # TODO: try Faster Region-CNNs, Single Shot MultiBox Detector, and YOLO
+        locations = []
+        dx = haystack.width / self.params["deep"]["owidth"].value
+        dy = haystack.height / self.params["deep"]["oheight"].value
+        ys, xs = numpy.where(hotmap > self.params["find"]["similarity"].value)
+        for (x, y) in zip(list(xs), list(ys)):
+            ox, oy = dx * x, dy * y
+
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(canvas)
+            draw.rectangle((ox, oy, ox+dx, oy+dy), outline=(0,0,255))
+
+            self.imglog.locations.append((ox, oy))
+            self.imglog.similarities.append(hotmap[y,x])
+            locations.append(Location(ox, oy))
+
+        self.imglog.hotmaps.append(canvas)
+        self.imglog.log(30)
+        return locations
+
+    def train(self, epochs, train_samples, train_targets, data_filename=None):
+        """
+        Train the convolutional neural network.
+
+        :param int epochs: number of training epochs (train on all samples for each)
+        :param str train_samples: filename for the samples dataset
+        :param str train_targets: filename for the targets dataset
+        :param data_filename: file name for storing the trained model (won't store if None)
+        :param data_filename: str or None
+        """
+        # create loader for the data (allowing batches and other extras)
+        import torch
+        data_tensor, target_tensor = torch.load(train_samples), torch.load(train_targets)
+        kwargs = {'num_workers': 1, 'pin_memory': True} if self.params["deep"]["use_cuda"].value else {}
+        from torch.utils.data import TensorDataset
+        train_loader = torch.utils.data.DataLoader(TensorDataset(data_tensor, target_tensor),
+                                                   batch_size=self.params["deep"]["batch_size"].value,
+                                                   shuffle=True, **kwargs)
+
+        # initialize stochastic gradient descent optimizer for learning
+        import torch.optim as optim
+        optimizer = optim.SGD(self.net.parameters(),
+                              lr=self.params["deep"]["learning_rate"].value,
+                              momentum=self.params["deep"]["sgd_momentum"].value)
+
+        # set the module in training mode
+        self.net.train()
+
+        from torch.autograd import Variable
+        import torch.nn.functional as F
+        for epoch in range(1, epochs + 1):
+            # loader iterator returns batches of samples
+            for batch_idx, (data, target) in enumerate(train_loader):
+                if self.params["deep"]["use_cuda"].value:
+                    data, target = data.cuda(), target.cuda()
+                data, target = Variable(data), Variable(target)
+
+                # main training step
+                optimizer.zero_grad()
+                output = self.net(data)
+                loss = F.nll_loss(output, target)
+
+                # backpropagation happens here
+                loss.backward()
+                # learning happens here
+                optimizer.step()
+
+                # log measurements on each ten batches
+                if batch_idx % self.params["deep"]["log_interval"].value == 0:
+                    log.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+                            epoch, batch_idx * len(data), len(train_loader.dataset),
+                            100. * batch_idx / len(train_loader), loss.data[0]))
+
+        # save the network state if required
+        if data_filename is not None:
+            state_dict = self.net.state_dict()
+            log.debug("Resulting state dictionary (weights, biases, etc) of the network:\n%s", state_dict)
+            torch.save(state_dict, data_filename)
+
+    def test(self, train_samples, train_targets):
+        """
+        Test the convolutional neural network.
+
+        :param str train_samples: filename for the samples dataset
+        :param str train_targets: filename for the targets dataset
+        """
+        # create loader for the data (allowing batches and other extras)
+        import torch
+        data_tensor, target_tensor = torch.load(train_samples), torch.load(train_targets)
+        kwargs = {'num_workers': 1, 'pin_memory': True} if self.params["deep"]["use_cuda"].value else {}
+        from torch.utils.data import TensorDataset
+        test_loader = torch.utils.data.DataLoader(TensorDataset(data_tensor, target_tensor),
+                                                  batch_size=self.params["deep"]["batch_size"].value,
+                                                  shuffle=True, **kwargs)
+
+        # set the module in evaluation mode
+        self.net.eval()
+
+        test_loss = 0
+        correct = 0
+        from torch.autograd import Variable
+        import torch.nn.functional as F
+        # loader iterator returns batches of samples
+        for data, target in test_loader:
+            if self.params["deep"]["use_cuda"].value:
+                data, target = data.cuda(), target.cuda()
+            # volatile implies to use the variable in inference mode
+            data, target = Variable(data, volatile=True), Variable(target)
+
+            # main testing step
+            output = self.net(data)
+            # accumulate negative log likelihood loss
+            test_loss += F.nll_loss(output, target).data[0]
+            # get the index of the max log-probability
+            pred = output.data.max(1)[1]
+            # calculate accuracy as well
+            correct += pred.eq(target.data).cpu().sum()
+
+        # loss function already averages over batch size
+        test_loss /= len(test_loader)
+        # log measurements - this is the only testing action
+        log.info('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
+                test_loss, correct, len(test_loader.dataset),
+                100. * correct / len(test_loader.dataset)))
+
+    def log(self, lvl):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            return
+        # logging is being collected for a specific logtype
+        elif ImageLogger.accumulate_logging:
+            return
+        # no hotmaps to log
+        elif len(self.imglog.hotmaps) == 0:
+            raise MissingHotmapError("No matching was performed in order to be image logged")
+
+        self.imglog.dump_hotmap("imglog%s-3hotmap-1activity.png" % self.imglog.printable_step,
+                                self.imglog.hotmaps[0])
+
+        similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
+        name = "imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity)
+        self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
 
         self.imglog.clear()
         ImageLogger.step += 1

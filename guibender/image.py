@@ -129,6 +129,8 @@ class Target(object):
             finder = TextMatcher()
         elif backend_name == "hybrid":
             finder = HybridMatcher()
+        elif backend_name == "deep":
+            finder = DeepMatcher()
         finder.from_match_file(filename_without_extention)
         return finder
 
