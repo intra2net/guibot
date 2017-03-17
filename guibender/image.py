@@ -123,6 +123,8 @@ class Target(object):
             finder = TemplateMatcher()
         elif backend_name == "feature":
             finder = FeatureMatcher()
+        elif backend_name == "cascade":
+            finder = CascadeMatcher()
         elif backend_name == "hybrid":
             finder = HybridMatcher()
         finder.from_match_file(filename_without_extention)

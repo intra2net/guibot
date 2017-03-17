@@ -26,7 +26,7 @@ from location import Location
 from region import Region
 from match import Match
 from desktopcontrol import AutoPyDesktopControl
-from image import Image
+from image import Image, Pattern
 from errors import *
 from imagefinder import *
 
@@ -240,6 +240,23 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertAlmostEqual(matches[0].x, 68, delta=5)
         self.assertAlmostEqual(matches[0].y, 18, delta=5)
+
+    def test_cascade_same(self):
+        finder = CascadeMatcher()
+        # no similarty parameter is supported - this is a binary match case
+        finder.params["find"]["similarity"].value = 0.0
+        matches = finder.find(Pattern('n_ibs.xml'), Image('n_ibs'))
+        self.assertEqual(len(matches), 1)
+        # TODO: only part of the image is matched - need better cascade
+        self.assertEqual(matches[0].x, 39)
+        self.assertEqual(matches[0].y, 139)
+
+    def test_cascade_nomatch(self):
+        finder = CascadeMatcher()
+        # no similarty parameter is supported - this is a binary match case
+        finder.params["find"]["similarity"].value = 0.0
+        matches = finder.find(Pattern('n_ibs.xml'), Image('all_shapes'))
+        self.assertEqual(len(matches), 0)
 
     def test_feature_text_basic(self):
         needle = Image('word')

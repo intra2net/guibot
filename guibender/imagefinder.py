@@ -147,7 +147,7 @@ class ImageFinder(LocalSettings):
 
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
-        self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature", "hybrid")
+        self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature", "cascade", "hybrid")
 
         # other attributes
         self.imglog = ImageLogger()
@@ -1497,6 +1497,100 @@ class FeatureMatcher(ImageFinder):
         for loc in locations:
             x, y = loc
             cv2.circle(hotmap, (int(x), int(y)), radius, (r, g, b))
+
+
+class CascadeMatcher(ImageFinder):
+    """
+    Cascade matching backend provided by OpenCV.
+
+    This matcher uses Haar cascade for object detection.
+    It is the most advanced method for object detection
+    excluding convolutional neural networks. However, it
+    requires the generation of a Haar cascade (if such is
+    not already provided) of the needle to be found.
+
+    TODO: Currently no similarity requirement can be applied
+    due to the cascade classifier API.
+    """
+
+    def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
+        """Build a CV backend using OpenCV's cascade matching options."""
+        super(CascadeMatcher, self).__init__(configure=False, synchronize=False)
+
+        # additional preparation (no synchronization available)
+        if configure:
+            self.__configure_backend(reset=True)
+
+    def __configure_backend(self, backend=None, category="cascade", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if category != "cascade":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(CascadeMatcher, self).configure_backend("cascade", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+        self.params[category]["scaleFactor"] = CVParameter(1.1)
+        self.params[category]["minNeighbors"] = CVParameter(3, 0, None)
+        self.params[category]["minWidth"] = CVParameter(0, 0, None)
+        self.params[category]["maxWidth"] = CVParameter(1000, 0, None)
+        self.params[category]["minHeight"] = CVParameter(0, 0, None)
+        self.params[category]["maxHeight"] = CVParameter(1000, 0, None)
+
+    def configure_backend(self, backend=None, category="cascade", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def find(self, needle, haystack, multiple=False):
+        """
+        Custom implementation of the base method.
+
+        :param needle: target pattern (cascade) to search for
+        :type needle: :py:class:`Pattern`
+
+        See base method for details.
+        """
+        needle.match_settings = self
+        needle.use_own_settings = True
+        self.imglog.needle = needle
+        self.imglog.haystack = haystack
+        self.imglog.dump_matched_images()
+
+        import cv2
+        import numpy
+        needle_cascade = cv2.CascadeClassifier(needle.data_file)
+        if needle_cascade.empty():
+            raise Exception("Could not load the cascade classifier properly")
+        gray_haystack = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
+        canvas = numpy.array(haystack.pil_image)
+
+        locations = []
+        rects = needle_cascade.detectMultiScale(gray_haystack,
+                                                self.params["cascade"]["scaleFactor"].value,
+                                                self.params["cascade"]["minNeighbors"].value,
+                                                0,
+                                                (self.params["cascade"]["minWidth"].value,
+                                                 self.params["cascade"]["minHeight"].value),
+                                                (self.params["cascade"]["maxWidth"].value,
+                                                 self.params["cascade"]["maxHeight"].value))
+        for (x,y,w,h) in rects:
+            cv2.rectangle(canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
+            cv2.rectangle(canvas, (x,y), (x+w,y+h), (255, 0, 0), 1)
+            locations.append(Location(x,y))
+
+        self.imglog.similarities.append(self.params["find"]["similarity"].value)
+        self.imglog.locations = [(l.x,l.y) for l in locations]
+        self.imglog.hotmaps.append(canvas)
+        self.imglog.log(30)
+        return locations
 
 
 class HybridMatcher(TemplateMatcher, FeatureMatcher):
