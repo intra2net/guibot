@@ -14,7 +14,6 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import re
-import PIL.Image
 try:
     import configparser as config
 except ImportError:
@@ -24,13 +23,6 @@ from settings import GlobalSettings, LocalSettings
 from location import Location
 from imagelogger import ImageLogger
 from errors import *
-
-# TODO: OpenCV is required for 95% of the backends so we need to improve the image
-# logging and overall image manipulation in order to be able to truly localize its importing
-if GlobalSettings.find_image_backend != "autopy":
-    import cv2
-    import math
-    import numpy
 
 import logging
 log = logging.getLogger('guibender.imagefinder')
@@ -374,20 +366,21 @@ class AutoPyMatcher(ImageFinder):
         .. warning:: AutoPy has a bug when finding multiple matches
                      so this is currently not supported.
         """
+        if multiple:
+            raise NotImplementedError("The backend algorithm AutoPy does not support "
+                                      "multiple matches on screen")
+
         needle.match_settings = self
         needle.use_own_settings = True
         self.imglog.needle = needle
         self.imglog.haystack = haystack
         self.imglog.dump_matched_images()
+        # prepare a canvas solely for image logging
+        self.imglog.hotmaps.append(haystack.pil_image.copy())
 
-        if multiple:
-            raise NotImplementedError("The backend algorithm AutoPy does not support "
-                                      "multiple matches on screen")
+        # class-specific dependencies
         from autopy import bitmap
         from tempfile import NamedTemporaryFile
-
-        # prepare a canvas solely for image logging
-        self.imglog.hotmaps.append(haystack.preprocess())
 
         if needle.filename in self._bitmapcache:
             autopy_needle = self._bitmapcache[needle.filename]
@@ -416,10 +409,14 @@ class AutoPyMatcher(ImageFinder):
             self.imglog.locations.append(coord)
             self.imglog.similarities.append(1.0 - autopy_tolerance)
             matches = [Location(coord[0], coord[1])]
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(self.imglog.hotmaps[-1])
+            draw.rectangle((coord[0], coord[1], coord[0]+needle.width, coord[1]+needle.height),
+                           outline=(0,0,255))
+            del draw
         else:
             matches = []
         self.imglog.log(30)
-
         return matches
 
 
@@ -435,6 +432,7 @@ class TemplateMatcher(ImageFinder):
         self.algorithms["template_matchers"] = ("sqdiff", "ccorr", "ccoeff","sqdiff_normed",
                                                  "ccorr_normed", "ccoeff_normed")
 
+        # additional preparation (no synchronization available)
         if configure:
             self.__configure_backend(reset=True)
 
@@ -499,7 +497,12 @@ class TemplateMatcher(ImageFinder):
         if self.params["template"]["backend"] in ("sqdiff", "sqdiff_normed"):
             result = 1.0 - result
 
+        import cv2
+        import numpy
         universal_hotmap = result * 255.0
+        final_hotmap = numpy.array(self.imglog.haystack.pil_image)
+        if self.params["template"]["nocolor"].value:
+            final_hotmap = cv2.cvtColor(final_hotmap, cv2.COLOR_RGB2GRAY)
 
         # extract maxima once for each needle size region
         similarity = self.params["find"]["similarity"].value
@@ -518,13 +521,22 @@ class TemplateMatcher(ImageFinder):
                 if len(maxima) == 0:
                     self.imglog.similarities.append(maxVal)
                     self.imglog.locations.append(maxLoc)
-                    self.imglog.hotmaps.append(universal_hotmap)
+                    current_hotmap = numpy.copy(universal_hotmap)
+                    cv2.circle(current_hotmap, (maxLoc[0],maxLoc[1]), int(30*maxVal), (255,255,255))
+                    self.imglog.hotmaps.append(current_hotmap)
+                    self.imglog.hotmaps.append(final_hotmap)
+
                 log.debug("Best match is not acceptable")
                 break
             else:
                 self.imglog.similarities.append(maxVal)
                 self.imglog.locations.append(maxLoc)
-                self.imglog.hotmaps.append(universal_hotmap)
+                current_hotmap = numpy.copy(universal_hotmap)
+                cv2.circle(current_hotmap, (maxLoc[0],maxLoc[1]), int(30*maxVal), (255,255,255))
+                x, y = maxLoc
+                cv2.rectangle(final_hotmap, (x, y), (x+needle.width, y+needle.height), (0,0,0), 2)
+                cv2.rectangle(final_hotmap, (x, y), (x+needle.width, y+needle.height), (255,255,255), 1)
+                self.imglog.hotmaps.append(current_hotmap)
                 log.debug("Best match is acceptable")
                 maxima.append(Location(maxLoc[0], maxLoc[1]))
                 if similarity == 0.0:
@@ -549,6 +561,7 @@ class TemplateMatcher(ImageFinder):
 
             log.log(0, "Total maxima up to the point are %i", len(maxima))
         log.debug("A total of %i matches found", len(maxima))
+        self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
 
         return maxima
@@ -566,20 +579,22 @@ class TemplateMatcher(ImageFinder):
                         needle.width, needle.height, haystack.width, haystack.height)
             return None
 
+        import cv2
+        import numpy
         methods = {"sqdiff": cv2.TM_SQDIFF, "sqdiff_normed": cv2.TM_SQDIFF_NORMED,
                    "ccorr": cv2.TM_CCORR, "ccorr_normed": cv2.TM_CCORR_NORMED,
                    "ccoeff": cv2.TM_CCOEFF, "ccoeff_normed": cv2.TM_CCOEFF_NORMED}
         if method not in methods.keys():
             raise UnsupportedBackendError("Supported algorithms are in conflict")
 
+        numpy_needle = numpy.array(needle.pil_image)
+        numpy_haystack = numpy.array(haystack.pil_image)
         if nocolor:
-            gray_needle = needle.preprocess(gray=True)
-            gray_haystack = haystack.preprocess(gray=True)
+            gray_needle = cv2.cvtColor(numpy_needle, cv2.COLOR_RGB2GRAY)
+            gray_haystack = cv2.cvtColor(numpy_haystack, cv2.COLOR_RGB2GRAY)
             match = cv2.matchTemplate(gray_haystack, gray_needle, methods[method])
         else:
-            opencv_needle = needle.preprocess(gray=False)
-            opencv_haystack = haystack.preprocess(gray=False)
-            match = cv2.matchTemplate(opencv_haystack, opencv_needle, methods[method])
+            match = cv2.matchTemplate(numpy_haystack, numpy_needle, methods[method])
 
         return match
 
@@ -600,18 +615,12 @@ class TemplateMatcher(ImageFinder):
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
         for i in range(len(self.imglog.similarities)):
-            self.imglog.log_locations(30, [self.imglog.locations[i]], self.imglog.hotmaps[i],
-                                      int(30 * self.imglog.similarities[i]), 255, 255, 255,
-                                      draw_needle_box=False)
             name = "imglog%s-3hotmap-template%s-%s.png" % (self.imglog.printable_step,
                                                            i + 1, self.imglog.similarities[i])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
-        no_color = self.params["template"]["nocolor"].value
-        final_hotmap = self.imglog.haystack.preprocess(gray=no_color)
-        self.imglog.log_locations(30, self.imglog.locations, final_hotmap,
-                                  0, 255, 255, 255, draw_needle_box=True)
+
         name = "imglog%s-3hotmap-template.png" % self.imglog.printable_step
-        self.imglog.dump_hotmap(name, final_hotmap)
+        self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
 
         self.imglog.clear()
         ImageLogger.step += 1
@@ -685,10 +694,12 @@ class FeatureMatcher(ImageFinder):
                 self.params[category]["oldSURFdetect"] = CVParameter(85)
                 return
             else:
+                import cv2
                 feature_detector_create = getattr(cv2, "%s_create" % backend)
                 self._detector = backend_obj = feature_detector_create()
 
         elif category == "fextract":
+            import cv2
             descriptor_extractor_create = getattr(cv2, "%s_create" % backend)
             self._extractor = backend_obj = descriptor_extractor_create()
 
@@ -709,6 +720,7 @@ class FeatureMatcher(ImageFinder):
                     return
                 else:
 
+                    import cv2
                     # NOTE: descriptor matcher creation is kept the old way while feature
                     # detection and extraction not - example of the untidy maintenance of OpenCV
                     self._matcher = backend_obj = cv2.DescriptorMatcher_create(backend)
@@ -875,9 +887,14 @@ class FeatureMatcher(ImageFinder):
             raise NotImplementedError("The feature matcher backend does not support "
                                       "multiple matches on screen")
 
-        ngray = needle.preprocess(gray=True)
-        hgray = haystack.preprocess(gray=True)
-        hcanvas = haystack.preprocess(gray=False)
+        import cv2
+        import numpy
+        ngray = cv2.cvtColor(numpy.array(needle.pil_image), cv2.COLOR_RGB2GRAY)
+        hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
+        self.imglog.hotmaps.append(numpy.array(haystack.pil_image))
+        self.imglog.hotmaps.append(numpy.array(haystack.pil_image))
+        self.imglog.hotmaps.append(numpy.array(haystack.pil_image))
+        self.imglog.hotmaps.append(numpy.array(haystack.pil_image))
 
         # project more points for debugging purposes and image logging
         frame_points = []
@@ -886,14 +903,12 @@ class FeatureMatcher(ImageFinder):
         frame_points.append((needle.width / 2, needle.height / 2))
 
         similarity = self.params["find"]["similarity"].value
-        coord = self._project_features(frame_points, ngray, hgray,
-                                       similarity, hcanvas)
+        coord = self._project_features(frame_points, ngray, hgray, similarity)
         matches = [coord] if coord is not None else []
 
         return matches
 
-    def _project_features(self, locations_in_needle, ngray, hgray,
-                          similarity, hotmap_canvas=None):
+    def _project_features(self, locations_in_needle, ngray, hgray, similarity):
         """
         EXTRA DOCSTRING: Feature matching backend - wrapper.
 
@@ -901,7 +916,6 @@ class FeatureMatcher(ImageFinder):
         projection used by all public feature matching functions.
         """
         # default logging in case no match is found (further overridden by match stages)
-        self.imglog.hotmaps.append(hotmap_canvas)
         self.imglog.locations.append((0, 0))
         self.imglog.similarities.append(0.0)
 
@@ -938,6 +952,7 @@ class FeatureMatcher(ImageFinder):
             self.imglog.log(40)
             return None
         else:
+            self._log_features(30, self.imglog.locations, self.imglog.hotmaps[-1], 3, 0, 0, 255)
             location = Location(*locations_in_haystack[0])
             self.imglog.log(30)
             return location
@@ -953,6 +968,7 @@ class FeatureMatcher(ImageFinder):
         hfactor = self.params["fdetect"]["hzoom"].value
 
         # zoom in if explicitly set
+        import cv2
         if nfactor > 1.0:
             log.debug("Zooming x%i needle", nfactor)
             new_shape = (int(ngray.shape[0] * nfactor), int(ngray.shape[1] * nfactor))
@@ -1000,8 +1016,7 @@ class FeatureMatcher(ImageFinder):
         log.debug("Detected %s keypoints in needle and %s in haystack",
                   len(nkeypoints), len(hkeypoints))
         hkp_locations = [hkp.pt for hkp in hkeypoints]
-        self.imglog.log_locations(10, hkp_locations, self.imglog.hotmaps[-1],
-                                  3, 255, 0, 0, draw_needle_box=False)
+        self._log_features(10, hkp_locations, self.imglog.hotmaps[-4], 3, 255, 0, 0)
 
         return (nkeypoints, ndescriptors, hkeypoints, hdescriptors)
 
@@ -1044,6 +1059,7 @@ class FeatureMatcher(ImageFinder):
             matching of each other to ensure the error by accepting the
             match is not too large.
             """
+            import cv2
             matches2 = []
             for nm in nmatches:
                 for hm in hmatches:
@@ -1098,8 +1114,7 @@ class FeatureMatcher(ImageFinder):
 
         # these matches are half the way to being good
         mhkp_locations = [mhkp.pt for mhkp in match_hkeypoints]
-        self.imglog.log_locations(10, mhkp_locations, self.imglog.hotmaps[-1],
-                                  2, 0, 255, 255, draw_needle_box=False)
+        self._log_features(10, mhkp_locations, self.imglog.hotmaps[-3], 2, 255, 255, 0)
 
         # update the current achieved similarity
         match_similarity = float(len(match_nkeypoints)) / float(len(nkeypoints))
@@ -1132,6 +1147,8 @@ class FeatureMatcher(ImageFinder):
         # check matches consistency
         assert len(mnkp) == len(mhkp)
 
+        import cv2
+        import numpy
         # homography and fundamental matrix as options - homography is considered only
         # for rotation but currently gives better results than the fundamental matrix
         H, mask = cv2.findHomography(numpy.array([kp.pt for kp in mnkp]),
@@ -1153,8 +1170,7 @@ class FeatureMatcher(ImageFinder):
             if mask[i][0] == 1:
                 true_matches.append(kp)
         tmhkp_locations = [tmhkp.pt for tmhkp in true_matches]
-        self.imglog.log_locations(20, tmhkp_locations, self.imglog.hotmaps[-1],
-                                  1, 0, 255, 0, draw_needle_box=False)
+        self._log_features(20, tmhkp_locations, self.imglog.hotmaps[-2], 1, 0, 255, 0)
 
         # calculate and project all point coordinates in the needle
         projected = []
@@ -1190,18 +1206,30 @@ class FeatureMatcher(ImageFinder):
         elif len(self.imglog.hotmaps) == 0:
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
-        name = "imglog%s-3hotmap-feature-%s.png" % (self.imglog.printable_step,
+        stages = ["detect", "match", "project", ""]
+        for i, stage in enumerate(stages):
+            if self.imglog.logging_level > 10 and stage in ["detect", "match"]:
+                continue
+            if self.imglog.logging_level > 20 and stage == "project":
+                continue
+            if stage == "":
+                name = "imglog%s-3hotmap-%s.png" % (self.imglog.printable_step,
                                                     self.imglog.similarities[-1])
-        self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
-
-        final_hotmap = self.imglog.haystack.preprocess(gray=False)
-        self.imglog.log_locations(30, self.imglog.locations, final_hotmap,
-                                  3, 0, 0, 255, draw_needle_box=False)
-        name = "imglog%s-3hotmap-feature.png" % self.imglog.printable_step
-        self.imglog.dump_hotmap(name, final_hotmap)
+            else:
+                name = "imglog%s-3hotmap-%s%s.png" % (self.imglog.printable_step,
+                                                      i+1, stage)
+            self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
 
         self.imglog.clear()
         ImageLogger.step += 1
+
+    def _log_features(self, lvl, locations, hotmap, radius=0, r=255, g=255, b=255):
+        if lvl < self.imglog.logging_level:
+            return
+        import cv2
+        for loc in locations:
+            x, y = loc
+            cv2.circle(hotmap, (int(x), int(y)), radius, (r, g, b))
 
 
 class HybridMatcher(TemplateMatcher, FeatureMatcher):
@@ -1295,14 +1323,18 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
                   "and feature similarity %s", template_similarity,
                   feature_similarity)
 
+        # class-specific dependencies
+        import cv2
+        import numpy
+
         self.params["find"]["similarity"].value = template_similarity
         # call specifically the template find variant here
         template_maxima = TemplateMatcher.find(self, needle, haystack, True)
 
         self.params["find"]["similarity"].value = feature_similarity
-        ngray = needle.preprocess(gray=True)
-        hgray = haystack.preprocess(gray=True)
-        hcanvas = haystack.preprocess(gray=False)
+        ngray = cv2.cvtColor(numpy.array(needle.pil_image), cv2.COLOR_RGB2GRAY)
+        hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
+        final_hotmap = numpy.array(haystack.pil_image)
 
         frame_points = []
         frame_points.append((needle.width / 2, needle.height / 2))
@@ -1321,10 +1353,15 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
             haystack_region = hgray[up:down, left:right]
             haystack_region = haystack_region.copy()
-            hotmap_region = hcanvas[up:down, left:right]
+            hotmap_region = final_hotmap[up:down, left:right]
             hotmap_region = hotmap_region.copy()
-            res = self._project_features(frame_points, ngray, haystack_region,
-                                         feature_similarity, hotmap_region)
+            # four smaller hotmaps for the feature matching stages (draw on same image here)
+            self.imglog.hotmaps.append(hotmap_region)
+            self.imglog.hotmaps.append(hotmap_region)
+            self.imglog.hotmaps.append(hotmap_region)
+            self.imglog.hotmaps.append(hotmap_region)
+
+            res = self._project_features(frame_points, ngray, haystack_region, feature_similarity)
             # if the feature matching succeeded or is worse than satisfactory template matching
             if res != None or (self.imglog.similarities[-1] > 0.0 and
                                self.imglog.similarities[-1] < self.imglog.similarities[i] and
@@ -1338,7 +1375,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
                                        self.imglog.similarities[-1],
                                        self.imglog.locations[-1]])
                 # stitch back for a better final image logging
-                hcanvas[up:down, left:right] = hotmap_region
+                final_hotmap[up:down, left:right] = hotmap_region
 
             # if similarity is not zero but we have no result, we failed the comparison
             elif self.imglog.similarities[-1] == 0.0:
@@ -1368,21 +1405,23 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
             # NOTE: handle cases when the matching failed at the feature stage, i.e. dump
             # a hotmap for debugging also in this case
             if len(self.imglog.similarities) > 1:
-                self.imglog.hotmaps.append(hcanvas)
+                self.imglog.hotmaps.append(final_hotmap)
                 self.imglog.similarities.append(self.imglog.similarities[len(template_maxima)])
                 self.imglog.locations.append(self.imglog.locations[len(template_maxima)])
             self.imglog.log(30)
             return []
 
-        # NOTE: the best of all found will always be logged but if multiple matches
-        # are allowed they will all be present on the dumped final canvas
-        best_acceptable = max(feature_maxima, key=lambda x: x[1])
-        self.imglog.hotmaps.append(hcanvas)
-        self.imglog.similarities.append(best_acceptable[1])
-        self.imglog.locations.append(best_acceptable[2])
         locations = []
         for maximum in feature_maxima:
-            locations.append(Location(*maximum[2]))
+            x, y = maximum[2]
+            cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,0), 2)
+            cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,255), 1)
+            locations.append(Location(x, y))
+        self.imglog.hotmaps.append(final_hotmap)
+        # log one best match for final hotmap filename
+        best_acceptable = max(feature_maxima, key=lambda x: x[1])
+        self.imglog.similarities.append(best_acceptable[1])
+        self.imglog.locations.append(best_acceptable[2])
         self.imglog.log(30)
         return locations
 
@@ -1407,24 +1446,17 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         # to make sure the winner is the first alphabetically
         candidate_num = len(self.imglog.similarities) / 2
         for i in range(candidate_num):
-            self.imglog.log_locations(30, [self.imglog.locations[i]],
-                                      self.imglog.hotmaps[i],
-                                      30 * self.imglog.similarities[i], 255, 255, 255)
             name = "imglog%s-3hotmap-hybrid-%stemplate-%s.png" % (self.imglog.printable_step,
                                                                   i + 1, self.imglog.similarities[i])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
             ii = candidate_num + i
-            self.imglog.log_locations(30, [self.imglog.locations[ii]],
-                                      self.imglog.hotmaps[ii],
-                                      4, 255, 0, 0)
+            hii = candidate_num + i*4 + 3
+            #self.imglog.log_locations(30, [self.imglog.locations[ii]], self.imglog.hotmaps[hii], 4, 255, 0, 0)
             name = "imglog%s-3hotmap-hybrid-%sfeature-%s.png" % (self.imglog.printable_step,
                                                                  i + 1, self.imglog.similarities[ii])
-            self.imglog.dump_hotmap(name, self.imglog.hotmaps[ii])
+            self.imglog.dump_hotmap(name, self.imglog.hotmaps[hii])
 
         if len(self.imglog.similarities) % 2 == 1:
-            self.imglog.log_locations(30, [self.imglog.locations[-1]],
-                                      self.imglog.hotmaps[-1],
-                                      6, 255, 0, 0)
             name = "imglog%s-3hotmap-hybrid-%s.png" % (self.imglog.printable_step,
                                                        self.imglog.similarities[-1])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
@@ -1447,6 +1479,8 @@ class Hybrid2to1Matcher(HybridMatcher):
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's template and feature matching."""
         super(Hybrid2to1Matcher, self).__init__(configure=False, synchronize=False)
+
+        # additional preparation (no synchronization available)
         if configure:
             self.__configure_backend(reset=True)
 
@@ -1525,9 +1559,11 @@ class Hybrid2to1Matcher(HybridMatcher):
         log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
                   x, y, dx, dy)
 
-        ngray = needle.preprocess(gray=True)
-        hgray = haystack.preprocess(gray=True)
-        hcanvas = haystack.preprocess(gray=False)
+        import cv2
+        import numpy
+        ngray = cv2.cvtColor(numpy.array(needle.pil_image), cv2.COLOR_RGB2GRAY)
+        hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
+        hcanvas = numpy.array(haystack.pil_image)
 
         frame_points = []
         frame_points.append((needle.width / 2, needle.height / 2))
@@ -1537,6 +1573,7 @@ class Hybrid2to1Matcher(HybridMatcher):
         # the translation distance cannot be larger than the haystack
         dx = min(dx, haystack.width)
         dy = min(dy, haystack.height)
+        import math
         nx = int(math.ceil(float(max(haystack.width - x, 0)) / dx) + 1)
         ny = int(math.ceil(float(max(haystack.height - y, 0)) / dy) + 1)
         log.debug("Dividing haystack into %ix%i pieces", nx, ny)
@@ -1628,6 +1665,8 @@ class CustomMatcher(ImageFinder):
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using custom matching."""
         super(CustomMatcher, self).__init__(self, configure=False, synchronize=False)
+
+        # additional preparation (no synchronization available)
         if configure:
             self.__configure_backend(reset=True)
 
@@ -1671,10 +1710,12 @@ class CustomMatcher(ImageFinder):
         .. warning:: This method is currently not fully implemented. The current
                      MSER might not be used in the actual implementation.
         """
-        opencv_haystack = haystack.preprocess()
-        opencv_needle = needle.preprocess()
-        hgray = haystack.preprocess(gray=True)
-        ngray = needle.preprocess(gray=True)
+        import cv2
+        import numpy
+        opencv_haystack = numpy.array(haystack.pil_image)
+        opencv_needle = numpy.array(needle.pil_image)
+        hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
+        ngray = cv2.cvtColor(numpy.array(needle.pil_image), cv2.COLOR_RGB2GRAY)
 
         # TODO: this MSER blob feature detector is also available in
         # version 2.2.3 - implement if necessary
@@ -1849,6 +1890,8 @@ class CustomMatcher(ImageFinder):
                                is close to 0, i.e. the k+1-th neighbor is too far.
         :returns: obtained matches
         """
+        import cv2
+        import numpy
         if desc4kp > 1:
             desc1 = numpy.array(desc1, dtype=numpy.float32).reshape((-1, desc4kp))
             desc2 = numpy.array(desc2, dtype=numpy.float32).reshape((-1, desc4kp))

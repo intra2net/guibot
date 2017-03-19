@@ -15,13 +15,9 @@
 #
 import os
 import shutil
+import PIL.Image
 
-from errors import *
 from settings import GlobalSettings
-
-# TODO: try to use PIL functionality instead
-import cv2
-import numpy
 
 
 class ImageLogger(object):
@@ -29,17 +25,13 @@ class ImageLogger(object):
     Logger for the image matching process with the help of images.
 
     It always contains the current match case:
-    the needle and haystack images being matched and the hotmap
-    (a result image as a numpy array with information about the success),
-    the matched similarity and the matched coordinates.
+    the needle and haystack images/targets being matched and the hotmap
+    (an image with additional drawn information on it), the matched
+    similarity and the matched coordinates.
 
-    The image logging consists of saving the last hotmap. If the template
-    matching method was used, the hotmap is a fingerprint of the matching
-    in the entire haystack. Its lighter areas are places where the needle
-    was matched better. If the feature matching method was used, the hotmap
-    contains the matched needle features in the haystack (green), the ones
-    that were not matched (red), and the points in needle projected to the
-    haystack that could be used for clicking, hovering, etc. (blue).
+    Generally, each matcher class takes care of its own image logging,
+    performing drawing or similar operations on the spot and deciding
+    which hotmaps (also their names and order) to dump.
     """
 
     #: number of the current step
@@ -100,43 +92,6 @@ class ImageLogger(object):
         """Log images with a CRITICAL logging level."""
         self.log(50)
 
-    def log_locations(self, lvl, locations, hotmap,
-                      radius=0, r=255, g=255, b=255,
-                      draw_needle_box=True):
-        """
-        Draw locations with an arbitrary logging level on a hotmap.
-
-        :param int lvl: logging level for the message
-        :param locations: locations on the hotmap that will be circled
-        :type locations: [(int, int)]
-        :param hotmap: image to draw on where the locations are found
-        :type hotmap: :py:class:`numpy.ndarray`
-        :param int radius: radius of each circle (preferably integer)
-        :param int b: blue value of each circle
-        :param int g: green value of each circle
-        :param int r: red value of each circle
-        """
-        if lvl < self.logging_level:
-            return
-        for loc in locations:
-            x, y = loc
-            color = (b, g, r)
-            cv2.circle(hotmap, (int(x), int(y)), radius, color)
-            if draw_needle_box:
-                cv2.rectangle(hotmap, (x, y), (x+self.needle.width, y+self.needle.height), (0, 0, 0), 2)
-                cv2.rectangle(hotmap, (x, y), (x+self.needle.width, y+self.needle.height), color, 1)
-
-    def log_window(self, hotmap):
-        """
-        Show a window with the given hotmap.
-
-        :param hotmap: image (with matching results) to show
-        :type hotmap: :py:class:`numpy.ndarray`
-        """
-        cv2.startWindowThread()
-        cv2.namedWindow("hotmap", 1)
-        cv2.imshow("hotmap", hotmap)
-
     def dump_matched_images(self):
         """
         Write file with the current needle and haystack.
@@ -177,12 +132,21 @@ class ImageLogger(object):
 
         :param str name: filename to use for the image
         :param hotmap: image (with matching results) to write
-        :type hotmap: :py:class:`numpy.ndarray`
+        :type hotmap: :py:class:`PIL.Image` or :py:class:`numpy.ndarray`
         """
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
         path = os.path.join(ImageLogger.logging_destination, name)
-        cv2.imwrite(path, hotmap, [cv2.IMWRITE_PNG_COMPRESSION, GlobalSettings.image_quality])
+
+        if isinstance(hotmap, PIL.Image.Image):
+            pil_image = hotmap
+        else:
+            # numpy or other array
+            pil_image = PIL.Image.fromarray(hotmap)
+            # NOTE: some modes cannot be saved unless converted to RGB
+            if pil_image.mode != 'RGB':
+                pil_image = pil_image.convert('RGB')
+        pil_image.save(path, compress_level=GlobalSettings.image_quality)
 
     def clear(self):
         """Clear all accumulated logging including hotmaps, similarities, and locations."""

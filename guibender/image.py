@@ -21,10 +21,6 @@ try:
 except ImportError:
     import ConfigParser as config
 
-# TODO: try to use PIL functionality instead
-import cv2
-import numpy
-
 from settings import GlobalSettings
 from location import Location
 from imagepath import ImagePath
@@ -270,20 +266,3 @@ class Image(object):
         :param str filename_without_extention: match filename for the configuration
         """
         self.match_settings.to_match_file(filename_without_extention)
-
-    def preprocess(self, gray=False):
-        """
-        Convert the image into a compatible numpy array used for matching.
-
-        :param bool gray: whether to also convert the image into grayscale
-        :returns: converted image
-        :rtype: :py:class:`numpy.ndarray`
-
-        This format is used by the CV backend.
-        """
-        searchable_image = numpy.array(self._pil_image)
-        # convert RGB to BGR
-        searchable_image = searchable_image[:, :, ::-1].copy()
-        if gray:
-            searchable_image = cv2.cvtColor(searchable_image, cv2.COLOR_BGR2GRAY)
-        return searchable_image
