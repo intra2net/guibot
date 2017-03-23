@@ -57,6 +57,7 @@ class Calibrator(object):
             excluded from the dictionary. The dictionary can thus also be used to
             assess what are the available and working methods besides their success
             for a given `needle` and `haystack`.
+        .. todo:: The calibrator is currently implemented only for the template/feature matchers.
         """
         results = []
         log.info("Performing benchmarking %s calibration and %s refinements",

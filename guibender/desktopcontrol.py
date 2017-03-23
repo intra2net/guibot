@@ -295,6 +295,7 @@ class DesktopControl(LocalSettings):
                      (see :py:class:`inputmap.Key` for extensive list)
         :type keys: [str] or str (no special keys in the second case)
         """
+        # BUG: pressing multiple times the same key does not work?
         self.keys_toggle(keys, True)
         self.keys_toggle(keys, False)
 
