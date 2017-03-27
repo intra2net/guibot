@@ -29,7 +29,7 @@ log = logging.getLogger('guibender.imagefinder')
 
 
 class CVParameter(object):
-    """A class for a single parameter from the CV equalizer."""
+    """A class for a single parameter used for CV backend configuration."""
 
     def __init__(self, value,
                  min_val=None, max_val=None,
@@ -106,7 +106,7 @@ class CVParameter(object):
             elif re.match(r"[\d.]+", arg):
                 arg = float(arg)
             else:
-                raise ValueError
+                arg = str(arg)
 
             log.log(0, "%s %s", arg, type(arg))
             args.append(arg)
