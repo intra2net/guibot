@@ -27,6 +27,7 @@ from imagepath import ImagePath
 from location import Location
 from region import Region
 from match import Match
+from imagefinder import TemplateMatcher
 from desktopcontrol import AutoPyDesktopControl
 from image import Image
 from inputmap import Key
@@ -112,19 +113,20 @@ class RegionTest(unittest.TestCase):
 
     def test_find(self):
         self.show_image('all_shapes')
-
         region = Region()
-        match = region.find(Image('shape_blue_circle'))
 
-        self.assertEqual(165, match.width)
-        self.assertEqual(151, match.height)
+        match = region.find(Image('shape_green_box'))
+        self.assertEqual((match.x, match.y), (504, 414))
+        self.assertEqual(67, match.width)
+        self.assertEqual(52, match.height)
 
         # Match again - this time just pass a filename
-        match = region.find('shape_pink_box')
-        self.assertEqual(69, match.width)
-        self.assertEqual(48, match.height)
+        match = region.find('shape_green_box')
+        self.assertEqual((match.x, match.y), (504, 414))
+        self.assertEqual(67, match.width)
+        self.assertEqual(52, match.height)
 
-        # Test get_last_match()
+        # Test last match property
         last_match = region.last_match
         self.assertEqual(last_match.x, match.x)
         self.assertEqual(last_match.y, match.y)
@@ -141,7 +143,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(match.target.x + 200, match_offset.target.x)
         self.assertEqual(match.target.y + 100, match_offset.target.y)
 
-        # Positive target offset
+        # Negative target offset
         match_offset = Region().find(Image('shape_blue_circle.png').with_target_offset(-50, -30))
         self.assertEqual(match.target.x - 50, match_offset.target.x)
         self.assertEqual(match.target.y - 30, match_offset.target.y)
@@ -159,64 +161,70 @@ class RegionTest(unittest.TestCase):
         except FindError, e:
             pass
 
-    def test_zero_matches(self):
-        self.show_image('all_shapes')
-
-        matches = Region().find_all(Image('shape_blue_circle'))
-        self.assertEqual(len(matches), 1)
-
-        self.close_windows()
-
-        matches = Region().find_all(Image('shape_blue_circle'), allow_zero=True)
-        self.assertEqual(len(matches), 0)
-
-        self.close_windows()
-
     def test_find_all(self):
         self.show_image('all_shapes')
-        # TODO: find should consider both autopy
-        # and OpenCV but both may not be supported
-        # at developer's platform
+        # initialize template matching region to support multiple matches
+        boxes = Region(cv=TemplateMatcher())
+
         greenbox = Image('shape_green_box')
-        matches = Region().find_all(greenbox)
+        matches = boxes.find_all(greenbox)
         self.assertEqual(len(matches), 1)
+        self.assertEqual((matches[0].x, matches[0].y), (504, 414))
         self.assertEqual(67, matches[0].width)
         self.assertEqual(52, matches[0].height)
 
         redbox = Image('shape_red_box')
-        matches = Region().find_all(redbox)
-        self.assertEqual(len(matches), 3)
+        matches = boxes.find_all(redbox)
+        expected_matches = [(793, 251), (501, 249), (791, 340)]
+        self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             Region().hover(match)
             time.sleep(0.5)
+            self.assertIn((match.x, match.y), expected_matches)
             self.assertEqual(68, match.width)
             self.assertEqual(56, match.height)
 
         pinkbox = Image('shape_pink_box')
-
         # pink is similar to red, so the best fuzzy matches also
         # include the three red boxes when considering color
-        pinkbox.match_settings.params["find"]["similarity"].value = 0.5
-        pinkbox.match_settings.params["template"]["nocolor"].value = False
-        matches = Region().find_all(pinkbox)
-        self.assertEqual(len(matches), 4)
+        boxes.cv_backend.params["find"]["similarity"].value = 0.5
+        boxes.cv_backend.params["template"]["nocolor"].value = False
+        matches = boxes.find_all(pinkbox)
+        expected_matches = [(504, 479), (793, 262), (790, 351), (503, 260)]
+        self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
-            Region().hover(match)
+            boxes.hover(match)
             time.sleep(0.5)
+            self.assertIn((match.x, match.y), expected_matches)
             self.assertEqual(69, match.width)
             self.assertEqual(48, match.height)
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
-        pinkbox.match_settings.params["find"]["similarity"].value = 0.8
-        pinkbox.match_settings.params["template"]["nocolor"].value = True
-        matches = Region().find_all(pinkbox)
-        self.assertEqual(len(matches), 3)
+        boxes.cv_backend.params["find"]["similarity"].value = 0.8
+        boxes.cv_backend.params["template"]["nocolor"].value = True
+        matches = boxes.find_all(pinkbox)
+        expected_matches = [(504, 479), (502, 344), (505, 419)]
+        self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
-            Region().hover(match)
+            boxes.hover(match)
             time.sleep(0.5)
+            self.assertIn((match.x, match.y), expected_matches)
             self.assertEqual(69, match.width)
             self.assertEqual(48, match.height)
+
+    def test_zero_matches(self):
+        self.show_image('all_shapes')
+        # initialize template matching region to support multiple matches
+        boxes = Region(cv=TemplateMatcher())
+
+        matches = boxes.find_all(Image('shape_blue_circle'))
+        self.assertEqual(len(matches), 1)
+        self.close_windows()
+
+        matches = boxes.find_all(Image('shape_blue_circle'), allow_zero=True)
+        self.assertEqual(len(matches), 0)
+        self.close_windows()
 
     def test_sample(self):
         self.show_image('all_shapes')

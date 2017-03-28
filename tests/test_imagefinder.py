@@ -164,6 +164,8 @@ class ImageFinderTest(unittest.TestCase):
         # AutoPy returns +1 pixel for both axes
         self.assertEqual(matches[0].x, 105)
         self.assertEqual(matches[0].y, 11)
+        self.assertEqual(matches[0].width, 165)
+        self.assertEqual(matches[0].height, 151)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(4)
@@ -203,6 +205,8 @@ class ImageFinderTest(unittest.TestCase):
                 self.assertEqual(len(matches), 1)
                 self.assertEqual(matches[0].x, 104)
                 self.assertEqual(matches[0].y, 10)
+                self.assertEqual(matches[0].width, 165)
+                self.assertEqual(matches[0].height, 151)
 
                 # verify dumped files count and names
                 dumps = self._verify_and_get_dumps(6, i)
@@ -269,6 +273,8 @@ class ImageFinderTest(unittest.TestCase):
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0].x, 104)
             self.assertEqual(matches[0].y, 10)
+            self.assertEqual(matches[0].width, 165)
+            self.assertEqual(matches[0].height, 151)
 
             # verify dumped files count and names
             dumps = self._verify_and_get_dumps(5, i)
@@ -333,6 +339,8 @@ class ImageFinderTest(unittest.TestCase):
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0].x, 104)
             self.assertEqual(matches[0].y, 10)
+            self.assertEqual(matches[0].width, 165)
+            self.assertEqual(matches[0].height, 151)
 
     def test_template_multiple(self):
         finder = TemplateMatcher()
@@ -377,6 +385,8 @@ class ImageFinderTest(unittest.TestCase):
                         self.assertEqual(len(matches), 1)
                         self.assertEqual(matches[0].x, 0)
                         self.assertEqual(matches[0].y, 0)
+                        self.assertEqual(matches[0].width, 178)
+                        self.assertEqual(matches[0].height, 269)
 
                         # verify dumped files count and names
                         dumps = self._verify_and_get_dumps(7, i)
@@ -440,6 +450,8 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertAlmostEqual(matches[0].x, 39, delta=5)
         self.assertAlmostEqual(matches[0].y, 222, delta=5)
+        self.assertAlmostEqual(matches[0].width, 100, delta=10)
+        self.assertAlmostEqual(matches[0].height, 150, delta=10)
 
     def test_feature_rotation(self):
         finder = FeatureMatcher()
@@ -448,6 +460,8 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertAlmostEqual(matches[0].x, 435, delta=5)
         self.assertAlmostEqual(matches[0].y, 447, delta=5)
+        self.assertAlmostEqual(matches[0].width, 270, delta=10)
+        self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
     def test_feature_viewport(self):
         finder = FeatureMatcher()
@@ -456,6 +470,8 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertAlmostEqual(matches[0].x, 68, delta=5)
         self.assertAlmostEqual(matches[0].y, 18, delta=5)
+        self.assertAlmostEqual(matches[0].width, 160, delta=10)
+        self.assertAlmostEqual(matches[0].height, 250, delta=10)
 
     def test_cascade_same(self):
         finder = CascadeMatcher()
@@ -468,6 +484,8 @@ class ImageFinderTest(unittest.TestCase):
         # TODO: only part of the image is matched - need better cascade
         self.assertEqual(matches[0].x, 39)
         self.assertEqual(matches[0].y, 139)
+        self.assertAlmostEqual(matches[0].width, 165, delta=10)
+        self.assertAlmostEqual(matches[0].height, 151, delta=10)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(4)
@@ -520,6 +538,8 @@ class ImageFinderTest(unittest.TestCase):
                 self.assertEqual(len(matches), 1)
                 self.assertEqual(matches[0].x, 22)
                 self.assertEqual(matches[0].y, 83)
+                self.assertAlmostEqual(matches[0].width, 40, delta=3)
+                self.assertAlmostEqual(matches[0].height, 15, delta=3)
 
                 # verify dumped files count and names
                 dumps = self._verify_and_get_dumps(7, i)
@@ -596,6 +616,8 @@ class ImageFinderTest(unittest.TestCase):
         # TODO: location too far due to poor text detection
         #self.assertEqual(matches[0].x, 11)
         self.assertEqual(matches[0].y, 12)
+        self.assertAlmostEqual(matches[0].width, 110, delta=5)
+        self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_bold(self):
         finder = TextMatcher()
@@ -604,6 +626,8 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 12)
         self.assertEqual(matches[0].y, 13)
+        self.assertAlmostEqual(matches[0].width, 100, delta=5)
+        self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_italic(self):
         finder = TextMatcher()
@@ -612,6 +636,8 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 11)
         self.assertEqual(matches[0].y, 12)
+        self.assertAlmostEqual(matches[0].width, 120, delta=5)
+        self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_larger(self):
         finder = TextMatcher()
@@ -622,6 +648,8 @@ class ImageFinderTest(unittest.TestCase):
         # TODO: location too far due to poor text detection
         #self.assertEqual(matches[0].x, 13)
         self.assertEqual(matches[0].y, 13)
+        #self.assertAlmostEqual(matches[0].width, 100, delta=5)
+        self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_font(self):
         finder = TextMatcher()
@@ -631,6 +659,8 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 7)
         self.assertEqual(matches[0].y, 13)
+        self.assertAlmostEqual(matches[0].width, 120, delta=5)
+        self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_hybrid_same(self):
         finder = HybridMatcher()
@@ -645,6 +675,8 @@ class ImageFinderTest(unittest.TestCase):
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0].x, 0)
             self.assertEqual(matches[0].y, 0)
+            self.assertEqual(matches[0].width, 178)
+            self.assertEqual(matches[0].height, 269)
 
             # verify dumped files count and names
             dumps = self._verify_and_get_dumps(6, i)
@@ -707,6 +739,9 @@ class ImageFinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 0)
         self.assertEqual(matches[0].y, 0)
+        # based on a 15x15 output layer (network configuration)
+        self.assertEqual(matches[0].width, Image('all_shapes').width/15)
+        self.assertEqual(matches[0].height, Image('all_shapes').height/15)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(5)

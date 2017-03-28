@@ -21,7 +21,6 @@ except ImportError:
     import ConfigParser as config
 
 from settings import GlobalSettings, LocalSettings
-from location import Location
 from imagelogger import ImageLogger
 from errors import *
 
@@ -287,7 +286,7 @@ class ImageFinder(LocalSettings):
             else:
                 param.fixed = not mark
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Find all needle images in a haystack image.
 
@@ -295,9 +294,8 @@ class ImageFinder(LocalSettings):
         :type needle: :py:class:`image.Target`
         :param haystack: image to look in
         :type haystack: :py:class:`image.Image`
-        :param bool multiple: whether to find all matches
         :returns: all found matches (one in most use cases)
-        :rtype: [:py:class:`location.Location`]
+        :rtype: [:py:class:`match.Match`]
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
         raise NotImplementedError("Abstract method call - call implementation of this class")
@@ -357,21 +355,15 @@ class AutoPyMatcher(ImageFinder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
-
-        :raises: :py:class:`NotImplementedError` if expecting multiple matches
 
         See base method for details.
 
         .. warning:: AutoPy has a bug when finding multiple matches
-                     so this is currently not supported.
+                     so it will currently only return a single match.
         """
-        if multiple:
-            raise NotImplementedError("The backend algorithm AutoPy does not support "
-                                      "multiple matches on screen")
-
         needle.match_settings = self
         needle.use_own_settings = True
         self.imglog.needle = needle
@@ -410,11 +402,14 @@ class AutoPyMatcher(ImageFinder):
         if coord is not None:
             self.imglog.locations.append(coord)
             self.imglog.similarities.append(1.0 - autopy_tolerance)
-            matches = [Location(coord[0], coord[1])]
+            x, y = coord
+            w, h = needle.width, needle.height
+            dx, dy = needle.center_offset.x, needle.center_offset.y
+            from match import Match
+            matches = [Match(x, y, w, h, dx, dy)]
             from PIL import ImageDraw
             draw = ImageDraw.Draw(self.imglog.hotmaps[-1])
-            draw.rectangle((coord[0], coord[1], coord[0]+needle.width, coord[1]+needle.height),
-                           outline=(0,0,255))
+            draw.rectangle((x, y, x+w, y+h), outline=(0,0,255))
             del draw
         else:
             matches = []
@@ -515,7 +510,7 @@ class ContourMatcher(ImageFinder):
         """
         self.__configure(threshold_filter, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
@@ -559,7 +554,8 @@ class ContourMatcher(ImageFinder):
                 distances[i,j] = cv2.matchShapes(hcontour, ncontour, self.params["contour"]["contoursMatch"].value, 0)
                 assert distances[i,j] >= 0.0
 
-        locations = []
+        from match import Match
+        matches = []
         nx, ny, nw, nh = cv2.boundingRect(numpy.concatenate(needle_contours, axis=0))
         while True:
             matching_haystack_contours = []
@@ -585,16 +581,21 @@ class ContourMatcher(ImageFinder):
                 needle_upleft = (max(int((x-nx)*float(w)/nw), 0), max(int((y-ny)*float(h)/nh), 0))
                 needle_downright = (min(int(needle_upleft[0]+needle.width*float(w)/nw), haystack.width),
                                     min(int(needle_upleft[1]+needle.height*float(h)/nh), haystack.height))
+                needle_center_offset = (needle.center_offset.x*float(w)/nw,
+                                        needle.center_offset.y*float(h)/nh)
                 cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (0,0,0), 2)
                 cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (255,255,255), 1)
                 # NOTE: to extract the region of interest just do:
                 # roi = thresh_haystack[y:y+h,x:x+w]
                 self.imglog.similarities.append(1.0 - average_distance)
                 self.imglog.locations.append(needle_upleft)
-                locations.append(Location(*needle_upleft))
+                matches.append(Match(needle_upleft[0], needle_upleft[1],
+                                     needle_downright[0] - needle_upleft[0],
+                                     needle_downright[1] - needle_upleft[1],
+                                     *needle_center_offset))
 
         self.imglog.log(30)
-        return locations
+        return matches
 
     def _binarize_image(self, image, log=False):
         import cv2
@@ -719,7 +720,7 @@ class TemplateMatcher(ImageFinder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
@@ -740,7 +741,7 @@ class TemplateMatcher(ImageFinder):
                                                   self.algorithms["template_matchers"]))
         match_template = self.params["template"]["backend"]
         no_color = self.params["template"]["nocolor"].value
-        log.debug("Performing opencv-%s multiple template matching %s color",
+        log.debug("Performing opencv-%s template matching %s color",
                   match_template, "without" if no_color else "with")
         result = self._match_template(needle, haystack, no_color, match_template)
         if result is None:
@@ -759,7 +760,8 @@ class TemplateMatcher(ImageFinder):
 
         # extract maxima once for each needle size region
         similarity = self.params["find"]["similarity"].value
-        maxima = []
+        from match import Match
+        matches = []
         while True:
 
             minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
@@ -771,7 +773,7 @@ class TemplateMatcher(ImageFinder):
                       str(maxVal), similarity, str(maxLoc))
 
             if maxVal < similarity:
-                if len(maxima) == 0:
+                if len(matches) == 0:
                     self.imglog.similarities.append(maxVal)
                     self.imglog.locations.append(maxLoc)
                     current_hotmap = numpy.copy(universal_hotmap)
@@ -787,11 +789,13 @@ class TemplateMatcher(ImageFinder):
                 current_hotmap = numpy.copy(universal_hotmap)
                 cv2.circle(current_hotmap, (maxLoc[0],maxLoc[1]), int(30*maxVal), (255,255,255))
                 x, y = maxLoc
-                cv2.rectangle(final_hotmap, (x, y), (x+needle.width, y+needle.height), (0,0,0), 2)
-                cv2.rectangle(final_hotmap, (x, y), (x+needle.width, y+needle.height), (255,255,255), 1)
+                w, h = needle.width, needle.height
+                dx, dy = needle.center_offset.x, needle.center_offset.y
+                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0,0,0), 2)
+                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255,255,255), 1)
                 self.imglog.hotmaps.append(current_hotmap)
                 log.debug("Best match is acceptable")
-                maxima.append(Location(maxLoc[0], maxLoc[1]))
+                matches.append(Match(x, y, w, h, dx, dy))
                 if similarity == 0.0:
                     # return just one match if no similarity requirement
                     break
@@ -812,12 +816,12 @@ class TemplateMatcher(ImageFinder):
             # clean found image to look for next safe distance match
             result[match_y0:match_y1,match_x0:match_x1] = 0.0
 
-            log.log(0, "Total maxima up to the point are %i", len(maxima))
-        log.debug("A total of %i matches found", len(maxima))
+            log.log(0, "Total maxima up to the point are %i", len(matches))
+        log.debug("A total of %i matches found", len(matches))
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
 
-        return maxima
+        return matches
 
     def _match_template(self, needle, haystack, nocolor, method):
         """
@@ -1122,15 +1126,14 @@ class FeatureMatcher(ImageFinder):
         """
         self.__synchronize(feature_detect, feature_extract, feature_match, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
-        :raises: :py:class:`NotImplementedError` if expecting multiple matches
-
         See base method for details.
 
-        .. warning:: Finding multiple matches is currently not supported.
+        .. warning:: Finding multiple matches is currently not supported
+                     and this will currently only return a single match.
 
         Available methods are: a combination of feature detector,
         extractor, and matcher.
@@ -1140,10 +1143,6 @@ class FeatureMatcher(ImageFinder):
         self.imglog.needle = needle
         self.imglog.haystack = haystack
         self.imglog.dump_matched_images()
-
-        if multiple:
-            raise NotImplementedError("The feature matcher backend does not support "
-                                      "multiple matches on screen")
 
         import cv2
         import numpy
@@ -1155,16 +1154,20 @@ class FeatureMatcher(ImageFinder):
         self.imglog.hotmaps.append(numpy.array(haystack.pil_image))
 
         # project more points for debugging purposes and image logging
-        frame_points = []
-        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
-                             (needle.width, needle.height)])
-        frame_points.append((needle.width / 2, needle.height / 2))
+        npoints = []
+        npoints.extend([(0, 0), (needle.width, 0), (0, needle.height),
+                        (needle.width, needle.height)])
+        npoints.append((needle.width / 2, needle.height / 2))
 
         similarity = self.params["find"]["similarity"].value
-        coord = self._project_features(frame_points, ngray, hgray, similarity)
-        matches = [coord] if coord is not None else []
-
-        return matches
+        hpoints = self._project_features(npoints, ngray, hgray, similarity)
+        if hpoints is not None:
+            from match import Match
+            x, y = hpoints[0]
+            w, h = tuple(numpy.abs(numpy.subtract(hpoints[3], hpoints[0])))
+            # TODO: projecting offset requires more effort
+            return [Match(x, y, w, h)]
+        return []
 
     def _project_features(self, locations_in_needle, ngray, hgray, similarity):
         """
@@ -1215,9 +1218,8 @@ class FeatureMatcher(ImageFinder):
             return None
         else:
             self._log_features(30, self.imglog.locations, self.imglog.hotmaps[-1], 3, 0, 0, 255)
-            location = Location(*locations_in_haystack[0])
             self.imglog.log(30)
-            return location
+            return locations_in_haystack
 
     def _detect_features(self, ngray, hgray, detect, extract):
         """
@@ -1549,7 +1551,7 @@ class CascadeMatcher(ImageFinder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
@@ -1572,7 +1574,8 @@ class CascadeMatcher(ImageFinder):
         gray_haystack = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
         canvas = numpy.array(haystack.pil_image)
 
-        locations = []
+        from match import Match
+        matches = []
         rects = needle_cascade.detectMultiScale(gray_haystack,
                                                 self.params["cascade"]["scaleFactor"].value,
                                                 self.params["cascade"]["minNeighbors"].value,
@@ -1584,13 +1587,14 @@ class CascadeMatcher(ImageFinder):
         for (x,y,w,h) in rects:
             cv2.rectangle(canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
             cv2.rectangle(canvas, (x,y), (x+w,y+h), (255, 0, 0), 1)
-            locations.append(Location(x,y))
+            dx, dy = needle.center_offset.x, needle.center_offset.y
+            matches.append(Match(x, y, w, h, dx, dy))
 
         self.imglog.similarities.append(self.params["find"]["similarity"].value)
-        self.imglog.locations = [(l.x,l.y) for l in locations]
+        self.imglog.locations = [(l.x,l.y) for l in matches]
         self.imglog.hotmaps.append(canvas)
         self.imglog.log(30)
-        return locations
+        return matches
 
 
 class TextMatcher(ContourMatcher):
@@ -1811,7 +1815,7 @@ class TextMatcher(ContourMatcher):
         """
         self.__synchronize(text_detector, text_recognizer, threshold_filter, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
@@ -1841,7 +1845,8 @@ class TextMatcher(ContourMatcher):
             text_regions = self._detect_text_components(haystack)
 
         # perform optical character recognition on the final regions
-        locations = []
+        from match import Match
+        matches = []
         for text_box in text_regions:
             text_img = img_haystack[text_box[1]:text_box[1]+text_box[3],text_box[0]:text_box[0]+text_box[2]]
             text_img = self._binarize_image(text_img)
@@ -1865,13 +1870,14 @@ class TextMatcher(ContourMatcher):
             if similarity >= self.params["find"]["similarity"].value:
                 self.imglog.locations.append((text_box[0], text_box[1]))
                 x, y, w, h = text_box
+                dx, dy = needle.center_offset.x, needle.center_offset.y
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0, 0, 0), 2)
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255, 255, 255), 1)
-                locations.append(Location(text_box[0], text_box[1]))
+                matches.append(Match(x, y, w, h, dx, dy))
 
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
-        return locations
+        return matches
 
     def _detect_text_erstat(self, haystack):
         import cv2
@@ -2135,7 +2141,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         """
         self.__configure(template_match, feature_detect, feature_extract, feature_match, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
@@ -2160,7 +2166,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
         self.params["find"]["similarity"].value = template_similarity
         # call specifically the template find variant here
-        template_maxima = TemplateMatcher.find(self, needle, haystack, True)
+        template_maxima = TemplateMatcher.find(self, needle, haystack)
 
         self.params["find"]["similarity"].value = feature_similarity
         # dump correct matching settings
@@ -2240,19 +2246,22 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
             self.imglog.log(30)
             return []
 
-        locations = []
+        matches = []
+        from match import Match
         for maximum in feature_maxima:
             x, y = maximum[2]
+            w, h = needle.width, needle.height
+            dx, dy = needle.center_offset.x, needle.center_offset.y
             cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,0), 2)
             cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,255), 1)
-            locations.append(Location(x, y))
+            matches.append(Match(x, y, w, h, dx, dy))
         self.imglog.hotmaps.append(final_hotmap)
         # log one best match for final hotmap filename
         best_acceptable = max(feature_maxima, key=lambda x: x[1])
         self.imglog.similarities.append(best_acceptable[1])
         self.imglog.locations.append(best_acceptable[2])
         self.imglog.log(30)
-        return locations
+        return matches
 
     def log(self, lvl):
         """
@@ -2355,7 +2364,7 @@ class Hybrid2to1Matcher(HybridMatcher):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
@@ -2408,8 +2417,9 @@ class Hybrid2to1Matcher(HybridMatcher):
         log.debug("Dividing haystack into %ix%i pieces", nx, ny)
         result = numpy.zeros((ny, nx))
 
-        locations = {}
-        locations_flat = []
+        matches_grid = {}
+        matches = []
+        from match import Match
         for i in range(nx):
             for j in range(ny):
                 left = i * dx
@@ -2440,17 +2450,19 @@ class Hybrid2to1Matcher(HybridMatcher):
                     log.debug("No acceptable match in region %s", (i, j))
                     continue
                 else:
-                    locations[(j, i)] = Location(left + self.imglog.locations[-1][0],
-                                                 up + self.imglog.locations[-1][1])
-                    locations_flat.append(locations[(j, i)])
-                    self.imglog.locations[-1] = locations[(j, i)]
+                    matches_grid[(j, i)] = Match(left + self.imglog.locations[-1][0],
+                                                 up + self.imglog.locations[-1][1],
+                                                 needle.width, needle.height,
+                                                 needle.center_offset.x, needle.center_offset.y)
+                    matches.append(matches_grid[(j, i)])
+                    self.imglog.locations[-1] = matches_grid[(j, i)]
                     log.debug("Acceptable best match with similarity %s starting at %s in region %s",
-                              self.imglog.similarities[-1], locations[(j, i)], (i, j))
+                              self.imglog.similarities[-1], matches_grid[(j, i)], (i, j))
 
         # release the accumulated logging from subroutines
         ImageLogger.accumulate_logging = False
         self.imglog.log(30)
-        return locations_flat
+        return matches
 
     def log(self, lvl):
         """
@@ -2607,7 +2619,7 @@ class DeepMatcher(ImageFinder):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 
@@ -2660,12 +2672,14 @@ class DeepMatcher(ImageFinder):
         self.imglog.hotmaps.append(hotmap*255)
 
         # TODO: try Faster Region-CNNs, Single Shot MultiBox Detector, and YOLO
-        locations = []
+        matches = []
+        from match import Match
         dx = haystack.width / self.params["deep"]["owidth"].value
         dy = haystack.height / self.params["deep"]["oheight"].value
         ys, xs = numpy.where(hotmap > self.params["find"]["similarity"].value)
         for (x, y) in zip(list(xs), list(ys)):
             ox, oy = dx * x, dy * y
+            ndx, ndy = needle.center_offset.x, needle.center_offset.y
 
             from PIL import ImageDraw
             draw = ImageDraw.Draw(canvas)
@@ -2673,11 +2687,11 @@ class DeepMatcher(ImageFinder):
 
             self.imglog.locations.append((ox, oy))
             self.imglog.similarities.append(hotmap[y,x])
-            locations.append(Location(ox, oy))
+            matches.append(Match(ox, oy, dx, dy, ndx, ndy))
 
         self.imglog.hotmaps.append(canvas)
         self.imglog.log(30)
-        return locations
+        return matches
 
     def train(self, epochs, train_samples, train_targets, data_filename=None):
         """
@@ -2850,7 +2864,7 @@ class CustomMatcher(ImageFinder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack, multiple=False):
+    def find(self, needle, haystack):
         """
         Custom implementation of the base method.
 

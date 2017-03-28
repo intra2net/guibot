@@ -396,10 +396,11 @@ class Region(object):
 
             found_pics = cv_backend.find(image, screen_capture)
             if len(found_pics) > 0:
-                found_pic = found_pics[0]
-                self._last_match = match.Match(self._xpos + found_pic.x,
-                                               self._ypos + found_pic.y, image,
-                                               dc_backend, cv_backend)
+                self._last_match = found_pics[0]
+                self._last_match.x += self.x
+                self._last_match.y += self.y
+                self._last_match.dc_backend = dc_backend
+                self._last_match.cv_backend = cv_backend
                 return self._last_match
 
             elif time.time() > timeout_limit:
@@ -449,14 +450,15 @@ class Region(object):
         while True:
             screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = cv_backend.find(image, screen_capture, multiple=True)
-
+            found_pics = cv_backend.find(image, screen_capture)
             if len(found_pics) > 0:
-                for found_pic in found_pics:
-                    last_matches.append(match.Match(self._xpos + found_pic.x,
-                                                    self._ypos + found_pic.y, image,
-                                                    dc_backend, cv_backend))
-                self._last_match = found_pics[-1]
+                for match in found_pics:
+                    match.x += self.x
+                    match.y += self.y
+                    match.dc_backend = dc_backend
+                    match.cv_backend = cv_backend
+                    last_matches.append(match)
+                self._last_match = last_matches[-1]
                 return last_matches
 
             elif time.time() > timeout_limit:
@@ -895,7 +897,3 @@ class Region(object):
                 else:
                     raise ValueError("Unknown text character" % part)
         return text_list
-
-
-# TODO: make this more pythonic
-import match
