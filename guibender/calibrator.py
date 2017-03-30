@@ -68,11 +68,6 @@ class Calibrator(object):
         finder = imagefinder.TemplateMatcher()
         needle.match_settings.params["find"]["similarity"].value = 0.0
         for key in finder.algorithms["template_matchers"]:
-            # autopy does not provide any similarity value
-            # and only normed methods are comparable
-            if "_normed" not in key:
-                continue
-
             for gray in (True, False):
                 if gray:
                     method = key + "_gray"

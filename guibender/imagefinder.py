@@ -683,8 +683,8 @@ class TemplateMatcher(ImageFinder):
 
         # available and currently fully compatible methods
         self.categories["template"] = "template_matchers"
-        self.algorithms["template_matchers"] = ("sqdiff", "ccorr", "ccoeff","sqdiff_normed",
-                                                 "ccorr_normed", "ccoeff_normed")
+        # we only use the normalized version of "sqdiff", "ccorr", and "ccoeff"
+        self.algorithms["template_matchers"] = ("sqdiff_normed", "ccorr_normed", "ccoeff_normed")
 
         # additional preparation (no synchronization available)
         if configure:
@@ -741,14 +741,14 @@ class TemplateMatcher(ImageFinder):
                                                   self.algorithms["template_matchers"]))
         match_template = self.params["template"]["backend"]
         no_color = self.params["template"]["nocolor"].value
-        log.debug("Performing opencv-%s template matching %s color",
+        log.debug("Performing %s template matching %s color",
                   match_template, "without" if no_color else "with")
         result = self._match_template(needle, haystack, no_color, match_template)
         if result is None:
             log.warning("OpenCV's template matching returned no result")
             return []
         # switch max and min for sqdiff and sqdiff_normed (to always look for max)
-        if self.params["template"]["backend"] in ("sqdiff", "sqdiff_normed"):
+        if self.params["template"]["backend"] in ("sqdiff_normed"):
             result = 1.0 - result
 
         import cv2
@@ -765,9 +765,7 @@ class TemplateMatcher(ImageFinder):
         while True:
 
             minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
-            # BUG: Due to an OpenCV bug sqdiff_normed might return a similarity > 1.0
-            # although it must be normalized (i.e. between 0 and 1) so patch this and
-            # other possible similar bugs
+            # rectify to the [0,1] interval to avoid negative values in some methods
             maxVal = min(max(maxVal, 0.0), 1.0)
             log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
                       str(maxVal), similarity, str(maxLoc))
