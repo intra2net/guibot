@@ -906,7 +906,7 @@ class FeatureMatcher(ImageFinder):
                                                "BruteForce-Hamming(2)")
         self.algorithms["feature_detectors"] = ("ORB", "BRISK", "KAZE", "AKAZE", "MSER",
                                                   "AgastFeatureDetector", "FastFeatureDetector", "GFTTDetector",
-                                                 "SimpleBlobDetector", "oldSURF")
+                                                 "SimpleBlobDetector")
         # TODO: we could also support "StereoSGBM" but it needs initialization arguments
         self.algorithms["feature_extractors"] = ("ORB", "BRISK", "KAZE", "AKAZE")
 
@@ -954,13 +954,9 @@ class FeatureMatcher(ImageFinder):
             self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
             self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
 
-            if backend == "oldSURF":
-                self.params[category]["oldSURFdetect"] = CVParameter(85)
-                return
-            else:
-                import cv2
-                feature_detector_create = getattr(cv2, "%s_create" % backend)
-                self._detector = backend_obj = feature_detector_create()
+            import cv2
+            feature_detector_create = getattr(cv2, "%s_create" % backend)
+            self._detector = backend_obj = feature_detector_create()
 
         elif category == "fextract":
             import cv2
@@ -1073,23 +1069,20 @@ class FeatureMatcher(ImageFinder):
             backend = category if backend is None else backend
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
-        if category == "fdetect" and self.params[category]["backend"] == "oldSURF":
-            pass
-        else:
-            for attribute in dir(backend_obj):
-                if not attribute.startswith("get"):
+        for attribute in dir(backend_obj):
+            if not attribute.startswith("get"):
+                continue
+            param = attribute.replace("get", "")
+            if param in self.params[category]:
+                val = self.params[category][param].value
+                set_attribute = attribute.replace("get", "set")
+                # some getters might not have corresponding setters
+                if not hasattr(backend_obj, set_attribute):
                     continue
-                param = attribute.replace("get", "")
-                if param in self.params[category]:
-                    val = self.params[category][param].value
-                    set_attribute = attribute.replace("get", "set")
-                    # some getters might not have corresponding setters
-                    if not hasattr(backend_obj, set_attribute):
-                        continue
-                    set_param = getattr(backend_obj, set_attribute)
-                    set_param(val)
-                    log.log(0, "Synced %s to %s", param, val)
-                    self.params[category][param].value = val
+                set_param = getattr(backend_obj, set_attribute)
+                set_param(val)
+                log.log(0, "Synced %s to %s", param, val)
+                self.params[category][param].value = val
         if category == "fdetect":
             self._detector = backend_obj
         elif category == "fextract":
@@ -1240,16 +1233,8 @@ class FeatureMatcher(ImageFinder):
             log.debug("Zooming x%i haystack", hfactor)
             hgray = cv2.resize(hgray, None, fx=hfactor, fy=hfactor)
 
-        if detect == "oldSURF":
-            # build the old surf feature detector
-            hessian_threshold = self.params["fdetect"]["oldSURFdetect"].value
-            detector = cv2.SURF(hessian_threshold)
-
-            (nkeypoints, ndescriptors) = detector.detect(ngray, None, useProvidedKeypoints=False)
-            (hkeypoints, hdescriptors) = detector.detect(hgray, None, useProvidedKeypoints=False)
-
         # include only methods tested for compatibility
-        elif (detect in self.algorithms["feature_detectors"]
+        if (detect in self.algorithms["feature_detectors"]
               and extract in self.algorithms["feature_extractors"]):
             self.synchronize_backend(category="fdetect")
             self.synchronize_backend(category="fextract")

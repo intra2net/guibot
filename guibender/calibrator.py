@@ -93,16 +93,8 @@ class Calibrator(object):
         # test all feature matching methods
         finder = imagefinder.FeatureMatcher()
         for key_fd in finder.algorithms["feature_detectors"]:
-            # skip in-house because of opencv version bug
-            if key_fd == "oldSURF":
-                continue
-
             for key_fe in finder.algorithms["feature_extractors"]:
                 for key_fm in finder.algorithms["feature_matchers"]:
-                    # Dense feature detection and in-house-region feature matching
-                    # are too much performance overhead
-                    if key_fd == "Dense" and key_fm == "in-house-region":
-                        continue
 
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     log.debug("Testing %s with %s:", needle.filename, method)
