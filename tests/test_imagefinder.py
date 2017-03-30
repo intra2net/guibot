@@ -117,32 +117,32 @@ class ImageFinderTest(unittest.TestCase):
 
         finder = FeatureMatcher()
         finder.configure()
-        # test that a parameter of ORB (the current and default extractor)
+        # test that a parameter of ORB (the current and default detector)
         # is present in parameters while a parameter of KAZE is not present
-        self.assertTrue(finder.params["fextract"].has_key("MaxFeatures"))
-        self.assertFalse(finder.params["fextract"].has_key("NOctaves"))
+        self.assertTrue(finder.params["fdetect"].has_key("MaxFeatures"))
+        self.assertFalse(finder.params["fdetect"].has_key("NOctaves"))
 
         finder = HybridMatcher()
-        finder.configure(feature_detect="ORB", feature_extract="KAZE", feature_match="BruteForce")
+        finder.configure(feature_detect="KAZE", feature_extract="ORB", feature_match="BruteForce")
         self.assertEqual(finder.params["find"]["backend"], "hybrid")
         self.assertEqual(finder.params["template"]["backend"], "ccoeff_normed")
         self.assertEqual(finder.params["feature"]["backend"], "mixed")
-        self.assertEqual(finder.params["fdetect"]["backend"], "ORB")
-        self.assertEqual(finder.params["fextract"]["backend"], "KAZE")
+        self.assertEqual(finder.params["fdetect"]["backend"], "KAZE")
+        self.assertEqual(finder.params["fextract"]["backend"], "ORB")
         self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce")
 
-        # test that a parameter of KAZE (the new extractor) is now present
+        # test that a parameter of KAZE (the new detector) is now present
         # while the parameter of ORB is not present anymore
-        self.assertTrue(finder.params["fextract"].has_key("NOctaves"))
-        self.assertFalse(finder.params["fextract"].has_key("MaxFeatures"))
+        self.assertTrue(finder.params["fdetect"].has_key("NOctaves"))
+        self.assertFalse(finder.params["fdetect"].has_key("MaxFeatures"))
 
         # check consistency of all unchanged options
         finder.configure_backend("ccorr_normed", "template")
         self.assertEqual(finder.params["find"]["backend"], "hybrid")
         self.assertEqual(finder.params["template"]["backend"], "ccorr_normed")
         self.assertEqual(finder.params["feature"]["backend"], "mixed")
-        self.assertEqual(finder.params["fdetect"]["backend"], "ORB")
-        self.assertEqual(finder.params["fextract"]["backend"], "KAZE")
+        self.assertEqual(finder.params["fdetect"]["backend"], "KAZE")
+        self.assertEqual(finder.params["fextract"]["backend"], "ORB")
         self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce")
 
         # check reset to defaults

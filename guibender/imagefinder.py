@@ -908,7 +908,8 @@ class FeatureMatcher(ImageFinder):
                                                   "AgastFeatureDetector", "FastFeatureDetector", "GFTTDetector",
                                                  "SimpleBlobDetector")
         # TODO: we could also support "StereoSGBM" but it needs initialization arguments
-        self.algorithms["feature_extractors"] = ("ORB", "BRISK", "KAZE", "AKAZE")
+        # BUG: "KAZE", "AKAZE" we get internal error when using KAZE/AKAZE even though it should be possible
+        self.algorithms["feature_extractors"] = ("ORB", "BRISK")
 
         # other attributes
         self._detector = None
