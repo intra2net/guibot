@@ -15,17 +15,14 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
+import re
 import unittest
 import shutil
 
 import common_test
 from settings import GlobalSettings
-from calibrator import Calibrator
 from imagepath import ImagePath
-from location import Location
-from region import Region
-from match import Match
-from desktopcontrol import AutoPyDesktopControl
+from imagelogger import ImageLogger
 from image import Image, Text, Pattern
 from errors import *
 from imagefinder import *
@@ -37,11 +34,72 @@ class ImageFinderTest(unittest.TestCase):
     def setUpClass(self):
         self.imagepath = ImagePath()
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
+
+        # preserve values of static attributes
+        self.prev_loglevel = GlobalSettings.image_logging_level
+        self.prev_logpath = GlobalSettings.image_logging_destination
+        self.prev_logwidth = GlobalSettings.image_logging_step_width
+
+        self.logpath = os.path.join(common_test.unittest_dir, 'tmp')
         GlobalSettings.image_logging_level = 0
+        GlobalSettings.image_logging_destination = self.logpath
+        GlobalSettings.image_logging_step_width = 4
+
+    @classmethod
+    def tearDownClass(self):
+        GlobalSettings.image_logging_level = self.prev_loglevel
+        GlobalSettings.image_logging_destination = self.prev_logpath
+        GlobalSettings.image_logging_step_width = self.prev_logwidth
+
+    def setUp(self):
+        # the image logger will recreate its logging destination
+        ImageLogger.step = 1
 
     def tearDown(self):
         if os.path.exists(GlobalSettings.image_logging_destination):
             shutil.rmtree(GlobalSettings.image_logging_destination)
+
+    def _get_matches_in(self, pattern, dumps):
+        return [match.group(0) for d in dumps for match in [re.search(pattern, d)] if match]
+
+    def _verify_and_get_dumps(self, count, index=1):
+        dumps = os.listdir(self.logpath)
+        self.assertEquals(len(dumps), count)
+        steps = self._get_matches_in('imglog\d\d\d\d-.+', dumps)
+        self.assertEquals(len(steps), len(dumps))
+        first_steps = self._get_matches_in('imglog%04d-.+' % index, dumps)
+        self.assertEquals(len(first_steps), len(steps))
+        return dumps
+
+    def _verify_dumped_images(self, needle_name, haystack_name, dumps, backend):
+        needles = self._get_matches_in(".*needle.*", dumps)
+        self.assertEquals(len(needles), 2)
+        target, config = reversed(needles) if needles[0].endswith(".match") else needles
+        self.assertIn("1needle", target)
+        self.assertIn("1needle", config)
+        self.assertIn(needle_name, target)
+        self.assertIn(needle_name, config)
+        self.assertTrue(config.endswith(".match"))
+        self.assertEqual(os.path.splitext(target)[0], os.path.splitext(config)[0])
+        self.assertTrue(os.path.isfile(os.path.join(self.logpath, target)))
+        self.assertTrue(os.path.isfile(os.path.join(self.logpath, config)))
+        with open(os.path.join(self.logpath, config)) as match_settings:
+            self.assertIn("[find]\nbackend = %s" % backend, match_settings.read())
+
+        haystacks = self._get_matches_in('.*haystack.*', dumps)
+        self.assertEquals(len(haystacks), 1)
+        haystack = haystacks[0]
+        self.assertIn('2haystack', haystack)
+        self.assertIn(haystack_name, haystack)
+        self.assertTrue(os.path.isfile(os.path.join(self.logpath, haystack)))
+
+    def _verify_single_hotmap(self, dumps, backend):
+        hotmaps = self._get_matches_in('.*hotmap.*', dumps)
+        self.assertEquals(len(hotmaps), 1)
+        self.assertIn('3hotmap', hotmaps[0])
+        # report achieved similarity in the end of the filename
+        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+        self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
 
     def test_configure_backend(self):
         finder = ImageFinder()
@@ -100,21 +158,37 @@ class ImageFinderTest(unittest.TestCase):
         finder = AutoPyMatcher()
         finder.params["find"]["similarity"].value = 1.0
         matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
+
+        # verify match accuracy
         self.assertEqual(len(matches), 1)
         # AutoPy returns +1 pixel for both axes
         self.assertEqual(matches[0].x, 105)
         self.assertEqual(matches[0].y, 11)
 
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(4)
+        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "autopy")
+        self._verify_single_hotmap(dumps, "autopy")
+
     def test_autopy_nomatch(self):
         finder = AutoPyMatcher()
         finder.params["find"]["similarity"].value = 0.25
         matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+
+        # verify match accuracy
         self.assertEqual(len(matches), 0)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(4)
+        self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "autopy")
+        self._verify_single_hotmap(dumps, "autopy")
 
     def test_contour_same(self):
         finder = ContourMatcher()
         # shape matching is not perfect
         finder.params["find"]["similarity"].value = 0.99
+        i = 1
+
         for contour in finder.algorithms["contour_extractors"]:
             for threshold in finder.algorithms["threshold_filters"]:
                 # TODO: this is still not implemented
@@ -124,62 +198,166 @@ class ImageFinderTest(unittest.TestCase):
                 finder.configure_backend(threshold, "threshold")
                 finder.params["contour"]["minArea"].value = 100
                 matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
+
+                # verify match accuracy
                 self.assertEqual(len(matches), 1)
                 self.assertEqual(matches[0].x, 104)
                 self.assertEqual(matches[0].y, 10)
 
+                # verify dumped files count and names
+                dumps = self._verify_and_get_dumps(6, i)
+                self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "contour")
+                hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+                self.assertEquals(len(hotmaps), 3)
+                self.assertIn('3hotmap', hotmaps[0])
+                # report achieved similarity in the end of the filename
+                self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
+                self.assertIn('3hotmap-1threshold', hotmaps[1])
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
+                self.assertIn('3hotmap-2contours', hotmaps[2])
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
+
+                shutil.rmtree(self.logpath)
+                i += 1
+
     def test_contour_nomatch(self):
         finder = ContourMatcher()
         finder.params["find"]["similarity"].value = 0.25
+        i = 1
+
         for contour in finder.algorithms["contour_extractors"]:
             for threshold in finder.algorithms["threshold_filters"]:
                 finder.configure_backend(contour, "contour")
                 finder.configure_backend(threshold, "threshold")
                 finder.params["contour"]["minArea"].value = 100
+
+                # verify match accuracy
                 matches = finder.find(Image('n_ibs'), Image('all_shapes'))
                 self.assertEqual(len(matches), 0)
+
+                # verify dumped files count and names
+                dumps = self._verify_and_get_dumps(6, i)
+                self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "contour")
+                hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+                self.assertEquals(len(hotmaps), 3)
+                self.assertIn('3hotmap', hotmaps[0])
+                # report achieved similarity in the end of the filename
+                self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
+                self.assertIn('3hotmap-1threshold', hotmaps[1])
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
+                self.assertIn('3hotmap-2contours', hotmaps[2])
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
+
+                shutil.rmtree(self.logpath)
+                i += 1
 
     def test_template_same(self):
         finder = TemplateMatcher()
         finder.params["find"]["similarity"].value = 1.0
+        i = 1
+
         for template in finder.algorithms["template_matchers"]:
             # one of the backend is not perfect for this case
             if template == "sqdiff_normed":
                 finder.params["find"]["similarity"].value = 0.99
             finder.configure_backend(template, "template")
             matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
+
+            # verify match accuracy
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0].x, 104)
             self.assertEqual(matches[0].y, 10)
 
+            # verify dumped files count and names
+            dumps = self._verify_and_get_dumps(5, i)
+            self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "template")
+            hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+            self.assertEquals(len(hotmaps), 2)
+            for j, hotmap in enumerate(hotmaps):
+                if j == 0:
+                    self.assertIn('3hotmap', hotmap)
+                else:
+                    self.assertIn('3hotmap-1template', hotmap)
+                # report achieved similarity in the end of the filename
+                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+            shutil.rmtree(self.logpath)
+            i += 1
+
     def test_template_nomatch(self):
         finder = TemplateMatcher()
         finder.params["find"]["similarity"].value = 0.25
+        i = 1
+
         for template in finder.algorithms["template_matchers"]:
             # one of the backend is too tolerant for this case
             if template == "ccorr_normed":
                 continue
             finder.configure_backend(template, "template")
             matches = finder.find(Image('n_ibs'), Image('all_shapes'))
-            # test template matching failure to validate needle difficulty
+
+            # verify match accuracy
             self.assertEqual(len(matches), 0)
+
+            # verify dumped files count and names
+            dumps = self._verify_and_get_dumps(5, i)
+            self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "template")
+            hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+            self.assertEquals(len(hotmaps), 2)
+            for j, hotmap in enumerate(hotmaps):
+                if j == 0:
+                    self.assertIn('3hotmap', hotmap)
+                else:
+                    self.assertIn('3hotmap-1template', hotmap)
+                # report achieved similarity in the end of the filename
+                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+            shutil.rmtree(self.logpath)
+            i += 1
 
     def test_template_nocolor(self):
         finder = TemplateMatcher()
         # template matching without color is not perfect
         finder.params["find"]["similarity"].value = 0.99
+
         for template in finder.algorithms["template_matchers"]:
             finder.configure_backend(template, "template")
             finder.params["template"]["nocolor"].value = True
             matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
-            # test template matching failure to validate needle difficulty
+
+            # verify match accuracy
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0].x, 104)
             self.assertEqual(matches[0].y, 10)
 
+    def test_template_multiple(self):
+        finder = TemplateMatcher()
+        finder.find(Image('shape_red_box'), Image('all_shapes'))
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(7)
+        self._verify_dumped_images('shape_red_box', 'all_shapes', dumps, "template")
+        hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+        self.assertEquals(len(hotmaps), 4)
+        self.assertEquals(len(self._get_matches_in('.*3hotmap.*', hotmaps)), 4)
+        for i, hotmap in enumerate(hotmaps):
+            if i == 0:
+                self.assertIn('3hotmap', hotmap)
+            else:
+                self.assertIn('3hotmap-%stemplate' % i, hotmap)
+            # report achieved similarity in the end of the filename
+            self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
     def test_feature_same(self):
         finder = FeatureMatcher()
         finder.params["find"]["similarity"].value = 1.0
+        i = 1
+
         for feature in finder.algorithms["feature_projectors"]:
             for fdetect in finder.algorithms["feature_detectors"]:
                 for fextract in finder.algorithms["feature_extractors"]:
@@ -194,13 +372,33 @@ class ImageFinderTest(unittest.TestCase):
                                            feature_extract=fextract,
                                            feature_match=fmatch)
                         matches = finder.find(Image('n_ibs'), Image('n_ibs'))
+
+                        # verify match accuracy
                         self.assertEqual(len(matches), 1)
                         self.assertEqual(matches[0].x, 0)
                         self.assertEqual(matches[0].y, 0)
 
+                        # verify dumped files count and names
+                        dumps = self._verify_and_get_dumps(7, i)
+                        self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "feature")
+                        hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+                        self.assertEquals(len(hotmaps), 4)
+                        self.assertIn('3hotmap', hotmaps[0])
+                        # report achieved similarity in the end of the filename
+                        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
+                        self.assertIn('3hotmap-1detect', hotmaps[1])
+                        self.assertIn('3hotmap-2match', hotmaps[2])
+                        self.assertIn('3hotmap-3project', hotmaps[3])
+
+                        shutil.rmtree(self.logpath)
+                        i += 1
+
     def test_feature_nomatch(self):
         finder = FeatureMatcher()
         finder.params["find"]["similarity"].value = 0.25
+        i = 1
+
         for feature in finder.algorithms["feature_projectors"]:
             for fdetect in finder.algorithms["feature_detectors"]:
                 for fextract in finder.algorithms["feature_extractors"]:
@@ -215,7 +413,25 @@ class ImageFinderTest(unittest.TestCase):
                                            feature_extract=fextract,
                                            feature_match=fmatch)
                         matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+
+                        # verify match accuracy
                         self.assertEqual(len(matches), 0)
+
+                        # verify dumped files count and names
+                        dumps = self._verify_and_get_dumps(7, i)
+                        self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "feature")
+                        hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+                        self.assertEquals(len(hotmaps), 4)
+                        self.assertIn('3hotmap', hotmaps[0])
+                        # report achieved similarity in the end of the filename
+                        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
+                        self.assertIn('3hotmap-1detect', hotmaps[1])
+                        self.assertIn('3hotmap-2match', hotmaps[2])
+                        self.assertIn('3hotmap-3project', hotmaps[3])
+
+                        shutil.rmtree(self.logpath)
+                        i += 1
 
     def test_feature_scaling(self):
         finder = FeatureMatcher()
@@ -246,21 +462,37 @@ class ImageFinderTest(unittest.TestCase):
         # no similarty parameter is supported - this is a binary match case
         finder.params["find"]["similarity"].value = 0.0
         matches = finder.find(Pattern('n_ibs.xml'), Image('n_ibs'))
+
+        # verify match accuracy
         self.assertEqual(len(matches), 1)
         # TODO: only part of the image is matched - need better cascade
         self.assertEqual(matches[0].x, 39)
         self.assertEqual(matches[0].y, 139)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(4)
+        self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "cascade")
+        self._verify_single_hotmap(dumps, "cascade")
 
     def test_cascade_nomatch(self):
         finder = CascadeMatcher()
         # no similarty parameter is supported - this is a binary match case
         finder.params["find"]["similarity"].value = 0.0
         matches = finder.find(Pattern('n_ibs.xml'), Image('all_shapes'))
+
+        # verify match accuracy
         self.assertEqual(len(matches), 0)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(4)
+        self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "cascade")
+        self._verify_single_hotmap(dumps, "cascade")
 
     def test_text_same(self):
         finder = TextMatcher()
         finder.params["find"]["similarity"].value = 1.0
+        i = 1
+
         for tdetect in finder.algorithms["text_detectors"]:
             # TODO: this is still not implemented
             if tdetect == "components":
@@ -283,13 +515,39 @@ class ImageFinderTest(unittest.TestCase):
                 finder.synchronize_backend(tdetect, "tdetect")
                 finder.synchronize_backend(ocr, "ocr")
                 matches = finder.find(Text('Text'), Image('all_shapes'))
+
+                # verify match accuracy
                 self.assertEqual(len(matches), 1)
                 self.assertEqual(matches[0].x, 22)
                 self.assertEqual(matches[0].y, 83)
 
+                # verify dumped files count and names
+                dumps = self._verify_and_get_dumps(7, i)
+                self._verify_dumped_images('Text', 'all_shapes', dumps, "text")
+                hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+                self.assertEquals(len(hotmaps), 4)
+                for j, hotmap in enumerate(hotmaps):
+                    if j == 0:
+                        self.assertIn('3hotmap', hotmap)
+                    elif j == 1:
+                        self.assertIn('3hotmap-1char', hotmap)
+                    elif j == 2:
+                        self.assertIn('3hotmap-2text', hotmap)
+                    else:
+                        self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
+                    if j == 3 or j == 4:
+                        # report achieved similarity in the end of the filename
+                        self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                    self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+                shutil.rmtree(self.logpath)
+                i += 1
+
     def test_text_nomatch(self):
         finder = TextMatcher()
         finder.params["find"]["similarity"].value = 0.25
+        i = 1
+
         for tdetect in finder.algorithms["text_detectors"]:
             # TODO: this is still not implemented
             if tdetect == "components":
@@ -304,7 +562,31 @@ class ImageFinderTest(unittest.TestCase):
                 finder.synchronize_backend(tdetect, "tdetect")
                 finder.synchronize_backend(ocr, "ocr")
                 matches = finder.find(Text('Nothing'), Image('all_shapes'))
+
+                # verify match accuracy
                 self.assertEqual(len(matches), 0)
+
+                # verify dumped files count and names
+                dumps = self._verify_and_get_dumps(7, i)
+                self._verify_dumped_images('Nothing', 'all_shapes', dumps, "text")
+                hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+                self.assertEquals(len(hotmaps), 4)
+                for j, hotmap in enumerate(hotmaps):
+                    if j == 0:
+                        self.assertIn('3hotmap', hotmap)
+                    elif j == 1:
+                        self.assertIn('3hotmap-1char', hotmap)
+                    elif j == 2:
+                        self.assertIn('3hotmap-2text', hotmap)
+                    else:
+                        self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
+                    if j == 3 or j == 4:
+                        # report achieved similarity in the end of the filename
+                        self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                    self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+                shutil.rmtree(self.logpath)
+                i += 1
 
     def test_text_basic(self):
         finder = TextMatcher()
@@ -353,20 +635,65 @@ class ImageFinderTest(unittest.TestCase):
     def test_hybrid_same(self):
         finder = HybridMatcher()
         finder.params["find"]["similarity"].value = 1.0
+        i = 1
+
         for hybrid in finder.algorithms["hybrid_matchers"]:
             finder.configure_backend(hybrid, "hybrid")
             matches = finder.find(Image('n_ibs'), Image('n_ibs'))
+
+            # verify match accuracy
             self.assertEqual(len(matches), 1)
             self.assertEqual(matches[0].x, 0)
             self.assertEqual(matches[0].y, 0)
 
+            # verify dumped files count and names
+            dumps = self._verify_and_get_dumps(6, i)
+            self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "hybrid")
+            hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+            self.assertEquals(len(hotmaps), 3)
+            for i, hotmap in enumerate(hotmaps):
+                if i == 0:
+                    self.assertIn('3hotmap', hotmap)
+                    self.assertNotIn('template', hotmap)
+                    self.assertNotIn('feature', hotmap)
+                elif i % 2 == 1:
+                    self.assertIn('%sfeature' % ((i - 1) / 2 + 1), hotmap)
+                else:
+                    self.assertIn('%stemplate' % ((i - 1) / 2 + 1), hotmap)
+                # report achieved similarity in the end of the filename
+                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+            shutil.rmtree(self.logpath)
+            i += 1
+
     def test_hybrid_nomatch(self):
         finder = HybridMatcher()
         finder.params["find"]["similarity"].value = 0.25
+        i = 1
+
         for hybrid in finder.algorithms["hybrid_matchers"]:
             finder.configure_backend(hybrid, "hybrid")
             matches = finder.find(Image('n_ibs'), Image('all_shapes'))
+
+            # verify match accuracy
             self.assertEqual(len(matches), 0)
+
+            # verify dumped files count and names
+            dumps = self._verify_and_get_dumps(4, i)
+            self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "hybrid")
+            hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+            self.assertEquals(len(hotmaps), 1)
+            hotmap = hotmaps[0]
+            self.assertIn('3hotmap', hotmap)
+            self.assertNotIn('template', hotmap)
+            self.assertNotIn('feature', hotmap)
+            # report achieved similarity in the end of the filename
+            self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+            shutil.rmtree(self.logpath)
+            i += 1
 
     def test_deep_same(self):
         finder = DeepMatcher()
@@ -375,9 +702,25 @@ class ImageFinderTest(unittest.TestCase):
         #finder.train(1, 'samples_images.pth', 'targets_images.pth', 'shape_blue_circle.pth')
         #finder.test('samples_images.pth', 'targets_images.pth')
         matches = finder.find(Pattern('shape_blue_circle.pth'), Image('all_shapes'))
+
+        # verify match accuracy
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 0)
         self.assertEqual(matches[0].y, 0)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(5)
+        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "deep")
+        hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+        self.assertEquals(len(hotmaps), 2)
+        for i, hotmap in enumerate(hotmaps):
+            if i == 0:
+                self.assertIn('3hotmap', hotmap)
+                # report achieved similarity in the end of the filename
+                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            else:
+                self.assertIn('%sactivity' % i, hotmap)
+            self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     def test_deep_nomatch(self):
         finder = DeepMatcher()
@@ -386,7 +729,23 @@ class ImageFinderTest(unittest.TestCase):
         #finder.train(1, 'samples_images.pth', 'targets_images.pth', 'shape_blue_circle.pth')
         #finder.test('samples_images.pth', 'targets_images.pth')
         matches = finder.find(Pattern('n_ibs.pth'), Image('all_shapes'))
+
+        # verify match accuracy
         self.assertEqual(len(matches), 0)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(5)
+        self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "deep")
+        hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
+        self.assertEquals(len(hotmaps), 2)
+        for i, hotmap in enumerate(hotmaps):
+            if i == 0:
+                self.assertIn('3hotmap', hotmap)
+                # report achieved similarity in the end of the filename
+                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            else:
+                self.assertIn('%sactivity' % i, hotmap)
+            self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
 
 if __name__ == '__main__':

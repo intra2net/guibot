@@ -660,9 +660,9 @@ class ContourMatcher(ImageFinder):
         elif len(self.imglog.hotmaps) == 0:
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
-        self.imglog.dump_hotmap("imglog%s-3hotmap-threshold.png" % self.imglog.printable_step,
+        self.imglog.dump_hotmap("imglog%s-3hotmap-1threshold.png" % self.imglog.printable_step,
                                 self.imglog.hotmaps[0])
-        self.imglog.dump_hotmap("imglog%s-3hotmap-contours.png" % self.imglog.printable_step,
+        self.imglog.dump_hotmap("imglog%s-3hotmap-2contours.png" % self.imglog.printable_step,
                                 self.imglog.hotmaps[1])
 
         similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
@@ -868,12 +868,13 @@ class TemplateMatcher(ImageFinder):
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
         for i in range(len(self.imglog.similarities)):
-            name = "imglog%s-3hotmap-template%s-%s.png" % (self.imglog.printable_step,
+            name = "imglog%s-3hotmap-%stemplate-%s.png" % (self.imglog.printable_step,
                                                            i + 1, self.imglog.similarities[i])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
 
-        name = "imglog%s-3hotmap-template.png" % self.imglog.printable_step
-        self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
+        similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
+        self.imglog.dump_hotmap("imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity),
+                                self.imglog.hotmaps[-1])
 
         self.imglog.clear()
         ImageLogger.step += 1
@@ -2044,17 +2045,18 @@ class TextMatcher(ContourMatcher):
         elif len(self.imglog.hotmaps) == 0:
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
-        self.imglog.dump_hotmap("imglog%s-3hotmap-char.png" % self.imglog.printable_step,
+        self.imglog.dump_hotmap("imglog%s-3hotmap-1char.png" % self.imglog.printable_step,
                                 self.imglog.hotmaps[0])
-        self.imglog.dump_hotmap("imglog%s-3hotmap-text.png" % self.imglog.printable_step,
+        self.imglog.dump_hotmap("imglog%s-3hotmap-2text.png" % self.imglog.printable_step,
                                 self.imglog.hotmaps[1])
 
         for i in range(2, len(self.imglog.hotmaps)-1):
-            self.imglog.dump_hotmap("imglog%s-3hotmap-text%s-%s.png" % (self.imglog.printable_step, i-1,
-                                                                        self.imglog.similarities[i-2]),
+            self.imglog.dump_hotmap("imglog%s-3hotmap-3ocr-%stext-%s.png" % (self.imglog.printable_step, i-1,
+                                                                             self.imglog.similarities[i-2]),
                                     self.imglog.hotmaps[i])
 
-        self.imglog.dump_hotmap("imglog%s-3hotmap.png" % self.imglog.printable_step,
+        similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
+        self.imglog.dump_hotmap("imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity),
                                 self.imglog.hotmaps[-1])
 
         self.imglog.clear()
@@ -2271,19 +2273,19 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         # to make sure the winner is the first alphabetically
         candidate_num = len(self.imglog.similarities) / 2
         for i in range(candidate_num):
-            name = "imglog%s-3hotmap-hybrid-%stemplate-%s.png" % (self.imglog.printable_step,
-                                                                  i + 1, self.imglog.similarities[i])
+            name = "imglog%s-3hotmap-%stemplate-%s.png" % (self.imglog.printable_step,
+                                                           i + 1, self.imglog.similarities[i])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
             ii = candidate_num + i
             hii = candidate_num + i*4 + 3
             #self.imglog.log_locations(30, [self.imglog.locations[ii]], self.imglog.hotmaps[hii], 4, 255, 0, 0)
-            name = "imglog%s-3hotmap-hybrid-%sfeature-%s.png" % (self.imglog.printable_step,
-                                                                 i + 1, self.imglog.similarities[ii])
+            name = "imglog%s-3hotmap-%sfeature-%s.png" % (self.imglog.printable_step,
+                                                          i + 1, self.imglog.similarities[ii])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[hii])
 
         if len(self.imglog.similarities) % 2 == 1:
-            name = "imglog%s-3hotmap-hybrid-%s.png" % (self.imglog.printable_step,
-                                                       self.imglog.similarities[-1])
+            name = "imglog%s-3hotmap-%s.png" % (self.imglog.printable_step,
+                                                self.imglog.similarities[-1])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
 
         self.imglog.clear()
