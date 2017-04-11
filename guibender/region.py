@@ -484,12 +484,17 @@ class Region(object):
         :type image: str or :py:class:`image.Image`
         :returns: similarity with best match on the screen
         :rtype: float
+
+        .. note:: Not all matchers support a 'similarity' value. The ones that don't
+            will return zero similarity (similarly to the image logging case).
         """
         log.debug("Looking for image %s", image)
         if isinstance(image, basestring):
             image = Image(image)
+        if not image.use_own_settings:
+            image.match_settings = self.cv_backend
+            image.use_own_settings = True
         image = image.with_similarity(0.0)
-        image.use_own_settings = True
         ImageLogger.accumulate_logging = True
         match = self.find(image)
         similarity = match.similarity

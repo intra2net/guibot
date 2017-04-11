@@ -265,8 +265,8 @@ class Image(Target):
         :returns: copy of the current image (with settings)
         :rtype: :py:class:`image.Image`
         """
-        copy_settings = copy.deepcopy(self.match_settings)
         selfcopy = copy.copy(self)
+        copy_settings = self.match_settings.copy()
         selfcopy.match_settings = copy_settings
         return selfcopy
 

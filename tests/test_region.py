@@ -27,10 +27,10 @@ from imagepath import ImagePath
 from location import Location
 from region import Region
 from match import Match
-from imagefinder import TemplateMatcher
-from desktopcontrol import AutoPyDesktopControl
 from image import Image
 from inputmap import Key
+from imagefinder import *
+from desktopcontrol import *
 from errors import *
 
 
@@ -240,12 +240,21 @@ class RegionTest(unittest.TestCase):
 
     def test_sample(self):
         self.show_image('all_shapes')
-        # sampling is done only from the current haystack
-        # so wait a bit to reach the correct haystack
-        time.sleep(5)
 
-        similarity = Region().sample(Image('shape_blue_circle'))
+        # initialize template matching region to support similarity
+        shapes = Region(cv=TemplateMatcher())
+        similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
+
+        # initialize autopy matching region to not support similarity
+        shapes = Region(cv=AutoPyMatcher())
+        similarity = shapes.sample(Image('shape_blue_circle'))
+        self.assertEqual(similarity, 0.0)
+
+        # initialize hybrid matching region to not support similarity
+        shapes = Region(cv=HybridMatcher())
+        similarity = shapes.sample(Image('shape_blue_circle'))
+        self.assertEqual(similarity, 0.0)
 
         self.close_windows()
 

@@ -15,6 +15,7 @@
 #
 import os
 import re
+import copy
 try:
     import configparser as config
 except ImportError:
@@ -285,6 +286,19 @@ class ImageFinder(LocalSettings):
                 param.fixed = True
             else:
                 param.fixed = not mark
+
+    def copy(self):
+        acopy = type(self)()
+        for category in self.params.keys():
+            try:
+                acopy.configure_backend(self.params[category]["backend"], category)
+                for param in self.params[category].keys():
+                    acopy.params[category][param] = copy.deepcopy(self.params[category][param])
+                acopy.synchronize_backend(self.params[category]["backend"], category)
+            except UnsupportedBackendError:
+                # some categories are not configurable or synchronizable
+                pass
+        return acopy
 
     def find(self, needle, haystack):
         """
