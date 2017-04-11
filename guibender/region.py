@@ -17,13 +17,13 @@ import time
 import os
 
 # interconnected classes - carefully avoid circular reference
-import imagefinder
-import desktopcontrol
 from settings import GlobalSettings
-from errors import *
 from location import Location
-from image import Image
 from imagelogger import ImageLogger
+from errors import *
+from image import *
+from imagefinder import *
+from desktopcontrol import *
 
 import logging
 log = logging.getLogger('guibender.region')
@@ -57,20 +57,28 @@ class Region(object):
         """
         if dc is None:
             if GlobalSettings.desktop_control_backend == "autopy":
-                dc = desktopcontrol.AutoPyDesktopControl()
+                dc = AutoPyDesktopControl()
             elif GlobalSettings.desktop_control_backend == "qemu":
-                dc = desktopcontrol.QemuDesktopControl()
+                dc = QemuDesktopControl()
             elif GlobalSettings.desktop_control_backend == "vncdotool":
-                dc = desktopcontrol.VNCDoToolDesktopControl()
+                dc = VNCDoToolDesktopControl()
         if cv is None:
             if GlobalSettings.find_image_backend == "autopy":
-                cv = imagefinder.AutoPyMatcher()
+                cv = AutoPyMatcher()
+            elif GlobalSettings.find_image_backend == "contour":
+                cv = ContourMatcher()
             elif GlobalSettings.find_image_backend == "template":
-                cv = imagefinder.TemplateMatcher()
+                cv = TemplateMatcher()
             elif GlobalSettings.find_image_backend == "feature":
-                cv = imagefinder.FeatureMatcher()
+                cv = FeatureMatcher()
+            elif GlobalSettings.find_image_backend == "cascade":
+                cv = CascadeMatcher()
+            elif GlobalSettings.find_image_backend == "text":
+                cv = TextMatcher()
             elif GlobalSettings.find_image_backend == "hybrid":
-                cv = imagefinder.HybridMatcher()
+                cv = HybridMatcher()
+            elif GlobalSettings.find_image_backend == "deep":
+                cv = DeepMatcher()
 
         # since the backends are read/write make them public attributes
         self.dc_backend = dc
@@ -369,7 +377,7 @@ class Region(object):
         Find an image on the screen.
 
         :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :type image: str or :py:class:`image.Target`
         :param int timeout: timeout before giving up
         :returns: match obtained from finding the image within the region
         :rtype: :py:class:`match.Match`
@@ -378,14 +386,20 @@ class Region(object):
         This method is the main entrance to all our image finding capabilities
         and is the milestone for all image expect methods.
         """
+        # handle some specific target types
         if isinstance(image, basestring):
             image = Image(image)
-        log.debug("Looking for image %s", image)
+        log.debug("Looking for target %s", image)
 
         if image.use_own_settings:
             log.debug("Using special settings to match %s", image)
             cv_backend = image.match_settings
         else:
+            if isinstance(image, Text) and not isinstance(self.cv_backend, TextMatcher):
+                raise IncompatibleTargetError("Need text matcher for matching text")
+            if isinstance(image, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
+                                                   isinstance(self.cv_backend, DeepMatcher)):
+                raise IncompatibleTargetError("Need pattern matcher for matching patterns")
             image.match_settings = self.cv_backend
             cv_backend = self.cv_backend
         dc_backend = self.dc_backend
@@ -423,7 +437,7 @@ class Region(object):
         Find multiples of an image on the screen.
 
         :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :type image: str or :py:class:`image.Target`
         :param int timeout: timeout before giving up
         :param bool allow_zero: whether to allow zero matches or raise error
         :returns: matches obtained from finding the image within the region
@@ -433,14 +447,21 @@ class Region(object):
 
         This method is similar the one above but allows for more than one match.
         """
+        # handle some specific target types
         if isinstance(image, basestring):
             image = Image(image)
-        log.debug("Looking for multiple occurrences of image %s", image)
+        log.debug("Looking for multiple occurrences of target %s", image)
 
         if image.use_own_settings:
             log.debug("Using special settings to match %s", image)
             cv_backend = image.match_settings
         else:
+            if isinstance(image, Text) and not isinstance(self.cv_backend, TextMatcher):
+                raise IncompatibleTargetError("Need text matcher for matching text")
+            if isinstance(image, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
+                                                   isinstance(self.cv_backend, DeepMatcher)):
+                raise IncompatibleTargetError("Need pattern matcher for matching patterns")
+            image.match_settings = self.cv_backend
             cv_backend = self.cv_backend
         dc_backend = self.dc_backend
 
@@ -555,8 +576,7 @@ class Region(object):
             time.sleep(0.2)
 
         # image is still there
-        name = image if isinstance(image, basestring) else image.filename
-        raise NotFindError(name)
+        raise NotFindError(image)
 
     """Mouse methods"""
     def idle(self, timeout):
@@ -584,27 +604,24 @@ class Region(object):
 
         :param image_or_location: image or location to hover to
         :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Image`
+                                 str or :py:class:`image.Target`
         :returns: match from finding the image or nothing if hovering over a known location
         :rtype: :py:class:`match.Match` or None
         """
         log.info("Hovering over %s", image_or_location)
 
         # Handle Match
-        try:
+        from match import Match
+        if isinstance(image_or_location, Match):
             self.dc_backend.mouse_move(image_or_location.target)
             return None
-        except AttributeError:
-            pass
 
         # Handle Location
-        try:
+        if isinstance(image_or_location, Location):
             self.dc_backend.mouse_move(image_or_location)
             return None
-        except AttributeError:
-            pass
 
-        # Find image
+        # Find target (image, text, pattern) or str
         match = self.find(image_or_location)
         self.dc_backend.mouse_move(match.target)
 

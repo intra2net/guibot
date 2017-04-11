@@ -25,6 +25,7 @@ from settings import GlobalSettings
 from location import Location
 from imagepath import ImagePath
 from imagefinder import *
+from errors import *
 
 
 class Target(object):
@@ -131,6 +132,8 @@ class Target(object):
             finder = HybridMatcher()
         elif backend_name == "deep":
             finder = DeepMatcher()
+        else:
+            raise UnsupportedBackendError("No '%s' backend is supported" % backend_name)
         finder.from_match_file(filename_without_extention)
         return finder
 
@@ -159,6 +162,11 @@ class Target(object):
         match_filename = filename_without_extesion + ".match"
         if os.path.exists(match_filename):
             self.match_settings = self.load_configuration(filename_without_extesion)
+            try:
+                self.match_settings.synchronize()
+            except UnsupportedBackendError:
+                # some matchers don't support synchronization
+                pass
             self.use_own_settings = True
 
     def save(self, filename):

@@ -23,6 +23,10 @@ class FileNotFoundError(GuiBenderError):
     """Exception raised when a picture file cannot be found on disc"""
 
 
+class IncompatibleTargetError(GuiBenderError):
+    """Exception raised when a matched target is of type that cannot be handled by the matcher"""
+
+
 class FindError(GuiBenderError):
     """Exception raised when an Image cannot be found on the screen"""
 
