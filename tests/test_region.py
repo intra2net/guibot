@@ -44,6 +44,17 @@ class RegionTest(unittest.TestCase):
         self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
         self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')
 
+        # preserve values of static attributes
+        self.prev_loglevel = GlobalSettings.image_logging_level
+        self.prev_logpath = GlobalSettings.image_logging_destination
+        GlobalSettings.image_logging_level = 0
+        GlobalSettings.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
+
+    @classmethod
+    def tearDownClass(self):
+        GlobalSettings.image_logging_level = self.prev_loglevel
+        GlobalSettings.image_logging_destination = self.prev_logpath
+
     def setUp(self):
         self.child_img = None
         self.child_app = None
@@ -116,13 +127,13 @@ class RegionTest(unittest.TestCase):
         region = Region()
 
         match = region.find(Image('shape_green_box'))
-        self.assertEqual((match.x, match.y), (504, 414))
+        self.assertEqual((match.x, match.y), (31, 191))
         self.assertEqual(67, match.width)
         self.assertEqual(52, match.height)
 
         # Match again - this time just pass a filename
         match = region.find('shape_green_box')
-        self.assertEqual((match.x, match.y), (504, 414))
+        self.assertEqual((match.x, match.y), (31, 191))
         self.assertEqual(67, match.width)
         self.assertEqual(52, match.height)
 
@@ -169,13 +180,13 @@ class RegionTest(unittest.TestCase):
         greenbox = Image('shape_green_box')
         matches = boxes.find_all(greenbox)
         self.assertEqual(len(matches), 1)
-        self.assertEqual((matches[0].x, matches[0].y), (504, 414))
+        self.assertEqual((matches[0].x, matches[0].y), (31, 191))
         self.assertEqual(67, matches[0].width)
         self.assertEqual(52, matches[0].height)
 
         redbox = Image('shape_red_box')
         matches = boxes.find_all(redbox)
-        expected_matches = [(793, 251), (501, 249), (791, 340)]
+        expected_matches = [(28, 26), (320, 28), (318, 117)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             Region().hover(match)
@@ -190,7 +201,8 @@ class RegionTest(unittest.TestCase):
         boxes.cv_backend.params["find"]["similarity"].value = 0.5
         boxes.cv_backend.params["template"]["nocolor"].value = False
         matches = boxes.find_all(pinkbox)
-        expected_matches = [(504, 479), (793, 262), (790, 351), (503, 260)]
+        # approximately the above coordinates since maching different needle
+        expected_matches = [(27, 37), (322, 39), (317, 128), (31, 256)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             boxes.hover(match)
@@ -204,7 +216,7 @@ class RegionTest(unittest.TestCase):
         boxes.cv_backend.params["find"]["similarity"].value = 0.8
         boxes.cv_backend.params["template"]["nocolor"].value = True
         matches = boxes.find_all(pinkbox)
-        expected_matches = [(504, 479), (502, 344), (505, 419)]
+        expected_matches = [(29, 121), (32, 196), (31, 256)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             boxes.hover(match)
