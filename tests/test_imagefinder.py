@@ -477,19 +477,18 @@ class ImageFinderTest(unittest.TestCase):
         finder = CascadeMatcher()
         # no similarty parameter is supported - this is a binary match case
         finder.params["find"]["similarity"].value = 0.0
-        matches = finder.find(Pattern('n_ibs.xml'), Image('n_ibs'))
+        matches = finder.find(Pattern('shape_blue_circle.xml'), Image('all_shapes'))
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        # TODO: only part of the image is matched - need better cascade
-        self.assertEqual(matches[0].x, 39)
-        self.assertEqual(matches[0].y, 139)
+        self.assertAlmostEqual(matches[0].x, 104, delta=5)
+        self.assertAlmostEqual(matches[0].y, 10, delta=5)
         self.assertAlmostEqual(matches[0].width, 165, delta=10)
         self.assertAlmostEqual(matches[0].height, 151, delta=10)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(4)
-        self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "cascade")
+        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "cascade")
         self._verify_single_hotmap(dumps, "cascade")
 
     def test_cascade_nomatch(self):
@@ -505,6 +504,38 @@ class ImageFinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(4)
         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "cascade")
         self._verify_single_hotmap(dumps, "cascade")
+
+    def test_cascade_scaling(self):
+        finder = CascadeMatcher()
+        matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_scaled'))
+        self.assertEqual(len(matches), 1)
+        # the original needle image was 150x150 with larger white margins
+        self.assertAlmostEqual(matches[0].x, 10, delta=5)
+        self.assertAlmostEqual(matches[0].y, 215, delta=5)
+        # near square shape is due to the positive images used for training
+        self.assertAlmostEqual(matches[0].width, 165, delta=5)
+        self.assertAlmostEqual(matches[0].height, 165, delta=5)
+
+    def test_cascade_rotation(self):
+        finder = CascadeMatcher()
+        matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_rotated'))
+        # TODO: rotation does not work yet - increase angles in augmented data
+        #self.assertEqual(len(matches), 1)
+        #self.assertAlmostEqual(matches[0].x, 435, delta=5)
+        #self.assertAlmostEqual(matches[0].y, 447, delta=5)
+        #self.assertAlmostEqual(matches[0].width, 270, delta=10)
+        #self.assertAlmostEqual(matches[0].height, 180, delta=10)
+
+    def test_cascade_viewport(self):
+        finder = CascadeMatcher()
+        matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_viewport'))
+        self.assertEqual(len(matches), 1)
+        # the original needle image was 150x150 with larger white margins
+        self.assertAlmostEqual(matches[0].x, 20, delta=5)
+        self.assertAlmostEqual(matches[0].y, 20, delta=5)
+        # near square shape is due to the positive images used for training
+        self.assertAlmostEqual(matches[0].width, 250, delta=10)
+        self.assertAlmostEqual(matches[0].height, 250, delta=10)
 
     def test_text_same(self):
         finder = TextMatcher()
