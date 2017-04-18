@@ -65,7 +65,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE "doc/Image Logging Tutorial.pdf" "doc/Match Settings Tutorial.pdf"
+%doc LICENSE doc/api doc/tutorials
 #%config guibender.cfg
 #%ghost guibender.log
 #%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6
