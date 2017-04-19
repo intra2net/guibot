@@ -57,14 +57,14 @@ class ImagePathTest(unittest.TestCase):
 
     def test_search(self):
         self.imagepath.add_path('images')
-        self.assertEqual('images/qt4gui_button.png', self.imagepath.search('qt4gui_button.png'))
+        self.assertEqual('images/shape_black_box.png', self.imagepath.search('shape_black_box.png'))
         # Test without .png extension
-        self.assertEqual('images/qt4gui_button.png', self.imagepath.search('qt4gui_button'))
+        self.assertEqual('images/shape_black_box.png', self.imagepath.search('shape_black_box'))
 
         # Create another ImagePath instance.
         # It should contain the same search paths
         new_finder = ImagePath()
-        self.assertEqual('images/qt4gui_button.png', new_finder.search('qt4gui_button'))
+        self.assertEqual('images/shape_black_box.png', new_finder.search('shape_black_box'))
 
     def test_search_image_error(self):
         try:

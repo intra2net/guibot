@@ -443,7 +443,7 @@ class Text(Target):
 
     def __str__(self):
         """Provide a part of the text value."""
-        return self.value[:10]
+        return self.value[:30]
 
     def load(self, filename):
         """

@@ -1,0 +1,9 @@
+# IMAGE MATCH DATA
+[find]
+backend = text
+similarity = <value='0.8' min='0.0' max='1.0' delta='0.1' tolerance='0.1' fixed='True'>
+
+[tdetect]
+backend = erstat
+minArea = <value='0.000001' min='0.0' max='1.0' delta='1.0' tolerance='0.1' fixed='True'>
+maxArea = <value='0.13' min='0.0' max='1.0' delta='1.0' tolerance='0.1' fixed='True'>

@@ -27,7 +27,7 @@ from imagepath import ImagePath
 from location import Location
 from region import Region
 from match import Match
-from image import Image
+from image import Image, Text
 from inputmap import Key
 from imagefinder import *
 from desktopcontrol import *
@@ -64,46 +64,16 @@ class RegionTest(unittest.TestCase):
         if os.path.exists(GlobalSettings.image_logging_destination):
             shutil.rmtree(GlobalSettings.image_logging_destination)
 
-    def test_basic(self):
-        screen_width = AutoPyDesktopControl().width
-        screen_height = AutoPyDesktopControl().height
-
-        region = Region()
-        self.assertEqual(0, region.x)
-        self.assertEqual(0, region.y)
-        self.assertEqual(screen_width, region.width)
-        self.assertEqual(screen_height, region.height)
-
-        region = Region(10, 20, 300, 200)
-        self.assertEqual(10, region.x)
-        self.assertEqual(20, region.y)
-        self.assertEqual(300, region.width)
-        self.assertEqual(200, region.height)
-
-    def wait_end(self, subprocess_pipe, timeout=30):
-        expires = time.time() + timeout
-
-        while True:
-            exit_code = subprocess_pipe.poll()
-            if exit_code is not None:
-                return exit_code
-
-            if time.time() > expires:
-                self.fail('Program did not close on time. Ignoring')
-                break
-
-            time.sleep(0.2)
-
     def show_image(self, filename):
         filename = self.imagepath.search(filename)
         self.child_img = subprocess.Popen(['python', self.script_img, filename])
         # HACK: avoid small variability in loading speed
-        time.sleep(1)
+        time.sleep(3)
 
     def show_application(self):
         self.child_app = subprocess.Popen(['python', self.script_app])
         # HACK: avoid small variability in loading speed
-        time.sleep(1)
+        time.sleep(3)
 
     def close_windows(self):
         if self.child_img is not None:
@@ -121,6 +91,36 @@ class RegionTest(unittest.TestCase):
 
             # HACK: make sure app is really closed
             time.sleep(0.5)
+
+    def wait_end(self, subprocess_pipe, timeout=30):
+        expires = time.time() + timeout
+
+        while True:
+            exit_code = subprocess_pipe.poll()
+            if exit_code is not None:
+                return exit_code
+
+            if time.time() > expires:
+                self.fail('Program did not close on time. Ignoring')
+                break
+
+            time.sleep(0.2)
+
+    def test_basic(self):
+        screen_width = AutoPyDesktopControl().width
+        screen_height = AutoPyDesktopControl().height
+
+        region = Region()
+        self.assertEqual(0, region.x)
+        self.assertEqual(0, region.y)
+        self.assertEqual(screen_width, region.width)
+        self.assertEqual(screen_height, region.height)
+
+        region = Region(10, 20, 300, 200)
+        self.assertEqual(10, region.x)
+        self.assertEqual(20, region.y)
+        self.assertEqual(300, region.width)
+        self.assertEqual(200, region.height)
 
     def test_find(self):
         self.show_image('all_shapes')
@@ -225,7 +225,7 @@ class RegionTest(unittest.TestCase):
             self.assertEqual(69, match.width)
             self.assertEqual(48, match.height)
 
-    def test_zero_matches(self):
+    def test_find_zero_matches(self):
         self.show_image('all_shapes')
         # initialize template matching region to support multiple matches
         boxes = Region(cv=TemplateMatcher())
@@ -268,14 +268,9 @@ class RegionTest(unittest.TestCase):
         match = Region().exists(Image('shape_blue_circle'))
         self.assertEqual(None, match)
 
-        # TODO: it is not clear what the following two lines do
-        # since windows should already be closed?
-        self.close_windows()
-
-        Region().wait_vanish('all_shapes')
-
     def test_wait(self):
         self.show_image('all_shapes')
+
         match = Region().wait(Image('shape_blue_circle'), timeout=5)
         self.assertTrue(isinstance(match, Match))
 
@@ -283,40 +278,45 @@ class RegionTest(unittest.TestCase):
 
     def test_wait_vanish(self):
         self.show_image('all_shapes')
-        time.sleep(3)
-        self.assertRaises(NotFindError, Region().wait_vanish, 'all_shapes', timeout=30)
-        # self.assertFalse()
+
+        self.assertRaises(NotFindError, Region().wait_vanish, 'all_shapes', timeout=10)
 
         self.close_windows()
+
         # assert no NotFindError is raised now
-        Region().wait_vanish('all_shapes', timeout=10)
+        self.assertTrue(Region().wait_vanish('all_shapes', timeout=10))
 
     def test_hover(self):
-        # Hover over Location
         self.show_image('all_shapes')
+
         region = Region()
         match = region.find(Image('shape_blue_circle'))
-        match.hover(match.target)
+        region.hover(match.target)
+        self.assertAlmostEqual(match.target.x, region.mouse_location.x, delta=1)
+        self.assertAlmostEqual(match.target.y, region.mouse_location.y, delta=1)
 
-        # Hover over Image with 50% similarity
-        region.cv_backend.params["find"]["similarity"].value = 0.5
-        region.hover(Image('shape_pink_box'))
+        # hover over coordinates in a subregion
+        match = match.find(Image('shape_blue_circle'))
+        self.assertAlmostEqual(match.target.x, region.mouse_location.x, delta=1)
+        self.assertAlmostEqual(match.target.y, region.mouse_location.y, delta=1)
+
+        self.close_windows()
 
     def test_click(self):
         self.show_application()
-        Region().click('qt4gui_button')
+        Region().click(Text("close on click"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_double_click(self):
         self.show_application()
-        Region().idle(2).double_click('qt4gui_double_click')
+        Region().idle(2).double_click(Text("double click"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_right_click(self):
         self.show_application()
-        Region().right_click('qt4gui_contextmenu_label').nearby(200).idle(3).click('qt4gui_contextmenu_quit')
+        Region().right_click(Text("context menu")).nearby(100).idle(3).click(Text("close"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -335,34 +335,39 @@ class RegionTest(unittest.TestCase):
 
     def test_press_at(self):
         self.show_application()
-        Region().press_at([Region().ENTER], 'qt4gui_lineedit2')
+        Region().press_at([Region().ESC], Text("type anything"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_type_text(self):
         self.show_application()
-        Region().click('qt4gui_lineedit').idle(0.2).type_text('quit')
+        # reset to (0,0) to avoid cursor on the same control (used many times)
+        Region().hover(Location(0,0))
+        Region().click(Text("type quit")).idle(0.2).type_text('quit')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_type_at(self):
         self.show_application()
-        Region().type_at('quit', 'qt4gui_lineedit')
+        # reset to (0,0) to avoid cursor on the same control (used many times)
+        Region().hover(Location(0,0))
+        Region().type_at('quit', Text("type quit"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_drag_drop(self):
         self.show_application()
-        Region().drag_drop('qt4gui_textedit', 'qt4gui_lineedit')
+        # the textedit is easy enough so that we don't need text matching
+        Region().drag_drop('qt4gui_textedit', Text("type quit"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
     def test_drag_from(self):
         self.show_application()
 
-        # TODO: some bug does not allow for Region().drag_from().hover()
+        # the textedit is easy enough so that we don't need text matching
         Region().drag_from('qt4gui_textedit')
-        Region().hover('qt4gui_label1')
+        Region().hover(Text("drag to close"))
 
         # toggled buttons cleanup
         Region().dc_backend.mouse_up(Region().LEFT_BUTTON)
@@ -373,12 +378,10 @@ class RegionTest(unittest.TestCase):
     def test_drop_at(self):
         self.show_application()
 
-        # TODO: some bug does not allow for Region().drag().hover()
+        # the textedit is easy enough so that we don't need text matching
         Region().drag_from('qt4gui_textedit')
-        Region().hover('qt4gui_label2')
-        self.assertRaises(NotFindError, Region().wait_vanish, 'qt4gui_label2', timeout=3)
 
-        Region().drop_at('qt4gui_label2')
+        Region().drop_at(Text("drop to close"))
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
@@ -386,7 +389,7 @@ class RegionTest(unittest.TestCase):
     def test_mouse_down(self):
         self.show_application()
 
-        Region().idle(2).mouse_down('qt4gui_label3')
+        Region().idle(2).mouse_down(Text("mouse down"))
 
         # toggled buttons cleanup
         Region().dc_backend.mouse_up(Region().LEFT_BUTTON)
@@ -397,10 +400,13 @@ class RegionTest(unittest.TestCase):
     def test_mouse_up(self):
         self.show_application()
 
-        Region().idle(2).mouse_down('qt4gui_label4')
-        self.assertRaises(NotFindError, Region().wait_vanish, 'qt4gui_label4', timeout=3)
+        # TODO: the GUI only works if mouse-up event is on the previous location
+        # Region().mouse_down(Location(0,0))
+        # Region().mouse_up(Text("mouse up"))
+        match = Region().find(Text("mouse up"))
+        Region().mouse_down(match.target)
 
-        Region().mouse_up('qt4gui_label4')
+        Region().mouse_up(match.target)
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
