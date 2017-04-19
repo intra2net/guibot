@@ -78,6 +78,7 @@ class PathTest(unittest.TestCase):
         # Test without extension
         self.assertEqual('images/shape_black_box.png', self.path.search('shape_black_box'))
         self.assertEqual('images/mouse down.txt', self.path.search('mouse down'))
+        self.assertEqual('images/circle.steps', self.path.search('circle'))
 
         # Test correct precedence of the checks
         self.assertEqual('images/shape_blue_circle.pth', self.path.search('shape_blue_circle.pth'))

@@ -2990,7 +2990,7 @@ class HybridMatcher(Finder):
             # backends are the same as the ones for the base class
             super(HybridMatcher, self).configure_backend(backend=backend, reset=True)
         if backend is None:
-            backend = GlobalSettings.find_backend
+            backend = "autopy"
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -3012,9 +3012,7 @@ class HybridMatcher(Finder):
         if reset:
             # backends are the same as the ones for the base class
             super(HybridMatcher, self).synchronize_backend(backend, reset=True)
-        if backend is None:
-            backend = GlobalSettings.find_backend
-        if backend not in self.algorithms[self.categories[category]]:
+        if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
         # this matcher will only work with image-based matchers

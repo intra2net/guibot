@@ -23,7 +23,7 @@ import common_test
 from settings import GlobalSettings
 from path import Path
 from imagelogger import ImageLogger
-from target import Image, Text, Pattern
+from target import Image, Text, Pattern, Chain
 from errors import *
 from finder import *
 
@@ -62,13 +62,16 @@ class FinderTest(unittest.TestCase):
     def _get_matches_in(self, pattern, dumps):
         return [match.group(0) for d in dumps for match in [re.search(pattern, d)] if match]
 
-    def _verify_and_get_dumps(self, count, index=1):
+    def _verify_and_get_dumps(self, count, index=1, multistep=False):
         dumps = os.listdir(self.logpath)
         self.assertEquals(len(dumps), count)
         steps = self._get_matches_in('imglog\d\d\d\d-.+', dumps)
         self.assertEquals(len(steps), len(dumps))
         first_steps = self._get_matches_in('imglog%04d-.+' % index, dumps)
-        self.assertEquals(len(first_steps), len(steps))
+        if not multistep:
+            self.assertEquals(len(first_steps), len(steps))
+        else:
+            self.assertLessEqual(len(first_steps), len(steps))
         return dumps
 
     def _verify_dumped_images(self, needle_name, haystack_name, dumps, backend):
@@ -808,6 +811,53 @@ class FinderTest(unittest.TestCase):
             else:
                 self.assertIn('%sactivity' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+    def test_hybrid_same(self):
+        finder = HybridMatcher()
+        finder.configure_backend("autopy")
+        finder.synchronize_backend("autopy")
+        finder.params["find"]["similarity"].value = 1.0
+        matches = finder.find(Chain('circle'), Image('all_shapes'))
+
+        # verify match accuracy
+        self.assertEqual(len(matches), 1)
+        # AutoPy returns +1 pixel for both axes
+        self.assertEqual(matches[0].x, 105)
+        self.assertEqual(matches[0].y, 11)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(4)
+        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "autopy")
+        self._verify_single_hotmap(dumps, "autopy")
+
+    def test_hybrid_nomatch(self):
+        finder = HybridMatcher()
+        finder.configure_backend("autopy")
+        finder.synchronize_backend("autopy")
+        finder.params["find"]["similarity"].value = 1.0
+        matches = finder.find(Chain('circle_fake'), Image('all_shapes'))
+
+        # verify match accuracy
+        self.assertEqual(len(matches), 0)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(12, multistep=True)
+
+    def test_hybrid_fallback(self):
+        finder = HybridMatcher()
+        finder.configure_backend("autopy")
+        finder.synchronize_backend("autopy")
+        finder.params["find"]["similarity"].value = 1.0
+        matches = finder.find(Chain('circle_fallback'), Image('all_shapes'))
+
+        # verify match accuracy
+        self.assertEqual(len(matches), 1)
+        # AutoPy returns +1 pixel for both axes
+        self.assertEqual(matches[0].x, 105)
+        self.assertEqual(matches[0].y, 11)
+
+        # verify dumped files count and names
+        dumps = self._verify_and_get_dumps(8, multistep=True)
 
 
 if __name__ == '__main__':
