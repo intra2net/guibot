@@ -2163,6 +2163,8 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         template_maxima = TemplateMatcher.find(self, needle, haystack, True)
 
         self.params["find"]["similarity"].value = feature_similarity
+        # dump correct matching settings
+        self.imglog.dump_matched_images()
         ngray = cv2.cvtColor(numpy.array(needle.pil_image), cv2.COLOR_RGB2GRAY)
         hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
         final_hotmap = numpy.array(haystack.pil_image)
