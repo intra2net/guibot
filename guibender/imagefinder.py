@@ -414,13 +414,14 @@ class AutoPyMatcher(ImageFinder):
         log.debug("Best acceptable match starting at %s", coord)
 
         if coord is not None:
+            similarity = self.params["find"]["similarity"].value
             self.imglog.locations.append(coord)
-            self.imglog.similarities.append(1.0 - autopy_tolerance)
+            self.imglog.similarities.append(similarity)
             x, y = coord
             w, h = needle.width, needle.height
             dx, dy = needle.center_offset.x, needle.center_offset.y
             from match import Match
-            matches = [Match(x, y, w, h, dx, dy)]
+            matches = [Match(x, y, w, h, dx, dy, similarity)]
             from PIL import ImageDraw
             draw = ImageDraw.Draw(self.imglog.hotmaps[-1])
             draw.rectangle((x, y, x+w, y+h), outline=(0,0,255))
@@ -601,12 +602,14 @@ class ContourMatcher(ImageFinder):
                 cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (255,255,255), 1)
                 # NOTE: to extract the region of interest just do:
                 # roi = thresh_haystack[y:y+h,x:x+w]
-                self.imglog.similarities.append(1.0 - average_distance)
+                similarity = 1.0 - average_distance
+                self.imglog.similarities.append(similarity)
                 self.imglog.locations.append(needle_upleft)
                 matches.append(Match(needle_upleft[0], needle_upleft[1],
                                      needle_downright[0] - needle_upleft[0],
                                      needle_downright[1] - needle_upleft[1],
-                                     *needle_center_offset))
+                                     needle_center_offset[0], needle_center_offset[1],
+                                     similarity))
 
         self.imglog.log(30)
         return matches
@@ -807,7 +810,7 @@ class TemplateMatcher(ImageFinder):
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255,255,255), 1)
                 self.imglog.hotmaps.append(current_hotmap)
                 log.debug("Best match is acceptable")
-                matches.append(Match(x, y, w, h, dx, dy))
+                matches.append(Match(x, y, w, h, dx, dy, maxVal))
                 if similarity == 0.0:
                     # return just one match if no similarity requirement
                     break
@@ -1172,7 +1175,10 @@ class FeatureMatcher(ImageFinder):
             x, y = hpoints[0]
             w, h = tuple(numpy.abs(numpy.subtract(hpoints[3], hpoints[0])))
             # TODO: projecting offset requires more effort
-            return [Match(x, y, w, h)]
+            matches = [Match(x, y, w, h, self.imglog.similarities[-1])]
+            self.imglog.log(30)
+            return matches
+        self.imglog.log(40)
         return []
 
     def _project_features(self, locations_in_needle, ngray, hgray, similarity):
@@ -1199,7 +1205,6 @@ class FeatureMatcher(ImageFinder):
             log.debug("No acceptable best match after feature detection: "
                       "only %s\%s needle and %s\%s haystack features detected",
                       len(nkp), min_features, len(hkp), min_features)
-            self.imglog.log(40)
             return None
 
         mnkp, mhkp = self._match_features(nkp, ndc, hkp, hdc,
@@ -1212,7 +1217,6 @@ class FeatureMatcher(ImageFinder):
                       "- best match similarity %s of %s required",
                       len(mnkp), min_features,
                       self.imglog.similarities[-1], similarity)
-            self.imglog.log(40)
             return None
 
         locations_in_haystack = self._project_locations(locations_in_needle, mnkp, mhkp)
@@ -1220,11 +1224,9 @@ class FeatureMatcher(ImageFinder):
             log.debug("No acceptable best match after RANSAC projection: "
                       "best match similarity %s is less than required %s",
                       self.imglog.similarities[-1], similarity)
-            self.imglog.log(40)
             return None
         else:
             self._log_features(30, self.imglog.locations, self.imglog.hotmaps[-1], 3, 0, 0, 255)
-            self.imglog.log(30)
             return locations_in_haystack
 
     def _detect_features(self, ngray, hgray, detect, extract):
@@ -1871,7 +1873,8 @@ class TextMatcher(ContourMatcher):
                 dx, dy = needle.center_offset.x, needle.center_offset.y
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0, 0, 0), 2)
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255, 255, 255), 1)
-                matches.append(Match(x, y, w, h, dx, dy))
+                matches.append(Match(x, y, w, h, dx, dy, similarity))
+        matches = sorted(matches, key=lambda x:x.similarity, reverse=True)
 
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
@@ -2246,18 +2249,21 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
         matches = []
         from match import Match
-        for maximum in feature_maxima:
+        maxima = sorted(feature_maxima, key=lambda x:x[1], reverse=True)
+        for maximum in maxima:
+            similarity = maximum[1]
             x, y = maximum[2]
             w, h = needle.width, needle.height
             dx, dy = needle.center_offset.x, needle.center_offset.y
             cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,0), 2)
             cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,255), 1)
-            matches.append(Match(x, y, w, h, dx, dy))
+            matches.append(Match(x, y, w, h, dx, dy, similarity))
         self.imglog.hotmaps.append(final_hotmap)
         # log one best match for final hotmap filename
-        best_acceptable = max(feature_maxima, key=lambda x: x[1])
+        best_acceptable = maxima[0]
         self.imglog.similarities.append(best_acceptable[1])
         self.imglog.locations.append(best_acceptable[2])
+
         self.imglog.log(30)
         return matches
 
@@ -2451,7 +2457,8 @@ class Hybrid2to1Matcher(HybridMatcher):
                     matches_grid[(j, i)] = Match(left + self.imglog.locations[-1][0],
                                                  up + self.imglog.locations[-1][1],
                                                  needle.width, needle.height,
-                                                 needle.center_offset.x, needle.center_offset.y)
+                                                 needle.center_offset.x, needle.center_offset.y,
+                                                 result[j][i])
                     matches.append(matches_grid[(j, i)])
                     self.imglog.locations[-1] = matches_grid[(j, i)]
                     log.debug("Acceptable best match with similarity %s starting at %s in region %s",
@@ -2676,6 +2683,7 @@ class DeepMatcher(ImageFinder):
         dy = haystack.height / self.params["deep"]["oheight"].value
         ys, xs = numpy.where(hotmap > self.params["find"]["similarity"].value)
         for (x, y) in zip(list(xs), list(ys)):
+            similarity = hotmap[y,x]
             ox, oy = dx * x, dy * y
             ndx, ndy = needle.center_offset.x, needle.center_offset.y
 
@@ -2685,7 +2693,7 @@ class DeepMatcher(ImageFinder):
 
             self.imglog.locations.append((ox, oy))
             self.imglog.similarities.append(hotmap[y,x])
-            matches.append(Match(ox, oy, dx, dy, ndx, ndy))
+            matches.append(Match(ox, oy, dx, dy, ndx, ndy, similarity))
 
         self.imglog.hotmaps.append(canvas)
         self.imglog.log(30)

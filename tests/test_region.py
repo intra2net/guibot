@@ -241,20 +241,19 @@ class RegionTest(unittest.TestCase):
     def test_sample(self):
         self.show_image('all_shapes')
 
+        # autopy matching does not support similarity
+        shapes = Region(cv=AutoPyMatcher())
+        similarity = shapes.sample(Image('shape_blue_circle'))
+        self.assertEqual(similarity, 0.0)
+
         # initialize template matching region to support similarity
         shapes = Region(cv=TemplateMatcher())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
 
-        # initialize autopy matching region to not support similarity
-        shapes = Region(cv=AutoPyMatcher())
-        similarity = shapes.sample(Image('shape_blue_circle'))
-        self.assertEqual(similarity, 0.0)
-
-        # initialize hybrid matching region to not support similarity
         shapes = Region(cv=HybridMatcher())
         similarity = shapes.sample(Image('shape_blue_circle'))
-        self.assertEqual(similarity, 0.0)
+        self.assertEqual(similarity, 1.0)
 
         self.close_windows()
 

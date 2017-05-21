@@ -495,11 +495,8 @@ class Region(object):
             image.match_settings = self.cv_backend
             image.use_own_settings = True
         image = image.with_similarity(0.0)
-        ImageLogger.accumulate_logging = True
         match = self.find(image)
         similarity = match.similarity
-        ImageLogger.accumulate_logging = False
-        self.cv_backend.imglog.clear()
         return similarity
 
     def exists(self, image, timeout=0):
