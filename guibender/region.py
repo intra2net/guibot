@@ -88,16 +88,18 @@ class Region(object):
         self._xpos = xpos
         self._ypos = ypos
 
-        if width == 0 and self.dc_backend.width is not None:
+        # zero width/height implies the one of the available screen
+        if width == 0 and self.dc_backend.width != 0:
             self._width = self.dc_backend.width
         else:
             self._width = width
-
-        if height == 0 and self.dc_backend.height is not None:
+        if height == 0 and self.dc_backend.height != 0:
             self._height = self.dc_backend.height
         else:
             self._height = height
-        self._ensure_screen_clipping()
+        # clipping should only be performed on initialized screen
+        if self.dc_backend.width != 0 and self.dc_backend.height != 0:
+            self._ensure_screen_clipping()
 
         mouse_map = self.dc_backend.mousemap
         for mouse_button in dir(mouse_map):
