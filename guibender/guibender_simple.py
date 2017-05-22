@@ -14,23 +14,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# Frontend with simple procedural API allowing the use of a module instead of
-# the GuiBender object (creating and running the GuiBender object internally).
+"""
+Frontend with simple procedural API allowing the use of a module instead of
+the :py:class:`guibender.GuiBender` object (creating and running this same
+object internally). All the methods delegate their calls to this object so
+for information about the API please refer to it and :py:class:`region.Region`.
+"""
 
 from guibender import GuiBender
 
+# accessible attributes of this module
 guibender = GuiBender()
-
-# return main guibender object
-
-
-def get_guibender():
-    return guibender
-
-
-def last_match():
-    return guibender.get_last_match()
+last_match = guibender.last_match
 
 
 def add_image_path(directory):

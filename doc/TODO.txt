@@ -1,54 +1,34 @@
-MAIN
---------------------------------------
-- Integrate some of the visualization code in the test_imagefinder into the
-  ImageLogger and make improve its unit testing. Check the function draw_needle_features
-  for any further detail.
+TODO - hierarchical notes
+-------------------------
 
-- Maximum difference between the similarity obtained from the template and from the
-  feature matching in the hybrid case may prevent from abnormal results in any of
-  the two matching subparts.
-
-- Calibrating is still not very used. It is really necessary but at the moment
-  we need more manual experience in order to make it more usable. The ultimate
-  calibration includes not just matching but also competitors, i.e. it doesn't
-  just obtain the optimum similarity for the given needle and haystack but it
-  minimizes the similarity for spatial and temporal competitors where spatial
-  means the others in the same haystack while temporal extends it to others
-  in nearby haystacks (time frames). A tool for this might even offer ways to provide
-  the desired match so that even if it is suboptimal for the given parameters
-  and another match is enhanced, this could be reverted with some parameters that
-  could possibly be found through such calibration.
-
-- Make feature similarity more reliable. Currently it is defined as the ratio of
-  keypoints through each feature matching filter. In case of successful matching
-  the calibrate method thus optimizes the last ratio (matched / RANSAC inlier
-  points) which is not always the best case according to the image logging.
-  It is not important how many are the final matches, but how credible they are.
-  The final homography only requires 4 matches (fundamental matrix requires 8).
-  Figure out a similarity parameter that reflects this reliability.
-
-- Turn the getter methods at various classes into properties to make them more pythonic
-  and preserve the restricted accessibility.
-
-- Still reconsider whether to return the (0,0) needle point or its center since
-  wild transformations are possible and defining the clicking point as (+n,+n)
-  is not as consistent.
-
-SECONDARY
---------------------------------------
-- generate needle as difference of two images to create image variables
-- ignore subregions while template matching to define frames of matching
-- conditional matching - match needle if no other needle is matched
-- match on still haystack as a wait to wait for some events to finish
-- is idle() necessary?
-- pressing multiple times the same key does not work
-- add documentation everywhere (sample() and all simple methods as well)
-
-DETECTED BUGS:
---------------------------------------
-- Subregioning fails at certain cases resulting in a 0.0 template similarity no
-matter whether we use hybrid, template or other method. At the image logging
-one can observe that the second haystack (the region from the match of the
-first region) is completely black and of really small size. This could of course
-also be a problem of the image logging so more research is needed. For now, we
-will wait for recurrence of this problem but we will keep it in mind.
+- new methods test stage
+    - various collected strange cases (special testing pairs)
+    - training a button cascade requires even more experience
+        - reuse haystack images and localize some OK buttons
+        - current choice: larger variety and distance (to positives) of data
+        - play around with parameters (data augmentation, training, etc.)
+    - advanced unit tests to include all backend types (desktop control)?
+- other advancements
+    - add useful core methods built in derived visual objects
+    - generate needle as difference of two images to create image variables
+    - ignore subregions while template matching to define frames of matching
+    - match on still haystack as a way to wait for some events to finish
+    - conditional matching - match needle if no other needle is matched
+    - purely visual vs also behavioral intelligence (GUI handling)
+- hybrid matching improvements - maximum difference between the similarity
+  obtained from the template and from the feature matching in the hybrid case
+  may prevent from abnormal results in any of the two matching subparts
+- calibration and parameter optimization still not finished and fully used
+      It is really necessary but at the moment we need more manual experience in
+      order to make it more usable. The ultimate calibration includes not just
+      matching but also competitors, i.e. it doesn't just obtain the optimum
+      similarity for the given needle and haystack but it minimizes the similarity
+      for spatial and temporal competitors where spatial means the others in the
+      same haystack while temporal extends it to others in nearby haystacks (time
+      frames). A tool for this might even offer ways to provide the desired match
+      so that even if it is suboptimal for the given parameters and another match
+      is enhanced, this could be reverted with some parameters that could possibly
+      be found through such calibration.
+- clicking target point - still reconsider whether to return the (0,0) needle point
+  or its center since wild transformations are possible and defining the clicking point
+  as (+n,+n) is not as consistent

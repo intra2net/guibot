@@ -15,17 +15,39 @@
 #
 
 
-class Location:
+class Location(object):
+    """Simple location on a 2D surface, region, or screen."""
 
-    def __init__(self, x_pos=0, y_pos=0):
-        self.xpos = x_pos
-        self.ypos = y_pos
+    def __init__(self, xpos=0, ypos=0):
+        """
+        Build a location object.
+
+        :param int xpos: x coordinate of the location
+        :param int ypos: y coordinate of the location
+        """
+        self._xpos = xpos
+        self._ypos = ypos
 
     def __str__(self):
-        return "(%s, %s)" % (self.xpos, self.ypos)
+        """Provide a compact form for the location."""
+        return "(%s, %s)" % (self._xpos, self._ypos)
 
     def get_x(self):
-        return self.xpos
+        """
+        Getter for readonly attribute.
+
+        :returns: x coordinate of the location
+        :rtype: int
+        """
+        return self._xpos
+    x = property(fget=get_x)
 
     def get_y(self):
-        return self.ypos
+        """
+        Getter for readonly attribute.
+
+        :returns: y coordinate of the location
+        :rtype: int
+        """
+        return self._ypos
+    y = property(fget=get_y)

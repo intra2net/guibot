@@ -23,25 +23,44 @@ from region import Region
 
 
 class GuiBender(Region):
-
     """
-    The main guibender object is also a region
+    The main guibender object is the root (first and screen wide) region
     with some convenience functions added.
+
+    .. seealso:: Real API is inherited from :py:class:`region.Region`.
     """
 
     def __init__(self, dc=None, cv=None):
-        # initialize with default region of full screen and own
-        # desktop control and computer vision backends
+        """
+        Build a guibender object.
+
+        :param dc: DC backend used for any desktop control
+        :type dc: :py:class:`desktopcontrol.DesktopControl` or None
+        :param cv: CV backend used for any image finding
+        :type cv: :py:class:`imagefinder.ImageFinder` or None
+
+        We will initialize with default region of full screen and default
+        desktop control and computer vision backends if none are provided.
+        """
         super(GuiBender, self).__init__(dc=dc, cv=cv)
 
         self.imagepath = ImagePath()
 
     def add_image_path(self, directory):
+        """
+        Add a path to the list of currently accessible paths
+        if it wasn't already added.
+
+        :param str directory: path to add
+        """
         log.info("Adding image path %s", directory)
         self.imagepath.add_path(directory)
 
     def remove_image_path(self, directory):
+        """
+        Remove a path from the list of currently accessible paths.
+
+        :param str directory: path to add
+        """
         log.info("Removing image path %s", directory)
         self.imagepath.remove_path(directory)
-
-    # Real API is inherited from Region - see region.py

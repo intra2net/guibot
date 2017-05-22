@@ -18,11 +18,8 @@ import os
 import unittest
 import pprint
 
-import cv
-import cv2
-
 import common_test
-from imagefinder import ImageFinder
+from imagefinder import FeatureMatcher
 from calibrator import Calibrator
 from imagepath import ImagePath
 from image import Image
@@ -37,11 +34,11 @@ class CalibratorTest(unittest.TestCase):
         self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
-        finder = ImageFinder()
-        finder.image_logging = 10
-        finder.eq.configure_backend(find_image="feature")
+        finder = FeatureMatcher()
+        finder.imglog.logging_level = 10
+        finder.configure()
         for category in calibrate_backends:
-            finder.eq.can_calibrate(True, category)
+            finder.can_calibrate(category, True)
         calibrator = Calibrator()
 
         haystack = Image(haystack)
@@ -83,11 +80,9 @@ class CalibratorTest(unittest.TestCase):
         return
         haystack = Image('all_shapes')
         needle = Image('all_shapes')
-
-        finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        results = calibrator.benchmark(haystack, needle, calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
@@ -102,11 +97,9 @@ class CalibratorTest(unittest.TestCase):
     def test_benchmark_feature_poor_image(self):
         haystack = Image('all_shapes')
         needle = Image('shape_blue_circle')
-
-        finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        results = calibrator.benchmark(haystack, needle, calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
@@ -120,11 +113,9 @@ class CalibratorTest(unittest.TestCase):
         return
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')
-
-        finder = ImageFinder()
         calibrator = Calibrator()
 
-        results = calibrator.benchmark(haystack, needle, finder, calibration=False)
+        results = calibrator.benchmark(haystack, needle, calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")

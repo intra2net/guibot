@@ -2,8 +2,8 @@
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 
 Name:           guibender
-Version:        0.10
-Release:        6
+Version:        0.11
+Release:        1
 Summary:        GUI testing tool
 
 Group:          Development/Tools
@@ -20,7 +20,7 @@ Source0:        http://developer.intra2net.com/%{name}-%{version}.tar.gz
 # for qemu: need to have autotest with virt-test installed then simply pass the qemu monitor as parameter
 # TODO: opencv must be turned into conditional dependency only if we use
 # particular computer vision backends.
-Requires:       opencv >= 2.4
+Requires:       opencv >= 3.1
 Requires:       opencv-python
 
 %description
@@ -32,6 +32,9 @@ Requires:       anaconda-runtime >= 11.4.1.5, yum => 3.2.19, repoview, createrep
 BuildRequires:  python-devel
 
 BuildArch:      noarch
+
+# don't generate debug informaiton
+%global debug_package %{nil}
 
 
 %prep
@@ -62,7 +65,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE "doc/Image Logging Tutorial.pdf" "doc/Match Settings Tutorial.pdf"
+%doc LICENSE doc/api doc/tutorials
 #%config guibender.cfg
 #%ghost guibender.log
 #%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6

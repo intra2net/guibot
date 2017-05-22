@@ -17,15 +17,36 @@ import os
 from errors import *
 
 
-class ImagePath:
+class ImagePath(object):
+    """
+    Handler for currently used image paths or
+    sources of images with a desired name.
+
+    The methods of this class are shared among
+    all of its instances.
+    """
+
     # Shared between all instances
     _imagePaths = []
 
     def add_path(self, directory):
+        """
+        Add a path to the list of currently accessible paths
+        if it wasn't already added.
+
+        :param str directory: path to add
+        """
         if directory not in ImagePath._imagePaths:
             ImagePath._imagePaths.append(directory)
 
     def remove_path(self, directory):
+        """
+        Remove a path from the list of currently accessible paths.
+
+        :param str directory: path to add
+        :returns: whether the removal succeeded
+        :rtype: bool
+        """
         try:
             ImagePath._imagePaths.remove(directory)
         except:
@@ -34,10 +55,19 @@ class ImagePath:
         return True
 
     def clear(self):
+        """Clear all currently accessible paths."""
         # empty list but keep reference
         del ImagePath._imagePaths[:]
 
     def search(self, filename):
+        """
+        Search for a filename in the currently accessible paths.
+
+        :param str filename: filename of the image to search for
+        :returns: the full name of the found image file
+        :rtype: str
+        :raises: :py:class:`FileNotFoundError` if no such file was found
+        """
         for directory in ImagePath._imagePaths:
             fullname = os.path.join(directory, filename)
             if os.path.exists(fullname):

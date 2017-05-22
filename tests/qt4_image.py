@@ -34,11 +34,11 @@ class ImageWithLayout(QtGui.QWidget):
 
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(image)
-        # vbox.setAlignment(QtCore.Qt.AlignTop)
+        vbox.setAlignment(QtCore.Qt.AlignTop)
 
         hbox = QtGui.QHBoxLayout()
         hbox.addLayout(vbox)
-        hbox.setAlignment(QtCore.Qt.AlignCenter)
+        hbox.setAlignment(QtCore.Qt.AlignLeft)
 
         self.setLayout(hbox)
         self.showFullScreen()

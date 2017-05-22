@@ -19,45 +19,45 @@ import math
 from imagelogger import ImageLogger
 
 import logging
+import imagefinder
 log = logging.getLogger('guibender.calibrator')
 
 
-class Calibrator:
-
+class Calibrator(object):
     """
-    This class provides with a group of methods to facilitate and
-    automate the selection of algorithms and parameters that are most
-    successful for a custom image.
+    Provides with a group of methods to facilitate and automate the selection
+    of algorithms and parameters that are most suitable for a given preselected
+    image matching pair.
 
-    All methods perform benchmarking and calibration of an ImageFinder
-    for a given needle Image() and haystack Image().
+    Use the benchmarking method to choose the best algorithm to find your image.
+    Use the calibration method to find the best parameters if you have already
+    chosen the algorithm.
     """
 
-    def benchmark(self, haystack, needle, imagefinder,
-                  calibration=True, refinements=10):
+    def benchmark(self, haystack, needle, calibration=True, refinements=10):
         """
-        Performs benchmarking on all available algorithms and returns a list of
-        (method, success, coordinates, time) tuples sorted according to
-        similarity (success).
-
-        Use this method to choose the best algorithm to find your specific image
-        (or image category). Use the "calibrate" method to find the best parameters
-        if you have already chosen the algorithm.
-
-        Note: This method already uses calibrate internally to provide the best
-        outcome for each compared method (optimal success). You will not gain
-        the same result if you don't calibrate the parameters. To turn the calibration
-        off and benchmark with your selected parameters, change the "calibration"
-        function argument.
-
-        Note: Methods that are supported by OpenCV but currently don't work are
-        excluded from the dictionary. The dictionary can thus also be used
-        to assess what are the available and working methods besides their success
+        Perform benchmarking on all available algorithms of an image finder
         for a given needle and haystack.
 
-        @param imagefinder: the ImageFinder instance to use for the benchmarking
-        @param calibration: whether to use calibration
-        @param refinements: number of refinements allowed to improve calibration
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param bool calibration: whether to use calibration
+        :param int refinements: number of refinements allowed to improve calibration
+        :returns: list of (method, similarity, location, time) tuples sorted according to similarity
+        :rtype: [(str, float, :py:class:`location.Location`, float)]
+
+        This method already uses :py:func:`Calibrator.calibrate` internally
+        to provide the best outcome for each compared method (optimal success).
+        To turn the calibration off and benchmark with your selected parameters,
+        set the `calibration` argument to false.
+
+        .. note:: Methods that are supported by OpenCV but currently don't work are
+            excluded from the dictionary. The dictionary can thus also be used to
+            assess what are the available and working methods besides their success
+            for a given `needle` and `haystack`.
+        .. todo:: The calibrator is currently implemented only for the template/feature matchers.
         """
         results = []
         log.info("Performing benchmarking %s calibration and %s refinements",
@@ -66,17 +66,9 @@ class Calibrator:
         ImageLogger.accumulate_logging = True
 
         # test all template matching methods
-        old_config = (imagefinder.eq.get_backend("find"),
-                      imagefinder.eq.get_backend("tmatch"))
-        old_gray = imagefinder.eq.p["find"]["nocolor"].value
-        old_similarity = needle.match_settings.p["find"]["similarity"].value
-        needle.match_settings.p["find"]["similarity"].value = 0.0
-        for key in imagefinder.eq.algorithms["template_matchers"]:
-            # autopy does not provide any similarity value
-            # and only normed methods are comparable
-            if "_normed" not in key:
-                continue
-
+        finder = imagefinder.TemplateMatcher()
+        needle.match_settings.params["find"]["similarity"].value = 0.0
+        for key in finder.algorithms["template_matchers"]:
             for gray in (True, False):
                 if gray:
                     method = key + "_gray"
@@ -84,93 +76,74 @@ class Calibrator:
                     method = key
                 log.debug("Testing %s with %s:", needle.filename, method)
 
-                imagefinder.eq.configure_backend(find_image="template",
-                                                 template_match=key)
-                imagefinder.eq.p["find"]["nocolor"].value = gray
+                finder.configure_backend(key, reset=True)
+                finder.params["template"]["nocolor"].value = gray
 
                 start_time = time.time()
-                imagefinder.find(needle, haystack)
+                finder.find(needle, haystack)
                 total_time = time.time() - start_time
-                similarity, location = self._get_last_criteria(imagefinder, total_time)
+                similarity, location = self._get_last_criteria(finder, total_time)
                 results.append((method, similarity, location, total_time))
-                imagefinder.imglog.clear()
-
-        imagefinder.eq.configure_backend(find_image=old_config[0],
-                                         template_match=old_config[1])
-        imagefinder.eq.p["find"]["nocolor"].value = old_gray
+                finder.imglog.clear()
 
         # test all feature matching methods
-        old_config = (imagefinder.eq.get_backend("find"),
-                      imagefinder.eq.get_backend("fdetect"),
-                      imagefinder.eq.get_backend("fextract"),
-                      imagefinder.eq.get_backend("fmatch"))
-        for key_fd in imagefinder.eq.algorithms["feature_detectors"]:
-            # skip in-house because of opencv version bug
-            if key_fd == "oldSURF":
-                continue
-
-            for key_fe in imagefinder.eq.algorithms["feature_extractors"]:
-                for key_fm in imagefinder.eq.algorithms["feature_matchers"]:
-                    # Dense feature detection and in-house-region feature matching
-                    # are too much performance overhead
-                    if key_fd == "Dense" and key_fm == "in-house-region":
-                        continue
+        finder = imagefinder.FeatureMatcher()
+        for key_fd in finder.algorithms["feature_detectors"]:
+            for key_fe in finder.algorithms["feature_extractors"]:
+                for key_fm in finder.algorithms["feature_matchers"]:
 
                     method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
                     log.debug("Testing %s with %s:", needle.filename, method)
 
-                    imagefinder.eq.configure_backend(find_image="feature",
-                                                     feature_detect=key_fd,
-                                                     feature_extract=key_fe,
-                                                     feature_match=key_fm)
+                    finder.configure(key_fd, key_fe, key_fm)
                     if calibration:
-                        self.calibrate(haystack, needle, imagefinder,
+                        self.calibrate(haystack, needle, finder,
                                        refinements=refinements)
 
                     start_time = time.time()
-                    imagefinder.find(needle, haystack)
+                    finder.find(needle, haystack)
                     total_time = time.time() - start_time
-                    similarity, location = self._get_last_criteria(imagefinder, total_time)
+                    similarity, location = self._get_last_criteria(finder, total_time)
                     results.append((method, similarity, location, total_time))
-                    imagefinder.imglog.clear()
+                    finder.imglog.clear()
 
         ImageLogger.accumulate_logging = False
-        imagefinder.eq.configure_backend(find_image=old_config[0],
-                                         feature_detect=old_config[1],
-                                         feature_extract=old_config[2],
-                                         feature_match=old_config[3])
-        needle.match_settings.p["find"]["similarity"].value = old_similarity
         return sorted(results, key=lambda x: x[1], reverse=True)
 
-    def calibrate(self, haystack, needle, imagefinder,
+    def calibrate(self, haystack, needle, finder,
                   refinements=10, max_exec_time=0.5):
         """
-        Calibrates the available parameters (the equalizer) of an image
-        finder for a given needle and haystack.
+        Calibrate the available parameters (configuration or equalizer) of
+        an image finder for a given needle and haystack.
 
-        Returns the minimized error (in terms of similarity) for the given
-        maximal execution time (in seconds) and number of refinements.
+        :param haystack: image to look in
+        :type haystack: :py:class:`image.Image`
+        :param needle: image to look for
+        :type needle: :py:class:`image.Image`
+        :param finder: CV backend to calibrate
+        :type finder: :py:class:`imagefinder.ImageFinder`
+        :param int refinements: maximal number of refinements
+        :param float max_exec_time: maximum seconds for a matching attempt
+        :returns: minimized error (in terms of similarity)
+        :rtype: float
 
-        Note: This method calibrates only parameters that are not protected
-        from calibration, i.e. that have "fixed" attribute set to False.
+        This method calibrates only parameters that are not protected
+        from calibration, i.e. that have `fixed` attribute set to false.
         In order to set all parameters of a background algorithm for calibration
-        use the "can_calibrate" method of the equalizer first.
+        use the :py:func:`settings.CVEqualizer.can_calibrate` method first.
         """
         def run(params):
-            """
-            Internal custom function to evaluate error for a given set of parameters.
-            """
-            imagefinder.eq.parameters = params
+            finder.params = params
 
             start_time = time.time()
             try:
-                imagefinder.find(needle, haystack)
-                similarity = imagefinder.imglog.similarities[-1]
+                finder.find(needle, haystack)
+                similarity = finder.imglog.similarities[-1]
             except:
                 log.debug("Time taken is out of the maximum allowable range")
                 similarity = 0.0
             total_time = time.time() - start_time
-            imagefinder.imglog.clear()
+            finder.imglog.clear()
 
             error = 1.0 - similarity
             error += max(total_time - max_exec_time, 0)
@@ -178,34 +151,38 @@ class Calibrator:
 
         # block logging since we need all its info after the matching finishes
         ImageLogger.accumulate_logging = True
-        old_similarity = needle.match_settings.p["find"]["similarity"].value
-        needle.match_settings.p["find"]["similarity"].value = 0.0
-        best_params, error = self.twiddle(imagefinder.eq.p, run, refinements)
-        imagefinder.eq.parameters = best_params
-        needle.match_settings.p["find"]["similarity"].value = old_similarity
+        old_similarity = needle.match_settings.params["find"]["similarity"].value
+        needle.match_settings.params["find"]["similarity"].value = 0.0
+        best_params, error = self.twiddle(finder.params, run, refinements)
+        finder.params = best_params
+        needle.match_settings.params["find"]["similarity"].value = old_similarity
         ImageLogger.accumulate_logging = False
 
         return error
 
     def twiddle(self, params, run_function, max_attempts):
         """
-        Function to optimize a set of parameters for a minimal returned error.
+        Optimize a set of parameters for a minimal matching error.
 
-        @param parameters: a list of parameter triples of the form (min, start, max)
-        @param run_function: a function that accepts a list of tested parameters
-        and returns the error that should be minimized
-        @param tolerance: minimal parameter delta (uncertainty interval)
-        @param max_attempts: maximal number of refinements to reach the parameter
-        delta below the tolerance.
+        :param params: configuration for the CV backend
+        :type params: {str, {str, :py:class:`settings.CVParameter`}}
+        :param run_function: a function that accepts a list of tested parameters
+                             and returns the error that should be minimized
+        :type run_function: function
+        :param int max_attempts: maximal number of refinements to reach
+                                 the parameter delta below the tolerance
+        :returns: the configuration with the minimal error
+        :rtype: ({str, {str, :py:class:`settings.CVParameter`}}, float)
 
-        Special credits for this approach should be given to Prof. Sebastian Thrun,
-        who explained it in his Artificial Intelligence for Robotics class.
+        .. note:: Special credits for this approach should be given to Prof. Sebastian
+            Thrun, who explained it in his Artificial Intelligence for Robotics class.
         """
         deltas = {}
         for category in params.keys():
             deltas[category] = {}
             for key in params[category].keys():
-                if not params[category][key].fixed:
+                if (isinstance(params[category][key], imagefinder.CVParameter) and
+                        not params[category][key].fixed):
                     deltas[category][key] = params[category][key].delta
 
         best_params = params
@@ -231,8 +208,9 @@ class Calibrator:
 
             for category in params.keys():
                 for key in params[category].keys():
-                    if params[category][key].fixed:
-                        log.log(0, "fixed: %s %s", category, key)
+                    if (isinstance(params[category][key], imagefinder.CVParameter) and
+                            not params[category][key].fixed):
+                        log.log(0, "fixed or not a parameter: %s %s", category, key)
                         continue
                     else:
                         param = params[category][key]
@@ -301,11 +279,10 @@ class Calibrator:
 
         return (best_params, best_error)
 
-    def _get_last_criteria(self, imagefinder, total_time):
-        assert len(imagefinder.imglog.similarities) == len(imagefinder.imglog.locations)
-        if len(imagefinder.imglog.similarities) > 0:
-            similarity = imagefinder.imglog.similarities[-1]
-            location = imagefinder.imglog.locations[-1]
+    def _get_last_criteria(self, finder, total_time):
+        if len(finder.imglog.similarities) > 0:
+            similarity = finder.imglog.similarities[-1]
+            location = finder.imglog.locations[-1]
         else:
             similarity = 0.0
             location = None

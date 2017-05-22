@@ -19,7 +19,7 @@ import unittest
 import common_test
 
 from region import Region
-from desktopcontrol import DesktopControl
+from desktopcontrol import AutoPyDesktopControl
 
 
 class RegionTest(unittest.TestCase):
@@ -27,184 +27,187 @@ class RegionTest(unittest.TestCase):
     def test_position_calc(self):
         region = Region(10, 20, 300, 200)
 
-        center = region.get_center()
-        self.assertEqual(145, center.get_x())
-        self.assertEqual(90, center.get_y())
+        center = region.center
+        self.assertEqual(160, center.x)
+        self.assertEqual(120, center.y)
 
-        top_left = region.get_top_left()
-        self.assertEqual(10, top_left.get_x())
-        self.assertEqual(20, top_left.get_y())
+        top_left = region.top_left
+        self.assertEqual(10, top_left.x)
+        self.assertEqual(20, top_left.y)
 
-        top_right = region.get_top_right()
-        self.assertEqual(310, top_right.get_x())
-        self.assertEqual(20, top_right.get_y())
+        top_right = region.top_right
+        self.assertEqual(310, top_right.x)
+        self.assertEqual(20, top_right.y)
 
-        bottom_left = region.get_bottom_left()
-        self.assertEqual(10, bottom_left.get_x())
-        self.assertEqual(220, bottom_left.get_y())
+        bottom_left = region.bottom_left
+        self.assertEqual(10, bottom_left.x)
+        self.assertEqual(220, bottom_left.y)
 
-        bottom_right = region.get_bottom_right()
-        self.assertEqual(310, bottom_right.get_x())
-        self.assertEqual(220, bottom_right.get_y())
+        bottom_right = region.bottom_right
+        self.assertEqual(310, bottom_right.x)
+        self.assertEqual(220, bottom_right.y)
 
     def test_screen_clipping(self):
-        screen_width = DesktopControl().get_width()
-        screen_height = DesktopControl().get_height()
+        screen = AutoPyDesktopControl()
+        screen_width = screen.width
+        screen_height = screen.height
 
         region = Region(0, 0, 80000, 40000)
-        self.assertEqual(screen_width, region.get_width())
-        self.assertEqual(screen_height, region.get_height())
+        self.assertEqual(screen_width, region.width)
+        self.assertEqual(screen_height, region.height)
 
         region = Region(80000, 40000, 300, 200)
-        self.assertEqual(screen_width - 1, region.get_x())
-        self.assertEqual(screen_height - 1, region.get_y())
-        self.assertEqual(1, region.get_width())
-        self.assertEqual(1, region.get_height())
+        self.assertEqual(screen_width - 1, region.x)
+        self.assertEqual(screen_height - 1, region.y)
+        self.assertEqual(1, region.width)
+        self.assertEqual(1, region.height)
 
         region = Region(200, 100, screen_width * 2, screen_height * 2)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(screen_width - region.get_x(), region.get_width())
-        self.assertEqual(screen_height - region.get_y(), region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(screen_width - region.x, region.width)
+        self.assertEqual(screen_height - region.y, region.height)
 
     def test_nearby(self):
-        screen_width = DesktopControl().get_width()
-        screen_height = DesktopControl().get_height()
+        screen = AutoPyDesktopControl()
+        screen_width = screen.width
+        screen_height = screen.height
 
         # defaults to 50 pixels
         region = Region(200, 100, 20, 10).nearby()
-        self.assertEqual(150, region.get_x())
-        self.assertEqual(50, region.get_y())
-        self.assertEqual(120, region.get_width())
-        self.assertEqual(110, region.get_height())
+        self.assertEqual(150, region.x)
+        self.assertEqual(50, region.y)
+        self.assertEqual(120, region.width)
+        self.assertEqual(110, region.height)
 
         region = Region(200, 100, 20, 10).nearby(rrange=80000)
-        self.assertEqual(0, region.get_x())
-        self.assertEqual(0, region.get_y())
-        self.assertEqual(screen_width, region.get_width())
-        self.assertEqual(screen_height, region.get_height())
+        self.assertEqual(0, region.x)
+        self.assertEqual(0, region.y)
+        self.assertEqual(screen_width, region.width)
+        self.assertEqual(screen_height, region.height)
 
         region = Region(200, 100, 20, 10).nearby(rrange=0)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(20, region.get_width())
-        self.assertEqual(10, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(20, region.width)
+        self.assertEqual(10, region.height)
 
     def test_nearby_clipping(self):
-        screen_width = DesktopControl().get_width()
-        screen_height = DesktopControl().get_height()
+        screen = AutoPyDesktopControl()
+        screen_width = screen.width
+        screen_height = screen.height
 
         # clip upper side
         region = Region(200, 100, 20, 10).nearby(rrange=150)
-        self.assertEqual(50, region.get_x())
-        self.assertEqual(0, region.get_y())
-        self.assertEqual(320, region.get_width())
-        self.assertEqual(260, region.get_height())
+        self.assertEqual(50, region.x)
+        self.assertEqual(0, region.y)
+        self.assertEqual(320, region.width)
+        self.assertEqual(260, region.height)
 
         # clip lower side
         region = Region(200, screen_height - 30, 20, 10).nearby(rrange=50)
-        self.assertEqual(150, region.get_x())
-        self.assertEqual(screen_height - 30 - 50, region.get_y())
-        self.assertEqual(120, region.get_width())
-        self.assertEqual(80, region.get_height())
+        self.assertEqual(150, region.x)
+        self.assertEqual(screen_height - 30 - 50, region.y)
+        self.assertEqual(120, region.width)
+        self.assertEqual(80, region.height)
 
         # clip left side
         region = Region(20, 100, 30, 10).nearby(rrange=50)
-        self.assertEqual(0, region.get_x())
-        self.assertEqual(50, region.get_y())
-        self.assertEqual(100, region.get_width())
-        self.assertEqual(110, region.get_height())
+        self.assertEqual(0, region.x)
+        self.assertEqual(50, region.y)
+        self.assertEqual(100, region.width)
+        self.assertEqual(110, region.height)
 
         # clip right side
         region = Region(screen_width - 30, 100, 20, 10).nearby(rrange=50)
-        self.assertEqual(screen_width - 30 - 50, region.get_x())
-        self.assertEqual(50, region.get_y())
-        self.assertEqual(80, region.get_width())
-        self.assertEqual(110, region.get_height())
+        self.assertEqual(screen_width - 30 - 50, region.x)
+        self.assertEqual(50, region.y)
+        self.assertEqual(80, region.width)
+        self.assertEqual(110, region.height)
 
     def test_above(self):
         region = Region(200, 100, 20, 10).above(50)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(50, region.get_y())
-        self.assertEqual(20, region.get_width())
-        self.assertEqual(60, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(50, region.y)
+        self.assertEqual(20, region.width)
+        self.assertEqual(60, region.height)
 
         region = Region(200, 100, 20, 10).above(80000)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(0, region.get_y())
-        self.assertEqual(20, region.get_width())
-        self.assertEqual(110, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(0, region.y)
+        self.assertEqual(20, region.width)
+        self.assertEqual(110, region.height)
 
         # extend to full screen above
         region = Region(200, 100, 20, 10).above()
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(0, region.get_y())
-        self.assertEqual(20, region.get_width())
-        self.assertEqual(110, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(0, region.y)
+        self.assertEqual(20, region.width)
+        self.assertEqual(110, region.height)
 
     def test_below(self):
-        screen_height = DesktopControl().get_height()
+        screen_height = AutoPyDesktopControl().height
 
         region = Region(200, 100, 20, 10).below(50)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(20, region.get_width())
-        self.assertEqual(60, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(20, region.width)
+        self.assertEqual(60, region.height)
 
         region = Region(200, 100, 20, 10).below(80000)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(20, region.get_width())
-        self.assertEqual(screen_height - region.get_y(), region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(20, region.width)
+        self.assertEqual(screen_height - region.y, region.height)
 
         # extend to full screen below
         region = Region(200, 100, 20, 10).below()
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(20, region.get_width())
-        self.assertEqual(screen_height - region.get_y(), region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(20, region.width)
+        self.assertEqual(screen_height - region.y, region.height)
 
     def test_left(self):
         region = Region(200, 100, 20, 10).left(50)
-        self.assertEqual(150, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(70, region.get_width())
-        self.assertEqual(10, region.get_height())
+        self.assertEqual(150, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(70, region.width)
+        self.assertEqual(10, region.height)
 
         region = Region(200, 100, 20, 10).left(80000)
-        self.assertEqual(0, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(220, region.get_width())
-        self.assertEqual(10, region.get_height())
+        self.assertEqual(0, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(220, region.width)
+        self.assertEqual(10, region.height)
 
         # extend to full screen above
         region = Region(200, 100, 20, 10).left()
-        self.assertEqual(0, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(220, region.get_width())
-        self.assertEqual(10, region.get_height())
+        self.assertEqual(0, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(220, region.width)
+        self.assertEqual(10, region.height)
 
     def test_right(self):
-        screen_width = DesktopControl().get_width()
+        screen_width = AutoPyDesktopControl().width
 
         region = Region(200, 100, 20, 10).right(50)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(70, region.get_width())
-        self.assertEqual(10, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(70, region.width)
+        self.assertEqual(10, region.height)
 
         region = Region(200, 100, 20, 10).right(80000)
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(screen_width - region.get_x(), region.get_width())
-        self.assertEqual(10, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(screen_width - region.x, region.width)
+        self.assertEqual(10, region.height)
 
         # extend to full screen above
         region = Region(200, 100, 20, 10).right()
-        self.assertEqual(200, region.get_x())
-        self.assertEqual(100, region.get_y())
-        self.assertEqual(screen_width - region.get_x(), region.get_width())
-        self.assertEqual(10, region.get_height())
+        self.assertEqual(200, region.x)
+        self.assertEqual(100, region.y)
+        self.assertEqual(screen_width - region.x, region.width)
+        self.assertEqual(10, region.height)
 
 if __name__ == '__main__':
     unittest.main()

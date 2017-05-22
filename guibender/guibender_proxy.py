@@ -14,10 +14,13 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 
-
-# Frontend with serialization compatible API allowing the use of Pyro4 modified
-# GuiBender object (creating and running the GuiBender object remotely and
-# manipulating it locally).
+"""
+Frontend with serialization compatible API allowing the use of Pyro4 modified
+:py:class:`guibender.GuiBender` object (creating and running the same object
+remotely and manipulating it locally). All the methods delegate their calls to
+this object with some additional postprocessing to make the execution remote so
+for information about the API please refer to it and :py:class:`region.Region`.
+"""
 
 import re
 
@@ -28,7 +31,6 @@ from guibender import GuiBender
 
 
 class GuiBenderProxy(GuiBender):
-
     """
     The proxy guibender object is just a wrapper around the actual guibender
     object that takes care of returning easily serializable Pyro4 proxy objects
@@ -51,6 +53,10 @@ class GuiBenderProxy(GuiBender):
             self._pyroDaemon.register(obj)
         return obj
 
+    def get_mouse_location(self):
+        # override a property
+        return self._proxify(super(GuiBenderProxy, self).get_mouse_location())
+
     def find(self, image, timeout=10):
         return self._proxify(super(GuiBenderProxy, self).find(image, timeout))
 
@@ -72,9 +78,6 @@ class GuiBenderProxy(GuiBender):
 
     def wait_vanish(self, image, timeout=30):
         return self._proxify(super(GuiBenderProxy, self).wait_vanish(image, timeout))
-
-    def get_mouse_location(self):
-        return self._proxify(super(GuiBenderProxy, self).get_mouse_location())
 
     def hover(self, image_or_location):
         return self._proxify(super(GuiBenderProxy, self).hover(image_or_location))
@@ -118,18 +121,25 @@ class GuiBenderProxy(GuiBender):
 
 
 """
-Put here any exceptions that are too complicated for the default serialization
-and define their serialization methods. A serialization method is also included
-for the ImageFinderMethodError which was chosen randomly just as a sample.
+We put here any exceptions that are too complicated for the default serialization
+and define their serialization methods.
 
-NOTE: This woulnd't be needed if we were using the Pickle serializer but its
-security problems at the moment made us prefer the serpent serializer paying
-for it with some extra setup steps and this method.
+.. note:: This would not be needed if we were using the Pickle serializer but its
+    security problems at the moment made us prefer the serpent serializer paying
+    for it with some extra setup steps and functions below.
 """
-exceptions = [errors.ImageFinderMethodError]
-
+exceptions = [errors.UnsupportedBackendError]
 
 def serialize_custom_error(class_obj):
+    """
+    Serialization method for the :py:class:`errors.UnsupportedBackendError`
+    which was chosen just as a sample.
+
+    :param class_obj: class object for the serialized error class
+    :type class_obj: classobj
+    :returns: serialization dictionary with the class name, arguments, and attributes
+    :rtype: {str, str or getset_descriptor or dictproxy}
+    """
     serialized = {}
     serialized["__class__"] = re.search("<class '(.+)'>", str(type(class_obj))).group(1)
     serialized["args"] = class_obj.args

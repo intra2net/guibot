@@ -15,39 +15,40 @@
 #
 import os
 import shutil
+import PIL.Image
 
-from errors import *
-from settings import Settings
-
-# TODO: try to use PIL functionality instead
-import cv
-import cv2
-import numpy
+from settings import GlobalSettings
 
 
-class ImageLogger:
-
+class ImageLogger(object):
     """
-    This class is reponsible for logging the image matching process
-    with the help of images. It always contains the current match
-    case: the needle and haystack images being matched and the hotmap -
-    a result image as a numpy array with information about the success,
-    the matched similarity and the matched coordinates.
+    Logger for the image matching process with the help of images.
+
+    It always contains the current match case:
+    the needle and haystack images/targets being matched and the hotmap
+    (an image with additional drawn information on it), the matched
+    similarity and the matched coordinates.
+
+    Generally, each matcher class takes care of its own image logging,
+    performing drawing or similar operations on the spot and deciding
+    which hotmaps (also their names and order) to dump.
     """
 
+    #: number of the current step
     step = 1
+    #: switch to stop logging and later on log all accumulated dumps at once
     accumulate_logging = False
 
-    logging_level = Settings.image_logging_level()
-    # NOTE: the executing code decides when to clean this directory
-    logging_destination = Settings.image_logging_destination()
-    step_width = Settings.image_logging_step_width()
-
-    def get_printable_step(self):
-        return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
-    printable_step = property(fget=get_printable_step)
+    #: level for the image logging
+    logging_level = GlobalSettings.image_logging_level
+    #: destination for the image logging in order to dump images
+    #: (the executing code decides when to clean this directory)
+    logging_destination = GlobalSettings.image_logging_destination
+    #: number of digits for the counter of logged steps
+    step_width = GlobalSettings.image_logging_step_width
 
     def __init__(self):
+        """Build an imagelogger object."""
         self.needle = None
         self.haystack = None
 
@@ -56,118 +57,48 @@ class ImageLogger:
         self.locations = []
 
         # sync these static methods with the general settings at each use
-        ImageLogger.logging_level = Settings.image_logging_level()
+        ImageLogger.logging_level = GlobalSettings.image_logging_level
         # NOTE: the executing code decides when to clean this directory
-        ImageLogger.logging_destination = Settings.image_logging_destination()
-        ImageLogger.step_width = Settings.image_logging_step_width()
+        ImageLogger.logging_destination = GlobalSettings.image_logging_destination
+        ImageLogger.step_width = GlobalSettings.image_logging_step_width
 
-    def debug(self, logtype):
-        self.log(10, logtype)
+    def get_printable_step(self):
+        """
+        Getter for readonly attribute.
 
-    def info(self, logtype):
-        self.log(20, logtype)
+        :returns: step number prepended with zeroes to obtain a fixed length enumeration
+        :rtype: str
+        """
+        return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
+    printable_step = property(fget=get_printable_step)
 
-    def warning(self, logtype):
-        self.log(30, logtype)
+    def debug(self):
+        """Log images with a DEBUG logging level."""
+        self.log(10)
 
-    def error(self, logtype):
-        self.log(40, logtype)
+    def info(self):
+        """Log images with an INFO logging level."""
+        self.log(20)
 
-    def critical(self, logtype):
-        self.log(50, logtype)
+    def warning(self):
+        """Log images with a WARNING logging level."""
+        self.log(30)
 
-    def log(self, lvl, logtype):
-        # below selected logging level
-        if lvl < self.logging_level:
-            return
-        # logging is being collected for a specific logtype
-        elif ImageLogger.accumulate_logging:
-            return
+    def error(self):
+        """Log images with an ERROR logging level."""
+        self.log(40)
 
-        if logtype in "template":
-            for i in range(len(self.similarities)):
-                self.log_locations(30, [self.locations[i]], self.hotmaps[i],
-                                   30 * self.similarities[i], 255, 255, 255)
-                name = "imglog%s-3hotmap-%s%s-%s.png" % (self.printable_step,
-                                                         logtype, i + 1,
-                                                         self.similarities[i])
-                self.dump_hotmap(name, self.hotmaps[i])
-
-        elif logtype == "autopy":
-            self.log_locations(30, self.locations, 30, 0, 0, 0)
-            name = "imglog%s-3hotmap-%s.png" % (self.printable_step,
-                                                logtype)
-            self.dump_hotmap(name, self.hotmaps[-1])
-
-        elif logtype == "feature":
-            self.log_locations(30, [self.locations[-1]], self.hotmaps[-1],
-                               4, 255, 0, 0)
-            name = "imglog%s-3hotmap-%s-%s.png" % (self.printable_step,
-                                                   logtype,
-                                                   self.similarities[-1])
-            self.dump_hotmap(name, self.hotmaps[-1])
-
-        elif logtype == "hybrid":
-            # knowing how the hybrid works this estimates
-            # the expected number of cases starting from 1 (i+1)
-            # to make sure the winner is the first alphabetically
-            candidate_num = len(self.similarities) / 2
-            for i in range(candidate_num):
-                self.log_locations(30, [self.locations[i]],
-                                   self.hotmaps[i],
-                                   30 * self.similarities[i], 255, 255, 255)
-                name = "imglog%s-3hotmap-%s-%stemplate-%s.png" % (self.printable_step,
-                                                                  logtype, i + 1,
-                                                                  self.similarities[i])
-                self.dump_hotmap(name, self.hotmaps[i])
-                ii = candidate_num + i
-                self.log_locations(30, [self.locations[ii]],
-                                   self.hotmaps[ii],
-                                   4, 255, 0, 0)
-                name = "imglog%s-3hotmap-%s-%sfeature-%s.png" % (self.printable_step,
-                                                                 logtype, i + 1,
-                                                                 self.similarities[ii])
-                self.dump_hotmap(name, self.hotmaps[ii])
-
-            if len(self.similarities) % 2 == 1:
-                self.log_locations(30, [self.locations[-1]],
-                                   self.hotmaps[-1],
-                                   6, 255, 0, 0)
-                name = "imglog%s-3hotmap-%s-%s.png" % (self.printable_step,
-                                                       logtype,
-                                                       self.similarities[-1])
-                self.dump_hotmap(name, self.hotmaps[-1])
-
-        elif logtype == "2to1":
-            for i in range(len(self.hotmaps)):
-                name = "imglog%s-3hotmap-%s-subregion%s-%s.png" % (self.printable_step,
-                                                                   logtype, i,
-                                                                   self.similarities[i])
-                self.dump_hotmap(name, self.hotmaps[i])
-
-        self.clear()
-        ImageLogger.step += 1
-
-    def log_locations(self, lvl, locations, hotmap=None,
-                      radius=2, r=255, g=255, b=255):
-        if len(self.hotmaps) == 0 and hotmap == None:
-            raise MissingHotmapError
-        elif hotmap == None:
-            hotmap = self.hotmaps[-1]
-
-        if lvl < self.logging_level:
-            return
-        for loc in locations:
-            x, y = loc
-            color = (r, g, b)
-            cv2.circle(hotmap, (int(x), int(y)), int(radius), color)
-
-    def log_window(self, hotmap):
-        cv2.startWindowThread()
-        cv2.namedWindow("hotmap", 1)
-        cv2.imshow("hotmap", hotmap)
+    def critical(self):
+        """Log images with a CRITICAL logging level."""
+        self.log(50)
 
     def dump_matched_images(self):
+        """
+        Write file with the current needle and haystack.
+
+        The current needle and haystack (matched images) are stored
+        as `needle` and `haystack` attributes.
+        """
         if ImageLogger.logging_level > 30:
             return
         if not os.path.exists(ImageLogger.logging_destination):
@@ -176,36 +107,42 @@ class ImageLogger:
             shutil.rmtree(ImageLogger.logging_destination)
             os.mkdir(ImageLogger.logging_destination)
 
-        if self.needle.filename == None:
-            self.needle.filename = "noname"
-        needle_name = os.path.basename(self.needle.filename)
         needle_name = "imglog%s-1needle-%s" % (self.printable_step,
-                                               needle_name)
+                                               str(self.needle))
         needle_path = os.path.join(ImageLogger.logging_destination,
                                    needle_name)
         self.needle.save(needle_path)
 
-        if self.haystack.filename == None:
-            self.haystack.filename = "noname.png"
-        haystack_name = os.path.basename(self.haystack.filename)
         haystack_name = "imglog%s-2haystack-%s" % (self.printable_step,
-                                                   haystack_name)
+                                                   str(self.haystack))
         haystack_path = os.path.join(ImageLogger.logging_destination,
                                      haystack_name)
         self.haystack.save(haystack_path)
 
     def dump_hotmap(self, name, hotmap):
+        """
+        Write a file the given hotmap.
+
+        :param str name: filename to use for the image
+        :param hotmap: image (with matching results) to write
+        :type hotmap: :py:class:`PIL.Image` or :py:class:`numpy.ndarray`
+        """
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
         path = os.path.join(ImageLogger.logging_destination, name)
-        cv2.imwrite(path, hotmap, [cv.CV_IMWRITE_PNG_COMPRESSION, Settings.image_quality()])
 
-    def hotmap_from_template(self, result):
-        matrix = cv.CreateMat(len(result), len(result[0]), cv.CV_8UC1)
-        cv.ConvertScale(cv.fromarray(result), matrix, scale=255.0)
-        return numpy.asarray(matrix)
+        if isinstance(hotmap, PIL.Image.Image):
+            pil_image = hotmap
+        else:
+            # numpy or other array
+            pil_image = PIL.Image.fromarray(hotmap)
+            # NOTE: some modes cannot be saved unless converted to RGB
+            if pil_image.mode != 'RGB':
+                pil_image = pil_image.convert('RGB')
+        pil_image.save(path, compress_level=GlobalSettings.image_quality)
 
     def clear(self):
+        """Clear all accumulated logging including hotmaps, similarities, and locations."""
         self.needle = None
         self.haystack = None
         self.hotmaps = []
