@@ -1019,19 +1019,17 @@ class FeatureMatcher(ImageFinder):
                     continue
 
                 # give more information about some better known parameters
-                if category in ("fdetect", "fextract") and param == "firstLevel":
+                if category in ("fdetect", "fextract") and param == "FirstLevel":
                     self.params[category][param] = CVParameter(val, 0, 100)
-                elif category in ("fdetect", "fextract") and param == "nFeatures":
-                    self.params[category][param] = CVParameter(val, delta=100)
+                elif category in ("fdetect", "fextract") and param == "MaxFeatures":
+                    self.params[category][param] = CVParameter(val, delta=1)
                 elif category in ("fdetect", "fextract") and param == "WTA_K":
                     self.params[category][param] = CVParameter(val, 2, 4)
-                elif category in ("fdetect", "fextract") and param == "scaleFactor":
+                elif category in ("fdetect", "fextract") and param == "ScaleFactor":
                     self.params[category][param] = CVParameter(val, 1.01, 2.0)
                 else:
                     self.params[category][param] = CVParameter(val)
-                log.debug("%s=%s", param, val)
-
-        log.log(0, "%s %s\n", category, self.params[category])
+                log.log(0, "%s=%s", param, val)
 
     def configure_backend(self, backend=None, category="feature", reset=False):
         """
