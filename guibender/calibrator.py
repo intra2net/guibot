@@ -15,11 +15,13 @@
 #
 import time
 import math
+import copy
 
 from imagelogger import ImageLogger
 
 import logging
 import imagefinder
+from errors import *
 log = logging.getLogger('guibender.calibrator')
 
 
@@ -130,32 +132,40 @@ class Calibrator(object):
         This method calibrates only parameters that are not protected
         from calibration, i.e. that have `fixed` attribute set to false.
         In order to set all parameters of a background algorithm for calibration
-        use the :py:func:`settings.CVEqualizer.can_calibrate` method first.
+        use the :py:func:`imagefinder.ImageFinder.can_calibrate` method first.
+
+        .. note:: All similarity parameters will be reset to 0.0 after calibration
+            and can be set by client code afterwards.
         """
         def run(params):
             finder.params = params
 
             start_time = time.time()
             try:
-                finder.find(needle, haystack)
-                similarity = finder.imglog.similarities[-1]
+                matches = finder.find(needle, haystack)
+                # pick similarity of the best match as representative
+                similarity = matches[0].similarity
             except:
-                log.debug("Time taken is out of the maximum allowable range")
+                log.warn("No match was found at this step (due to internal error or other)")
                 similarity = 0.0
             total_time = time.time() - start_time
-            finder.imglog.clear()
 
+            # main penalty for bad quality of matching
             error = 1.0 - similarity
+            # extra penalty for slow solutions
             error += max(total_time - max_exec_time, 0)
             return error
 
-        # block logging since we need all its info after the matching finishes
+        # block logging for performance speedup
         ImageLogger.accumulate_logging = True
-        old_similarity = needle.match_settings.params["find"]["similarity"].value
-        needle.match_settings.params["find"]["similarity"].value = 0.0
+        # any similarity parameters will be reset to 0.0 to search optimally
+        finder.params["find"]["similarity"].value = 0.0
+        finder.params["find"]["similarity"].fixed = True
+        if "hybrid" in finder.params.keys():
+            finder.params["hybrid"]["front_similarity"].value = 0.0
+            finder.params["hybrid"]["front_similarity"].fixed = True
         best_params, error = self.twiddle(finder.params, run, refinements)
         finder.params = best_params
-        needle.match_settings.params["find"]["similarity"].value = old_similarity
         ImageLogger.accumulate_logging = False
 
         return error
@@ -185,7 +195,7 @@ class Calibrator(object):
                         not params[category][key].fixed):
                     deltas[category][key] = params[category][key].delta
 
-        best_params = params
+        best_params = copy.deepcopy(params)
         best_error = run_function(params)
         log.log(0, "%s %s", best_params, best_error)
 
@@ -209,8 +219,13 @@ class Calibrator(object):
             for category in params.keys():
                 for key in params[category].keys():
                     if (isinstance(params[category][key], imagefinder.CVParameter) and
-                            not params[category][key].fixed):
-                        log.log(0, "fixed or not a parameter: %s %s", category, key)
+                            params[category][key].fixed):
+                        log.log(0, "skip fixed parameter: %s %s", category, key)
+                        continue
+                    elif key == "backend":
+                        continue
+                    elif not isinstance(params[category][key], imagefinder.CVParameter):
+                        log.warn("The parameter %s-%s is not a CV parameter!", category, key)
                         continue
                     else:
                         param = params[category][key]
@@ -241,7 +256,7 @@ class Calibrator(object):
 
                     error = run_function(params)
                     if error < best_error:
-                        best_params = params
+                        best_params = copy.deepcopy(params)
                         best_error = error
                         deltas[category][key] *= 1.1
                     else:
@@ -267,7 +282,7 @@ class Calibrator(object):
 
                         error = run_function(params)
                         if error < best_error:
-                            best_params = params
+                            best_params = copy.deepcopy(params)
                             best_error = error
                             deltas[category][key] *= 1.1
                         else:

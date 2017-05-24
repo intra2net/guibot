@@ -278,14 +278,15 @@ class ImageFinder(LocalSettings):
             raise UnsupportedBackendError("Category '%s' not among the "
                                           "supported %s" % (category, self.categories.keys()))
 
-        for param in self.params[category].values():
-            if not isinstance(param, CVParameter):
+        for key, value in self.params[category].items():
+            if not isinstance(value, CVParameter):
                 continue
             # BUG: force fix parameters that have internal bugs
-            if category == "fextract" and param == "bytes":
-                param.fixed = True
+            if category == "fextract" and value == "bytes":
+                value.fixed = True
             else:
-                param.fixed = not mark
+                value.fixed = not mark
+            logging.debug("Setting %s to fixed=%s for calibration", key, value.fixed)
 
     def copy(self):
         acopy = type(self)()
@@ -1173,7 +1174,7 @@ class FeatureMatcher(ImageFinder):
             x, y = hpoints[0]
             w, h = tuple(numpy.abs(numpy.subtract(hpoints[3], hpoints[0])))
             # TODO: projecting offset requires more effort
-            matches = [Match(x, y, w, h, self.imglog.similarities[-1])]
+            matches = [Match(x, y, w, h, 0, 0, self.imglog.similarities[-1])]
             self.imglog.log(30)
             return matches
         self.imglog.log(40)
