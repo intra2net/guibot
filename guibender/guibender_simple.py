@@ -80,6 +80,10 @@ def double_click(image_or_location, modifiers=None):
     return guibender.double_click(image_or_location, modifiers)
 
 
+def multi_click(image_or_location, count=3, modifiers=None):
+    return guibender.multi_click(image_or_location, count, modifiers)
+
+
 def mouse_down(image_or_location, button=None):
     return guibender.mouse_down(image_or_location, button)
 

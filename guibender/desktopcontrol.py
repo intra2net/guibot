@@ -222,32 +222,13 @@ class DesktopControl(LocalSettings):
         """
         raise NotImplementedError("Abstract method call - call implementation of this class")
 
-    def mouse_click(self, modifiers=None):
+    def mouse_click(self, button=None, count=1, modifiers=None):
         """
-        Click the left mouse button at the current mouse location.
+        Click the selected mouse button N times at the current mouse location.
 
-        :param modifiers: special keys to hold during clicking
-                         (see :py:class:`inputmap.KeyModifier` for extensive list)
-        :type modifiers: [str]
-        :raises: :py:class:`NotImplementedError` if the base class method is called
-        """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
-
-    def mouse_right_click(self, modifiers=None):
-        """
-        Click the right mouse button at the current mouse location.
-
-        :param modifiers: special keys to hold during clicking
-                         (see :py:class:`inputmap.KeyModifier` for extensive list)
-        :type modifiers: [str]
-        :raises: :py:class:`NotImplementedError` if the base class method is called
-        """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
-
-    def mouse_double_click(self, modifiers=None):
-        """
-        Double click the left mouse button at the current mouse location.
-
+        :param button: mouse button, e.g. self.mouse_map.LEFT_BUTTON
+        :type button: int or None
+        :param int count: number of times to click
         :param modifiers: special keys to hold during clicking
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
@@ -413,42 +394,19 @@ class AutoPyDesktopControl(DesktopControl):
         else:
             self._backend_obj.mouse.move(location.x, location.y)
 
-    def mouse_click(self, modifiers=None):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-        self._backend_obj.mouse.click(self._mousemap.LEFT_BUTTON)
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-    def mouse_right_click(self, modifiers=None):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-        self._backend_obj.mouse.click(self._mousemap.RIGHT_BUTTON)
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-    def mouse_double_click(self, modifiers=None):
+    def mouse_click(self, button=None, count=1, modifiers=None):
         """
         Custom implementation of the base method.
 
         See base method for details.
         """
         timeout = GlobalSettings.click_delay
+        button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
-        self._backend_obj.mouse.click(self._mousemap.LEFT_BUTTON)
-        time.sleep(timeout)
-        self._backend_obj.mouse.click(self._mousemap.LEFT_BUTTON)
+        for _ in range(count):
+            self._backend_obj.mouse.click(button)
+            time.sleep(timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -612,45 +570,19 @@ class QemuDesktopControl(DesktopControl):
         self._backend_obj.mouse_move(location.x, location.y)
         self._pointer = location
 
-    def mouse_click(self, modifiers=None):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-        # BUG: the mouse_button monitor command resets the mouse position to
-        # (0,0) making it impossible to click anywhere else, see this for more info:
-        # http://lists.nongnu.org/archive/html/qemu-devel/2013-06/msg02506.html
-        self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-    def mouse_right_click(self, modifiers=None):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-        self._backend_obj.mouse_button(self._mousemap.RIGHT_BUTTON)
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-    def mouse_double_click(self, modifiers=None):
+    def mouse_click(self, button=None, count=3, modifiers=None):
         """
         Custom implementation of the base method.
 
         See base method for details.
         """
         timeout = GlobalSettings.click_delay
+        button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
-        self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
-        time.sleep(timeout)
-        self._backend_obj.mouse_button(self._mousemap.LEFT_BUTTON)
+        for _ in range(count):
+            self._backend_obj.mouse_button(button)
+            time.sleep(timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -851,49 +783,22 @@ class VNCDoToolDesktopControl(DesktopControl):
             self._backend_obj.mouseMove(location.x, location.y)
         self._pointer = location
 
-    def mouse_click(self, modifiers=None):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-        self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
-        # BUG: the mouse button is pressed down forever (on LEFT) and lags behind
-        time.sleep(0.1)
-        self._backend_obj.mouseUp(self._mousemap.LEFT_BUTTON)
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-    def mouse_right_click(self, modifiers=None):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-        self._backend_obj.mousePress(self._mousemap.RIGHT_BUTTON)
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-    def mouse_double_click(self, modifiers=None):
+    def mouse_click(self, button=None, count=3, modifiers=None):
         """
         Custom implementation of the base method.
 
         See base method for details.
         """
         timeout = GlobalSettings.click_delay
+        button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
-        self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
-        # BUG: the mouse button is pressed down forever (on LEFT)
-        self._backend_obj.mouseUp(self._mousemap.LEFT_BUTTON)
-        time.sleep(timeout)
-        self._backend_obj.mousePress(self._mousemap.LEFT_BUTTON)
-        # BUG: the mouse button is pressed down forever (on LEFT)
-        self._backend_obj.mouseUp(self._mousemap.LEFT_BUTTON)
+        for _ in range(count):
+            self._backend_obj.mousePress(button)
+            # BUG: the mouse button is pressed down forever (on LEFT)
+            time.sleep(0.1)
+            self._backend_obj.mouseUp(button)
+            time.sleep(timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 

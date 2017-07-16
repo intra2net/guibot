@@ -651,7 +651,7 @@ class Region(object):
         log.info("Clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.dc_backend.mouse_click(modifiers)
+        self.dc_backend.mouse_click(self.LEFT_BUTTON, 1, modifiers)
         return match
 
     def right_click(self, image_or_location, modifiers=None):
@@ -665,7 +665,7 @@ class Region(object):
         log.info("Right clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.dc_backend.mouse_right_click(modifiers)
+        self.dc_backend.mouse_click(self.RIGHT_BUTTON, 1, modifiers)
         return match
 
     def double_click(self, image_or_location, modifiers=None):
@@ -679,7 +679,21 @@ class Region(object):
         log.info("Double clicking at %s", image_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
-        self.dc_backend.mouse_double_click(modifiers)
+        self.dc_backend.mouse_click(self.LEFT_BUTTON, 2, modifiers)
+        return match
+
+    def multi_click(self, image_or_location, count=3, modifiers=None):
+        """
+        Click N times on an image or location using the left mouse button
+        and optionally holding special keys.
+
+        Arguments and return values are analogical to :py:func:`Region.click`.
+        """
+        match = self.hover(image_or_location)
+        log.info("Clicking %s times at %s", count, image_or_location)
+        if modifiers != None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
+        self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
 
     def mouse_down(self, image_or_location, button=None):

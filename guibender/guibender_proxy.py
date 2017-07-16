@@ -91,6 +91,9 @@ class GuiBenderProxy(GuiBender):
     def double_click(self, image_or_location, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).double_click(image_or_location, modifiers))
 
+    def multi_click(self, image_or_location, count=3, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).multi_click(image_or_location, count, modifiers))
+
     def mouse_down(self, image_or_location, button=None):
         return self._proxify(super(GuiBenderProxy, self).mouse_down(image_or_location, button))
 
