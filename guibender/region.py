@@ -412,11 +412,11 @@ class Region(object):
 
             found_pics = cv_backend.find(image, screen_capture)
             if len(found_pics) > 0:
-                self._last_match = found_pics[0]
-                self._last_match.x += self.x
-                self._last_match.y += self.y
-                self._last_match.dc_backend = dc_backend
-                self._last_match.cv_backend = cv_backend
+                from match import Match
+                match = found_pics[0]
+                self._last_match = Match(match.x+self.x, match.y+self.y,
+                                         match.width, match.height, match.dx, match.dy,
+                                         match.similarity, dc=dc_backend, cv=cv_backend)
                 return self._last_match
 
             elif time.time() > timeout_limit:
@@ -475,12 +475,11 @@ class Region(object):
 
             found_pics = cv_backend.find(image, screen_capture)
             if len(found_pics) > 0:
+                from match import Match
                 for match in found_pics:
-                    match.x += self.x
-                    match.y += self.y
-                    match.dc_backend = dc_backend
-                    match.cv_backend = cv_backend
-                    last_matches.append(match)
+                    last_matches.append(Match(match.x+self.x, match.y+self.y,
+                                              match.width, match.height, match.dx, match.dy,
+                                              match.similarity, dc=dc_backend, cv=cv_backend))
                 self._last_match = last_matches[-1]
                 return last_matches
 

@@ -14,22 +14,20 @@
 # along with guibender.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# interconnected classes - import only their modules
-# to avoid circular reference
-import region
-
+from region import Region
 from location import Location
 from desktopcontrol import DesktopControl
 from imagefinder import ImageFinder
 
 
-class Match(region.Region):
+class Match(Region):
     """
     Wrapper around image which adds data necessary for manipulation
     of matches on a screen.
     """
 
-    def __init__(self, xpos, ypos, width, height, dx=0, dy=0, similarity=0.0):
+    def __init__(self, xpos, ypos, width, height, dx=0, dy=0,
+                 similarity=0.0, dc=None, cv=None):
         """
         Build a match object.
 
@@ -41,10 +39,12 @@ class Match(region.Region):
         :param int dy: y offset from the center of the match region
         :param float similarity: attained similarity of the match region
         """
-        super(Match, self).__init__(xpos, ypos, width, height,
-                                    DesktopControl(), ImageFinder())
+        dc = DesktopControl() if dc is None else dc
+        cv = ImageFinder() if cv is None else cv
+        super(Match, self).__init__(xpos, ypos, width, height, dc=dc, cv=cv)
         # custom DC and CV backends can be set later on by a region
         # if a match within the match will be needed (they are optional)
+        # -> recreate the match to fully initialized it with a different backend
         self._similarity = similarity
         self._dx, self._dy = dx, dy
 
@@ -62,7 +62,7 @@ class Match(region.Region):
         :type value: int
         """
         self._xpos = value
-    x = property(fget=region.Region.get_x, fset=set_x)
+    x = property(fget=Region.get_x, fset=set_x)
 
     def set_y(self, value):
         """
@@ -74,7 +74,27 @@ class Match(region.Region):
         :type value: int
         """
         self._ypos = value
-    y = property(fget=region.Region.get_y, fset=set_y)
+    y = property(fget=Region.get_y, fset=set_y)
+
+    def get_dx(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: x offset from the center of the match region
+        :rtype: int
+        """
+        return self._dx
+    dx = property(fget=get_dx)
+
+    def get_dy(self):
+        """
+        Getter for readonly attribute.
+
+        :returns: y offset from the center of the match region
+        :rtype: int
+        """
+        return self._dy
+    dy = property(fget=get_dy)
 
     def get_similarity(self):
         """
@@ -111,8 +131,8 @@ class Match(region.Region):
         :returns: target location to click on if clicking on the match
         :rtype: :py:class:`location.Location`
         """
-        center_region = region.Region(0, 0, width, height,
-                                      dc=self.dc_backend, cv=self.cv_backend)
+        center_region = Region(0, 0, width, height,
+                               dc=self.dc_backend, cv=self.cv_backend)
         click_center = center_region.center
 
         target_xpos = xpos + click_center.x + offset.x
