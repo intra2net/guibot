@@ -246,7 +246,7 @@ class Region(object):
         """
         Getter for readonly attribute.
 
-        :returns: last match obtained from finding an image within the region
+        :returns: last match obtained from finding a target within the region
         :rtype: :py:class:`match.Match`
         """
         return self._last_match
@@ -379,15 +379,15 @@ class Region(object):
         """
         Find a target (image, text, etc.) on the screen.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Target`
+        :param target: target to look for
+        :type target: str or :py:class:`image.Target`
         :param int timeout: timeout before giving up
-        :returns: match obtained from finding the image within the region
+        :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
         :raises: :py:class:`errors.FindError` if no match is found
 
-        This method is the main entrance to all our image finding capabilities
-        and is the milestone for all image expect methods.
+        This method is the main entrance to all our target finding capabilities
+        and is the milestone for all target expect methods.
         """
         # handle some specific target types
         if isinstance(target, basestring):
@@ -522,63 +522,63 @@ class Region(object):
         similarity = match.similarity
         return similarity
 
-    def exists(self, image, timeout=0):
+    def exists(self, target, timeout=0):
         """
-        Check if an image exists on the screen using the image matching
+        Check if a target exists on the screen using the matching
         success as a threshold for the existence.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`image.Target`
         :param int timeout: timeout before giving up
-        :returns: match obtained from finding the image within the region
+        :returns: match obtained from finding the target within the region
                   or nothing if no match is found
         :rtype: :py:class:`match.Match` or None
         """
-        log.debug("Checking if %s is present", image)
+        log.debug("Checking if %s is present", target)
         try:
-            return self.find(image, timeout)
+            return self.find(target, timeout)
         except FindError:
             pass
         return None
 
-    def wait(self, image, timeout=30):
+    def wait(self, target, timeout=30):
         """
-        Wait for an image to appear (be matched) with a given timeout
+        Wait for a target to appear (be matched) with a given timeout
         as failing tolerance.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`image.Target`
         :param int timeout: timeout before giving up
-        :returns: match obtained from finding the image within the region
+        :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
         :raises: :py:class:`errors.FindError` if no match is found
         """
-        log.info("Waiting for %s", image)
-        return self.find(image, timeout)
+        log.info("Waiting for %s", target)
+        return self.find(target, timeout)
 
-    def wait_vanish(self, image, timeout=30):
+    def wait_vanish(self, target, timeout=30):
         """
-        Wait for an image to disappear (be unmatched, i.e. matched
+        Wait for a target to disappear (be unmatched, i.e. matched
         without success) with a given timeout as failing tolerance.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`image.Target`
         :param int timeout: timeout before giving up
-        :returns: whether the image disappeared from the region
+        :returns: whether the target disappeared from the region
         :rtype: bool
         :raises: :py:class:`errors.NotFindError` if match is still found
         """
-        log.info("Waiting for %s to vanish", image)
+        log.info("Waiting for %s to vanish", target)
         expires = time.time() + timeout
         while time.time() < expires:
-            if self.exists(image, 0) is None:
+            if self.exists(target, 0) is None:
                 return True
 
             # don't hog the CPU
             time.sleep(0.2)
 
-        # image is still there
-        raise NotFindError(image)
+        # target is still there
+        raise NotFindError(target)
 
     """Mouse methods"""
     def idle(self, timeout):
@@ -600,170 +600,170 @@ class Region(object):
         time.sleep(timeout)
         return self
 
-    def hover(self, image_or_location):
+    def hover(self, target_or_location):
         """
-        Hover the mouse over an image or location.
+        Hover the mouse over a target or location.
 
-        :param image_or_location: image or location to hover to
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+        :param target_or_location: target or location to hover to
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
                                  str or :py:class:`image.Target`
-        :returns: match from finding the image or nothing if hovering over a known location
+        :returns: match from finding the target or nothing if hovering over a known location
         :rtype: :py:class:`match.Match` or None
         """
-        log.info("Hovering over %s", image_or_location)
+        log.info("Hovering over %s", target_or_location)
 
         # Handle Match
         from match import Match
-        if isinstance(image_or_location, Match):
-            self.dc_backend.mouse_move(image_or_location.target)
+        if isinstance(target_or_location, Match):
+            self.dc_backend.mouse_move(target_or_location.target)
             return None
 
         # Handle Location
-        if isinstance(image_or_location, Location):
-            self.dc_backend.mouse_move(image_or_location)
+        if isinstance(target_or_location, Location):
+            self.dc_backend.mouse_move(target_or_location)
             return None
 
         # Find target (image, text, pattern) or str
-        match = self.find(image_or_location)
+        match = self.find(target_or_location)
         self.dc_backend.mouse_move(match.target)
 
         return match
 
-    def click(self, image_or_location, modifiers=None):
+    def click(self, target_or_location, modifiers=None):
         """
-        Click on an image or location using the left mouse button and
+        Click on a target or location using the left mouse button and
         optionally holding special keys.
 
-        :param image_or_location: image or location to click on
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Image`
+        :param target_or_location: target or location to click on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`image.Target`
         :param modifiers: special keys to hold during clicking
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
-        :returns: match from finding the image or nothing if clicking on a known location
+        :returns: match from finding the target or nothing if clicking on a known location
         :rtype: :py:class:`match.Match` or None
 
         The special keys refer to a list of key modifiers, e.g.::
 
-            self.click('my_image', [KeyModifier.MOD_CTRL, 'x']).
+            self.click('my_target', [KeyModifier.MOD_CTRL, 'x']).
         """
-        match = self.hover(image_or_location)
-        log.info("Clicking at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Clicking at %s", target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 1, modifiers)
         return match
 
-    def right_click(self, image_or_location, modifiers=None):
+    def right_click(self, target_or_location, modifiers=None):
         """
-        Click on an image or location using the right mouse button and
+        Click on a target or location using the right mouse button and
         optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
-        match = self.hover(image_or_location)
-        log.info("Right clicking at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Right clicking at %s", target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.RIGHT_BUTTON, 1, modifiers)
         return match
 
-    def double_click(self, image_or_location, modifiers=None):
+    def double_click(self, target_or_location, modifiers=None):
         """
-        Double click on an image or location using the left mouse button
+        Double click on a target or location using the left mouse button
         and optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
-        match = self.hover(image_or_location)
-        log.info("Double clicking at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Double clicking at %s", target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 2, modifiers)
         return match
 
-    def multi_click(self, image_or_location, count=3, modifiers=None):
+    def multi_click(self, target_or_location, count=3, modifiers=None):
         """
-        Click N times on an image or location using the left mouse button
+        Click N times on a target or location using the left mouse button
         and optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
-        match = self.hover(image_or_location)
-        log.info("Clicking %s times at %s", count, image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Clicking %s times at %s", count, target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
 
-    def mouse_down(self, image_or_location, button=None):
+    def mouse_down(self, target_or_location, button=None):
         """
-        Hold down an arbitrary mouse button on an image or location.
+        Hold down an arbitrary mouse button on a target or location.
 
-        :param image_or_location: image or location to toggle on
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Image`
+        :param target_or_location: target or location to toggle on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`image.Target`
         :param button: button index depending on backend (default is left button)
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :type button: int or None
-        :returns: match from finding the image or nothing if toggling on a known location
+        :returns: match from finding the target or nothing if toggling on a known location
         :rtype: :py:class:`match.Match` or None
         """
         if button is None:
             button = self.LEFT_BUTTON
-        match = self.hover(image_or_location)
-        log.debug("Holding down the mouse at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.debug("Holding down the mouse at %s", target_or_location)
         self.dc_backend.mouse_down(button)
         return match
 
-    def mouse_up(self, image_or_location, button=None):
+    def mouse_up(self, target_or_location, button=None):
         """
-        Release an arbitrary mouse button on an image or location.
+        Release an arbitrary mouse button on a target or location.
 
-        :param image_or_location: image or location to toggle on
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Image`
+        :param target_or_location: target or location to toggle on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`image.Target`
         :param button: button index depending on backend (default is left button)
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :type button: int or None
-        :returns: match from finding the image or nothing if toggling on a known location
+        :returns: match from finding the target or nothing if toggling on a known location
         :rtype: :py:class:`match.Match` or None
         """
         if button is None:
             button = self.LEFT_BUTTON
-        match = self.hover(image_or_location)
-        log.debug("Holding up the mouse at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.debug("Holding up the mouse at %s", target_or_location)
         self.dc_backend.mouse_up(button)
         return match
 
-    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
+    def drag_drop(self, src_target_or_location, dst_target_or_location, modifiers=None):
         """
-        Drag from and drop at an image or location optionally holding special keys.
+        Drag from and drop at a target or location optionally holding special keys.
 
-        :param src_image_or_location: image or location to drag from
-        :type src_image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                     str or :py:class:`image.Image`
-        :param dst_image_or_location: image or location to drop at
-        :type dst_image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                     str or :py:class:`image.Image`
+        :param src_target_or_location: target or location to drag from
+        :type src_target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                     str or :py:class:`image.Target`
+        :param dst_target_or_location: target or location to drop at
+        :type dst_target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                     str or :py:class:`image.Target`
         :param modifiers: special keys to hold during dragging and dropping
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
-        :returns: match from finding the image or nothing if dropping at a known location
+        :returns: match from finding the target or nothing if dropping at a known location
         :rtype: :py:class:`match.Match` or None
         """
-        self.drag_from(src_image_or_location, modifiers)
-        match = self.drop_at(dst_image_or_location, modifiers)
+        self.drag_from(src_target_or_location, modifiers)
+        match = self.drop_at(dst_target_or_location, modifiers)
         return match
 
-    def drag_from(self, image_or_location, modifiers=None):
+    def drag_from(self, target_or_location, modifiers=None):
         """
-        Drag from an image or location optionally holding special keys.
+        Drag from a target or location optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.drag_drop`
-        but with `image_or_location` as `src_image_or_location`.
+        but with `target_or_location` as `src_target_or_location`.
         """
-        match = self.hover(image_or_location)
+        match = self.hover(target_or_location)
 
         time.sleep(0.2)
         if modifiers != None:
@@ -771,23 +771,23 @@ class Region(object):
             self.dc_backend.keys_toggle(modifiers, True)
             #self.dc_backend.keys_toggle(["Ctrl"], True)
 
-        log.info("Dragging %s", image_or_location)
+        log.info("Dragging %s", target_or_location)
         self.dc_backend.mouse_down(self.LEFT_BUTTON)
         time.sleep(GlobalSettings.delay_after_drag)
 
         return match
 
-    def drop_at(self, image_or_location, modifiers=None):
+    def drop_at(self, target_or_location, modifiers=None):
         """
-        Drop at an image or location optionally holding special keys.
+        Drop at a target or location optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.drag_drop`
-        but with `image_or_location` as `dst_image_or_location`.
+        but with `target_or_location` as `dst_target_or_location`.
         """
-        match = self.hover(image_or_location)
+        match = self.hover(target_or_location)
         time.sleep(GlobalSettings.delay_before_drop)
 
-        log.info("Dropping at %s", image_or_location)
+        log.info("Dropping at %s", target_or_location)
         self.dc_backend.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
@@ -817,22 +817,22 @@ class Region(object):
         self.dc_backend.keys_press(keys_list)
         return self
 
-    def press_at(self, keys, image_or_location):
+    def press_at(self, keys, target_or_location):
         """
         Press a single key or a list of keys simultaneously
-        at a specified image or location.
+        at a specified target or location.
 
         This method is similar to :py:func:`Region.press_keys` but
         with an extra argument like :py:func:`Region.click`.
         """
-        keys_list = self._parse_keys(keys, image_or_location)
-        match = self.click(image_or_location)
+        keys_list = self._parse_keys(keys, target_or_location)
+        match = self.click(target_or_location)
         time.sleep(GlobalSettings.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return match
 
-    def _parse_keys(self, keys, image_or_location=None):
-        at_str = " at %s" % image_or_location if image_or_location else ""
+    def _parse_keys(self, keys, target_or_location=None):
+        at_str = " at %s" % target_or_location if target_or_location else ""
 
         keys_list = []
         # if not a list (i.e. if a single key)
@@ -894,18 +894,18 @@ class Region(object):
         self.dc_backend.keys_type(text_list, modifiers)
         return self
 
-    def type_at(self, text, image_or_location, modifiers=None):
+    def type_at(self, text, target_or_location, modifiers=None):
         """
         Type a list of consecutive character keys (without special keys)
-        at a specified image or location.
+        at a specified target or location.
 
         This method is similar to :py:func:`Region.type_text` but
         with an extra argument like :py:func:`Region.click`.
         """
-        text_list = self._parse_text(text, image_or_location)
+        text_list = self._parse_text(text, target_or_location)
         match = None
-        if image_or_location != None:
-            match = self.click(image_or_location)
+        if target_or_location != None:
+            match = self.click(target_or_location)
         time.sleep(GlobalSettings.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
@@ -914,8 +914,8 @@ class Region(object):
         self.dc_backend.keys_type(text_list, modifiers)
         return match
 
-    def _parse_text(self, text, image_or_location=None):
-        at_str = " at %s" % image_or_location if image_or_location else ""
+    def _parse_text(self, text, target_or_location=None):
+        at_str = " at %s" % target_or_location if target_or_location else ""
 
         text_list = []
         if isinstance(text, basestring):

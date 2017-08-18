@@ -36,85 +36,85 @@ def remove_image_path(directory):
     guibender.remove_image_path(directory)
 
 
-def find(image, timeout=10):
-    return guibender.find(image, timeout)
+def find(target, timeout=10):
+    return guibender.find(target, timeout)
 
 
-def find_all(image, timeout=10, allow_zero=False):
-    return guibender.find_all(image, timeout, allow_zero)
+def find_all(target, timeout=10, allow_zero=False):
+    return guibender.find_all(target, timeout, allow_zero)
 
 
-def sample(image):
-    return guibender.sample(image)
+def sample(target):
+    return guibender.sample(target)
 
 
-def exists(image, timeout=0):
-    return guibender.exists(image, timeout)
+def exists(target, timeout=0):
+    return guibender.exists(target, timeout)
 
 
-def wait(image, timeout=30):
-    return guibender.wait(image, timeout)
+def wait(target, timeout=30):
+    return guibender.wait(target, timeout)
 
 
-def wait_vanish(image, timeout=30):
-    return guibender.wait_vanish(image, timeout)
+def wait_vanish(target, timeout=30):
+    return guibender.wait_vanish(target, timeout)
 
 
 def get_mouse_location():
     return guibender.get_mouse_location()
 
 
-def hover(image_or_location):
-    return guibender.hover(image_or_location)
+def hover(target_or_location):
+    return guibender.hover(target_or_location)
 
 
-def click(image_or_location, modifiers=None):
-    return guibender.click(image_or_location, modifiers)
+def click(target_or_location, modifiers=None):
+    return guibender.click(target_or_location, modifiers)
 
 
-def right_click(image_or_location, modifiers=None):
-    return guibender.right_click(image_or_location, modifiers)
+def right_click(target_or_location, modifiers=None):
+    return guibender.right_click(target_or_location, modifiers)
 
 
-def double_click(image_or_location, modifiers=None):
-    return guibender.double_click(image_or_location, modifiers)
+def double_click(target_or_location, modifiers=None):
+    return guibender.double_click(target_or_location, modifiers)
 
 
-def multi_click(image_or_location, count=3, modifiers=None):
-    return guibender.multi_click(image_or_location, count, modifiers)
+def multi_click(target_or_location, count=3, modifiers=None):
+    return guibender.multi_click(target_or_location, count, modifiers)
 
 
-def mouse_down(image_or_location, button=None):
-    return guibender.mouse_down(image_or_location, button)
+def mouse_down(target_or_location, button=None):
+    return guibender.mouse_down(target_or_location, button)
 
 
-def mouse_up(image_or_location, button=None):
-    return guibender.mouse_up(image_or_location, button)
+def mouse_up(target_or_location, button=None):
+    return guibender.mouse_up(target_or_location, button)
 
 
-def drag_drop(src_image_or_location, dst_image_or_location, modifiers=None):
-    return guibender.drag_drop(src_image_or_location, dst_image_or_location, modifiers)
+def drag_drop(src_target_or_location, dst_target_or_location, modifiers=None):
+    return guibender.drag_drop(src_target_or_location, dst_target_or_location, modifiers)
 
 
-def drag_from(image_or_location, modifiers=None):
-    return guibender.drag(image_or_location, modifiers)
+def drag_from(target_or_location, modifiers=None):
+    return guibender.drag(target_or_location, modifiers)
 
 
-def drop_at(image_or_location, modifiers=None):
-    return guibender.drop_at(image_or_location, modifiers)
+def drop_at(target_or_location, modifiers=None):
+    return guibender.drop_at(target_or_location, modifiers)
 
 
 def press_keys(keys):
     return guibender.press(keys)
 
 
-def press_at(image_or_location=None, keys=None):
-    return guibender.press_at(image_or_location, keys)
+def press_at(target_or_location=None, keys=None):
+    return guibender.press_at(target_or_location, keys)
 
 
 def type_text(text, modifiers=None):
     return guibender.type_text(text, modifiers)
 
 
-def type_at(image_or_location=None, text='', modifiers=None):
-    return guibender.type_at(image_or_location, text, modifiers)
+def type_at(target_or_location=None, text='', modifiers=None):
+    return guibender.type_at(target_or_location, text, modifiers)

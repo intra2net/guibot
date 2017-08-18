@@ -57,70 +57,70 @@ class GuiBenderProxy(GuiBender):
         # override a property
         return self._proxify(super(GuiBenderProxy, self).get_mouse_location())
 
-    def find(self, image, timeout=10):
-        return self._proxify(super(GuiBenderProxy, self).find(image, timeout))
+    def find(self, target, timeout=10):
+        return self._proxify(super(GuiBenderProxy, self).find(target, timeout))
 
-    def find_all(self, image, timeout=10, allow_zero=False):
-        matches = super(GuiBenderProxy, self).find_all(image, timeout, allow_zero)
+    def find_all(self, target, timeout=10, allow_zero=False):
+        matches = super(GuiBenderProxy, self).find_all(target, timeout, allow_zero)
         proxified = []
         for match in matches:
             proxified.append(self._proxify(match))
         return proxified
 
-    def sample(self, image):
-        return self._proxify(super(GuiBenderProxy, self).sample(image))
+    def sample(self, target):
+        return self._proxify(super(GuiBenderProxy, self).sample(target))
 
-    def exists(self, image, timeout=0):
-        return self._proxify(super(GuiBenderProxy, self).exists(image, timeout))
+    def exists(self, target, timeout=0):
+        return self._proxify(super(GuiBenderProxy, self).exists(target, timeout))
 
-    def wait(self, image, timeout=30):
-        return self._proxify(super(GuiBenderProxy, self).wait(image, timeout))
+    def wait(self, target, timeout=30):
+        return self._proxify(super(GuiBenderProxy, self).wait(target, timeout))
 
-    def wait_vanish(self, image, timeout=30):
-        return self._proxify(super(GuiBenderProxy, self).wait_vanish(image, timeout))
+    def wait_vanish(self, target, timeout=30):
+        return self._proxify(super(GuiBenderProxy, self).wait_vanish(target, timeout))
 
-    def hover(self, image_or_location):
-        return self._proxify(super(GuiBenderProxy, self).hover(image_or_location))
+    def hover(self, target_or_location):
+        return self._proxify(super(GuiBenderProxy, self).hover(target_or_location))
 
-    def click(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).click(image_or_location, modifiers))
+    def click(self, target_or_location, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).click(target_or_location, modifiers))
 
-    def right_click(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).right_click(image_or_location, modifiers))
+    def right_click(self, target_or_location, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).right_click(target_or_location, modifiers))
 
-    def double_click(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).double_click(image_or_location, modifiers))
+    def double_click(self, target_or_location, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).double_click(target_or_location, modifiers))
 
-    def multi_click(self, image_or_location, count=3, modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).multi_click(image_or_location, count, modifiers))
+    def multi_click(self, target_or_location, count=3, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).multi_click(target_or_location, count, modifiers))
 
-    def mouse_down(self, image_or_location, button=None):
-        return self._proxify(super(GuiBenderProxy, self).mouse_down(image_or_location, button))
+    def mouse_down(self, target_or_location, button=None):
+        return self._proxify(super(GuiBenderProxy, self).mouse_down(target_or_location, button))
 
-    def mouse_up(self, image_or_location, button=None):
-        return self._proxify(super(GuiBenderProxy, self).mouse_up(image_or_location, button))
+    def mouse_up(self, target_or_location, button=None):
+        return self._proxify(super(GuiBenderProxy, self).mouse_up(target_or_location, button))
 
-    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).drag_drop(src_image_or_location,
-                                                                   dst_image_or_location, modifiers))
+    def drag_drop(self, src_target_or_location, dst_target_or_location, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).drag_drop(src_target_or_location,
+                                                                   dst_target_or_location, modifiers))
 
-    def drag_from(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).drag(image_or_location, modifiers))
+    def drag_from(self, target_or_location, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).drag(target_or_location, modifiers))
 
-    def drop_at(self, image_or_location, modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).drop_at(image_or_location, modifiers))
+    def drop_at(self, target_or_location, modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).drop_at(target_or_location, modifiers))
 
     def press_keys(self, keys):
         return self._proxify(super(GuiBenderProxy, self).press(keys))
 
-    def press_at(self, image_or_location=None, keys=None):
-        return self._proxify(super(GuiBenderProxy, self).press_at(image_or_location, keys))
+    def press_at(self, target_or_location=None, keys=None):
+        return self._proxify(super(GuiBenderProxy, self).press_at(target_or_location, keys))
 
     def type_text(self, text, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).type_text(text, modifiers))
 
-    def type_at(self, image_or_location=None, text='', modifiers=None):
-        return self._proxify(super(GuiBenderProxy, self).type_at(image_or_location, text, modifiers))
+    def type_at(self, target_or_location=None, text='', modifiers=None):
+        return self._proxify(super(GuiBenderProxy, self).type_at(target_or_location, text, modifiers))
 
 
 """

@@ -30,39 +30,39 @@ class IncompatibleTargetError(GuiBenderError):
 class FindError(GuiBenderError):
     """Exception raised when an Image cannot be found on the screen"""
 
-    def __init__(self, failed_image=None):
+    def __init__(self, failed_target=None):
         """
-        Build the exception possibly providing the failed image.
+        Build the exception possibly providing the failed target.
 
-        :param failed_image: the image that wasn't found
-        :type failed_iamge: :py:class:`image.Image` or None
+        :param failed_target: the target that wasn't found
+        :type failed_target: :py:class:`image.Target` or None
         """
-        if failed_image:
-            message = "The image %s could not be found on the screen" % failed_image
+        if failed_target:
+            message = "The target %s could not be found on the screen" % failed_target
         else:
-            message = "The image could not be found on the screen"
+            message = "The target could not be found on the screen"
         super(FindError, self).__init__(message)
 
 
 class NotFindError(GuiBenderError):
     """Exception raised when an Image can be found on the screen but should not be"""
 
-    def __init__(self, failed_image=None):
+    def __init__(self, failed_target=None):
         """
-        Build the exception possibly providing the failed image.
+        Build the exception possibly providing the failed target.
 
-        :param failed_image: the image that was found
-        :type failed_iamge: :py:class:`image.Image` or None
+        :param failed_target: the target that was found
+        :type failed_target: :py:class:`image.Target` or None
         """
-        if failed_image:
-            message = "The image %s was found on the screen while it was not expected" % failed_image
+        if failed_target:
+            message = "The target %s was found on the screen while it was not expected" % failed_target
         else:
-            message = "The image was found on the screen while it was not expected"
+            message = "The target was found on the screen while it was not expected"
         super(NotFindError, self).__init__(message)
 
 
 class UnsupportedBackendError(GuiBenderError):
-    """Exception raised when a non-existent method is used for finding an image"""
+    """Exception raised when a non-existent method is used for finding a target"""
 
 
 class MissingHotmapError(GuiBenderError):

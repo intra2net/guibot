@@ -97,7 +97,7 @@ class Target(object):
         Read the configuration from a .match file with the given filename.
 
         :param str filename_without_extention: match filename for the configuration
-        :returns: image finder with the parsed (and generated) settings
+        :returns: target finder with the parsed (and generated) settings
         :rtype: :py:class:`imagefinder.ImageFinder`
         :raises: :py:class:`IOError` if the respective match file couldn't be read
         """

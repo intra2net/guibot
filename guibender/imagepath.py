@@ -19,15 +19,15 @@ from errors import *
 
 class ImagePath(object):
     """
-    Handler for currently used image paths or
-    sources of images with a desired name.
+    Handler for currently used target paths or
+    sources of targets with a desired name.
 
     The methods of this class are shared among
     all of its instances.
     """
 
     # Shared between all instances
-    _imagePaths = []
+    _target_paths = []
 
     def add_path(self, directory):
         """
@@ -36,8 +36,8 @@ class ImagePath(object):
 
         :param str directory: path to add
         """
-        if directory not in ImagePath._imagePaths:
-            ImagePath._imagePaths.append(directory)
+        if directory not in ImagePath._target_paths:
+            ImagePath._target_paths.append(directory)
 
     def remove_path(self, directory):
         """
@@ -48,7 +48,7 @@ class ImagePath(object):
         :rtype: bool
         """
         try:
-            ImagePath._imagePaths.remove(directory)
+            ImagePath._target_paths.remove(directory)
         except:
             return False
 
@@ -57,18 +57,18 @@ class ImagePath(object):
     def clear(self):
         """Clear all currently accessible paths."""
         # empty list but keep reference
-        del ImagePath._imagePaths[:]
+        del ImagePath._target_paths[:]
 
     def search(self, filename):
         """
         Search for a filename in the currently accessible paths.
 
-        :param str filename: filename of the image to search for
-        :returns: the full name of the found image file
+        :param str filename: filename of the target to search for
+        :returns: the full name of the found target file
         :rtype: str
         :raises: :py:class:`FileNotFoundError` if no such file was found
         """
-        for directory in ImagePath._imagePaths:
+        for directory in ImagePath._target_paths:
             fullname = os.path.join(directory, filename)
             if os.path.exists(fullname):
                 return fullname
