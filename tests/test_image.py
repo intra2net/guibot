@@ -52,14 +52,14 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.height, my_copy.height)
         self.assertEqual(image.center_offset, my_copy.center_offset)
 
-    def test_target_offset(self):
+    def test_center_offset(self):
         image = Image(self.file_all_shapes)
 
-        target_offset = image.center_offset
-        self.assertEqual(0, target_offset.x)
-        self.assertEqual(0, target_offset.y)
+        center_offset = image.center_offset
+        self.assertEqual(0, center_offset.x)
+        self.assertEqual(0, center_offset.y)
 
-        new_image = image.with_target_offset(100, 30)
+        new_image = image.with_center_offset(100, 30)
         self.assertEqual(image.filename, new_image.filename)
         self.assertEqual(image.similarity, new_image.similarity)
         self.assertEqual(image.pil_image, new_image.pil_image)
@@ -67,14 +67,14 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.height, new_image.height)
         self.assertNotEqual(image.center_offset, new_image.center_offset)
 
-        target_offset = new_image.center_offset
-        self.assertEqual(100, target_offset.x)
-        self.assertEqual(30, target_offset.y)
+        center_offset = new_image.center_offset
+        self.assertEqual(100, center_offset.x)
+        self.assertEqual(30, center_offset.y)
 
         # check it's unchanged in the original
-        target_offset = image.center_offset
-        self.assertEqual(0, target_offset.x)
-        self.assertEqual(0, target_offset.y)
+        center_offset = image.center_offset
+        self.assertEqual(0, center_offset.x)
+        self.assertEqual(0, center_offset.y)
 
     def test_similarity(self):
         image = Image(self.file_all_shapes)
@@ -90,14 +90,6 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.width, new_image.width)
         self.assertEqual(image.height, new_image.height)
         self.assertEqual(image.center_offset, new_image.center_offset)
-
-    def test_exact(self):
-        image = Image(self.file_all_shapes)
-
-        new_image = image.exact()
-        self.assertEqual(1.0, new_image.similarity)
-        # TODO: create a separate config for defaults to extract this from there
-        self.assertEqual(0.8, image.similarity)
 
     def test_save(self):
         image = Image(self.file_all_shapes)

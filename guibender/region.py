@@ -498,27 +498,27 @@ class Region(object):
                 # don't hog the CPU
                 time.sleep(GlobalSettings.rescan_speed_on_find)
 
-    def sample(self, image):
+    def sample(self, target):
         """
-        Sample the similarity between and image and the screen,
-        i.e. an empirical probability that the image is on the screen.
+        Sample the similarity between a target and the screen,
+        i.e. an empirical probability that the target is on the screen.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`image.Target`
         :returns: similarity with best match on the screen
         :rtype: float
 
         .. note:: Not all matchers support a 'similarity' value. The ones that don't
-            will return zero similarity (similarly to the image logging case).
+            will return zero similarity (similarly to the target logging case).
         """
-        log.debug("Looking for image %s", image)
-        if isinstance(image, basestring):
-            image = Image(image)
-        if not image.use_own_settings:
-            image.match_settings = self.cv_backend
-            image.use_own_settings = True
-        image = image.with_similarity(0.0)
-        match = self.find(image)
+        log.debug("Looking for target %s", target)
+        if isinstance(target, basestring):
+            target = Image(target)
+        if not target.use_own_settings:
+            target.match_settings = self.cv_backend
+            target.use_own_settings = True
+        target = target.with_similarity(0.0)
+        match = self.find(target)
         similarity = match.similarity
         return similarity
 

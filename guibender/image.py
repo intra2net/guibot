@@ -179,6 +179,45 @@ class Target(object):
         if self.use_own_settings:
             self.save_configuration(filename_without_extesion)
 
+    def copy(self):
+        """
+        Perform a copy of the target data and match settings.
+
+        :returns: copy of the current target (with settings)
+        :rtype: :py:class:`image.Target`
+        """
+        selfcopy = copy.copy(self)
+        copy_settings = self.match_settings.copy()
+        selfcopy.match_settings = copy_settings
+        return selfcopy
+
+    def with_center_offset(self, xpos, ypos):
+        """
+        Perform a copy of the target data with new match settings
+        and with a newly defined center offset.
+
+        :param int xpos: new offset in the x direction
+        :param int ypos: new offset in the y direction
+        :returns: copy of the current target with new center offset
+        :rtype: :py:class:`image.Target`
+        """
+        new_target = self.copy()
+        new_target._center_offset = Location(xpos, ypos)
+        return new_target
+
+    def with_similarity(self, new_similarity):
+        """
+        Perform a copy of the target data with new match settings
+        and with a newly defined required similarity.
+
+        :param float new_similarity: new required similarity
+        :returns: copy of the current target with new similarity
+        :rtype: :py:class:`image.Target`
+        """
+        new_target = self.copy()
+        new_target.match_settings.params["find"]["similarity"].value = new_similarity
+        return new_target
+
 
 class Image(Target):
     """
@@ -265,56 +304,6 @@ class Image(Target):
         """
         return self._pil_image
     pil_image = property(fget=get_pil_image)
-
-    def copy(self):
-        """
-        Perform a copy of the image data and match settings.
-
-        :returns: copy of the current image (with settings)
-        :rtype: :py:class:`image.Image`
-        """
-        selfcopy = copy.copy(self)
-        copy_settings = self.match_settings.copy()
-        selfcopy.match_settings = copy_settings
-        return selfcopy
-
-    def with_target_offset(self, xpos, ypos):
-        """
-        Perform a copy of the image data without match settings
-        and with a newly defined target offset.
-
-        :param int xpos: new offset in the x direction
-        :param int ypos: new offset in the y direction
-        :returns: copy of the current image with new target offset
-        :rtype: :py:class:`image.Image`
-        """
-        new_image = self.copy()
-
-        new_image._center_offset = Location(xpos, ypos)
-        return new_image
-
-    def with_similarity(self, new_similarity):
-        """
-        Perform a copy of the image data without match settings
-        and with a newly defined required similarity.
-
-        :param float new_similarity: new required similarity
-        :returns: copy of the current image with new similarity
-        :rtype: :py:class:`image.Image`
-        """
-        new_image = self.copy()
-        new_image.match_settings.params["find"]["similarity"].value = new_similarity
-        return new_image
-
-    def exact(self):
-        """
-        Perform a copy of the image data without match settings
-        and with a maximum required similarity.
-
-        :returns: copy of the current image with maximum similarity
-        :rtype: :py:class:`image.Image`
-        """
-        return self.with_similarity(1.0)
 
     def load(self, filename, use_cache=True):
         """

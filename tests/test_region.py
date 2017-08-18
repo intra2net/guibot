@@ -150,12 +150,12 @@ class RegionTest(unittest.TestCase):
         match = Region().find(Image('shape_blue_circle.png'))
 
         # Positive target offset
-        match_offset = Region().find(Image('shape_blue_circle.png').with_target_offset(200, 100))
+        match_offset = Region().find(Image('shape_blue_circle.png').with_center_offset(200, 100))
         self.assertEqual(match.target.x + 200, match_offset.target.x)
         self.assertEqual(match.target.y + 100, match_offset.target.y)
 
         # Negative target offset
-        match_offset = Region().find(Image('shape_blue_circle.png').with_target_offset(-50, -30))
+        match_offset = Region().find(Image('shape_blue_circle.png').with_center_offset(-50, -30))
         self.assertEqual(match.target.x - 50, match_offset.target.x)
         self.assertEqual(match.target.y - 30, match_offset.target.y)
 
