@@ -83,6 +83,7 @@ class Region(object):
         # since the backends are read/write make them public attributes
         self.dc_backend = dc
         self.cv_backend = cv
+        self.default_target_type = Image
 
         self._last_match = None
         self._xpos = xpos
@@ -374,9 +375,9 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     """Image expect methods"""
-    def find(self, image, timeout=10):
+    def find(self, target, timeout=10):
         """
-        Find an image on the screen.
+        Find a target (image, text, etc.) on the screen.
 
         :param image: image to look for
         :type image: str or :py:class:`image.Target`
@@ -389,20 +390,20 @@ class Region(object):
         and is the milestone for all image expect methods.
         """
         # handle some specific target types
-        if isinstance(image, basestring):
-            image = Image(image)
-        log.debug("Looking for target %s", image)
+        if isinstance(target, basestring):
+            target = self.default_target_type(target)
+        log.debug("Looking for target %s", target)
 
-        if image.use_own_settings:
-            log.debug("Using special settings to match %s", image)
-            cv_backend = image.match_settings
+        if target.use_own_settings:
+            log.debug("Using special settings to match %s", target)
+            cv_backend = target.match_settings
         else:
-            if isinstance(image, Text) and not isinstance(self.cv_backend, TextMatcher):
+            if isinstance(target, Text) and not isinstance(self.cv_backend, TextMatcher):
                 raise IncompatibleTargetError("Need text matcher for matching text")
-            if isinstance(image, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
+            if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
                                                    isinstance(self.cv_backend, DeepMatcher)):
                 raise IncompatibleTargetError("Need pattern matcher for matching patterns")
-            image.match_settings = self.cv_backend
+            target.match_settings = self.cv_backend
             cv_backend = self.cv_backend
         dc_backend = self.dc_backend
 
@@ -410,7 +411,7 @@ class Region(object):
         while True:
             screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = cv_backend.find(image, screen_capture)
+            found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
                 from match import Match
                 match = found_pics[0]
@@ -427,22 +428,22 @@ class Region(object):
                     hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
-                    image.save(ndump_path)
-                raise FindError(image)
+                    target.save(ndump_path)
+                raise FindError(target)
 
             else:
                 # don't hog the CPU
                 time.sleep(GlobalSettings.rescan_speed_on_find)
 
-    def find_all(self, image, timeout=10, allow_zero=False):
+    def find_all(self, target, timeout=10, allow_zero=False):
         """
-        Find multiples of an image on the screen.
+        Find multiples of a target on the screen.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Target`
+        :param target: target to look for
+        :type target: str or :py:class:`image.Target`
         :param int timeout: timeout before giving up
         :param bool allow_zero: whether to allow zero matches or raise error
-        :returns: matches obtained from finding the image within the region
+        :returns: matches obtained from finding the target within the region
         :rtype: [:py:class:`match.Match`]
         :raises: :py:class:`errors.FindError` if no matches are found
                  and zero matches are not allowed
@@ -450,20 +451,20 @@ class Region(object):
         This method is similar the one above but allows for more than one match.
         """
         # handle some specific target types
-        if isinstance(image, basestring):
-            image = Image(image)
-        log.debug("Looking for multiple occurrences of target %s", image)
+        if isinstance(target, basestring):
+            target = self.default_target_type(target)
+        log.debug("Looking for multiple occurrences of target %s", target)
 
-        if image.use_own_settings:
-            log.debug("Using special settings to match %s", image)
-            cv_backend = image.match_settings
+        if target.use_own_settings:
+            log.debug("Using special settings to match %s", target)
+            cv_backend = target.match_settings
         else:
-            if isinstance(image, Text) and not isinstance(self.cv_backend, TextMatcher):
+            if isinstance(target, Text) and not isinstance(self.cv_backend, TextMatcher):
                 raise IncompatibleTargetError("Need text matcher for matching text")
-            if isinstance(image, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
+            if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
                                                    isinstance(self.cv_backend, DeepMatcher)):
                 raise IncompatibleTargetError("Need pattern matcher for matching patterns")
-            image.match_settings = self.cv_backend
+            target.match_settings = self.cv_backend
             cv_backend = self.cv_backend
         dc_backend = self.dc_backend
 
@@ -473,7 +474,7 @@ class Region(object):
         while True:
             screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = cv_backend.find(image, screen_capture)
+            found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
                 from match import Match
                 for match in found_pics:
@@ -490,8 +491,8 @@ class Region(object):
                     if GlobalSettings.save_needle_on_error:
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
-                        image.save('/tmp/guibender_last_finderror_needle.png')
-                    raise FindError(image)
+                        target.save('/tmp/guibender_last_finderror_needle.png')
+                    raise FindError(target)
 
             else:
                 # don't hog the CPU
