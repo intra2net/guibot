@@ -127,13 +127,13 @@ class RegionTest(unittest.TestCase):
         region = Region()
 
         match = region.find(Image('shape_green_box'))
-        self.assertEqual((match.x, match.y), (31, 191))
+        self.assertEqual((match.x, match.y), (30, 190))
         self.assertEqual(67, match.width)
         self.assertEqual(52, match.height)
 
         # Match again - this time just pass a filename
         match = region.find('shape_green_box')
-        self.assertEqual((match.x, match.y), (31, 191))
+        self.assertEqual((match.x, match.y), (30, 190))
         self.assertEqual(67, match.width)
         self.assertEqual(52, match.height)
 
@@ -180,13 +180,13 @@ class RegionTest(unittest.TestCase):
         greenbox = Image('shape_green_box')
         matches = boxes.find_all(greenbox)
         self.assertEqual(len(matches), 1)
-        self.assertEqual((matches[0].x, matches[0].y), (31, 191))
+        self.assertEqual((matches[0].x, matches[0].y), (30, 190))
         self.assertEqual(67, matches[0].width)
         self.assertEqual(52, matches[0].height)
 
         redbox = Image('shape_red_box')
         matches = boxes.find_all(redbox)
-        expected_matches = [(28, 26), (320, 28), (318, 117)]
+        expected_matches = [(27, 25), (319, 27), (317, 116)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             Region().hover(match)
@@ -202,7 +202,7 @@ class RegionTest(unittest.TestCase):
         boxes.cv_backend.params["template"]["nocolor"].value = False
         matches = boxes.find_all(pinkbox)
         # approximately the above coordinates since maching different needle
-        expected_matches = [(27, 37), (322, 39), (317, 128), (31, 256)]
+        expected_matches = [(26, 36), (320, 38), (318, 127), (30, 255)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             boxes.hover(match)
@@ -216,7 +216,7 @@ class RegionTest(unittest.TestCase):
         boxes.cv_backend.params["find"]["similarity"].value = 0.8
         boxes.cv_backend.params["template"]["nocolor"].value = True
         matches = boxes.find_all(pinkbox)
-        expected_matches = [(29, 121), (32, 196), (31, 256)]
+        expected_matches = [(28, 120), (31, 195), (30, 255)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             boxes.hover(match)
