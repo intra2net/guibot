@@ -20,11 +20,11 @@ import sys
 import unittest
 import common_test
 
-from imagepath import ImagePath
+from path import Path
 from errors import *
 
 
-class ImagePathTest(unittest.TestCase):
+class PathTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
@@ -37,10 +37,10 @@ class ImagePathTest(unittest.TestCase):
         os.chdir(self.saved_working_dir)
 
     def setUp(self):
-        self.path = ImagePath()
+        self.path = Path()
 
         # Clear paths from any previous unit test since
-        # the paths are shared between all ImagePath instances
+        # the paths are shared between all Path instances
         self.path.clear()
 
     def test_basic(self):
@@ -60,9 +60,9 @@ class ImagePathTest(unittest.TestCase):
         # Test without .png extension
         self.assertEqual('images/shape_black_box.png', self.path.search('shape_black_box'))
 
-        # Create another ImagePath instance.
+        # Create another Path instance.
         # It should contain the same search paths
-        new_finder = ImagePath()
+        new_finder = Path()
         self.assertEqual('images/shape_black_box.png', new_finder.search('shape_black_box'))
 
     def test_search_target_error(self):

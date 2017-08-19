@@ -21,8 +21,8 @@ from settings import GlobalSettings
 from location import Location
 from imagelogger import ImageLogger
 from errors import *
-from image import *
-from imagefinder import *
+from target import *
+from finder import *
 from desktopcontrol import *
 
 import logging
@@ -46,8 +46,8 @@ class Region(object):
         :param int height: height of the region (ypos+height for downright vertex y)
         :param dc: DC backend used for any desktop control
         :type dc: :py:class:`desktopcontrol.DesktopControl` or None
-        :param cv: CV backend used for any image finding
-        :type cv: :py:class:`imagefinder.ImageFinder` or None
+        :param cv: CV backend used for any target finding
+        :type cv: :py:class:`finder.Finder` or None
         :raises: :py:class:`UninitializedBackendError` if the region is empty
 
         If any of the backends is not defined a new one will be initiated
@@ -63,21 +63,21 @@ class Region(object):
             elif GlobalSettings.desktop_control_backend == "vncdotool":
                 dc = VNCDoToolDesktopControl()
         if cv is None:
-            if GlobalSettings.find_image_backend == "autopy":
+            if GlobalSettings.find_backend == "autopy":
                 cv = AutoPyMatcher()
-            elif GlobalSettings.find_image_backend == "contour":
+            elif GlobalSettings.find_backend == "contour":
                 cv = ContourMatcher()
-            elif GlobalSettings.find_image_backend == "template":
+            elif GlobalSettings.find_backend == "template":
                 cv = TemplateMatcher()
-            elif GlobalSettings.find_image_backend == "feature":
+            elif GlobalSettings.find_backend == "feature":
                 cv = FeatureMatcher()
-            elif GlobalSettings.find_image_backend == "cascade":
+            elif GlobalSettings.find_backend == "cascade":
                 cv = CascadeMatcher()
-            elif GlobalSettings.find_image_backend == "text":
+            elif GlobalSettings.find_backend == "text":
                 cv = TextMatcher()
-            elif GlobalSettings.find_image_backend == "hybrid":
+            elif GlobalSettings.find_backend == "hybrid":
                 cv = HybridMatcher()
-            elif GlobalSettings.find_image_backend == "deep":
+            elif GlobalSettings.find_backend == "deep":
                 cv = DeepMatcher()
 
         # since the backends are read/write make them public attributes
@@ -380,7 +380,7 @@ class Region(object):
         Find a target (image, text, etc.) on the screen.
 
         :param target: target to look for
-        :type target: str or :py:class:`image.Target`
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
@@ -440,7 +440,7 @@ class Region(object):
         Find multiples of a target on the screen.
 
         :param target: target to look for
-        :type target: str or :py:class:`image.Target`
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :param bool allow_zero: whether to allow zero matches or raise error
         :returns: matches obtained from finding the target within the region
@@ -504,7 +504,7 @@ class Region(object):
         i.e. an empirical probability that the target is on the screen.
 
         :param target: target to look for
-        :type target: str or :py:class:`image.Target`
+        :type target: str or :py:class:`target.Target`
         :returns: similarity with best match on the screen
         :rtype: float
 
@@ -528,7 +528,7 @@ class Region(object):
         success as a threshold for the existence.
 
         :param target: target to look for
-        :type target: str or :py:class:`image.Target`
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :returns: match obtained from finding the target within the region
                   or nothing if no match is found
@@ -547,7 +547,7 @@ class Region(object):
         as failing tolerance.
 
         :param target: target to look for
-        :type target: str or :py:class:`image.Target`
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
@@ -562,7 +562,7 @@ class Region(object):
         without success) with a given timeout as failing tolerance.
 
         :param target: target to look for
-        :type target: str or :py:class:`image.Target`
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :returns: whether the target disappeared from the region
         :rtype: bool
@@ -606,7 +606,7 @@ class Region(object):
 
         :param target_or_location: target or location to hover to
         :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Target`
+                                 str or :py:class:`target.Target`
         :returns: match from finding the target or nothing if hovering over a known location
         :rtype: :py:class:`match.Match` or None
         """
@@ -636,7 +636,7 @@ class Region(object):
 
         :param target_or_location: target or location to click on
         :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Target`
+                                 str or :py:class:`target.Target`
         :param modifiers: special keys to hold during clicking
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
@@ -702,7 +702,7 @@ class Region(object):
 
         :param target_or_location: target or location to toggle on
         :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Target`
+                                 str or :py:class:`target.Target`
         :param button: button index depending on backend (default is left button)
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :type button: int or None
@@ -722,7 +722,7 @@ class Region(object):
 
         :param target_or_location: target or location to toggle on
         :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Target`
+                                 str or :py:class:`target.Target`
         :param button: button index depending on backend (default is left button)
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :type button: int or None
@@ -742,10 +742,10 @@ class Region(object):
 
         :param src_target_or_location: target or location to drag from
         :type src_target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                     str or :py:class:`image.Target`
+                                     str or :py:class:`target.Target`
         :param dst_target_or_location: target or location to drop at
         :type dst_target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                     str or :py:class:`image.Target`
+                                     str or :py:class:`target.Target`
         :param modifiers: special keys to hold during dragging and dropping
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]

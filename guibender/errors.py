@@ -35,7 +35,7 @@ class FindError(GuiBenderError):
         Build the exception possibly providing the failed target.
 
         :param failed_target: the target that wasn't found
-        :type failed_target: :py:class:`image.Target` or None
+        :type failed_target: :py:class:`target.Target` or None
         """
         if failed_target:
             message = "The target %s could not be found on the screen" % failed_target
@@ -52,7 +52,7 @@ class NotFindError(GuiBenderError):
         Build the exception possibly providing the failed target.
 
         :param failed_target: the target that was found
-        :type failed_target: :py:class:`image.Target` or None
+        :type failed_target: :py:class:`target.Target` or None
         """
         if failed_target:
             message = "The target %s was found on the screen while it was not expected" % failed_target

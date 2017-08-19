@@ -20,12 +20,12 @@ import unittest
 import common_test
 
 from tempfile import NamedTemporaryFile
-from image import Image
-from imagefinder import ImageFinder, CVParameter
+from target import Image
+from finder import Finder, CVParameter
 from errors import *
 
 
-class ImageTest(unittest.TestCase):
+class TargetTest(unittest.TestCase):
 
     def setUp(self):
         self.file_all_shapes = os.path.join(common_test.unittest_dir, 'images', 'all_shapes.png')
@@ -37,7 +37,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(300, image.height)
 
         self.assertTrue(image.filename.find('all_shapes.png') is not -1)
-        self.assertIsInstance(image.match_settings, ImageFinder)
+        self.assertIsInstance(image.match_settings, Finder)
         self.assertFalse(image.use_own_settings)
 
     def test_copy_object(self):

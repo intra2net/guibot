@@ -21,19 +21,19 @@ import shutil
 
 import common_test
 from settings import GlobalSettings
-from imagepath import ImagePath
+from path import Path
 from imagelogger import ImageLogger
-from image import Image, Text, Pattern
+from target import Image, Text, Pattern
 from errors import *
-from imagefinder import *
+from finder import *
 
 
-class ImageFinderTest(unittest.TestCase):
+class FinderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.imagepath = ImagePath()
-        self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.path = Path()
+        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         # preserve values of static attributes
         self.prev_loglevel = GlobalSettings.image_logging_level
@@ -102,7 +102,7 @@ class ImageFinderTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
 
     def test_configure_backend(self):
-        finder = ImageFinder()
+        finder = Finder()
         finder.configure_backend("feature")
         self.assertEqual(finder.params["find"]["backend"], "feature")
 

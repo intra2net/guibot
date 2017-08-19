@@ -19,10 +19,10 @@ import unittest
 import pprint
 
 import common_test
-from imagefinder import FeatureMatcher
+from finder import FeatureMatcher
 from calibrator import Calibrator
-from imagepath import ImagePath
-from image import Image
+from path import Path
+from target import Image
 from errors import *
 
 
@@ -30,8 +30,8 @@ class CalibratorTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.imagepath = ImagePath()
-        self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.path = Path()
+        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
         finder = FeatureMatcher()

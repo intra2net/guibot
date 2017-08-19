@@ -28,12 +28,12 @@ guibender = GuiBender()
 last_match = guibender.last_match
 
 
-def add_image_path(directory):
-    guibender.add_image_path(directory)
+def add_path(directory):
+    guibender.add_path(directory)
 
 
-def remove_image_path(directory):
-    guibender.remove_image_path(directory)
+def remove_path(directory):
+    guibender.remove_path(directory)
 
 
 def find(target, timeout=10):

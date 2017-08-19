@@ -18,7 +18,7 @@ import logging
 log = logging.getLogger('guibender')
 log.addHandler(logging.NullHandler())
 
-from imagepath import ImagePath
+from path import Path
 from region import Region
 
 
@@ -36,17 +36,17 @@ class GuiBender(Region):
 
         :param dc: DC backend used for any desktop control
         :type dc: :py:class:`desktopcontrol.DesktopControl` or None
-        :param cv: CV backend used for any image finding
-        :type cv: :py:class:`imagefinder.ImageFinder` or None
+        :param cv: CV backend used for any target finding
+        :type cv: :py:class:`finder.Finder` or None
 
         We will initialize with default region of full screen and default
         desktop control and computer vision backends if none are provided.
         """
         super(GuiBender, self).__init__(dc=dc, cv=cv)
 
-        self.imagepath = ImagePath()
+        self.path = Path()
 
-    def add_image_path(self, directory):
+    def add_path(self, directory):
         """
         Add a path to the list of currently accessible paths
         if it wasn't already added.
@@ -54,13 +54,13 @@ class GuiBender(Region):
         :param str directory: path to add
         """
         log.info("Adding image path %s", directory)
-        self.imagepath.add_path(directory)
+        self.path.add_path(directory)
 
-    def remove_image_path(self, directory):
+    def remove_path(self, directory):
         """
         Remove a path from the list of currently accessible paths.
 
         :param str directory: path to add
         """
         log.info("Removing image path %s", directory)
-        self.imagepath.remove_path(directory)
+        self.path.remove_path(directory)

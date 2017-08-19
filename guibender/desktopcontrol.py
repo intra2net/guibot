@@ -24,7 +24,7 @@ from tempfile import NamedTemporaryFile
 
 import inputmap
 from settings import GlobalSettings, LocalSettings
-from image import Image
+from target import Image
 from location import Location
 from errors import *
 

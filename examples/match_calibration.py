@@ -20,10 +20,10 @@ import logging
 import shutil
 
 from guibender.settings import GlobalSettings
-from guibender.imagepath import ImagePath
-from guibender.image import Image
+from guibender.path import Path
+from guibender.target import Image
 from guibender.errors import *
-from guibender.imagefinder import *
+from guibender.finder import *
 from guibender.calibrator import Calibrator
 
 
@@ -42,8 +42,8 @@ GlobalSettings.image_logging_level = 0
 GlobalSettings.image_logging_destination = LOGPATH
 GlobalSettings.image_logging_step_width = 4
 
-imagepath = ImagePath()
-imagepath.add_path('images/')
+path = Path()
+path.add_path('images/')
 
 ImageLogger.step = 1
 
@@ -52,21 +52,21 @@ haystack = Image(HAYSTACK)
 
 
 # the matching step
-if GlobalSettings.find_image_backend == "autopy":
+if GlobalSettings.find_backend == "autopy":
     finder = AutoPyMatcher()
-elif GlobalSettings.find_image_backend == "contour":
+elif GlobalSettings.find_backend == "contour":
     finder = ContourMatcher()
-elif GlobalSettings.find_image_backend == "template":
+elif GlobalSettings.find_backend == "template":
     finder = TemplateMatcher()
-elif GlobalSettings.find_image_backend == "feature":
+elif GlobalSettings.find_backend == "feature":
     finder = FeatureMatcher()
-elif GlobalSettings.find_image_backend == "cascade":
+elif GlobalSettings.find_backend == "cascade":
     finder = CascadeMatcher()
-elif GlobalSettings.find_image_backend == "text":
+elif GlobalSettings.find_backend == "text":
     finder = TextMatcher()
-elif GlobalSettings.find_image_backend == "hybrid":
+elif GlobalSettings.find_backend == "hybrid":
     finder = HybridMatcher()
-elif GlobalSettings.find_image_backend == "deep":
+elif GlobalSettings.find_backend == "deep":
     finder = DeepMatcher()
 # non-default initial conditions for the calibration
 #finder.configure_backend(find_image = "feature")

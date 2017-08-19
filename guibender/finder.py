@@ -26,7 +26,7 @@ from imagelogger import ImageLogger
 from errors import *
 
 import logging
-log = logging.getLogger('guibender.imagefinder')
+log = logging.getLogger('guibender.finder')
 
 
 class CVParameter(object):
@@ -116,7 +116,7 @@ class CVParameter(object):
         return CVParameter(*args)
 
 
-class ImageFinder(LocalSettings):
+class Finder(LocalSettings):
     """
     Base for all image matching functionality and backends.
 
@@ -125,7 +125,7 @@ class ImageFinder(LocalSettings):
     hybrid approach. The image finding methods include finding one or all
     matches above the similarity defined in the configuration of each backend.
 
-    External (image finder) parameters are:
+    External (finder) parameters are:
         * detect filter - works for certain detectors and
             determines how many initial features are
             detected in an image (e.g. hessian threshold for
@@ -142,8 +142,8 @@ class ImageFinder(LocalSettings):
     """
 
     def __init__(self, configure=True, synchronize=True):
-        """Build an image finder and its CV backend settings."""
-        super(ImageFinder, self).__init__(configure=False, synchronize=False)
+        """Build a finder and its CV backend settings."""
+        super(Finder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
@@ -162,9 +162,9 @@ class ImageFinder(LocalSettings):
         if category != "find":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(ImageFinder, self).configure_backend(backend="cv", reset=True)
+            super(Finder, self).configure_backend(backend="cv", reset=True)
         if backend is None:
-            backend = GlobalSettings.find_image_backend
+            backend = GlobalSettings.find_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -187,10 +187,10 @@ class ImageFinder(LocalSettings):
         if category != "find":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(ImageFinder, self).synchronize_backend("cv", reset=True)
+            super(Finder, self).synchronize_backend("cv", reset=True)
         # no backend object to sync to
         if backend is None:
-            backend = GlobalSettings.find_image_backend
+            backend = GlobalSettings.find_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
@@ -303,12 +303,12 @@ class ImageFinder(LocalSettings):
 
     def find(self, needle, haystack):
         """
-        Find all needle images in a haystack image.
+        Find all needle targets in a haystack image.
 
         :param needle: image, text, or pattern to look for
-        :type needle: :py:class:`image.Target`
+        :type needle: :py:class:`target.Target`
         :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
+        :type haystack: :py:class:`target.Image`
         :returns: all found matches (one in most use cases)
         :rtype: [:py:class:`match.Match`]
         :raises: :py:class:`NotImplementedError` if the base class method is called
@@ -339,7 +339,7 @@ class ImageFinder(LocalSettings):
         ImageLogger.step += 1
 
 
-class AutoPyMatcher(ImageFinder):
+class AutoPyMatcher(Finder):
     """Simple matching backend provided by AutoPy."""
 
     def __init__(self, configure=True, synchronize=True):
@@ -433,7 +433,7 @@ class AutoPyMatcher(ImageFinder):
         return matches
 
 
-class ContourMatcher(ImageFinder):
+class ContourMatcher(Finder):
     """
     Contour matching backend provided by OpenCV.
 
@@ -692,7 +692,7 @@ class ContourMatcher(ImageFinder):
         ImageLogger.step += 1
 
 
-class TemplateMatcher(ImageFinder):
+class TemplateMatcher(Finder):
     """Template matching backend provided by OpenCV."""
 
     def __init__(self, configure=True, synchronize=True):
@@ -900,7 +900,7 @@ class TemplateMatcher(ImageFinder):
         ImageLogger.step += 1
 
 
-class FeatureMatcher(ImageFinder):
+class FeatureMatcher(Finder):
     """
     Feature matching backend provided by OpenCV.
 
@@ -1500,7 +1500,7 @@ class FeatureMatcher(ImageFinder):
             cv2.circle(hotmap, (int(x), int(y)), radius, (r, g, b))
 
 
-class CascadeMatcher(ImageFinder):
+class CascadeMatcher(Finder):
     """
     Cascade matching backend provided by OpenCV.
 
@@ -1648,7 +1648,7 @@ class TextMatcher(ContourMatcher):
             return
 
         if reset:
-            ImageFinder.configure_backend(self, "text", reset=True)
+            Finder.configure_backend(self, "text", reset=True)
         if category == "text" and backend is None:
             backend = "mixed"
         elif category == "tdetect" and backend is None:
@@ -1737,7 +1737,7 @@ class TextMatcher(ContourMatcher):
         if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            ImageFinder.synchronize_backend(self, "text", reset=True)
+            Finder.synchronize_backend(self, "text", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
@@ -2124,7 +2124,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
             return
 
         if reset:
-            ImageFinder.configure_backend(self, "hybrid", reset=True)
+            Finder.configure_backend(self, "hybrid", reset=True)
         if backend is None:
             backend = "mixed"
         if backend not in self.algorithms[self.categories[category]]:
@@ -2518,7 +2518,7 @@ class Hybrid2to1Matcher(HybridMatcher):
         ImageLogger.step += 1
 
 
-class DeepMatcher(ImageFinder):
+class DeepMatcher(Finder):
     """
     Deep learning matching backend provided by PyTorch.
 
@@ -2855,7 +2855,7 @@ class DeepMatcher(ImageFinder):
         ImageLogger.step += 1
 
 
-class CustomMatcher(ImageFinder):
+class CustomMatcher(Finder):
     """
     Custom matching backend with in-house CV algorithms.
 
@@ -2910,9 +2910,9 @@ class CustomMatcher(ImageFinder):
         In-house feature detection algorithm.
 
         :param needle: image to look for
-        :type needle: :py:class:`image.Image`
+        :type needle: :py:class:`target.Image`
         :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
+        :type haystack: :py:class:`target.Image`
 
         .. warning:: This method is currently not fully implemented. The current
                      MSER might not be used in the actual implementation.
@@ -3143,7 +3143,7 @@ class CustomMatcher(ImageFinder):
         return matches
 
 
-class ImageSetFinder(ImageFinder):
+class ImageSetFinder(Finder):
     """
     Match one of a set of images usually representing the same thing.
 
@@ -3177,7 +3177,7 @@ class ImageSetFinder(ImageFinder):
             # backends are the same as the ones for the base class
             super(ImageSetFinder, self).configure_backend(backend=backend, reset=True)
         if backend is None:
-            backend = GlobalSettings.find_image_backend
+            backend = GlobalSettings.find_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -3200,7 +3200,7 @@ class ImageSetFinder(ImageFinder):
             # backends are the same as the ones for the base class
             super(ImageSetFinder, self).synchronize_backend(backend, reset=True)
         if backend is None:
-            backend = GlobalSettings.find_image_backend
+            backend = GlobalSettings.find_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 

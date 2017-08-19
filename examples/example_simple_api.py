@@ -14,7 +14,7 @@ sys.path.insert(0, '..')
 from guibender.guibender_simple import *
 
 
-add_image_path('images')
+add_path('images')
 
 if exists('all_shapes'):
     print('Shapes exist')

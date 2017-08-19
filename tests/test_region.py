@@ -23,13 +23,13 @@ import subprocess
 import common_test
 
 from settings import GlobalSettings
-from imagepath import ImagePath
+from path import Path
 from location import Location
 from region import Region
 from match import Match
-from image import Image, Text
+from target import Image, Text
 from inputmap import Key
-from imagefinder import *
+from finder import *
 from desktopcontrol import *
 from errors import *
 
@@ -38,8 +38,8 @@ class RegionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.imagepath = ImagePath()
-        self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.path = Path()
+        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
         self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')
@@ -65,7 +65,7 @@ class RegionTest(unittest.TestCase):
             shutil.rmtree(GlobalSettings.image_logging_destination)
 
     def show_image(self, filename):
-        filename = self.imagepath.search(filename)
+        filename = self.path.search(filename)
         self.child_img = subprocess.Popen(['python', self.script_img, filename])
         # HACK: avoid small variability in loading speed
         time.sleep(3)

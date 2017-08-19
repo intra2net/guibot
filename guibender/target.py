@@ -23,8 +23,8 @@ except ImportError:
 
 from settings import GlobalSettings
 from location import Location
-from imagepath import ImagePath
-from imagefinder import *
+from path import Path
+from finder import *
 from errors import *
 
 
@@ -39,27 +39,27 @@ class Target(object):
         Build a target object.
 
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`imagefinder.ImageFinder` or None
+        :type match_settings: :py:class:`finder.Finder` or None
         """
         self.match_settings = match_settings
         if self.match_settings != None:
             self.use_own_settings = True
         else:
-            if GlobalSettings.find_image_backend == "autopy":
+            if GlobalSettings.find_backend == "autopy":
                 self.match_settings = AutoPyMatcher()
-            elif GlobalSettings.find_image_backend == "contour":
+            elif GlobalSettings.find_backend == "contour":
                 self.match_settings = ContourMatcher()
-            elif GlobalSettings.find_image_backend == "template":
+            elif GlobalSettings.find_backend == "template":
                 self.match_settings = TemplateMatcher()
-            elif GlobalSettings.find_image_backend == "feature":
+            elif GlobalSettings.find_backend == "feature":
                 self.match_settings = FeatureMatcher()
-            elif GlobalSettings.find_image_backend == "cascade":
+            elif GlobalSettings.find_backend == "cascade":
                 self.match_settings = CascadeMatcher()
-            elif GlobalSettings.find_image_backend == "text":
+            elif GlobalSettings.find_backend == "text":
                 self.match_settings = TextMatcher()
-            elif GlobalSettings.find_image_backend == "hybrid":
+            elif GlobalSettings.find_backend == "hybrid":
                 self.match_settings = HybridMatcher()
-            elif GlobalSettings.find_image_backend == "deep":
+            elif GlobalSettings.find_backend == "deep":
                 self.match_settings = DeepMatcher()
             self.use_own_settings = False
 
@@ -98,7 +98,7 @@ class Target(object):
 
         :param str filename_without_extention: match filename for the configuration
         :returns: target finder with the parsed (and generated) settings
-        :rtype: :py:class:`imagefinder.ImageFinder`
+        :rtype: :py:class:`finder.Finder`
         :raises: :py:class:`IOError` if the respective match file couldn't be read
         """
         parser = config.RawConfigParser()
@@ -114,7 +114,7 @@ class Target(object):
         try:
             backend_name = parser.get("find", 'backend')
         except config.NoOptionError:
-            backend_name = GlobalSettings.find_image_backend
+            backend_name = GlobalSettings.find_backend
 
         if backend_name == "autopy":
             finder = AutoPyMatcher()
@@ -157,7 +157,7 @@ class Target(object):
         previously added paths.
         """
         if not os.path.exists(filename):
-            filename = ImagePath().search(filename)
+            filename = Path().search(filename)
         filename_without_extesion = os.path.splitext(filename)[0]
         match_filename = filename_without_extesion + ".match"
         if os.path.exists(match_filename):
@@ -184,7 +184,7 @@ class Target(object):
         Perform a copy of the target data and match settings.
 
         :returns: copy of the current target (with settings)
-        :rtype: :py:class:`image.Target`
+        :rtype: :py:class:`target.Target`
         """
         selfcopy = copy.copy(self)
         copy_settings = self.match_settings.copy()
@@ -199,7 +199,7 @@ class Target(object):
         :param int xpos: new offset in the x direction
         :param int ypos: new offset in the y direction
         :returns: copy of the current target with new center offset
-        :rtype: :py:class:`image.Target`
+        :rtype: :py:class:`target.Target`
         """
         new_target = self.copy()
         new_target._center_offset = Location(xpos, ypos)
@@ -212,7 +212,7 @@ class Target(object):
 
         :param float new_similarity: new required similarity
         :returns: copy of the current target with new similarity
-        :rtype: :py:class:`image.Target`
+        :rtype: :py:class:`target.Target`
         """
         new_target = self.copy()
         new_target.match_settings.params["find"]["similarity"].value = new_similarity
@@ -238,7 +238,7 @@ class Image(Target):
         :param pil_image: image data - use cache or recreate if none
         :type pil_image: :py:class:`PIL.Image` or None
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`imagefinder.ImageFinder` or None
+        :type match_settings: :py:class:`finder.Finder` or None
         :param bool use_cache: whether to cache image data for better performance
         """
         super(Image, self).__init__(match_settings)
@@ -314,7 +314,7 @@ class Image(Target):
         """
         super(Image, self).load(filename)
         if not os.path.exists(filename):
-            filename = ImagePath().search(filename)
+            filename = Path().search(filename)
 
         # TODO: check if mtime of the file changed -> cache dirty?
         if use_cache and filename in self._cache:
@@ -332,7 +332,7 @@ class Image(Target):
 
         :param str filename: name for the target file
         :returns: copy of the current image with the new filename
-        :rtype: :py:class:`image.Image`
+        :rtype: :py:class:`target.Image`
 
         The image is compressed upon saving with a PNG compression setting
         specified by :py:func:`settings.GlobalSettings.image_quality`.
@@ -362,7 +362,7 @@ class ImageSet(Target):
         :param images: name of the image file if any
         :type images: [:py:class:`Image`] or None
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`imagefinder.ImageFinder` or None
+        :type match_settings: :py:class:`finder.Finder` or None
         :param bool use_cache: whether to cache image data for better performance
         """
         super(ImageSet, self).__init__(match_settings)
@@ -418,13 +418,13 @@ class Text(Target):
 
         :param str value: text value to search for
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`imagefinder.ImageFinder` or None
+        :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Text, self).__init__(match_settings)
         self.value = value
 
         try:
-            filename = ImagePath().search(str(self) + ".txt")
+            filename = Path().search(str(self) + ".txt")
             self.load(filename)
         except FileNotFoundError:
             # text generated on the fly is also acceptable
@@ -442,7 +442,7 @@ class Text(Target):
         """
         super(Text, self).load(filename)
         if not os.path.exists(filename):
-            filename = ImagePath().search(filename)
+            filename = Path().search(filename)
         with open(filename) as f:
             self.value = f.read()
 
@@ -493,7 +493,7 @@ class Pattern(Target):
 
         :param str data_filename: name of the text file if any
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`imagefinder.ImageFinder` or None
+        :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Pattern, self).__init__(match_settings)
         self.data_file = None
@@ -515,7 +515,7 @@ class Pattern(Target):
         """
         super(Pattern, self).load(filename)
         if not os.path.exists(filename):
-            filename = ImagePath().search(filename)
+            filename = Path().search(filename)
         self.data_file = filename
 
     def save(self, filename):

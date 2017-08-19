@@ -54,7 +54,7 @@ class GlobalSettings(type):
 
     # backends shared between all instances
     _desktop_control_backend = "autopy"
-    _find_image_backend = "hybrid"
+    _find_backend = "hybrid"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "ORB"
@@ -300,7 +300,7 @@ class GlobalSettings(type):
 
     # these methods do not check for valid values since this
     # is already done at the equalizer on initialization
-    def find_image_backend(self, value=None):
+    def find_backend(self, value=None):
         """
         Same as :py:func:`GlobalSettings.image_logging_destination` but with
 
@@ -318,11 +318,11 @@ class GlobalSettings(type):
             i.e. the backend has to be installed or you will have unsatisfied imports.
         """
         if value is None:
-            return GlobalSettings._find_image_backend
+            return GlobalSettings._find_backend
         else:
-            GlobalSettings._find_image_backend = value
+            GlobalSettings._find_backend = value
     #: name of the computer vision backend
-    find_image_backend = property(fget=find_image_backend, fset=find_image_backend)
+    find_backend = property(fget=find_backend, fset=find_backend)
 
     def template_match_backend(self, value=None):
         """
