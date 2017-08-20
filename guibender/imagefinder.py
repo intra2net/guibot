@@ -1975,27 +1975,25 @@ class TextMatcher(ContourMatcher):
 
         # group characters into horizontally-correlated regions
         text_regions = []
-        for region1 in char_regions:
+        dx, dy = self.params["tdetect"]["horizontalSpacing"].value, self.params["tdetect"]["verticalVariance"].value
+        for i, region1 in enumerate(char_regions):
             # region was already merged
             if region1 is None:
                 continue
-            for i, region2 in enumerate(char_regions):
+            for j, region2 in enumerate(char_regions):
                 # region is compared to itself or to merged region
                 if region1 == region2 or region2 is None:
                     continue
                 x1, y1, w1, h1 = region1
                 x2, y2, w2, h2 = region2
-                dx, dy = self.params["tdetect"]["horizontalSpacing"], self.params["tdetect"]["verticalVariance"]
                 if abs(x1 + w1 - x2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < dy:
                     region1 = [min(x1,x2), min(y1,y2), max(x1+w1,x2+w2)-min(x1,x2), max(y1+h1,y2+h2)-min(y1,y2)]
-                    char_regions[i] = None
-                    if i < len(char_regions) - 1:
-                        continue
-                x, y, w, h = region1
-                cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
-                cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 255), 1)
-                text_regions.append(region1)
-                break
+                    char_regions[j] = None
+            x, y, w, h = region1
+            cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 255, 0), 1)
+            text_regions.append(region1)
+            char_regions[i] = None
 
         return text_regions
 
