@@ -1683,6 +1683,7 @@ class TextMatcher(ContourMatcher):
                 self.params[category]["maxAspectRatio"] = CVParameter(1.0, 0.0, 1.0)
                 self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None)
                 self.params[category]["verticalVariance"] = CVParameter(10, 0, None)
+                self.params[category]["minChars"] = CVParameter(3, 0, None)
             elif backend == "components":
                 self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4)
         elif category == "ocr":
@@ -1976,10 +1977,12 @@ class TextMatcher(ContourMatcher):
         # group characters into horizontally-correlated regions
         text_regions = []
         dx, dy = self.params["tdetect"]["horizontalSpacing"].value, self.params["tdetect"]["verticalVariance"].value
+        min_chars_for_text = self.params["tdetect"]["minChars"].value
         for i, region1 in enumerate(char_regions):
             # region was already merged
             if region1 is None:
                 continue
+            chars_for_text = 0
             for j, region2 in enumerate(char_regions):
                 # region is compared to itself or to merged region
                 if region1 == region2 or region2 is None:
@@ -1988,7 +1991,10 @@ class TextMatcher(ContourMatcher):
                 x2, y2, w2, h2 = region2
                 if abs(x1 + w1 - x2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < dy:
                     region1 = [min(x1,x2), min(y1,y2), max(x1+w1,x2+w2)-min(x1,x2), max(y1+h1,y2+h2)-min(y1,y2)]
+                    chars_for_text += 1
                     char_regions[j] = None
+            if chars_for_text < min_chars_for_text:
+                continue
             x, y, w, h = region1
             cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
             cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 255, 0), 1)
