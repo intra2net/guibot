@@ -17,6 +17,10 @@ import os
 from errors import *
 
 
+import logging
+log = logging.getLogger('guibender.path')
+
+
 class Path(object):
     """
     Handler for currently used target paths or
@@ -37,6 +41,7 @@ class Path(object):
         :param str directory: path to add
         """
         if directory not in Path._target_paths:
+            log.info("Adding target path %s", directory)
             Path._target_paths.append(directory)
 
     def remove_path(self, directory):
@@ -52,6 +57,7 @@ class Path(object):
         except:
             return False
 
+        log.info("Removing target path %s", directory)
         return True
 
     def clear(self):

@@ -53,7 +53,6 @@ class GuiBender(Region):
 
         :param str directory: path to add
         """
-        log.info("Adding image path %s", directory)
         self.path.add_path(directory)
 
     def remove_path(self, directory):
@@ -62,5 +61,4 @@ class GuiBender(Region):
 
         :param str directory: path to add
         """
-        log.info("Removing image path %s", directory)
         self.path.remove_path(directory)
