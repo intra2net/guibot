@@ -482,7 +482,7 @@ class ContourMatcher(ImageFinder):
             self.params[category]["retrievalMode"] = CVParameter(2, 1, 4)
             # 1 CHAIN_APPROX_NONE, 2 CHAIN_APPROX_SIMPLE, 3 CHAIN_APPROX_TC89_L1, 4 CHAIN_APPROX_TC89_KCOS
             self.params[category]["approxMethod"] = CVParameter(2, 1, 4)
-            self.params[category]["minArea"] = CVParameter(9, 0, None)
+            self.params[category]["minArea"] = CVParameter(0, 0, None)
             # 1 L1 method, 2 L2 method, 3 L3 method
             self.params[category]["contoursMatch"] = CVParameter(1, 1, 3)
         elif category == "threshold":
@@ -1675,12 +1675,12 @@ class TextMatcher(ContourMatcher):
                 self.params[category]["minProbability2"] = CVParameter(0.3, 0.0, 1.0)
             elif backend == "contours":
                 self.params[category]["maxArea"] = CVParameter(10000, 0, None)
-                self.params[category]["minWidth"] = CVParameter(3, 0, None)
+                self.params[category]["minWidth"] = CVParameter(1, 0, None)
                 self.params[category]["maxWidth"] = CVParameter(100, 0, None)
-                self.params[category]["minHeight"] = CVParameter(3, 0, None)
+                self.params[category]["minHeight"] = CVParameter(1, 0, None)
                 self.params[category]["maxHeight"] = CVParameter(100, 0, None)
-                self.params[category]["minAspectRatio"] = CVParameter(0.25, 0.0, 1.0)
-                self.params[category]["maxAspectRatio"] = CVParameter(1.0, 0.0, 1.0)
+                self.params[category]["minAspectRatio"] = CVParameter(0.1, 0.0, None)
+                self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None)
                 self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None)
                 self.params[category]["verticalVariance"] = CVParameter(10, 0, None)
                 self.params[category]["minChars"] = CVParameter(3, 0, None)
@@ -1959,14 +1959,17 @@ class TextMatcher(ContourMatcher):
         char_regions = []
         for hcontour in haystack_contours:
             x, y, w, h = cv2.boundingRect(hcontour)
-            if (cv2.contourArea(hcontour) < self.params["contour"]["minArea"].value or
-                cv2.contourArea(hcontour) > self.params["tdetect"]["maxArea"].value or
+            area, ratio = cv2.contourArea(hcontour), float(w)/h
+            if (area < self.params["contour"]["minArea"].value or
+                area > self.params["tdetect"]["maxArea"].value or
                 w < self.params["tdetect"]["minWidth"].value or
                 w > self.params["tdetect"]["maxWidth"].value or
                 h < self.params["tdetect"]["minHeight"].value or
                 h > self.params["tdetect"]["maxHeight"].value or
-                float(w)/h < self.params["tdetect"]["minAspectRatio"].value or
-                float(w)/h > self.params["tdetect"]["maxAspectRatio"].value):
+                ratio < self.params["tdetect"]["minAspectRatio"].value or
+                ratio > self.params["tdetect"]["maxAspectRatio"].value):
+                logging.debug("Ignoring contour with area %sx%s>%s and aspect ratio %s/%s=%s",
+                              w, h, area, w, h, ratio)
                 continue
             else:
                 cv2.rectangle(char_canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
