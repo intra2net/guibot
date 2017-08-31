@@ -1692,9 +1692,17 @@ class TextMatcher(ContourMatcher):
                 self.params[category]["language"] = CVParameter("eng")
                 self.params[category]["char_whitelist"] = CVParameter("0123456789abcdefghijklmnopqrst"
                                                                       "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
+                self.params[category]["oem"] = CVParameter(3, 0, 3)
+                # 13 different page segmentation modes - see Tesseract API
+                self.params[category]["psmode"] = CVParameter(3, 0, 13)
             elif backend == "hmm":
                 # 1 NM 2 CNN as classifiers for hidden markov models (see OpenCV documentation)
                 self.params[category]["classifier"] = CVParameter(1, 1, 2)
+            # 13 different page segmentation modes - see Tesseract API
+            self.params[category]["min_confidence"] = CVParameter(0, 0, 100)
+            # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
+            self.params[category]["component_level"] = CVParameter(0, 0, 1)
 
     def configure_backend(self, backend=None, category="text", reset=False):
         """
@@ -1755,8 +1763,11 @@ class TextMatcher(ContourMatcher):
 
         elif category == "ocr":
             if self.params["ocr"]["backend"] == "tesseract":
-                self.ocr = cv2.text.OCRTesseract_create(language=self.params["ocr"]["language"].value,
-                                                        char_whitelist=self.params["ocr"]["char_whitelist"].value)
+                self.ocr = cv2.text.OCRTesseract_create(datapath,
+                                                        language=self.params["ocr"]["language"].value,
+                                                        char_whitelist=self.params["ocr"]["char_whitelist"].value,
+                                                        oem=self.params[category]["oem"].value,
+                                                        psmode=self.params[category]["psmode"].value)
             elif self.params["ocr"]["backend"] in ["hmm", "beamSearch"]:
 
                 import numpy
@@ -1860,7 +1871,9 @@ class TextMatcher(ContourMatcher):
             #vector<string> words;
             #vector<float> confidences;
             #output = ocr.run(group_img, &boxes, &words, &confidences, cv2.text.OCR_LEVEL_WORD)
-            output = self.ocr.run(text_img, cv2.text.OCR_LEVEL_WORD)
+            output = self.ocr.run(text_img, text_img,
+                                  self.params["ocr"]["min_confidence"].value,
+                                  self.params["ocr"]["component_level"].value)
             log.debug("OCR output = '%s'", output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
