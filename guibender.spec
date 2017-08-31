@@ -3,7 +3,7 @@
 
 Name:           guibender
 Version:        0.11
-Release:        2
+Release:        3
 Summary:        GUI testing tool
 
 Group:          Development/Tools
@@ -24,7 +24,7 @@ Requires:       opencv >= 3.1
 Requires:       opencv-python
 
 %description
-A tool to use for GUI testing using autopy and OpenCV.
+A tool to use for GUI testing using OpenCV and PyTorch.
 
 #Patch1:        first_fix.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
@@ -51,12 +51,12 @@ rm -rf %{buildroot}
 %{__install} -d %{buildroot}%{python_sitelib}/guibender/guibender
 %{__install} -d %{buildroot}%{python_sitelib}/guibender/tests/images
 %{__install} -d %{buildroot}%{python_sitelib}/guibender/examples/images
+%{__install} -d %{buildroot}%{python_sitelib}/guibender/misc/tessdata
 %{__cp} -a guibender/* %{buildroot}%{python_sitelib}/guibender/guibender
 %{__cp} -a tests/* %{buildroot}%{python_sitelib}/guibender/tests
 %{__cp} -a examples/* %{buildroot}%{python_sitelib}/guibender/examples
-# TODO: check whether the config and spec are needed
-# TODO: perhaps move the doc/design ideas to %doc
-%{__install} -t %{buildroot}%{python_sitelib}/guibender/ __init__.py guibender.spec run_tests.sh
+%{__cp} -a misc/* %{buildroot}%{python_sitelib}/guibender/misc
+%{__install} -t %{buildroot}%{python_sitelib}/guibender/ __init__.py run_tests.sh
 
 
 %clean
@@ -76,8 +76,6 @@ rm -rf %{buildroot}
 %{python_sitelib}/guibender/__init__.py
 %exclude %{python_sitelib}/guibender/__init__.pyc
 %exclude %{python_sitelib}/guibender/__init__.pyo
-%{python_sitelib}/guibender/guibender.spec
-%{python_sitelib}/guibender/run_tests.sh
 %{python_sitelib}/guibender/guibender
 %exclude %{python_sitelib}/guibender/guibender/*.pyc
 %exclude %{python_sitelib}/guibender/guibender/*.pyo
@@ -87,7 +85,17 @@ rm -rf %{buildroot}
 %{python_sitelib}/guibender/examples
 %exclude %{python_sitelib}/guibender/examples/*.pyc
 %exclude %{python_sitelib}/guibender/examples/*.pyo
+%{python_sitelib}/guibender/misc
+%exclude %{python_sitelib}/guibender/misc/*.pyc
+%exclude %{python_sitelib}/guibender/misc/*.pyo
+%{python_sitelib}/guibender/run_tests.sh
+
 
 %changelog
-* Mon Apr 13 2013 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.10-1
+* Mon May 22 2017 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.11-2
+- Update from OpenCV 2.4 to OpenCV 3.1
+- Addition of CV backends like OCR (tesseract), CNN (PyTorch)
+- Multiple target types beyond images
+
+* Sat Apr 13 2013 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.10-1
 - Initial spec file
