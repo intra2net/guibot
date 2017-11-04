@@ -75,8 +75,8 @@ class Region(object):
                 cv = CascadeMatcher()
             elif GlobalSettings.find_backend == "text":
                 cv = TextMatcher()
-            elif GlobalSettings.find_backend == "hybrid":
-                cv = HybridMatcher()
+            elif GlobalSettings.find_backend == "tempfeat":
+                cv = TemplateFeatureMatcher()
             elif GlobalSettings.find_backend == "deep":
                 cv = DeepMatcher()
 

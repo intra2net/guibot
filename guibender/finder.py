@@ -148,7 +148,7 @@ class Finder(LocalSettings):
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
         self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature",
-                                           "cascade", "text", "hybrid", "deep")
+                                           "cascade", "text", "tempfeat", "deep")
 
         # other attributes
         self.imglog = ImageLogger()
@@ -2089,7 +2089,7 @@ class TextMatcher(ContourMatcher):
         ImageLogger.step += 1
 
 
-class HybridMatcher(TemplateMatcher, FeatureMatcher):
+class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
     """
     Hybrid matcher using both OpenCV's template and feature matching.
 
@@ -2103,18 +2103,18 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's template and feature matching."""
-        super(HybridMatcher, self).__init__(configure=False, synchronize=False)
+        super(TemplateFeatureMatcher, self).__init__(configure=False, synchronize=False)
 
-        self.categories["hybrid"] = "hybrid_matchers"
-        self.algorithms["hybrid_matchers"] = ("mixed",)
+        self.categories["tempfeat"] = "tempfeat_matchers"
+        self.algorithms["tempfeat_matchers"] = ("mixed",)
 
         if configure:
             self.__configure(reset=True)
         if synchronize:
             FeatureMatcher.synchronize(self, reset=False)
 
-    def __configure_backend(self, backend=None, category="hybrid", reset=False):
-        if category not in ["hybrid", "template", "feature", "fdetect", "fextract", "fmatch"]:
+    def __configure_backend(self, backend=None, category="tempfeat", reset=False):
+        if category not in ["tempfeat", "template", "feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["feature", "fdetect", "fextract", "fmatch"]:
             FeatureMatcher.configure_backend(self, backend, category, reset)
@@ -2124,7 +2124,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
             return
 
         if reset:
-            Finder.configure_backend(self, "hybrid", reset=True)
+            Finder.configure_backend(self, "tempfeat", reset=True)
         if backend is None:
             backend = "mixed"
         if backend not in self.algorithms[self.categories[category]]:
@@ -2135,7 +2135,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         self.params[category]["backend"] = backend
         self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0, 0.1, 0.1)
 
-    def configure_backend(self, backend=None, category="hybrid", reset=False):
+    def configure_backend(self, backend=None, category="tempfeat", reset=False):
         """
         Custom implementation of the base method.
 
@@ -2145,7 +2145,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
     def __configure(self, template_match=None, feature_detect=None,
                   feature_extract=None, feature_match=None, reset=True):
-        self.__configure_backend(category="hybrid", reset=reset)
+        self.__configure_backend(category="tempfeat", reset=reset)
         self.__configure_backend(template_match, "template")
         self.__configure_backend(category="feature")
         self.__configure_backend(feature_detect, "fdetect")
@@ -2174,9 +2174,9 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         ImageLogger.accumulate_logging = True
 
         # use a different lower similarity for the template matching
-        template_similarity = self.params["hybrid"]["front_similarity"].value
+        template_similarity = self.params["tempfeat"]["front_similarity"].value
         feature_similarity = self.params["find"]["similarity"].value
-        log.debug("Using hybrid matching with template similarity %s "
+        log.debug("Using tempfeat matching with template similarity %s "
                   "and feature similarity %s", template_similarity,
                   feature_similarity)
 
@@ -2307,7 +2307,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         elif len(self.imglog.hotmaps) == 0:
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
-        # knowing how the hybrid works this estimates
+        # knowing how the tempfeat works this estimates
         # the expected number of cases starting from 1 (i+1)
         # to make sure the winner is the first alphabetically
         candidate_num = len(self.imglog.similarities) / 2
@@ -2326,193 +2326,6 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
             name = "imglog%s-3hotmap-%s.png" % (self.imglog.printable_step,
                                                 self.imglog.similarities[-1])
             self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
-
-        self.imglog.clear()
-        ImageLogger.step += 1
-
-
-class Hybrid2to1Matcher(HybridMatcher):
-    """
-    Hybrid matcher using both OpenCV's template and feature matching.
-
-    Two thirds feature matching and one third template matching.
-    Divide the haystack into x,y subregions and perform feature
-    matching once for each dx,dy translation of each subregion.
-
-    .. warning:: This matcher is currently not supported by our configuration.
-    """
-
-    def __init__(self, configure=True, synchronize=True):
-        """Build a CV backend using OpenCV's template and feature matching."""
-        super(Hybrid2to1Matcher, self).__init__(configure=False, synchronize=False)
-
-        # additional preparation (no synchronization available)
-        if configure:
-            self.__configure_backend(reset=True)
-
-    def __configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None, reset=True):
-        super(Hybrid2to1Matcher, self).configure(template_match, feature_detect,
-                                                 feature_extract, feature_match,
-                                                 reset=reset)
-        self.__configure_backend(category="hybrid2to1", reset=False)
-
-    def configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None, reset=True):
-        """
-        Custom implementation of the base methods.
-
-        See base methods for details.
-        """
-        self.__configure(template_match, feature_detect, feature_extract, feature_match, reset)
-
-    def __configure_backend(self, backend=None, category="hybrid2to1", reset=False):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if category != "hybrid2to1":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
-        if reset:
-            super(Hybrid2to1Matcher, self).configure_backend("hybrid2to1", reset=True)
-
-        self.params[category] = {}
-        self.params[category]["backend"] = "none"
-        self.params[category]["x"] = CVParameter(1000, 1, None)
-        self.params[category]["y"] = CVParameter(1000, 1, None)
-        self.params[category]["dx"] = CVParameter(100, 1, None)
-        self.params[category]["dy"] = CVParameter(100, 1, None)
-
-    def configure_backend(self, backend=None, category="hybrid2to1", reset=False):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        self.__configure_backend(backend, category, reset)
-
-    def find(self, needle, haystack):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-
-        .. warning:: If this search is intensive (you use small frequent
-            subregions) please disable or reduce the image logging.
-
-        .. todo:: Currently this method is dangerous due to a possible
-            memory leak. Therefore avoid getting closer to a more normal
-            template matching or any small size and delta (x,y and dx,dy) that
-            will cause too many match attempts.
-
-        Example for normal template matching::
-
-            find_2to1hybrid(n, h, s, n.width, n.height, 1, 1)
-
-        Example to divide the screen into four quadrants and jump with distance
-        halves of these quadrants::
-
-            find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
-        """
-        # accumulate one template and multiple feature cases
-        ImageLogger.accumulate_logging = True
-
-        x = self.params["find"]["x"].value
-        y = self.params["find"]["y"].value
-        dx = self.params["find"]["dx"].value
-        dy = self.params["find"]["dy"].value
-        log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
-                  x, y, dx, dy)
-
-        import cv2
-        import numpy
-        ngray = cv2.cvtColor(numpy.array(needle.pil_image), cv2.COLOR_RGB2GRAY)
-        hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
-        hcanvas = numpy.array(haystack.pil_image)
-
-        frame_points = []
-        frame_points.append((needle.width / 2, needle.height / 2))
-        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
-                             (needle.width, needle.height)])
-
-        # the translation distance cannot be larger than the haystack
-        dx = min(dx, haystack.width)
-        dy = min(dy, haystack.height)
-        import math
-        nx = int(math.ceil(float(max(haystack.width - x, 0)) / dx) + 1)
-        ny = int(math.ceil(float(max(haystack.height - y, 0)) / dy) + 1)
-        log.debug("Dividing haystack into %ix%i pieces", nx, ny)
-        result = numpy.zeros((ny, nx))
-
-        matches_grid = {}
-        matches = []
-        from match import Match
-        for i in range(nx):
-            for j in range(ny):
-                left = i * dx
-                right = min(haystack.width, i * dx + x)
-                up = j * dy
-                down = min(haystack.height, j * dy + y)
-                log.debug("Region up-down is %s and left-right is %s",
-                          (up, down), (left, right))
-
-                haystack_region = hgray[up:down, left:right]
-                haystack_region = haystack_region.copy()
-                hotmap_region = hcanvas[up:down, left:right]
-                hotmap_region = hotmap_region.copy()
-
-                # uncomment this block in order to view the filling of the results
-                # (marked with 1.0 when filled) and the different ndarray shapes
-                #result[j][i] = 1.0
-                log.log(0, "%s", result)
-                log.log(0, "shapes: hcanvas %s, hgray %s, ngray %s, res %s\n",
-                        hcanvas.shape, hgray.shape, ngray.shape, result.shape)
-
-                res = self._project_features(frame_points, ngray, haystack_region,
-                                             self.params["find"]["similarity"].value,
-                                             hotmap_region)
-                result[j][i] = self.imglog.similarities[-1]
-
-                if res is None:
-                    log.debug("No acceptable match in region %s", (i, j))
-                    continue
-                else:
-                    matches_grid[(j, i)] = Match(left + self.imglog.locations[-1][0],
-                                                 up + self.imglog.locations[-1][1],
-                                                 needle.width, needle.height,
-                                                 needle.center_offset.x, needle.center_offset.y,
-                                                 result[j][i])
-                    matches.append(matches_grid[(j, i)])
-                    self.imglog.locations[-1] = matches_grid[(j, i)]
-                    log.debug("Acceptable best match with similarity %s starting at %s in region %s",
-                              self.imglog.similarities[-1], matches_grid[(j, i)], (i, j))
-
-        # release the accumulated logging from subroutines
-        ImageLogger.accumulate_logging = False
-        self.imglog.log(30)
-        return matches
-
-    def log(self, lvl):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        # below selected logging level
-        if lvl < self.imglog.logging_level:
-            return
-        # logging is being collected for a specific logtype
-        elif ImageLogger.accumulate_logging:
-            return
-        # no hotmaps to log
-        elif len(self.imglog.hotmaps) == 0:
-            raise MissingHotmapError("No matching was performed in order to be image logged")
-
-        for i in range(len(self.imglog.hotmaps)):
-            name = "imglog%s-3hotmap-2to1-subregion%s-%s.png" % (self.imglog.printable_step,
-                                                                 i, self.imglog.similarities[i])
-            self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
 
         self.imglog.clear()
         ImageLogger.step += 1
@@ -3143,7 +2956,7 @@ class CustomMatcher(Finder):
         return matches
 
 
-class ImageSetFinder(Finder):
+class HybridMatcher(Finder):
     """
     Match one of a set of images usually representing the same thing.
 
@@ -3154,12 +2967,12 @@ class ImageSetFinder(Finder):
     """
 
     def __init__(self, configure=True, synchronize=True):
-        """Build an image set finder."""
-        super(ImageSetFinder, self).__init__(configure=False, synchronize=False)
+        """Build a hybrid matcher."""
+        super(HybridMatcher, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
-        self.categories["set"] = "set_find_methods"
-        self.algorithms["set_find_methods"] = ("autopy", "contour", "template", "feature", "hybrid")
+        self.categories["hybrid"] = "hybrid_methods"
+        self.algorithms["hybrid_methods"] = ("autopy", "contour", "template", "feature", "tempfeat")
 
         # other attributes
         self._matcher = None
@@ -3170,12 +2983,12 @@ class ImageSetFinder(Finder):
         if synchronize:
             self.__synchronize_backend(reset=False)
 
-    def __configure_backend(self, backend=None, category="set", reset=False):
-        if category != "set":
+    def __configure_backend(self, backend=None, category="hybrid", reset=False):
+        if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             # backends are the same as the ones for the base class
-            super(ImageSetFinder, self).configure_backend(backend=backend, reset=True)
+            super(HybridMatcher, self).configure_backend(backend=backend, reset=True)
         if backend is None:
             backend = GlobalSettings.find_backend
         if backend not in self.algorithms[self.categories[category]]:
@@ -3185,7 +2998,7 @@ class ImageSetFinder(Finder):
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
-    def configure_backend(self, backend=None, category="set", reset=False):
+    def configure_backend(self, backend=None, category="hybrid", reset=False):
         """
         Custom implementation of the base method.
 
@@ -3193,12 +3006,12 @@ class ImageSetFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend=None, category="set", reset=False):
-        if category != "set":
+    def __synchronize_backend(self, backend=None, category="hybrid", reset=False):
+        if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             # backends are the same as the ones for the base class
-            super(ImageSetFinder, self).synchronize_backend(backend, reset=True)
+            super(HybridMatcher, self).synchronize_backend(backend, reset=True)
         if backend is None:
             backend = GlobalSettings.find_backend
         if backend not in self.algorithms[self.categories[category]]:
@@ -3213,10 +3026,10 @@ class ImageSetFinder(Finder):
             self._matcher = TemplateMatcher()
         elif backend == "feature":
             self._matcher = FeatureMatcher()
-        elif backend == "hybrid":
-            self._matcher = HybridMatcher()
+        elif backend == "tempfeat":
+            self._matcher = TemplateFeatureMatcher()
 
-    def synchronize_backend(self, backend=None, category="set", reset=False):
+    def synchronize_backend(self, backend=None, category="hybrid", reset=False):
         """
         Custom implementation of the base method.
 

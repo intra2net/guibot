@@ -57,8 +57,8 @@ class Target(object):
                 self.match_settings = CascadeMatcher()
             elif GlobalSettings.find_backend == "text":
                 self.match_settings = TextMatcher()
-            elif GlobalSettings.find_backend == "hybrid":
-                self.match_settings = HybridMatcher()
+            elif GlobalSettings.find_backend == "tempfeat":
+                self.match_settings = TemplateFeatureMatcher()
             elif GlobalSettings.find_backend == "deep":
                 self.match_settings = DeepMatcher()
             self.use_own_settings = False
@@ -128,8 +128,8 @@ class Target(object):
             finder = CascadeMatcher()
         elif backend_name == "text":
             finder = TextMatcher()
-        elif backend_name == "hybrid":
-            finder = HybridMatcher()
+        elif backend_name == "tempfeat":
+            finder = TemplateFeatureMatcher()
         elif backend_name == "deep":
             finder = DeepMatcher()
         else:

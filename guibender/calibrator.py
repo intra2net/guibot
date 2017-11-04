@@ -162,9 +162,9 @@ class Calibrator(object):
         # any similarity parameters will be reset to 0.0 to search optimally
         finder.params["find"]["similarity"].value = 0.0
         finder.params["find"]["similarity"].fixed = True
-        if "hybrid" in finder.params.keys():
-            finder.params["hybrid"]["front_similarity"].value = 0.0
-            finder.params["hybrid"]["front_similarity"].fixed = True
+        if "tempfeat" in finder.params.keys():
+            finder.params["tempfeat"]["front_similarity"].value = 0.0
+            finder.params["tempfeat"]["front_similarity"].fixed = True
         best_params, error = self.twiddle(finder.params, run, refinements)
         finder.params = best_params
         ImageLogger.accumulate_logging = False

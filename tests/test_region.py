@@ -251,7 +251,7 @@ class RegionTest(unittest.TestCase):
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
 
-        shapes = Region(cv=HybridMatcher())
+        shapes = Region(cv=TemplateFeatureMatcher())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertEqual(similarity, 1.0)
 

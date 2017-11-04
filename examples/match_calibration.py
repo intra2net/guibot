@@ -64,14 +64,14 @@ elif GlobalSettings.find_backend == "cascade":
     finder = CascadeMatcher()
 elif GlobalSettings.find_backend == "text":
     finder = TextMatcher()
-elif GlobalSettings.find_backend == "hybrid":
-    finder = HybridMatcher()
+elif GlobalSettings.find_backend == "tempfeat":
+    finder = TemplateFeatureMatcher()
 elif GlobalSettings.find_backend == "deep":
     finder = DeepMatcher()
 # non-default initial conditions for the calibration
 #finder.configure_backend(find_image = "feature")
 #finder.params["find"]["similarity"].value = 0.7
-#finder.params["hybrid"]["front_similarity"].value = 0.5
+#finder.params["tempfeat"]["front_similarity"].value = 0.5
 #finder.params["feature"]["ransacReprojThreshold"].value = 25.0
 #finder.params["fdetect"]["nzoom"].value = 7.0
 #finder.params["fdetect"]["hzoom"].value = 7.0

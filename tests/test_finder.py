@@ -122,9 +122,9 @@ class FinderTest(unittest.TestCase):
         self.assertTrue(finder.params["fdetect"].has_key("MaxFeatures"))
         self.assertFalse(finder.params["fdetect"].has_key("NOctaves"))
 
-        finder = HybridMatcher()
+        finder = TemplateFeatureMatcher()
         finder.configure(feature_detect="KAZE", feature_extract="ORB", feature_match="BruteForce")
-        self.assertEqual(finder.params["find"]["backend"], "hybrid")
+        self.assertEqual(finder.params["find"]["backend"], "tempfeat")
         self.assertEqual(finder.params["template"]["backend"], "ccoeff_normed")
         self.assertEqual(finder.params["feature"]["backend"], "mixed")
         self.assertEqual(finder.params["fdetect"]["backend"], "KAZE")
@@ -138,7 +138,7 @@ class FinderTest(unittest.TestCase):
 
         # check consistency of all unchanged options
         finder.configure_backend("ccorr_normed", "template")
-        self.assertEqual(finder.params["find"]["backend"], "hybrid")
+        self.assertEqual(finder.params["find"]["backend"], "tempfeat")
         self.assertEqual(finder.params["template"]["backend"], "ccorr_normed")
         self.assertEqual(finder.params["feature"]["backend"], "mixed")
         self.assertEqual(finder.params["fdetect"]["backend"], "KAZE")
@@ -147,7 +147,7 @@ class FinderTest(unittest.TestCase):
 
         # check reset to defaults
         finder.configure(template_match="sqdiff_normed")
-        self.assertEqual(finder.params["find"]["backend"], "hybrid")
+        self.assertEqual(finder.params["find"]["backend"], "tempfeat")
         self.assertEqual(finder.params["template"]["backend"], "sqdiff_normed")
         self.assertEqual(finder.params["feature"]["backend"], "mixed")
         self.assertEqual(finder.params["fdetect"]["backend"], "ORB")
@@ -693,13 +693,13 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 120, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
-    def test_hybrid_same(self):
-        finder = HybridMatcher()
+    def test_tempfeat_same(self):
+        finder = TemplateFeatureMatcher()
         finder.params["find"]["similarity"].value = 1.0
         i = 1
 
-        for hybrid in finder.algorithms["hybrid_matchers"]:
-            finder.configure_backend(hybrid, "hybrid")
+        for tempfeat in finder.algorithms["tempfeat_matchers"]:
+            finder.configure_backend(tempfeat, "tempfeat")
             matches = finder.find(Image('n_ibs'), Image('n_ibs'))
 
             # verify match accuracy
@@ -711,7 +711,7 @@ class FinderTest(unittest.TestCase):
 
             # verify dumped files count and names
             dumps = self._verify_and_get_dumps(6, i)
-            self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "hybrid")
+            self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "tempfeat")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
             self.assertEquals(len(hotmaps), 3)
             for i, hotmap in enumerate(hotmaps):
@@ -730,13 +730,13 @@ class FinderTest(unittest.TestCase):
             shutil.rmtree(self.logpath)
             i += 1
 
-    def test_hybrid_nomatch(self):
-        finder = HybridMatcher()
+    def test_tempfeat_nomatch(self):
+        finder = TemplateFeatureMatcher()
         finder.params["find"]["similarity"].value = 0.25
         i = 1
 
-        for hybrid in finder.algorithms["hybrid_matchers"]:
-            finder.configure_backend(hybrid, "hybrid")
+        for tempfeat in finder.algorithms["tempfeat_matchers"]:
+            finder.configure_backend(tempfeat, "tempfeat")
             matches = finder.find(Image('n_ibs'), Image('all_shapes'))
 
             # verify match accuracy
@@ -744,7 +744,7 @@ class FinderTest(unittest.TestCase):
 
             # verify dumped files count and names
             dumps = self._verify_and_get_dumps(4, i)
-            self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "hybrid")
+            self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "tempfeat")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
             self.assertEquals(len(hotmaps), 1)
             hotmap = hotmaps[0]
