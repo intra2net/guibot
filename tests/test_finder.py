@@ -817,7 +817,7 @@ class FinderTest(unittest.TestCase):
         finder.configure_backend("autopy")
         finder.synchronize_backend("autopy")
         finder.params["find"]["similarity"].value = 1.0
-        matches = finder.find(Chain('circle'), Image('all_shapes'))
+        matches = finder.find(Chain('circle_simple'), Image('all_shapes'))
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
@@ -859,6 +859,20 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(8, multistep=True)
 
+    def test_hybrid_multiconfig(self):
+        finder = HybridMatcher()
+        finder.configure_backend("autopy")
+        finder.synchronize_backend("autopy")
+        finder.params["find"]["similarity"].value = 1.0
+        matches = finder.find(Chain('circle'), Image('all_shapes'))
+
+        # verify match accuracy
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(matches[0].x, 104)
+        self.assertEqual(matches[0].y, 10)
+
+        # verify dumped files count and names (+1 as we match with template)
+        dumps = self._verify_and_get_dumps(9, multistep=True)
 
 if __name__ == '__main__':
     unittest.main()

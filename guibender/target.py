@@ -61,6 +61,8 @@ class Target(object):
                 self.match_settings = TemplateFeatureMatcher()
             elif GlobalSettings.find_backend == "deep":
                 self.match_settings = DeepMatcher()
+            elif GlobalSettings.find_backend == "hybrid":
+                self.match_settings = HybridMatcher()
             self.use_own_settings = False
 
         self._center_offset = Location(0, 0)
@@ -132,6 +134,8 @@ class Target(object):
             finder = TemplateFeatureMatcher()
         elif backend_name == "deep":
             finder = DeepMatcher()
+        elif backend_name == "hybrid":
+            finder = HybridMatcher()
         else:
             raise UnsupportedBackendError("No '%s' backend is supported" % backend_name)
         finder.from_match_file(filename_without_extention)
@@ -363,10 +367,12 @@ class Text(Target):
         """
         super(Text, self).__init__(match_settings)
         self.value = value
+        self.text_file = None
 
         try:
             filename = Path().search(str(self) + ".txt")
             self.load(filename)
+            self.text_file = filename
         except FileNotFoundError:
             # text generated on the fly is also acceptable
             pass
@@ -508,17 +514,31 @@ class Chain(Target):
 
         :param str steps_filename: names for the sequence definition file
         """
-        super(Chain, self).load(steps_filename)
         if not os.path.exists(steps_filename):
             steps_filename = Path().search(steps_filename)
 
         with open(steps_filename) as f:
             for step in f:
-                filename, use_cache = step.split()
-                use_cache = True if use_cache == "yes" else False
-                new_image = Image(image_filename=filename,
-                                  use_cache=use_cache)
-                self._steps.append(new_image)
+                data, config = step.split()
+
+                super(Chain, self).load(config)
+                self.use_own_settings = False
+
+                step_backend = self.match_settings.params["find"]["backend"]
+                if step_backend in ["autopy", "contour", "template", "feature", "tempfeat"]:
+                    data_and_config = Image(data, match_settings=self.match_settings)
+                elif step_backend in ["cascade", "deep"]:
+                    data_and_config = Pattern(data, match_settings=self.match_settings)
+                elif step_backend == "text":
+                    data_and_config = Text(data, match_settings=self.match_settings)
+                else:
+                    # in particular, we cannot have a chain within the chain since it is not useful
+                    raise UnsupportedBackendError("No target step type for '%s' backend" % step_backend)
+
+                self._steps.append(data_and_config)
+
+        # now define own match configuration
+        super(Chain, self).load(steps_filename)
 
     def save(self, steps_filename):
         """
@@ -528,11 +548,27 @@ class Chain(Target):
         """
         super(Chain, self).save(self.target_name)
         save_lines = []
-        for save_step in self._steps:
-            if save_step.filename is None:
-                logging.warning("Badly defined chain step detected - need a filename for each image")
+        for data_and_config in self._steps:
+            config = data_and_config.match_settings
+            data = data_and_config.match_settings
+
+            step_backend = config.params["find"]["backend"]
+            if step_backend in ["autopy", "contour", "template", "feature", "tempfeat"]:
+                data = data_and_config.filename
+            elif step_backend in ["cascade", "deep"]:
+                data = data_and_config.data_file
+            elif step_backend == "text":
+                data = data_and_config.text_file
+                if data is None:
+                    raise ValueError("Target step text %s does not have a corresponding file"
+                                     " - cannot save chain %s" % (data_and_config, self.target_name))
+                data = Text(data, match_settings=self.match_settings)
             else:
-                save_lines.append(save_step.filename + " " + "no")
-                save_step.save()
+                # in particular, we cannot have a chain within the chain since it is not useful
+                raise UnsupportedBackendError("No target step type for '%s' backend" % step_backend)
+
+            data_and_config.save(data)
+            save_lines.append(data + " " + os.path.splitext(data)[0] + ".match")
+
         with open(steps_filename, "w") as f:
             f.writelines(save_lines)

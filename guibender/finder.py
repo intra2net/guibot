@@ -2958,12 +2958,12 @@ class CustomMatcher(Finder):
 
 class HybridMatcher(Finder):
     """
-    Match one of a set of images usually representing the same thing.
+    Match a target through a sequence of differently configured attempts.
 
-    This matcher can work with any other matcher in the background.
-    What it will do is provide with alternatives if a match fails.
-
-    .. note:: This only works with matchers using image targets.
+    This matcher can work with any other matcher in the background and with
+    unique or repeating matchers for each step. If a step fails, the matcher
+    tries the next available along the fallback chain or fails if the end of
+    the chain is reached.
     """
 
     def __init__(self, configure=True, synchronize=True):
@@ -3015,7 +3015,7 @@ class HybridMatcher(Finder):
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
-        # this matcher will only work with image-based matchers
+        # default matcher in case of a simple chain without own matching config
         if backend == "autopy":
             self._matcher = AutoPyMatcher()
         elif backend == "contour":
@@ -3024,8 +3024,14 @@ class HybridMatcher(Finder):
             self._matcher = TemplateMatcher()
         elif backend == "feature":
             self._matcher = FeatureMatcher()
+        elif backend == "cascade":
+            self._matcher = CascadeMatcher()
+        elif backend == "text":
+            self._matcher = TextMatcher()
         elif backend == "tempfeat":
             self._matcher = TemplateFeatureMatcher()
+        elif backend == "deep":
+            self._matcher = DeepMatcher()
 
     def synchronize_backend(self, backend=None, category="hybrid", reset=False):
         """
@@ -3043,8 +3049,15 @@ class HybridMatcher(Finder):
 
         .. todo:: This hasn't been fully integrated yet.
         """
-        for image in needle:
-            matches = self._matcher.find(image, haystack)
+        for step_needle in needle:
+
+            if step_needle.use_own_settings and not isinstance(step_needle.match_settings, HybridMatcher):
+                matcher = step_needle.match_settings
+            else:
+                matcher = self._matcher
+
+            matches = matcher.find(step_needle, haystack)
             if len(matches) > 0:
                 return matches
+
         return []
