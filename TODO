@@ -1,26 +1,34 @@
 TODO - hierarchical notes
 -------------------------
 
+- guibot init
+    - update all tutorials as content and format (ODS/PDF to Markdown)
+    - module headers
+    - website platform
+- more and better unit tests
+    - advanced unit tests to include all backend types (desktop control)?
+    - apply hybrid backend
+    - add unit tests for each region method
 - new methods test stage
     - various collected strange cases (special testing pairs)
     - training a button cascade requires even more experience
         - reuse haystack images and localize some OK buttons
         - current choice: larger variety and distance (to positives) of data
         - play around with parameters (data augmentation, training, etc.)
-    - advanced unit tests to include all backend types (desktop control)?
 - other advancements
-    - add useful core methods built in derived visual objects
     - generate needle as difference of two images to create image variables
     - ignore subregions while template matching to define frames of matching
     - match on still haystack as a way to wait for some events to finish
     - conditional matching - match needle if no other needle is matched
-    - purely visual vs also behavioral intelligence (GUI handling)
-- hybrid matching improvements - maximum difference between the similarity
+    - purely visual vs also behavioral intelligence (GUI handling) - some
+      reinforcement learning for behavioral intelligence in addition to image recognition
+- teamfeat matching improvements - maximum difference between the similarity
   obtained from the template and from the feature matching in the hybrid case
   may prevent from abnormal results in any of the two matching subparts
 - calibration and parameter optimization still not finished and fully used
     - add support for more matchers (CV backends)
     - the ultimate calibration includes not just matching but also competitors
+        - train for data to match and data not to match to
         - it doesn't just obtain the optimum similarity for the given needle and
           haystack but it minimizes the similarity for spatial and temporal
           competitors where spatial means the others in the same haystack while
