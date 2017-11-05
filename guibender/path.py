@@ -104,6 +104,11 @@ class Path(object):
             if os.path.exists(fullname):
                 return fullname
 
+            # Check with .steps extension for chains
+            fullname = os.path.join(directory, filename + '.steps')
+            if os.path.exists(fullname):
+                return fullname
+
         if not silent:
             raise FileNotFoundError('File ' + filename + ' not found')
 

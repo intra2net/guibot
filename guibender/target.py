@@ -347,65 +347,6 @@ class Image(Target):
         return new_image
 
 
-class ImageSet(Target):
-    """
-    Container for multiple images representing the same target.
-
-    This is a simple step towards greater robustness where we can
-    supply a set of images and match on just one of them.
-    """
-
-    def __init__(self, group_name, images=None, match_settings=None, use_cache=True):
-        """
-        Build an image set object.
-
-        :param images: name of the image file if any
-        :type images: [:py:class:`Image`] or None
-        :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`finder.Finder` or None
-        :param bool use_cache: whether to cache image data for better performance
-        """
-        super(ImageSet, self).__init__(match_settings)
-        if images is None:
-            self._images = []
-        else:
-            self._images = images
-        self.group_name = group_name
-
-    def __str__(self):
-        """Provide the group name."""
-        return self.group_name
-
-    def __iter__(self):
-        """Provide an interator over the images."""
-        return self._images.__iter__()
-
-    def load(self, filenames, use_cache=True):
-        """
-        Load images from their files.
-
-        :param filenames: names for the target files
-        :type filenames: [str]
-        :param bool use_cache: whether to cache image data for better performance
-        """
-        super(ImageSet, self).load(self.group_name)
-        for filename in filenames:
-            new_image = Image(image_filename=filename, use_cache=use_cache)
-            self.images.append(new_image)
-
-    def save(self, filenames):
-        """
-        Save images to their files.
-
-        :param filenames: name for the target file
-        :type filenames: [str]
-        """
-        super(ImageSet, self).save(self.group_name)
-        assert len(self.images) == len(filenames), "Provided filenames must be as many as the contained images"
-        for image, filename in zip(self.images, filenames):
-            image.save(filename)
-
-
 class Text(Target):
     """
     Container for text data which is visually identified
@@ -528,3 +469,70 @@ class Pattern(Target):
         with open(filename, "w") as fo:
             with open(self.data_file, "r") as fi:
                 fo.write(fi.read())
+
+
+class Chain(Target):
+    """
+    Container for multiple configurations representing the same target.
+
+    The simplest version of a chain is a sequence of the same match
+    configuration steps performed on a sequence of images until one of them
+    succeeds. Every next step in this chain is a fallback case if the previous
+    step did not succeed.
+    """
+
+    def __init__(self, target_name, match_settings=None):
+        """
+        Build an chain object.
+
+        :param str target_name: name of the target for all steps
+        :param match_settings: predefined configuration for the CV backend if any
+        :type match_settings: :py:class:`finder.Finder` or None
+        """
+        super(Chain, self).__init__(match_settings)
+        self.target_name = target_name
+        self._steps = []
+        self.load(self.target_name+".steps")
+
+    def __str__(self):
+        """Provide the target name."""
+        return self.target_name
+
+    def __iter__(self):
+        """Provide an interator over the steps."""
+        return self._steps.__iter__()
+
+    def load(self, steps_filename):
+        """
+        Load steps from a sequence definition file.
+
+        :param str steps_filename: names for the sequence definition file
+        """
+        super(Chain, self).load(steps_filename)
+        if not os.path.exists(steps_filename):
+            steps_filename = Path().search(steps_filename)
+
+        with open(steps_filename) as f:
+            for step in f:
+                filename, use_cache = step.split()
+                use_cache = True if use_cache == "yes" else False
+                new_image = Image(image_filename=filename,
+                                  use_cache=use_cache)
+                self._steps.append(new_image)
+
+    def save(self, steps_filename):
+        """
+        Save steps to a sequence definition file.
+
+        :param str steps_filename: names for the sequence definition file
+        """
+        super(Chain, self).save(self.target_name)
+        save_lines = []
+        for save_step in self._steps:
+            if save_step.filename is None:
+                logging.warning("Badly defined chain step detected - need a filename for each image")
+            else:
+                save_lines.append(save_step.filename + " " + "no")
+                save_step.save()
+        with open(steps_filename, "w") as f:
+            f.writelines(save_lines)
