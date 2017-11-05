@@ -299,7 +299,7 @@ class GlobalSettings(type):
     desktop_control_backend = property(fget=desktop_control_backend, fset=desktop_control_backend)
 
     # these methods do not check for valid values since this
-    # is already done at the equalizer on initialization
+    # is already done during region and target initialization
     def find_backend(self, value=None):
         """
         Same as :py:func:`GlobalSettings.image_logging_destination` but with

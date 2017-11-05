@@ -120,22 +120,8 @@ class Finder(LocalSettings):
     """
     Base for all image matching functionality and backends.
 
-    It has implementations with both template matching and feature matching
-    algorithms through AutoPy or through the OpenCV library as well as a
-    hybrid approach. The image finding methods include finding one or all
-    matches above the similarity defined in the configuration of each backend.
-
-    External (finder) parameters are:
-        * detect filter - works for certain detectors and
-            determines how many initial features are
-            detected in an image (e.g. hessian threshold for
-            SURF detector)
-        * match filter - determines what part of all matches
-            returned by feature matcher remain good matches
-        * project filter - determines what part of the good
-            matches are considered inliers
-        * ratio test - boolean for whether to perform a ratio test
-        * symmetry test - boolean for whether to perform a symmetry test
+    The image finding methods include finding one or all matches
+    above the similarity defined in the configuration of each backend.
 
     There are many parameters that could contribute for a good match. They can
     all be manually adjusted or automatically calibrated.
@@ -188,11 +174,9 @@ class Finder(LocalSettings):
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             super(Finder, self).synchronize_backend("cv", reset=True)
-        # no backend object to sync to
-        if backend is None:
-            backend = GlobalSettings.find_backend
-        if backend not in self.algorithms[self.categories[category]]:
+        if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
     def synchronize_backend(self, backend=None, category="find", reset=False):
         """
@@ -936,9 +920,9 @@ class FeatureMatcher(Finder):
         self.algorithms["feature_extractors"] = ("ORB", "BRISK")
 
         # other attributes
-        self._detector = None
-        self._extractor = None
-        self._matcher = None
+        self.detector = None
+        self.extractor = None
+        self.matcher = None
 
         # additional preparation
         if configure:
@@ -981,12 +965,12 @@ class FeatureMatcher(Finder):
 
             import cv2
             feature_detector_create = getattr(cv2, "%s_create" % backend)
-            self._detector = backend_obj = feature_detector_create()
+            backend_obj = feature_detector_create()
 
         elif category == "fextract":
             import cv2
             descriptor_extractor_create = getattr(cv2, "%s_create" % backend)
-            self._extractor = backend_obj = descriptor_extractor_create()
+            backend_obj = descriptor_extractor_create()
 
         elif category == "fmatch":
             if backend == "in-house-region":
@@ -1008,7 +992,7 @@ class FeatureMatcher(Finder):
                     import cv2
                     # NOTE: descriptor matcher creation is kept the old way while feature
                     # detection and extraction not - example of the untidy maintenance of OpenCV
-                    self._matcher = backend_obj = cv2.DescriptorMatcher_create(backend)
+                    backend_obj = cv2.DescriptorMatcher_create(backend)
 
                     # BUG: a bug of OpenCV leads to crash if parameters
                     # are extracted from the matcher interface although
@@ -1044,6 +1028,18 @@ class FeatureMatcher(Finder):
         """
         Custom implementation of the base method.
 
+        Some relevant parameters are:
+            * detect filter - works for certain detectors and
+                determines how many initial features are
+                detected in an image (e.g. hessian threshold for
+                SURF detector)
+            * match filter - determines what part of all matches
+                returned by feature matcher remain good matches
+            * project filter - determines what part of the good
+                matches are considered inliers
+            * ratio test - boolean for whether to perform a ratio test
+            * symmetry test - boolean for whether to perform a symmetry test
+
         See base method for details.
         """
         self.__configure_backend(backend, category, reset)
@@ -1074,23 +1070,32 @@ class FeatureMatcher(Finder):
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             super(FeatureMatcher, self).synchronize_backend("feature", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
+
         backend_obj = None
         if category == "feature":
             # nothing to sync
             return
         elif category == "fdetect":
-            backend_obj = self._detector
+            import cv2
+            feature_detector_create = getattr(cv2, "%s_create" % backend)
+            backend_obj = feature_detector_create()
         elif category == "fextract":
-            backend_obj = self._extractor
+            import cv2
+            descriptor_extractor_create = getattr(cv2, "%s_create" % backend)
+            backend_obj = descriptor_extractor_create()
         elif category == "fmatch":
-            backend_obj = self._matcher
+            import cv2
+            # NOTE: descriptor matcher creation is kept the old way while feature
+            # detection and extraction not - example of the untidy maintenance of OpenCV
+            backend_obj = cv2.DescriptorMatcher_create(backend)
             # BUG: a bug of OpenCV leads to crash if parameters
             # are extracted from the matcher interface although
             # the API supports it - skip fmatch for now
+            self.matcher = backend_obj
             return
-        if backend_obj is None or (backend is not None and backend_obj.__class__.__name__ != backend):
-            backend = category if backend is None else backend
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
         for attribute in dir(backend_obj):
             if not attribute.startswith("get"):
@@ -1106,12 +1111,13 @@ class FeatureMatcher(Finder):
                 set_param(val)
                 log.log(0, "Synced %s to %s", param, val)
                 self.params[category][param].value = val
+
         if category == "fdetect":
-            self._detector = backend_obj
+            self.detector = backend_obj
         elif category == "fextract":
-            self._extractor = backend_obj
+            self.extractor = backend_obj
         elif category == "fmatch":
-            self._matcher = backend_obj
+            self.matcher = backend_obj
 
     def synchronize_backend(self, backend=None, category="feature", reset=False):
         """
@@ -1265,12 +1271,12 @@ class FeatureMatcher(Finder):
             self.synchronize_backend(category="fextract")
 
             # keypoints
-            nkeypoints = self._detector.detect(ngray)
-            hkeypoints = self._detector.detect(hgray)
+            nkeypoints = self.detector.detect(ngray)
+            hkeypoints = self.detector.detect(hgray)
 
             # feature vectors (descriptors)
-            (nkeypoints, ndescriptors) = self._extractor.compute(ngray, nkeypoints)
-            (hkeypoints, hdescriptors) = self._extractor.compute(hgray, hkeypoints)
+            (nkeypoints, ndescriptors) = self.extractor.compute(ngray, nkeypoints)
+            (hkeypoints, hdescriptors) = self.extractor.compute(hgray, hkeypoints)
 
         else:
             raise UnsupportedBackendError("Feature detector %s is not among the supported"
@@ -1353,25 +1359,25 @@ class FeatureMatcher(Finder):
 
         # find and filter matches through tests
         if match == "in-house-region":
-            matches = self._matcher.regionMatch(ndescriptors, hdescriptors,
-                                                nkeypoints, hkeypoints,
-                                                self.params["fmatch"]["refinements"].value,
-                                                self.params["fmatch"]["recalc_interval"].value,
-                                                self.params["fmatch"]["variants_k"].value,
-                                                self.params["fmatch"]["variants_ratio"].value)
+            matches = self.matcher.regionMatch(ndescriptors, hdescriptors,
+                                               nkeypoints, hkeypoints,
+                                               self.params["fmatch"]["refinements"].value,
+                                               self.params["fmatch"]["recalc_interval"].value,
+                                               self.params["fmatch"]["variants_k"].value,
+                                               self.params["fmatch"]["variants_ratio"].value)
         else:
             if self.params["fmatch"]["ratioTest"].value:
-                matches = self._matcher.knnMatch(ndescriptors, hdescriptors, 2)
+                matches = self.matcher.knnMatch(ndescriptors, hdescriptors, 2)
                 matches = ratio_test(matches)
             else:
-                matches = self._matcher.knnMatch(ndescriptors, hdescriptors, 1)
+                matches = self.matcher.knnMatch(ndescriptors, hdescriptors, 1)
                 matches = [m[0] for m in matches]
             if self.params["fmatch"]["symmetryTest"].value:
                 if self.params["fmatch"]["ratioTest"].value:
-                    hmatches = self._matcher.knnMatch(hdescriptors, ndescriptors, 2)
+                    hmatches = self.matcher.knnMatch(hdescriptors, ndescriptors, 2)
                     hmatches = ratio_test(hmatches)
                 else:
-                    hmatches = self._matcher.knnMatch(hdescriptors, ndescriptors, 1)
+                    hmatches = self.matcher.knnMatch(hdescriptors, ndescriptors, 1)
                     hmatches = [hm[0] for hm in hmatches]
                 matches = symmetry_test(matches, hmatches)
 
@@ -1751,6 +1757,7 @@ class TextMatcher(ContourMatcher):
             Finder.synchronize_backend(self, "text", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
         import cv2
         datapath = self.params["text"]["datapath"].value
@@ -1758,7 +1765,7 @@ class TextMatcher(ContourMatcher):
             # nothing to sync
             return
 
-        elif category == "tdetect" and self.params["tdetect"]["backend"] == "erstat":
+        elif category == "tdetect" and backend == "erstat":
             self.erc1 = cv2.text.loadClassifierNM1(os.path.join(datapath, 'trained_classifierNM1.xml'))
             self.erf1 = cv2.text.createERFilterNM1(self.erc1,
                                                    self.params["tdetect"]["thresholdDelta"].value,
@@ -1774,13 +1781,13 @@ class TextMatcher(ContourMatcher):
             return
 
         elif category == "ocr":
-            if self.params["ocr"]["backend"] == "tesseract":
+            if backend == "tesseract":
                 self.ocr = cv2.text.OCRTesseract_create(datapath,
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
                                                         oem=self.params[category]["oem"].value,
                                                         psmode=self.params[category]["psmode"].value)
-            elif self.params["ocr"]["backend"] in ["hmm", "beamSearch"]:
+            elif backend in ["hmm", "beamSearch"]:
 
                 import numpy
                 # vocabulary is strictly related with the XML data so remains hardcoded here
@@ -1793,7 +1800,7 @@ class TextMatcher(ContourMatcher):
                 transition_p = numpy.fromstring(transition_p_data.group(1).strip(), sep=' ').reshape(62,62)
                 emission_p = numpy.eye(62, dtype=numpy.float64)
 
-                if self.params["ocr"]["backend"] == "hmm":
+                if backend == "hmm":
                     classifier_data = os.path.join(datapath, 'OCRHMM_knn_model_data.xml.gz')
                     if self.params["ocr"]["classifier"].value == 1:
                         classifier = cv2.text.loadOCRHMMClassifierNM(classifier_data)
@@ -1807,7 +1814,7 @@ class TextMatcher(ContourMatcher):
                     classifier = cv2.text.loadOCRBeamSearchClassifierCNN(classifier_data)
                     self.ocr = cv2.text.OCRBeamSearchDecoder_create(classifier, vocabulary, transition_p, emission_p)
             else:
-                raise ValueError("Invalid OCR backend '%s'" % self.params["ocr"]["backend"])
+                raise ValueError("Invalid OCR backend '%s'" % backend)
 
     def synchronize_backend(self, backend=None, category="text", reset=False):
         """
@@ -2172,6 +2179,20 @@ class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
         """
         self.__configure(template_match, feature_detect, feature_extract, feature_match, reset)
 
+    def synchronize(self, feature_detect=None, feature_extract=None,
+                    feature_match=None, reset=True):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        Finder.synchronize_backend(self, "tempfeat", reset=reset)
+        FeatureMatcher.synchronize(self,
+                                   feature_detect=feature_detect,
+                                   feature_extract=feature_extract,
+                                   feature_match=feature_match,
+                                   reset=False)
+
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
@@ -2412,6 +2433,7 @@ class DeepMatcher(Finder):
             super(DeepMatcher, self).synchronize_backend("deep", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
         # class-specific dependencies
         import torch.nn as nn
@@ -2986,7 +3008,7 @@ class HybridMatcher(Finder):
         self.algorithms["hybrid_methods"] = ("autopy", "contour", "template", "feature", "tempfeat")
 
         # other attributes
-        self._matcher = None
+        self.matcher = None
 
         # additional preparation
         if configure:
@@ -3021,28 +3043,28 @@ class HybridMatcher(Finder):
         if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            # backends are the same as the ones for the base class
-            super(HybridMatcher, self).synchronize_backend(backend, reset=True)
+            super(HybridMatcher, self).synchronize_backend("hybrid", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
         # default matcher in case of a simple chain without own matching config
         if backend == "autopy":
-            self._matcher = AutoPyMatcher()
+            self.matcher = AutoPyMatcher()
         elif backend == "contour":
-            self._matcher = ContourMatcher()
+            self.matcher = ContourMatcher()
         elif backend == "template":
-            self._matcher = TemplateMatcher()
+            self.matcher = TemplateMatcher()
         elif backend == "feature":
-            self._matcher = FeatureMatcher()
+            self.matcher = FeatureMatcher()
         elif backend == "cascade":
-            self._matcher = CascadeMatcher()
+            self.matcher = CascadeMatcher()
         elif backend == "text":
-            self._matcher = TextMatcher()
+            self.matcher = TextMatcher()
         elif backend == "tempfeat":
-            self._matcher = TemplateFeatureMatcher()
+            self.matcher = TemplateFeatureMatcher()
         elif backend == "deep":
-            self._matcher = DeepMatcher()
+            self.matcher = DeepMatcher()
 
     def synchronize_backend(self, backend=None, category="hybrid", reset=False):
         """
@@ -3070,7 +3092,7 @@ class HybridMatcher(Finder):
             if step_needle.use_own_settings and not isinstance(step_needle.match_settings, HybridMatcher):
                 matcher = step_needle.match_settings
             else:
-                matcher = self._matcher
+                matcher = self.matcher
 
             matches = matcher.find(step_needle, haystack)
             if len(matches) > 0:
