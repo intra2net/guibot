@@ -148,7 +148,7 @@ class Finder(LocalSettings):
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
         self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature",
-                                           "cascade", "text", "tempfeat", "deep")
+                                           "cascade", "text", "tempfeat", "deep", "hybrid")
 
         # other attributes
         self.imglog = ImageLogger()
@@ -3057,8 +3057,6 @@ class HybridMatcher(Finder):
         Custom implementation of the base method.
 
         See base method for details.
-
-        .. todo:: This hasn't been fully integrated yet.
         """
         try:
             iter(needle)

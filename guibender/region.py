@@ -79,6 +79,8 @@ class Region(object):
                 cv = TemplateFeatureMatcher()
             elif GlobalSettings.find_backend == "deep":
                 cv = DeepMatcher()
+            elif GlobalSettings.find_backend == "hybrid":
+                cv = HybridMatcher()
 
         # since the backends are read/write make them public attributes
         self.dc_backend = dc
@@ -403,6 +405,8 @@ class Region(object):
             if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
                                                    isinstance(self.cv_backend, DeepMatcher)):
                 raise IncompatibleTargetError("Need pattern matcher for matching patterns")
+            if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridMatcher):
+                raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
             target.match_settings = self.cv_backend
             cv_backend = self.cv_backend
         dc_backend = self.dc_backend
@@ -464,6 +468,8 @@ class Region(object):
             if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
                                                    isinstance(self.cv_backend, DeepMatcher)):
                 raise IncompatibleTargetError("Need pattern matcher for matching patterns")
+            if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridMatcher):
+                raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
             target.match_settings = self.cv_backend
             cv_backend = self.cv_backend
         dc_backend = self.dc_backend
