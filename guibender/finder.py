@@ -305,8 +305,8 @@ class Finder(LocalSettings):
         """
         Find all needle targets in a haystack image.
 
-        :param needle: image, text, or pattern to look for
-        :type needle: :py:class:`target.Target`
+        :param needle: image, text, pattern, or a list or chain of such to look for
+        :type needle: :py:class:`target.Target` or [:py:class:`target.Target`]
         :param haystack: image to look in
         :type haystack: :py:class:`target.Image`
         :returns: all found matches (one in most use cases)
@@ -373,6 +373,9 @@ class AutoPyMatcher(Finder):
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
+
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
 
         See base method for details.
 
@@ -529,6 +532,9 @@ class ContourMatcher(Finder):
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
+
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
 
         See base method for details.
 
@@ -742,6 +748,8 @@ class TemplateMatcher(Finder):
         """
         Custom implementation of the base method.
 
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
         :raises: :py:class:`UnsupportedBackendError` if the choice of template
                  matches is not among the supported ones
 
@@ -1137,6 +1145,9 @@ class FeatureMatcher(Finder):
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
+
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
 
         See base method for details.
 
@@ -3049,6 +3060,13 @@ class HybridMatcher(Finder):
 
         .. todo:: This hasn't been fully integrated yet.
         """
+        try:
+            iter(needle)
+        except TypeError:
+            # one step chains can be of any target type
+            log.debug("Defaulting to one step chain %s", needle)
+            needle = [needle]
+
         for step_needle in needle:
 
             if step_needle.use_own_settings and not isinstance(step_needle.match_settings, HybridMatcher):
