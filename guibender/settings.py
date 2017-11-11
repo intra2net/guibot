@@ -55,10 +55,14 @@ class GlobalSettings(type):
     # backends shared between all instances
     _desktop_control_backend = "autopy"
     _find_backend = "hybrid"
+    _contour_threshold_backend = "adaptive"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "ORB"
     _feature_match_backend = "BruteForce-Hamming"
+    _text_detect_backend = "erstat"
+    _text_ocr_backend = "tesseract"
+    _hybrid_match_backend = "autopy"
 
     def click_delay(self, value=None):
         """
@@ -307,12 +311,21 @@ class GlobalSettings(type):
         :param value: name of the computer vision backend
 
         Supported backends:
+            * autopy - simple bitmap matching provided by autopy
+            * contour - contour matching using overall shape estimation
             * template - template matching using correlation coefficients,
-                         square difference or the default autopy matching.
-            * feature - feature matching using a mixture of feature detection,
-                        extraction and matching algorithms.
-            * hybrid - a mixture of template and feature matching where the
-                       first is used as necessary and the second as sufficient stage.
+                         square difference, etc.
+            * feature - matching using a mixture of feature detection,
+                        extraction and matching algorithms
+            * cascade - matching using OpenCV pretrained Haar cascades
+            * text - text matching using ERStat or custom text detection,
+                     followed by tesseract or Hidden Markov Model OCR
+            * tempfeat - a mixture of template and feature matching where the
+                       first is used as necessary and the second as sufficient stage
+            * deep - deep learning matching using convolutional neural network but
+                     customizable to any type of deep neural network
+            * hybrid - use a composite approach with any of the above methods
+                       as matching steps in a fallback sequence
 
         .. warning:: To use a particular backend you need to satisfy its dependencies,
             i.e. the backend has to be installed or you will have unsatisfied imports.
@@ -323,6 +336,21 @@ class GlobalSettings(type):
             GlobalSettings._find_backend = value
     #: name of the computer vision backend
     find_backend = property(fget=find_backend, fset=find_backend)
+
+    def contour_threshold_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+
+        :param value: name of the contour threshold backend
+
+        Supported backends: normal, adaptive, canny.
+        """
+        if value is None:
+            return GlobalSettings._contour_threshold_backend
+        else:
+            GlobalSettings._contour_threshold_backend = value
+    #: name of the contour threshold backend
+    contour_threshold_backend = property(fget=contour_threshold_backend, fset=contour_threshold_backend)
 
     def template_match_backend(self, value=None):
         """
@@ -385,6 +413,51 @@ class GlobalSettings(type):
             GlobalSettings._feature_match_backend = value
     #: name of the feature matching backend
     feature_match_backend = property(fget=feature_match_backend, fset=feature_match_backend)
+
+    def text_detect_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+
+        :param value: name of the text detection backend
+
+        Supported backends: erstat, contours, components.
+        """
+        if value is None:
+            return GlobalSettings._text_detect_backend
+        else:
+            GlobalSettings._text_detect_backend = value
+    #: name of the text detection backend
+    text_detect_backend = property(fget=text_detect_backend, fset=text_detect_backend)
+
+    def text_ocr_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+
+        :param value: name of the optical character recognition backend
+
+        Supported backends: tesseract, hmm, beamSearch.
+        """
+        if value is None:
+            return GlobalSettings._text_ocr_backend
+        else:
+            GlobalSettings._text_ocr_backend = value
+    #: name of the optical character recognition backend
+    text_ocr_backend = property(fget=text_ocr_backend, fset=text_ocr_backend)
+
+    def hybrid_match_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+
+        :param value: name of the hybrid matching backend for unconfigured one-step targets
+
+        Supported backends: all nonhybrid backends of :py:func:`GlobalSettings.find_backend`.
+        """
+        if value is None:
+            return GlobalSettings._hybrid_match_backend
+        else:
+            GlobalSettings._hybrid_match_backend = value
+    #: name of the hybrid matching backend for unconfigured one-step targets
+    hybrid_match_backend = property(fget=hybrid_match_backend, fset=hybrid_match_backend)
 
 
 class GlobalSettings(object):

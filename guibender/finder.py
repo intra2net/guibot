@@ -456,7 +456,7 @@ class ContourMatcher(Finder):
         if category == "contour" and backend is None:
             backend = "mixed"
         elif category == "threshold" and backend is None:
-            backend = "adaptive"
+            backend = GlobalSettings.contour_threshold_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -1669,9 +1669,9 @@ class TextMatcher(ContourMatcher):
         if category == "text" and backend is None:
             backend = "mixed"
         elif category == "tdetect" and backend is None:
-            backend = "erstat"
+            backend = GlobalSettings.text_detect_backend
         elif category == "ocr" and backend is None:
-            backend = "tesseract"
+            backend = GlobalSettings.text_ocr_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -3023,7 +3023,7 @@ class HybridMatcher(Finder):
             # backends are the same as the ones for the base class
             super(HybridMatcher, self).configure_backend(backend=backend, reset=True)
         if backend is None:
-            backend = "autopy"
+            backend = GlobalSettings.hybrid_match_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
