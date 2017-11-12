@@ -23,6 +23,7 @@ except ImportError:
 
 from settings import GlobalSettings, LocalSettings
 from imagelogger import ImageLogger
+from path import Path
 from errors import *
 
 import logging
@@ -127,6 +128,106 @@ class Finder(LocalSettings):
     all be manually adjusted or automatically calibrated.
     """
 
+    @staticmethod
+    def from_match_file(filename):
+        """
+        Read the configuration from a match file with the given filename.
+
+        :param str filename: match filename for the configuration
+        :returns: target finder with the parsed (and generated) settings
+        :rtype: :py:class:`finder.Finder`
+        :raises: :py:class:`IOError` if the respective match file couldn't be read
+
+        The influence of the read configuration is that of an overwrite, i.e.
+        all parameters will be generated (if not already present) and then the
+        ones read from the configuration file will be overwritten.
+        """
+        parser = config.RawConfigParser()
+        # preserve case sensitivity
+        parser.optionxform = str
+
+        if not filename.endswith(".match"):
+            filename += ".match"
+        if not os.path.exists(filename):
+            filename = Path().search(filename)
+        success = parser.read(filename)
+        # if no file is found throw an exception
+        if len(success) == 0:
+            raise IOError("Match file %s is corrupted and cannot be read" % filename)
+        if not parser.has_section("find"):
+            raise IOError("No image matching configuration can be found")
+        try:
+            backend_name = parser.get("find", 'backend')
+        except config.NoOptionError:
+            backend_name = GlobalSettings.find_backend
+
+        if backend_name == "autopy":
+            finder = AutoPyMatcher()
+        elif backend_name == "contour":
+            finder = ContourMatcher()
+        elif backend_name == "template":
+            finder = TemplateMatcher()
+        elif backend_name == "feature":
+            finder = FeatureMatcher()
+        elif backend_name == "cascade":
+            finder = CascadeMatcher()
+        elif backend_name == "text":
+            finder = TextMatcher()
+        elif backend_name == "tempfeat":
+            finder = TemplateFeatureMatcher()
+        elif backend_name == "deep":
+            finder = DeepMatcher()
+        elif backend_name == "hybrid":
+            finder = HybridMatcher()
+        else:
+            raise UnsupportedBackendError("No '%s' backend is supported" % backend_name)
+
+        for category in finder.params.keys():
+            if parser.has_section(category):
+                section_backend = parser.get(category, 'backend')
+                if section_backend != finder.params[category]["backend"]:
+                    finder.configure_backend(backend=section_backend, category=category, reset=False)
+                for option in parser.options(category):
+                    if option == "backend":
+                        continue
+                    param_string = parser.get(category, option)
+                    if isinstance(finder.params[category][option], CVParameter):
+                        param = CVParameter.from_string(param_string)
+                        log.log(0, "%s %s", param_string, param)
+                    else:
+                        param = param_string
+                    finder.params[category][option] = param
+
+        return finder
+
+    @staticmethod
+    def to_match_file(finder, filename):
+        """
+        Write the configuration to a match file with the given filename.
+
+        :param finder: match configuration to save
+        :type finder: :py:class:`finder.Finder`
+        :param str filename: match filename for the configuration
+        """
+        parser = config.RawConfigParser()
+        # preserve case sensitivity
+        parser.optionxform = str
+
+        sections = finder.params.keys()
+        for section in sections:
+            if not parser.has_section(section):
+                parser.add_section(section)
+            parser.set(section, 'backend', finder.params[section]["backend"])
+            for option in finder.params[section]:
+                log.log(0, "%s %s", section, option)
+                parser.set(section, option, finder.params[section][option])
+
+        if not filename.endswith(".match"):
+            filename += ".match"
+        with open(filename, 'w') as configfile:
+            configfile.write("# IMAGE MATCH DATA\n")
+            parser.write(configfile)
+
     def __init__(self, configure=True, synchronize=True):
         """Build a finder and its CV backend settings."""
         super(Finder, self).__init__(configure=False, synchronize=False)
@@ -185,68 +286,6 @@ class Finder(LocalSettings):
         See base method for details.
         """
         self.__synchronize_backend(backend, category, reset)
-
-    def from_match_file(self, filename_without_extention):
-        """
-        Read the configuration from a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        :raises: :py:class:`IOError` if the respective match file couldn't be read
-
-        The influence of the read configuration is that of an overwrite, i.e.
-        all parameters will be generated (if not already present) and then the
-        ones read from the configuration file will be overwritten.
-        """
-        if len(self.params.keys()) == 0:
-            self.configure()
-
-        parser = config.RawConfigParser()
-        # preserve case sensitivity
-        parser.optionxform = str
-
-        success = parser.read("%s.match" % filename_without_extention)
-        # if no file is found throw an exception
-        if len(success) == 0:
-            raise IOError
-
-        for category in self.params.keys():
-            if parser.has_section(category):
-                section_backend = parser.get(category, 'backend')
-                if section_backend != self.params[category]["backend"]:
-                    self.configure_backend(backend=section_backend, category=category, reset=False)
-                for option in parser.options(category):
-                    if option == "backend":
-                        continue
-                    param_string = parser.get(category, option)
-                    if isinstance(self.params[category][option], CVParameter):
-                        param = CVParameter.from_string(param_string)
-                        log.log(0, "%s %s", param_string, param)
-                    else:
-                        param = param_string
-                    self.params[category][option] = param
-
-    def to_match_file(self, filename_without_extention):
-        """
-        Write the configuration in a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        """
-        parser = config.RawConfigParser()
-        # preserve case sensitivity
-        parser.optionxform = str
-
-        sections = self.params.keys()
-        for section in sections:
-            if not parser.has_section(section):
-                parser.add_section(section)
-            parser.set(section, 'backend', self.params[section]["backend"])
-            for option in self.params[section]:
-                log.log(0, "%s %s", section, option)
-                parser.set(section, option, self.params[section][option])
-
-        with open("%s.match" % filename_without_extention, 'w') as configfile:
-            configfile.write("# IMAGE MATCH DATA\n")
-            parser.write(configfile)
 
     def can_calibrate(self, category, mark):
         """

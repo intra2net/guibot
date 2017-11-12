@@ -17,10 +17,6 @@ import copy
 import os
 import re
 import PIL.Image
-try:
-    import configparser as config
-except ImportError:
-    import ConfigParser as config
 
 from settings import GlobalSettings
 from location import Location
@@ -34,6 +30,60 @@ class Target(object):
     Target used to obtain screen location for clicking, typing,
     validation of expected visual output, etc.
     """
+
+    @staticmethod
+    def from_data_file(filename):
+        """
+        Read the target type from the extension of the target filename.
+
+        :param str filename: data filename for the target
+        :returns: target of type determined from its data filename extension
+        :rtype: :py:class:`target.Target`
+        :raises: :py:class:`errors.IncompatibleTargetFileError` if the data file if of unknown type
+        """
+        if not os.path.exists(filename):
+            filename = Path().search(filename)
+        basename = os.path.basename(filename)
+        name, extension = os.path.splitext(basename)
+
+        if extension in (".png", ".jpg"):
+            target = Image(filename)
+        elif extension == ".txt":
+            target = Text(name)
+        elif extension in (".xml", ".pth"):
+            target = Pattern(filename)
+        elif extension == ".steps":
+            target = Chain(name)
+        else:
+            raise IncompatibleTargetFileError("The target file %s is not among any of the known types" % filename)
+
+        return target
+
+    @staticmethod
+    def from_match_file(filename):
+        """
+        Read the target type and configuration from a match file with the given filename.
+
+        :param str filename: match filename for the configuration
+        :returns: target of type determined from its parsed (and generated) settings
+        :rtype: :py:class:`target.Target`
+        """
+        if not os.path.exists(filename):
+            filename = Path().search(filename)
+        name = os.path.splitext(os.path.basename(filename))[0]
+        match_filename = os.path.splitext(filename)[0] + ".match"
+        finder = Finder.from_match_file(match_filename)
+
+        if finder.params["find"]["backend"] in ("autopy", "contour", "template", "feature", "tempfeat"):
+            target = Image(filename, match_settings=finder)
+        elif finder.params["find"]["backend"] == "text":
+            target = Text(name, match_settings=finder)
+        elif finder.params["find"]["backend"] in ("cascade", "deep"):
+            target = Pattern(filename, match_settings=finder)
+        elif finder.params["find"]["backend"] == "hybrid":
+            target = Chain(name, match_settings=finder)
+
+        return target
 
     def __init__(self, match_settings=None):
         """
@@ -95,63 +145,6 @@ class Target(object):
         return self._center_offset
     center_offset = property(fget=get_center_offset)
 
-    def load_configuration(self, filename_without_extention):
-        """
-        Read the configuration from a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        :returns: target finder with the parsed (and generated) settings
-        :rtype: :py:class:`finder.Finder`
-        :raises: :py:class:`IOError` if the respective match file couldn't be read
-        """
-        parser = config.RawConfigParser()
-        # preserve case sensitivity
-        parser.optionxform = str
-
-        success = parser.read("%s.match" % filename_without_extention)
-        # if no file is found throw an exception
-        if len(success) == 0:
-            raise IOError("Match file is corrupted and cannot be read")
-        if not parser.has_section("find"):
-            raise IOError("No image matching configuration can be found")
-        try:
-            backend_name = parser.get("find", 'backend')
-        except config.NoOptionError:
-            backend_name = GlobalSettings.find_backend
-
-        if backend_name == "autopy":
-            finder = AutoPyMatcher()
-        elif backend_name == "contour":
-            finder = ContourMatcher()
-        elif backend_name == "template":
-            finder = TemplateMatcher()
-        elif backend_name == "feature":
-            finder = FeatureMatcher()
-        elif backend_name == "cascade":
-            finder = CascadeMatcher()
-        elif backend_name == "text":
-            finder = TextMatcher()
-        elif backend_name == "tempfeat":
-            finder = TemplateFeatureMatcher()
-        elif backend_name == "deep":
-            finder = DeepMatcher()
-        elif backend_name == "hybrid":
-            finder = HybridMatcher()
-        else:
-            raise UnsupportedBackendError("No '%s' backend is supported" % backend_name)
-        finder.from_match_file(filename_without_extention)
-        return finder
-
-    def save_configuration(self, filename_without_extention):
-        """
-        Write the configuration in a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        """
-        if self.match_settings is None:
-            raise IOError("No match settings available for saving at %s" % self)
-        self.match_settings.to_match_file(filename_without_extention)
-
     def load(self, filename):
         """
         Load target from a file.
@@ -163,10 +156,9 @@ class Target(object):
         """
         if not os.path.exists(filename):
             filename = Path().search(filename)
-        filename_without_extesion = os.path.splitext(filename)[0]
-        match_filename = filename_without_extesion + ".match"
+        match_filename = os.path.splitext(filename)[0] + ".match"
         if os.path.exists(match_filename):
-            self.match_settings = self.load_configuration(filename_without_extesion)
+            self.match_settings = Finder.from_match_file(match_filename)
             try:
                 self.match_settings.synchronize()
             except UnsupportedBackendError:
@@ -180,9 +172,9 @@ class Target(object):
 
         :param str filename: name for the target file
         """
-        filename_without_extesion = os.path.splitext(filename)[0]
+        match_filename = os.path.splitext(filename)[0] + ".match"
         if self.use_own_settings:
-            self.save_configuration(filename_without_extesion)
+            Finder.to_match_file(self.match_settings, match_filename)
 
     def copy(self):
         """

@@ -27,6 +27,10 @@ class IncompatibleTargetError(GuiBenderError):
     """Exception raised when a matched target is of type that cannot be handled by the matcher"""
 
 
+class IncompatibleTargetFileError(GuiBenderError):
+    """Exception raised when a matched target is restored from a file of unsupported type"""
+
+
 class FindError(GuiBenderError):
     """Exception raised when an Image cannot be found on the screen"""
 
