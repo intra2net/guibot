@@ -57,20 +57,32 @@ class PathTest(unittest.TestCase):
     def test_search(self):
         self.path.add_path('images')
         self.assertEqual('images/shape_black_box.png', self.path.search('shape_black_box.png'))
-        # Test without .png extension
-        self.assertEqual('images/shape_black_box.png', self.path.search('shape_black_box'))
 
-        # Create another Path instance.
-        # It should contain the same search paths
+        # Create another Path instance - it should contain the same search paths
         new_finder = Path()
         self.assertEqual('images/shape_black_box.png', new_finder.search('shape_black_box'))
 
-    def test_search_target_error(self):
+    def test_search_fail(self):
+        self.path.add_path('images')
+
+        # Test failed search
         try:
             target = self.path.search('foobar_does_not_exist')
             self.fail('Exception not thrown')
         except FileNotFoundError, e:
             pass
+
+    def test_search_type(self):
+        self.path.add_path('images')
+
+        # Test without extension
+        self.assertEqual('images/shape_black_box.png', self.path.search('shape_black_box'))
+        self.assertEqual('images/mouse down.txt', self.path.search('mouse down'))
+
+        # Test correct precedence of the checks
+        self.assertEqual('images/shape_blue_circle.pth', self.path.search('shape_blue_circle.pth'))
+        self.assertEqual('images/shape_blue_circle.xml', self.path.search('shape_blue_circle.xml'))
+        self.assertEqual('images/shape_blue_circle.png', self.path.search('shape_blue_circle'))
 
 if __name__ == '__main__':
     unittest.main()

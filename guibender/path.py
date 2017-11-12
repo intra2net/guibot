@@ -79,8 +79,23 @@ class Path(object):
             if os.path.exists(fullname):
                 return fullname
 
-            # Check with .png extension
+            # Check with .png extension for images
             fullname = os.path.join(directory, filename + '.png')
+            if os.path.exists(fullname):
+                return fullname
+
+            # Check with .xml extension for cascade
+            fullname = os.path.join(directory, filename + '.xml')
+            if os.path.exists(fullname):
+                return fullname
+
+            # Check with .txt extension for text
+            fullname = os.path.join(directory, filename + '.txt')
+            if os.path.exists(fullname):
+                return fullname
+
+            # Check with .pth extension for patterns
+            fullname = os.path.join(directory, filename + '.pth')
             if os.path.exists(fullname):
                 return fullname
 
