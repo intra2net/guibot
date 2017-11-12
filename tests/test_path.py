@@ -95,5 +95,13 @@ class PathTest(unittest.TestCase):
         except FileNotFoundError, e:
             pass
 
+    def test_search_silent(self):
+        self.path.add_path('images')
+        self.assertEqual('images/shape_black_box.png', self.path.search('shape_black_box.png', silent=True))
+
+        # Fail if the path restriction results in an empty set
+        target = self.path.search('shape_missing_box.png', silent=True)
+        self.assertIsNone(target)
+
 if __name__ == '__main__':
     unittest.main()
