@@ -65,17 +65,21 @@ class Path(object):
         # empty list but keep reference
         del Path._target_paths[:]
 
-    def search(self, filename):
+    def search(self, filename, restriction=""):
         """
         Search for a filename in the currently accessible paths.
 
         :param str filename: filename of the target to search for
+        :param str restriction: simple string to restrict the number of paths
         :returns: the full name of the found target file
         :rtype: str
         :raises: :py:class:`FileNotFoundError` if no such file was found
         """
         for directory in Path._target_paths:
             fullname = os.path.join(directory, filename)
+
+            if restriction not in fullname:
+                continue
             if os.path.exists(fullname):
                 return fullname
 

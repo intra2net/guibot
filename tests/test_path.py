@@ -84,5 +84,16 @@ class PathTest(unittest.TestCase):
         self.assertEqual('images/shape_blue_circle.xml', self.path.search('shape_blue_circle.xml'))
         self.assertEqual('images/shape_blue_circle.png', self.path.search('shape_blue_circle'))
 
+    def test_search_keyword(self):
+        self.path.add_path('images')
+        self.assertEqual('images/shape_black_box.png', self.path.search('shape_black_box.png', 'images'))
+
+        # Fail if the path restriction results in an empty set
+        try:
+            target = self.path.search('shape_black_box.png', 'other-images')
+            self.fail('Exception not thrown')
+        except FileNotFoundError, e:
+            pass
+
 if __name__ == '__main__':
     unittest.main()
