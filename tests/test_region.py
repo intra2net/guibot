@@ -238,6 +238,49 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
         self.close_windows()
 
+    def test_find_guess_target(self):
+        self.show_image('all_shapes')
+        region = Region()
+        imgroot = os.path.join(common_test.unittest_dir, 'images')
+
+        # find image from string with and without extension
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.png')))
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.match')))
+        region.find('shape_blue_circle')
+        region.find_all('shape_blue_circle')
+        region.find('shape_blue_circle.png')
+        region.find_all('shape_blue_circle.png')
+
+        # guess from match file configuration (target has match config)
+        # precedence is given to match file configuration (then data file)
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.txt')))
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.match')))
+        try:
+            region.find('mouse down')
+            self.fail('exception was not thrown')
+        except FindError, e:
+            pass
+        try:
+            region.find_all('mouse down')
+            self.fail('exception was not thrown')
+        except FindError, e:
+            pass
+
+        # guess from data file extension (target has no match config)
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'circle.steps')))
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'circle.match')))
+        region.find('circle')
+        region.find_all('circle')
+
+        # fail with default type if nothing else works
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.xtx')))
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.match')))
+        self.default_target_type = Image
+        # autopy cannot handle a masked image
+        region.cv_backend = TemplateMatcher()
+        region.find('shape_blue_circle_unknown.xtx')
+        region.find_all('shape_blue_circle_unknown.xtx')
+
     def test_sample(self):
         self.show_image('all_shapes')
 

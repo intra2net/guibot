@@ -391,24 +391,10 @@ class Region(object):
         This method is the main entrance to all our target finding capabilities
         and is the milestone for all target expect methods.
         """
-        # handle some specific target types
         if isinstance(target, basestring):
-            target = self.default_target_type(target)
+            target = self._target_from_string(target)
         log.debug("Looking for target %s", target)
-
-        if target.use_own_settings:
-            log.debug("Using special settings to match %s", target)
-            cv_backend = target.match_settings
-        else:
-            if isinstance(target, Text) and not isinstance(self.cv_backend, TextMatcher):
-                raise IncompatibleTargetError("Need text matcher for matching text")
-            if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
-                                                   isinstance(self.cv_backend, DeepMatcher)):
-                raise IncompatibleTargetError("Need pattern matcher for matching patterns")
-            if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridMatcher):
-                raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
-            target.match_settings = self.cv_backend
-            cv_backend = self.cv_backend
+        cv_backend = self._determine_cv_backend(target)
         dc_backend = self.dc_backend
 
         timeout_limit = time.time() + timeout
@@ -454,24 +440,10 @@ class Region(object):
 
         This method is similar the one above but allows for more than one match.
         """
-        # handle some specific target types
         if isinstance(target, basestring):
-            target = self.default_target_type(target)
-        log.debug("Looking for multiple occurrences of target %s", target)
-
-        if target.use_own_settings:
-            log.debug("Using special settings to match %s", target)
-            cv_backend = target.match_settings
-        else:
-            if isinstance(target, Text) and not isinstance(self.cv_backend, TextMatcher):
-                raise IncompatibleTargetError("Need text matcher for matching text")
-            if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
-                                                   isinstance(self.cv_backend, DeepMatcher)):
-                raise IncompatibleTargetError("Need pattern matcher for matching patterns")
-            if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridMatcher):
-                raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
-            target.match_settings = self.cv_backend
-            cv_backend = self.cv_backend
+            target = self._target_from_string(target)
+        log.debug("Looking for target %s", target)
+        cv_backend = self._determine_cv_backend(target)
         dc_backend = self.dc_backend
 
         # TODO: decide about updating the last_match attribute
@@ -503,6 +475,35 @@ class Region(object):
             else:
                 # don't hog the CPU
                 time.sleep(GlobalSettings.rescan_speed_on_find)
+
+    def _target_from_string(self, target_str):
+        # handle some specific target types
+        try:
+            # guess from a match file has the highest precedence
+            return Target.from_match_file(target_str)
+        except (IOError, FileNotFoundError) as ex:
+            log.debug(ex)
+            try:
+                # if a match file does not exist the data file must exist
+                return Target.from_data_file(target_str)
+            except IncompatibleTargetFileError, ex:
+                log.debug(ex)
+                # if anything else goes wrong fail on the default type
+                return self.default_target_type(target_str)
+
+    def _determine_cv_backend(self, target):
+        if target.use_own_settings:
+            log.debug("Using special settings to match %s", target)
+            return target.match_settings
+        if isinstance(target, Text) and not isinstance(self.cv_backend, TextMatcher):
+            raise IncompatibleTargetError("Need text matcher for matching text")
+        if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
+                                               isinstance(self.cv_backend, DeepMatcher)):
+            raise IncompatibleTargetError("Need pattern matcher for matching patterns")
+        if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridMatcher):
+            raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
+        target.match_settings = self.cv_backend
+        return self.cv_backend
 
     def sample(self, target):
         """
