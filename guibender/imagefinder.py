@@ -784,7 +784,7 @@ class TemplateMatcher(ImageFinder):
             minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(result)
             # rectify to the [0,1] interval to avoid negative values in some methods
             maxVal = min(max(maxVal, 0.0), 1.0)
-            log.debug('Best match with value %s (similarity %s) and location (x,y) %s',
+            log.debug('Next best match with value %s (similarity %s) and location (x,y) %s',
                       str(maxVal), similarity, str(maxLoc))
 
             if maxVal < similarity:
@@ -796,7 +796,7 @@ class TemplateMatcher(ImageFinder):
                     self.imglog.hotmaps.append(current_hotmap)
                     self.imglog.hotmaps.append(final_hotmap)
 
-                log.debug("Best match is not acceptable")
+                log.debug("Next best match is not acceptable")
                 break
             else:
                 self.imglog.similarities.append(maxVal)
@@ -809,7 +809,7 @@ class TemplateMatcher(ImageFinder):
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0,0,0), 2)
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255,255,255), 1)
                 self.imglog.hotmaps.append(current_hotmap)
-                log.debug("Best match is acceptable")
+                log.debug("Next best match is acceptable")
                 matches.append(Match(x, y, w, h, dx, dy, maxVal))
                 if similarity == 0.0:
                     # return just one match if no similarity requirement
@@ -2222,6 +2222,8 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
                                self.imglog.similarities[i] > feature_similarity):
                 # take the template matching location rather than the feature one
                 # for stability (they should ultimately be the same)
+                log.debug("Using template result %s instead of the worse feature result %s",
+                          self.imglog.similarities[i], self.imglog.similarities[-1])
                 location = (left, up)
                 self.imglog.locations[-1] = location
 
