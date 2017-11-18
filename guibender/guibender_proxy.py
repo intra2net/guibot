@@ -94,6 +94,17 @@ class GuiBenderProxy(GuiBender):
     def multi_click(self, target_or_location, count=3, modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).multi_click(target_or_location, count, modifiers))
 
+    def click_expect(self, click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+        return self._proxify(super(GuiBenderProxy, self).click_expect(click_image_or_location,
+                                                                      expect_image_or_location, modifiers, timeout))
+
+    def click_vanish(self, click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+        return self._proxify(super(GuiBenderProxy, self).click_vanish(click_image_or_location,
+                                                                      expect_image_or_location, modifiers, timeout))
+
+    def click_at_index(self, anchor, index=0, find_number=3, timeout=10):
+        return self._proxify(super(GuiBenderProxy, self).click_at_index(anchor, index, find_number, timeout))
+
     def mouse_down(self, target_or_location, button=None):
         return self._proxify(super(GuiBenderProxy, self).mouse_down(target_or_location, button))
 
@@ -121,6 +132,12 @@ class GuiBenderProxy(GuiBender):
 
     def type_at(self, target_or_location=None, text='', modifiers=None):
         return self._proxify(super(GuiBenderProxy, self).type_at(target_or_location, text, modifiers))
+
+    def fill_at(self, anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_click="double"):
+        return self._proxify(super(GuiBenderProxy, self).fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_click))
+
+    def select_at(self, anchor, image_or_index, dx, dy, dw=0, dh=0):
+        return self._proxify(super(GuiBenderProxy, self).select_at(anchor, image_or_index, dx, dy, dw, dh))
 
 
 """

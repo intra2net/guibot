@@ -703,6 +703,97 @@ class Region(object):
         self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
 
+    def click_expect(self, click_image_or_location,
+                     expect_image_or_location=None,
+                     modifiers=None, timeout=60):
+        """
+        Click on an image or location and wait for another one to appear.
+
+        :param click_image_or_location: image or location to click on
+        :type click_image_or_location: Image or Location
+        :param expect_image_or_location: image or location to wait for
+        :type expect_image_or_location: Image or Location or None
+        :param modifiers: key modifiers when clicking
+        :type modifiers: [Key] or None
+        :param int timout: time in seconds to wait for
+        :returns: match obtained from finding the second target within the region
+        :rtype: :py:class:`match.Match`
+        """
+        self.click(click_image_or_location, modifiers=modifiers)
+        if expect_image_or_location is None:
+            expect_image_or_location = click_image_or_location
+        return self.wait(expect_image_or_location, timeout)
+
+    def click_vanish(self, click_image_or_location,
+                     expect_image_or_location=None,
+                     modifiers=None, timeout=60):
+        """
+        Click on an image or location and wait for another one to disappear.
+
+        :param click_image_or_location: image or location to click on
+        :type click_image_or_location: Image or Location
+        :param expect_image_or_location: image or location to wait for
+        :type expect_image_or_location: Image or Location or None
+        :param modifiers: key modifiers when clicking
+        :type modifiers: [Key] or None
+        :param int timout: time in seconds to wait for
+        :returns: whether the second target disappeared from the region
+        :rtype: bool
+        """
+        self.click(click_image_or_location, modifiers=modifiers)
+        if expect_image_or_location is None:
+            expect_image_or_location = click_image_or_location
+        return self.wait_vanish(expect_image_or_location, timeout)
+
+    def click_at_index(self, anchor, index=0, find_number=3, timeout=10):
+        """
+        Find all instances of an anchor image and click on the one with the
+        desired index given that they are horizontally then vertically sorted.
+
+        :param str anchor: image to find all matches of
+        :param int index: index of the match to click on (assuming >=1 matches),
+            sorted according to their (x,y) coordinates
+        :param int find_number: expected number of matches which is necessary
+            for fast failure in case some elements are not visualized and/or
+            proper matching result
+        :param int timeout: timeout before which the number of matches should be found
+        :returns: match from finding the target of the desired index
+        :rtype: :py:class:`match.Match`
+
+        .. note:: This method is a good replacement of a number of coincident
+            limitations regarding the Windows version of autopy and Pyro and
+            therefore the (Windows) virtual user:
+
+            * autopy has an old BUG regarding capturing the screen at a region
+              with boundaries, different than the entire screen -> subregioning which
+              is the main way to deal with any kind of highly repeating and homogeneous
+              interface, is totally unavailable here.
+            * Pyro4 cannot serialize generators, so this is an implementation of a
+              "generator step" involving clicking on consecutive matches.
+            * The serialized virtual user now returns a list of proxified matches
+              when calling find_all, but they are all essentially useless as they
+              don't proxify their returned objects and cannot be sent back as arguments.
+              The special proxy interface of the virtual user was implemented only to
+              handle the most basic case - serialize the objects returned by the main
+              shared class by proxifying them (turning them into remote objects as well,
+              which already have a well-defined serialization method) and nothing more.
+        """
+        matched = False
+        for _ in range(timeout):
+            targets = self.find_all(anchor)
+            if len(targets) == find_number:
+                matched = True
+                break
+        if not matched:
+            # raise an error without redundant imports
+            self.find(anchor)
+
+        sorted_targets = sorted(targets, key=lambda x: (x.x, x.y))
+        logging.debug("Totally %s clicking matches found: %s", len(sorted_targets),
+                      ["(%s, %s)" % (x.x, x.y) for x in sorted_targets])
+        self.click(sorted_targets[index])
+        return sorted_targets[index]
+
     def mouse_down(self, target_or_location, button=None):
         """
         Hold down an arbitrary mouse button on a target or location.
@@ -812,6 +903,8 @@ class Region(object):
         :param keys: characters or special keys depending on the backend
                      (see :py:class:`inputmap.Key` for extensive list)
         :type keys: [str] or str (possibly special keys in both cases)
+        :returns: self
+        :rtype: :py:class:`Region`
 
         Thus, the line ``self.press_keys([Key.ENTER])`` is equivalent to
         the line ``self.press_keys(Key.ENTER)``. Other examples are::
@@ -881,6 +974,8 @@ class Region(object):
         :param modifiers: special keys to hold during typing
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
+        :returns: self
+        :rtype: :py:class:`Region`
 
         Thus, the line ``self.type_text(['hello'])`` is equivalent to
         the line ``self.type_text('hello')``. Other examples are::
@@ -939,3 +1034,136 @@ class Region(object):
                 else:
                     raise ValueError("Unknown text character" % part)
         return text_list
+
+    """Mixed (form) methods"""
+    def fill_at(self, anchor, text, dx, dy,
+                del_flag=True, esc_flag=True,
+                mark_click="double"):
+        """
+        Fills a new text at a text box with variable content
+        using an anchor image and a displacement from that image.
+
+        :param str anchor: image of reference for the input field
+        :param str text: text to fill in
+        :param int dx: displacement from the anchor in the x direction
+        :param int dy: displacement from the anchor in the y direction
+        :param bool del_flag: whether to delete the highlighted text
+        :param bool esc_flag: whether to escape any possible fill suggestions
+        :param str mark_click: "single", "double", or "triple" click to highlight previous text
+        :returns: self
+        :rtype: :py:class:`Region`
+        :raises: :py:class:`exceptions.ValueError` if `mark_click` is not acceptable value
+
+        If the delete flag is set the previous content will be deleted or
+        otherwise the new text will be added in the end of the current text.
+        If the escape flag is set an escape will be pressed after typing
+        in order to avoid any entry suggestions from a dropdown list that
+        could cover important image matching areas.
+
+        Since different interfaces behave differently, one might need a
+        single, double or triple click to mark the already present text that
+        has to be replaced.
+        """
+        # NOTE: handle cases of empty value no filling anything
+        if not text:
+            return
+        from match import Match
+        if isinstance(anchor, Match):
+            start_loc = anchor.target
+        else:
+            start_loc = self.hover(anchor).target
+        loc = Location(start_loc.x + dx, start_loc.y + dy)
+
+        if mark_click == "double":
+            self.double_click(loc)
+        elif mark_click == "single":
+            self.click(loc)
+        elif mark_click == "triple":
+            self.double_click(loc)
+            self.click(loc)
+        else:
+            raise ValueError("Incorrect value '%s' for clicking behavior" % mark_click)
+
+        if isinstance(text, basestring):
+            text = [text]
+        if del_flag:
+            text.insert(0, self.DELETE)
+        else:
+            text.insert(0, self.RIGHT)
+        if esc_flag:
+            text.append(self.ESC)
+        for part in text:
+            try:
+                key_str = self.dc_backend.keymap.to_string(part)
+                self.press_keys(part)
+            except KeyError:
+                self.type_text(part)
+
+        return self
+
+    def select_at(self, anchor, image_or_index, dx, dy, dw=0, dh=0):
+        """
+        Select an option at a dropdown list using either an integer index
+        or an option image if the order cannot be easily inferred.
+
+        :param str anchor: image of reference for the input dropdown menu
+        :param image_or_index: item image or item index
+        :type image_or_index: str or int
+        :param int dx: displacement from the anchor in the x direction
+        :param int dy: displacement from the anchor in the y direction
+        :param int dw: width to add to the displacement for an image search area
+        :param int dh: height to add to the displacement for an image search area
+        :returns: self
+        :rtype: :py:class:`Region`
+
+        It uses an anchor image which is rather constant and a displacement
+        to locate the dropdown location. It moves down to the option if
+        index is used where index 0 represents the current selection.
+
+        To avoid the limitations of the index method, an image of the option
+        can be provided and will be matched in the area with and under the
+        dropdown list. This also handles cases where the option coincides
+        with the previously selected option. For more details see the really
+        cool note in the end of this method.
+        """
+        # NOTE: handle cases of empty value no filling anything
+        if not image_or_index:
+            return
+        from match import Match
+        if isinstance(anchor, Match):
+            start_loc = anchor.target
+        else:
+            start_loc = self.hover(anchor).target
+        loc = Location(start_loc.x + dx, start_loc.y + dy)
+        self.click(loc)
+        # make sure the dropdown options appear
+        time.sleep(1)
+        if isinstance(image_or_index, int):
+            move_key = self.UP if image_or_index < 0 else self.DOWN
+            for _ in range(abs(image_or_index)):
+                # TODO: multiple DOWN in a single press call doesn't work
+                self.press_keys([move_key])
+            self.press_keys([self.ENTER])
+        else:
+            # NOTE: By definition, the dropdown list will be below and centered
+            # at the clicking location that we obtain from the anchor image.
+            # Therefore, we need to center the generated dropdown haystack around
+            # the x of 'loc'. However, it is possible that the option is
+            # already selected and cannot be matched among the dropdown options.
+            # This can be handled if that option is matched at the dropdown box (by
+            # the clicking location) where the already selected option is shown again in
+            # a normal way. Therefore, we need to make sure that the entire dropdown
+            # is in the haystack area. Since the height of any of the options varies,
+            # we need to take the worst case scenario, i.e. the largest y distance
+            # that we have to cover so that we don't cut away the dropdown box from
+            # the dropdown haystack. This worst case is a minimal number of options
+            # which is 0, implying empty space repeated in the dropdown box and the
+            # list, therefore a total of 2 option heights spanning the haystack height.
+            # The haystack y displacement relative to 'loc' is then 1/2*1/2*dh
+            dropdown_haystack = Region(xpos=loc.x - dw / 2,
+                                       ypos=loc.y - dh / 4,
+                                       width=dw, height=dh,
+                                       dc=self.dc_backend, cv=self.cv_backend)
+            dropdown_haystack.click(image_or_index)
+
+        return self

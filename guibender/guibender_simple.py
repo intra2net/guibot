@@ -84,6 +84,18 @@ def multi_click(target_or_location, count=3, modifiers=None):
     return guibender.multi_click(target_or_location, count, modifiers)
 
 
+def click_expect(click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+    return guibender.click_expect(click_image_or_location, expect_image_or_location, modifiers, timeout)
+
+
+def click_vanish(click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+    return guibender.click_vanish(click_image_or_location, expect_image_or_location, modifiers, timeout)
+
+
+def click_at_index(anchor, index=0, find_number=3, timeout=10):
+    return guibender.click_at_index(anchor, index, find_number, timeout)
+
+
 def mouse_down(target_or_location, button=None):
     return guibender.mouse_down(target_or_location, button)
 
@@ -118,3 +130,11 @@ def type_text(text, modifiers=None):
 
 def type_at(target_or_location=None, text='', modifiers=None):
     return guibender.type_at(target_or_location, text, modifiers)
+
+
+def fill_at(anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_click="double"):
+    return guibender.fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_click)
+
+
+def select_at(anchor, image_or_index, dx, dy, dw=0, dh=0):
+    return guibender.select_at(anchor, image_or_index, dx, dy, dw, dh)
