@@ -840,8 +840,8 @@ class FinderTest(unittest.TestCase):
         # verify match accuracy
         self.assertEqual(len(matches), 0)
 
-        # verify dumped files count and names
-        dumps = self._verify_and_get_dumps(12, multistep=True)
+        # verify dumped files count and names (4+4+7)
+        dumps = self._verify_and_get_dumps(15, multistep=True)
 
     def test_hybrid_fallback(self):
         finder = HybridMatcher()

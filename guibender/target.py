@@ -15,6 +15,7 @@
 #
 import copy
 import os
+import re
 import PIL.Image
 try:
     import configparser as config
@@ -513,13 +514,18 @@ class Chain(Target):
         Load steps from a sequence definition file.
 
         :param str steps_filename: names for the sequence definition file
+        :raises: :py:class:`errors.UnsupportedBackendError` if a chain step is of unknown type
+        :raises: :py:class:`IOError` if an chain step line cannot be parsed
         """
         if not os.path.exists(steps_filename):
             steps_filename = Path().search(steps_filename)
 
         with open(steps_filename) as f:
             for step in f:
-                data, config = step.split()
+                dataconfig = re.split(r'\t+', step.rstrip('\t\n'))
+                if len(dataconfig) != 2:
+                    raise IOError("Invalid chain step line '%s'" % dataconfig[0])
+                data, config = re.split(r'\t+', step.rstrip('\t\n'))
 
                 super(Chain, self).load(config)
                 self.use_own_settings = False
