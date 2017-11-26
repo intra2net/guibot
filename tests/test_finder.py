@@ -20,7 +20,7 @@ import unittest
 import shutil
 
 import common_test
-from settings import GlobalSettings
+from settings import GlobalConfig
 from path import Path
 from imagelogger import ImageLogger
 from target import Image, Text, Pattern, Chain
@@ -36,28 +36,28 @@ class FinderTest(unittest.TestCase):
         self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         # preserve values of static attributes
-        self.prev_loglevel = GlobalSettings.image_logging_level
-        self.prev_logpath = GlobalSettings.image_logging_destination
-        self.prev_logwidth = GlobalSettings.image_logging_step_width
+        self.prev_loglevel = GlobalConfig.image_logging_level
+        self.prev_logpath = GlobalConfig.image_logging_destination
+        self.prev_logwidth = GlobalConfig.image_logging_step_width
 
         self.logpath = os.path.join(common_test.unittest_dir, 'tmp')
-        GlobalSettings.image_logging_level = 0
-        GlobalSettings.image_logging_destination = self.logpath
-        GlobalSettings.image_logging_step_width = 4
+        GlobalConfig.image_logging_level = 0
+        GlobalConfig.image_logging_destination = self.logpath
+        GlobalConfig.image_logging_step_width = 4
 
     @classmethod
     def tearDownClass(self):
-        GlobalSettings.image_logging_level = self.prev_loglevel
-        GlobalSettings.image_logging_destination = self.prev_logpath
-        GlobalSettings.image_logging_step_width = self.prev_logwidth
+        GlobalConfig.image_logging_level = self.prev_loglevel
+        GlobalConfig.image_logging_destination = self.prev_logpath
+        GlobalConfig.image_logging_step_width = self.prev_logwidth
 
     def setUp(self):
         # the image logger will recreate its logging destination
         ImageLogger.step = 1
 
     def tearDown(self):
-        if os.path.exists(GlobalSettings.image_logging_destination):
-            shutil.rmtree(GlobalSettings.image_logging_destination)
+        if os.path.exists(GlobalConfig.image_logging_destination):
+            shutil.rmtree(GlobalConfig.image_logging_destination)
 
     def _get_matches_in(self, pattern, dumps):
         return [match.group(0) for d in dumps for match in [re.search(pattern, d)] if match]

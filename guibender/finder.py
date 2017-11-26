@@ -21,7 +21,7 @@ try:
 except ImportError:
     import ConfigParser as config
 
-from settings import GlobalSettings, LocalSettings
+from config import GlobalConfig, LocalConfig
 from imagelogger import ImageLogger
 from path import Path
 from errors import *
@@ -117,7 +117,7 @@ class CVParameter(object):
         return CVParameter(*args)
 
 
-class Finder(LocalSettings):
+class Finder(LocalConfig):
     """
     Base for all image matching functionality and backends.
 
@@ -159,7 +159,7 @@ class Finder(LocalSettings):
         try:
             backend_name = parser.get("find", 'backend')
         except config.NoOptionError:
-            backend_name = GlobalSettings.find_backend
+            backend_name = GlobalConfig.find_backend
 
         if backend_name == "autopy":
             finder = AutoPyMatcher()
@@ -251,7 +251,7 @@ class Finder(LocalSettings):
         if reset:
             super(Finder, self).configure_backend(backend="cv", reset=True)
         if backend is None:
-            backend = GlobalSettings.find_backend
+            backend = GlobalConfig.find_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -495,7 +495,7 @@ class ContourMatcher(Finder):
         if category == "contour" and backend is None:
             backend = "mixed"
         elif category == "threshold" and backend is None:
-            backend = GlobalSettings.contour_threshold_backend
+            backend = GlobalConfig.contour_threshold_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -748,7 +748,7 @@ class TemplateMatcher(Finder):
         if reset:
             super(TemplateMatcher, self).configure_backend("template", reset=True)
         if backend is None:
-            backend = GlobalSettings.template_match_backend
+            backend = GlobalConfig.template_match_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -977,11 +977,11 @@ class FeatureMatcher(Finder):
         if category == "feature" and backend is None:
             backend = "mixed"
         elif category == "fdetect" and backend is None:
-            backend = GlobalSettings.feature_detect_backend
+            backend = GlobalConfig.feature_detect_backend
         elif category == "fextract" and backend is None:
-            backend = GlobalSettings.feature_extract_backend
+            backend = GlobalConfig.feature_extract_backend
         elif category == "fmatch" and backend is None:
-            backend = GlobalSettings.feature_match_backend
+            backend = GlobalConfig.feature_match_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -1708,9 +1708,9 @@ class TextMatcher(ContourMatcher):
         if category == "text" and backend is None:
             backend = "mixed"
         elif category == "tdetect" and backend is None:
-            backend = GlobalSettings.text_detect_backend
+            backend = GlobalConfig.text_detect_backend
         elif category == "ocr" and backend is None:
-            backend = GlobalSettings.text_ocr_backend
+            backend = GlobalConfig.text_ocr_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -3062,7 +3062,7 @@ class HybridMatcher(Finder):
             # backends are the same as the ones for the base class
             super(HybridMatcher, self).configure_backend(backend=backend, reset=True)
         if backend is None:
-            backend = GlobalSettings.hybrid_match_backend
+            backend = GlobalConfig.hybrid_match_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))

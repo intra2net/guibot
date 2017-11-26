@@ -22,7 +22,7 @@ import shutil
 import subprocess
 import common_test
 
-from settings import GlobalSettings
+from config import GlobalConfig
 from path import Path
 from location import Location
 from region import Region
@@ -45,15 +45,15 @@ class RegionTest(unittest.TestCase):
         self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')
 
         # preserve values of static attributes
-        self.prev_loglevel = GlobalSettings.image_logging_level
-        self.prev_logpath = GlobalSettings.image_logging_destination
-        GlobalSettings.image_logging_level = 0
-        GlobalSettings.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
+        self.prev_loglevel = GlobalConfig.image_logging_level
+        self.prev_logpath = GlobalConfig.image_logging_destination
+        GlobalConfig.image_logging_level = 0
+        GlobalConfig.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
 
     @classmethod
     def tearDownClass(self):
-        GlobalSettings.image_logging_level = self.prev_loglevel
-        GlobalSettings.image_logging_destination = self.prev_logpath
+        GlobalConfig.image_logging_level = self.prev_loglevel
+        GlobalConfig.image_logging_destination = self.prev_logpath
 
     def setUp(self):
         self.child_img = None
@@ -61,8 +61,8 @@ class RegionTest(unittest.TestCase):
 
     def tearDown(self):
         self.close_windows()
-        if os.path.exists(GlobalSettings.image_logging_destination):
-            shutil.rmtree(GlobalSettings.image_logging_destination)
+        if os.path.exists(GlobalConfig.image_logging_destination):
+            shutil.rmtree(GlobalConfig.image_logging_destination)
 
     def show_image(self, filename):
         filename = self.path.search(filename)

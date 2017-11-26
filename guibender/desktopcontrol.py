@@ -23,13 +23,13 @@ import PIL.Image
 from tempfile import NamedTemporaryFile
 
 import inputmap
-from settings import GlobalSettings, LocalSettings
+from config import GlobalConfig, LocalConfig
 from target import Image
 from location import Location
 from errors import *
 
 
-class DesktopControl(LocalSettings):
+class DesktopControl(LocalConfig):
     """
     Desktop control backend, responsible for performing desktop operations
     like mouse clicking, key pressing, text typing, etc.
@@ -125,7 +125,7 @@ class DesktopControl(LocalSettings):
         if reset:
             super(DesktopControl, self).configure_backend("dc", reset=True)
         if backend is None:
-            backend = GlobalSettings.desktop_control_backend
+            backend = GlobalConfig.desktop_control_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -400,7 +400,7 @@ class AutoPyDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = GlobalSettings.click_delay
+        timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
@@ -450,13 +450,13 @@ class AutoPyDesktopControl(DesktopControl):
             capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             for part in text:
                 for char in str(part):
-                    if char in shift_chars and GlobalSettings.preprocess_special_chars:
+                    if char in shift_chars and GlobalConfig.preprocess_special_chars:
                         self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                    elif char in capital_chars and GlobalSettings.preprocess_special_chars:
+                    elif char in capital_chars and GlobalConfig.preprocess_special_chars:
                         self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
                     else:
                         self._backend_obj.key.tap(char)
-                    time.sleep(GlobalSettings.delay_between_keys)
+                    time.sleep(GlobalConfig.delay_between_keys)
                 # TODO: Fix AutoPy to handle international chars and other stuff so
                 # that both the Linux and Windows version are reduced to autopy.key
                 # autopy.key.type_string(text)
@@ -576,7 +576,7 @@ class QemuDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = GlobalSettings.click_delay
+        timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
@@ -669,12 +669,12 @@ class QemuDesktopControl(DesktopControl):
             for char in str(part):
                 if qemu_escape_map.has_key(char):
                     char = qemu_escape_map[char]
-                elif capital_chars.has_key(char) and GlobalSettings.preprocess_special_chars:
+                elif capital_chars.has_key(char) and GlobalConfig.preprocess_special_chars:
                     char = "shift-%s" % capital_chars[char]
-                elif special_chars.has_key(char) and GlobalSettings.preprocess_special_chars:
+                elif special_chars.has_key(char) and GlobalConfig.preprocess_special_chars:
                     char = "shift-%s" % special_chars[char]
                 self._backend_obj.sendkey(char, hold_time=1)
-                time.sleep(GlobalSettings.delay_between_keys)
+                time.sleep(GlobalConfig.delay_between_keys)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
@@ -789,7 +789,7 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = GlobalSettings.click_delay
+        timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
@@ -857,7 +857,7 @@ class VNCDoToolDesktopControl(DesktopControl):
                     char = 'space'
                 elif char == "\n":
                     char = 'return'
-                time.sleep(GlobalSettings.delay_between_keys)
+                time.sleep(GlobalConfig.delay_between_keys)
                 self._backend_obj.keyPress(char)
 
         if modifiers != None:

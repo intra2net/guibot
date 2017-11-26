@@ -17,7 +17,7 @@ import time
 import os
 
 # interconnected classes - carefully avoid circular reference
-from settings import GlobalSettings
+from config import GlobalConfig
 from location import Location
 from imagelogger import ImageLogger
 from errors import *
@@ -51,35 +51,35 @@ class Region(object):
         :raises: :py:class:`UninitializedBackendError` if the region is empty
 
         If any of the backends is not defined a new one will be initiated
-        using the parameters defined in :py:class:`settings.GlobalSettings`.
+        using the parameters defined in :py:class:`settings.GlobalConfig`.
         If `width` or `height` remains zero, it will be set to the maximum
         available within the screen space.
         """
         if dc is None:
-            if GlobalSettings.desktop_control_backend == "autopy":
+            if GlobalConfig.desktop_control_backend == "autopy":
                 dc = AutoPyDesktopControl()
-            elif GlobalSettings.desktop_control_backend == "qemu":
+            elif GlobalConfig.desktop_control_backend == "qemu":
                 dc = QemuDesktopControl()
-            elif GlobalSettings.desktop_control_backend == "vncdotool":
+            elif GlobalConfig.desktop_control_backend == "vncdotool":
                 dc = VNCDoToolDesktopControl()
         if cv is None:
-            if GlobalSettings.find_backend == "autopy":
+            if GlobalConfig.find_backend == "autopy":
                 cv = AutoPyMatcher()
-            elif GlobalSettings.find_backend == "contour":
+            elif GlobalConfig.find_backend == "contour":
                 cv = ContourMatcher()
-            elif GlobalSettings.find_backend == "template":
+            elif GlobalConfig.find_backend == "template":
                 cv = TemplateMatcher()
-            elif GlobalSettings.find_backend == "feature":
+            elif GlobalConfig.find_backend == "feature":
                 cv = FeatureMatcher()
-            elif GlobalSettings.find_backend == "cascade":
+            elif GlobalConfig.find_backend == "cascade":
                 cv = CascadeMatcher()
-            elif GlobalSettings.find_backend == "text":
+            elif GlobalConfig.find_backend == "text":
                 cv = TextMatcher()
-            elif GlobalSettings.find_backend == "tempfeat":
+            elif GlobalConfig.find_backend == "tempfeat":
                 cv = TemplateFeatureMatcher()
-            elif GlobalSettings.find_backend == "deep":
+            elif GlobalConfig.find_backend == "deep":
                 cv = DeepMatcher()
-            elif GlobalSettings.find_backend == "hybrid":
+            elif GlobalConfig.find_backend == "hybrid":
                 cv = HybridMatcher()
 
         # since the backends are read/write make them public attributes
@@ -411,10 +411,10 @@ class Region(object):
                 return self._last_match
 
             elif time.time() > timeout_limit:
-                if GlobalSettings.save_needle_on_error:
+                if GlobalConfig.save_needle_on_error:
                     if not os.path.exists(ImageLogger.logging_destination):
                         os.mkdir(ImageLogger.logging_destination)
-                    dump_path = GlobalSettings.image_logging_destination
+                    dump_path = GlobalConfig.image_logging_destination
                     hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
@@ -423,7 +423,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(GlobalSettings.rescan_speed_on_find)
+                time.sleep(GlobalConfig.rescan_speed_on_find)
 
     def find_all(self, target, timeout=10, allow_zero=False):
         """
@@ -466,7 +466,7 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    if GlobalSettings.save_needle_on_error:
+                    if GlobalConfig.save_needle_on_error:
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
                         target.save('/tmp/guibender_last_finderror_needle.png')
@@ -474,7 +474,7 @@ class Region(object):
 
             else:
                 # don't hog the CPU
-                time.sleep(GlobalSettings.rescan_speed_on_find)
+                time.sleep(GlobalConfig.rescan_speed_on_find)
 
     def _target_from_string(self, target_str):
         # handle some specific target types
@@ -780,7 +780,7 @@ class Region(object):
 
         log.info("Dragging %s", target_or_location)
         self.dc_backend.mouse_down(self.LEFT_BUTTON)
-        time.sleep(GlobalSettings.delay_after_drag)
+        time.sleep(GlobalConfig.delay_after_drag)
 
         return match
 
@@ -792,7 +792,7 @@ class Region(object):
         but with `target_or_location` as `dst_target_or_location`.
         """
         match = self.hover(target_or_location)
-        time.sleep(GlobalSettings.delay_before_drop)
+        time.sleep(GlobalConfig.delay_before_drop)
 
         log.info("Dropping at %s", target_or_location)
         self.dc_backend.mouse_up(self.LEFT_BUTTON)
@@ -820,7 +820,7 @@ class Region(object):
             self.press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
-        time.sleep(GlobalSettings.delay_before_keys)
+        time.sleep(GlobalConfig.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return self
 
@@ -834,7 +834,7 @@ class Region(object):
         """
         keys_list = self._parse_keys(keys, target_or_location)
         match = self.click(target_or_location)
-        time.sleep(GlobalSettings.delay_before_keys)
+        time.sleep(GlobalConfig.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return match
 
@@ -893,7 +893,7 @@ class Region(object):
         typing special keys.
         """
         text_list = self._parse_text(text)
-        time.sleep(GlobalSettings.delay_before_keys)
+        time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
@@ -913,7 +913,7 @@ class Region(object):
         match = None
         if target_or_location != None:
             match = self.click(target_or_location)
-        time.sleep(GlobalSettings.delay_before_keys)
+        time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]

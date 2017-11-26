@@ -18,7 +18,7 @@ import os
 import re
 import PIL.Image
 
-from settings import GlobalSettings
+from config import GlobalConfig
 from location import Location
 from path import Path
 from finder import *
@@ -96,23 +96,23 @@ class Target(object):
         if self.match_settings != None:
             self.use_own_settings = True
         else:
-            if GlobalSettings.find_backend == "autopy":
+            if GlobalConfig.find_backend == "autopy":
                 self.match_settings = AutoPyMatcher()
-            elif GlobalSettings.find_backend == "contour":
+            elif GlobalConfig.find_backend == "contour":
                 self.match_settings = ContourMatcher()
-            elif GlobalSettings.find_backend == "template":
+            elif GlobalConfig.find_backend == "template":
                 self.match_settings = TemplateMatcher()
-            elif GlobalSettings.find_backend == "feature":
+            elif GlobalConfig.find_backend == "feature":
                 self.match_settings = FeatureMatcher()
-            elif GlobalSettings.find_backend == "cascade":
+            elif GlobalConfig.find_backend == "cascade":
                 self.match_settings = CascadeMatcher()
-            elif GlobalSettings.find_backend == "text":
+            elif GlobalConfig.find_backend == "text":
                 self.match_settings = TextMatcher()
-            elif GlobalSettings.find_backend == "tempfeat":
+            elif GlobalConfig.find_backend == "tempfeat":
                 self.match_settings = TemplateFeatureMatcher()
-            elif GlobalSettings.find_backend == "deep":
+            elif GlobalConfig.find_backend == "deep":
                 self.match_settings = DeepMatcher()
-            elif GlobalSettings.find_backend == "hybrid":
+            elif GlobalConfig.find_backend == "hybrid":
                 self.match_settings = HybridMatcher()
             self.use_own_settings = False
 
@@ -332,11 +332,11 @@ class Image(Target):
         :rtype: :py:class:`target.Image`
 
         The image is compressed upon saving with a PNG compression setting
-        specified by :py:func:`settings.GlobalSettings.image_quality`.
+        specified by :py:func:`settings.GlobalConfig.image_quality`.
         """
         super(Image, self).save(filename)
         filename += ".png" if os.path.splitext(filename)[1] != ".png" else ""
-        self.pil_image.save(filename, compress_level=GlobalSettings.image_quality)
+        self.pil_image.save(filename, compress_level=GlobalConfig.image_quality)
 
         new_image = self.copy()
         new_image._filename = filename
