@@ -618,21 +618,22 @@ class Region(object):
         :rtype: :py:class:`match.Match` or None
         """
         log.info("Hovering over %s", target_or_location)
+        smooth = GlobalConfig.smooth_mouse_drag
 
         # Handle Match
         from match import Match
         if isinstance(target_or_location, Match):
-            self.dc_backend.mouse_move(target_or_location.target)
+            self.dc_backend.mouse_move(target_or_location.target, smooth)
             return None
 
         # Handle Location
         if isinstance(target_or_location, Location):
-            self.dc_backend.mouse_move(target_or_location)
+            self.dc_backend.mouse_move(target_or_location, smooth)
             return None
 
         # Find target (image, text, pattern) or str
         match = self.find(target_or_location)
-        self.dc_backend.mouse_move(match.target)
+        self.dc_backend.mouse_move(match.target, smooth)
 
         return match
 

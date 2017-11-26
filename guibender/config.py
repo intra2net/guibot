@@ -44,6 +44,7 @@ class GlobalConfig(type):
     _keys_delay = 0.2
     _type_delay = 0.1
     _rescan_speed_on_find = 0.2
+    _smooth_mouse_drag = True
     _screen_autoconnect = True
     _preprocess_special_chars = True
     _save_needle_on_error = True
@@ -146,19 +147,37 @@ class GlobalConfig(type):
     #: time interval between two image matching attempts (used to reduce overhead on the CPU)
     rescan_speed_on_find = property(fget=rescan_speed_on_find, fset=rescan_speed_on_find)
 
-    def screen_autoconnect(self, value=None):
+    def smooth_mouse_drag(self, value=None):
         """
         Getter/setter for property attribute.
 
-        :param value: whether to perform complete initialization of the
-                      desktop control backend
+        :param value: whether to move the mouse cursor to a location instantly or smoothly
         :type value: bool or None
         :returns: current value if no argument was passed otherwise only sets it
         :rtype: bool or None
-        :raises: :py:class:`ValueError` is value is not boolean or None
+        :raises: :py:class:`ValueError` if value is not boolean or None
+
+        This is useful if a routine task has to be executed faster without
+        supervision or the need of debugging.
+        """
+        if value is None:
+            return GlobalConfig._smooth_mouse_drag
+        elif value == True or value == False:
+            GlobalConfig._smooth_mouse_drag = value
+        else:
+            raise ValueError
+    #: whether to move the mouse cursor to a location instantly or smoothly
+    smooth_mouse_drag = property(fget=smooth_mouse_drag, fset=smooth_mouse_drag)
+
+    def screen_autoconnect(self, value=None):
+        """
+        Same as :py:func:`GlobalConfig.smooth_mouse_drag` but with
+
+        :param value: whether to perform complete initialization of the
+                      desktop control backend
 
         Complete initialization includes connecting to the backend (screen)
-        selected in the `_desktop_control_backend`.
+        selected in the :py:func:`GlobalConfig.desktop_control_backend`.
 
         If disabled, you have to connect before performing any GUI operations::
 
@@ -177,7 +196,7 @@ class GlobalConfig(type):
 
     def preprocess_special_chars(self, value=None):
         """
-        Same as :py:func:`GlobalConfig.screen_autoconnect` but with
+        Same as :py:func:`GlobalConfig.smooth_mouse_drag` but with
 
         :param value: whether to preprocess capital and special characters and
                       handle them internally
@@ -196,7 +215,7 @@ class GlobalConfig(type):
 
     def save_needle_on_error(self, value=None):
         """
-        Same as :py:func:`GlobalConfig.screen_autoconnect` but with
+        Same as :py:func:`GlobalConfig.smooth_mouse_drag` but with
 
         :param value: whether to perform an extra needle dump on matching error
         """
