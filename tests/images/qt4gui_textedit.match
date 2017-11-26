@@ -1,6 +1,6 @@
 # IMAGE MATCH DATA
 [find]
-backend = hybrid
+backend = tempfeat
 similarity = <value='0.5' min='0.0' max='1.0' delta='0.1' tolerance='0.1' fixed='True'>
 
 [fdetect]
@@ -8,6 +8,6 @@ backend = ORB
 hzoom = <value='10.0' min='1.0' max='10.0' delta='1.0' tolerance='1.0' fixed='True'>
 nzoom = <value='4.0' min='1.0' max='10.0' delta='1.0' tolerance='1.0' fixed='True'>
 
-[hybrid]
+[tempfeat]
 backend = mixed
 front_similarity = <value='0.4' min='0.0' max='1.0' delta='0.1' tolerance='0.1' fixed='True'>

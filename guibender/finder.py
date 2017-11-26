@@ -21,12 +21,13 @@ try:
 except ImportError:
     import ConfigParser as config
 
-from settings import GlobalSettings, LocalSettings
+from config import GlobalConfig, LocalConfig
 from imagelogger import ImageLogger
+from path import Path
 from errors import *
 
 import logging
-log = logging.getLogger('guibender.imagefinder')
+log = logging.getLogger('guibender.finder')
 
 
 class CVParameter(object):
@@ -116,39 +117,125 @@ class CVParameter(object):
         return CVParameter(*args)
 
 
-class ImageFinder(LocalSettings):
+class Finder(LocalConfig):
     """
     Base for all image matching functionality and backends.
 
-    It has implementations with both template matching and feature matching
-    algorithms through AutoPy or through the OpenCV library as well as a
-    hybrid approach. The image finding methods include finding one or all
-    matches above the similarity defined in the configuration of each backend.
-
-    External (image finder) parameters are:
-        * detect filter - works for certain detectors and
-            determines how many initial features are
-            detected in an image (e.g. hessian threshold for
-            SURF detector)
-        * match filter - determines what part of all matches
-            returned by feature matcher remain good matches
-        * project filter - determines what part of the good
-            matches are considered inliers
-        * ratio test - boolean for whether to perform a ratio test
-        * symmetry test - boolean for whether to perform a symmetry test
+    The image finding methods include finding one or all matches
+    above the similarity defined in the configuration of each backend.
 
     There are many parameters that could contribute for a good match. They can
     all be manually adjusted or automatically calibrated.
     """
 
+    @staticmethod
+    def from_match_file(filename):
+        """
+        Read the configuration from a match file with the given filename.
+
+        :param str filename: match filename for the configuration
+        :returns: target finder with the parsed (and generated) settings
+        :rtype: :py:class:`finder.Finder`
+        :raises: :py:class:`IOError` if the respective match file couldn't be read
+
+        The influence of the read configuration is that of an overwrite, i.e.
+        all parameters will be generated (if not already present) and then the
+        ones read from the configuration file will be overwritten.
+        """
+        parser = config.RawConfigParser()
+        # preserve case sensitivity
+        parser.optionxform = str
+
+        if not filename.endswith(".match"):
+            filename += ".match"
+        if not os.path.exists(filename):
+            filename = Path().search(filename)
+        success = parser.read(filename)
+        # if no file is found throw an exception
+        if len(success) == 0:
+            raise IOError("Match file %s is corrupted and cannot be read" % filename)
+        if not parser.has_section("find"):
+            raise IOError("No image matching configuration can be found")
+        try:
+            backend_name = parser.get("find", 'backend')
+        except config.NoOptionError:
+            backend_name = GlobalConfig.find_backend
+
+        if backend_name == "autopy":
+            finder = AutoPyFinder()
+        elif backend_name == "contour":
+            finder = ContourFinder()
+        elif backend_name == "template":
+            finder = TemplateFinder()
+        elif backend_name == "feature":
+            finder = FeatureFinder()
+        elif backend_name == "cascade":
+            finder = CascadeFinder()
+        elif backend_name == "text":
+            finder = TextFinder()
+        elif backend_name == "tempfeat":
+            finder = TemplateFeatureFinder()
+        elif backend_name == "deep":
+            finder = DeepFinder()
+        elif backend_name == "hybrid":
+            finder = HybridFinder()
+        else:
+            raise UnsupportedBackendError("No '%s' backend is supported" % backend_name)
+
+        for category in finder.params.keys():
+            if parser.has_section(category):
+                section_backend = parser.get(category, 'backend')
+                if section_backend != finder.params[category]["backend"]:
+                    finder.configure_backend(backend=section_backend, category=category, reset=False)
+                for option in parser.options(category):
+                    if option == "backend":
+                        continue
+                    param_string = parser.get(category, option)
+                    if isinstance(finder.params[category][option], CVParameter):
+                        param = CVParameter.from_string(param_string)
+                        log.log(0, "%s %s", param_string, param)
+                    else:
+                        param = param_string
+                    finder.params[category][option] = param
+
+        return finder
+
+    @staticmethod
+    def to_match_file(finder, filename):
+        """
+        Write the configuration to a match file with the given filename.
+
+        :param finder: match configuration to save
+        :type finder: :py:class:`finder.Finder`
+        :param str filename: match filename for the configuration
+        """
+        parser = config.RawConfigParser()
+        # preserve case sensitivity
+        parser.optionxform = str
+
+        sections = finder.params.keys()
+        for section in sections:
+            if not parser.has_section(section):
+                parser.add_section(section)
+            parser.set(section, 'backend', finder.params[section]["backend"])
+            for option in finder.params[section]:
+                log.log(0, "%s %s", section, option)
+                parser.set(section, option, finder.params[section][option])
+
+        if not filename.endswith(".match"):
+            filename += ".match"
+        with open(filename, 'w') as configfile:
+            configfile.write("# IMAGE MATCH DATA\n")
+            parser.write(configfile)
+
     def __init__(self, configure=True, synchronize=True):
-        """Build an image finder and its CV backend settings."""
-        super(ImageFinder, self).__init__(configure=False, synchronize=False)
+        """Build a finder and its CV backend settings."""
+        super(Finder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
         self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature",
-                                           "cascade", "text", "hybrid", "deep")
+                                           "cascade", "text", "tempfeat", "deep", "hybrid")
 
         # other attributes
         self.imglog = ImageLogger()
@@ -162,9 +249,9 @@ class ImageFinder(LocalSettings):
         if category != "find":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(ImageFinder, self).configure_backend(backend="cv", reset=True)
+            super(Finder, self).configure_backend(backend="cv", reset=True)
         if backend is None:
-            backend = GlobalSettings.find_image_backend
+            backend = GlobalConfig.find_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -187,12 +274,10 @@ class ImageFinder(LocalSettings):
         if category != "find":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(ImageFinder, self).synchronize_backend("cv", reset=True)
-        # no backend object to sync to
-        if backend is None:
-            backend = GlobalSettings.find_image_backend
-        if backend not in self.algorithms[self.categories[category]]:
+            super(Finder, self).synchronize_backend("cv", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
     def synchronize_backend(self, backend=None, category="find", reset=False):
         """
@@ -201,68 +286,6 @@ class ImageFinder(LocalSettings):
         See base method for details.
         """
         self.__synchronize_backend(backend, category, reset)
-
-    def from_match_file(self, filename_without_extention):
-        """
-        Read the configuration from a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        :raises: :py:class:`IOError` if the respective match file couldn't be read
-
-        The influence of the read configuration is that of an overwrite, i.e.
-        all parameters will be generated (if not already present) and then the
-        ones read from the configuration file will be overwritten.
-        """
-        if len(self.params.keys()) == 0:
-            self.configure()
-
-        parser = config.RawConfigParser()
-        # preserve case sensitivity
-        parser.optionxform = str
-
-        success = parser.read("%s.match" % filename_without_extention)
-        # if no file is found throw an exception
-        if len(success) == 0:
-            raise IOError
-
-        for category in self.params.keys():
-            if parser.has_section(category):
-                section_backend = parser.get(category, 'backend')
-                if section_backend != self.params[category]["backend"]:
-                    self.configure_backend(backend=section_backend, category=category, reset=False)
-                for option in parser.options(category):
-                    if option == "backend":
-                        continue
-                    param_string = parser.get(category, option)
-                    if isinstance(self.params[category][option], CVParameter):
-                        param = CVParameter.from_string(param_string)
-                        log.log(0, "%s %s", param_string, param)
-                    else:
-                        param = param_string
-                    self.params[category][option] = param
-
-    def to_match_file(self, filename_without_extention):
-        """
-        Write the configuration in a .match file with the given filename.
-
-        :param str filename_without_extention: match filename for the configuration
-        """
-        parser = config.RawConfigParser()
-        # preserve case sensitivity
-        parser.optionxform = str
-
-        sections = self.params.keys()
-        for section in sections:
-            if not parser.has_section(section):
-                parser.add_section(section)
-            parser.set(section, 'backend', self.params[section]["backend"])
-            for option in self.params[section]:
-                log.log(0, "%s %s", section, option)
-                parser.set(section, option, self.params[section][option])
-
-        with open("%s.match" % filename_without_extention, 'w') as configfile:
-            configfile.write("# IMAGE MATCH DATA\n")
-            parser.write(configfile)
 
     def can_calibrate(self, category, mark):
         """
@@ -278,14 +301,15 @@ class ImageFinder(LocalSettings):
             raise UnsupportedBackendError("Category '%s' not among the "
                                           "supported %s" % (category, self.categories.keys()))
 
-        for param in self.params[category].values():
-            if not isinstance(param, CVParameter):
+        for key, value in self.params[category].items():
+            if not isinstance(value, CVParameter):
                 continue
             # BUG: force fix parameters that have internal bugs
-            if category == "fextract" and param == "bytes":
-                param.fixed = True
+            if category == "fextract" and value == "bytes":
+                value.fixed = True
             else:
-                param.fixed = not mark
+                value.fixed = not mark
+            logging.debug("Setting %s to fixed=%s for calibration", key, value.fixed)
 
     def copy(self):
         acopy = type(self)()
@@ -302,12 +326,12 @@ class ImageFinder(LocalSettings):
 
     def find(self, needle, haystack):
         """
-        Find all needle images in a haystack image.
+        Find all needle targets in a haystack image.
 
-        :param needle: image, text, or pattern to look for
-        :type needle: :py:class:`image.Target`
+        :param needle: image, text, pattern, or a list or chain of such to look for
+        :type needle: :py:class:`target.Target` or [:py:class:`target.Target`]
         :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
+        :type haystack: :py:class:`target.Image`
         :returns: all found matches (one in most use cases)
         :rtype: [:py:class:`match.Match`]
         :raises: :py:class:`NotImplementedError` if the base class method is called
@@ -338,12 +362,12 @@ class ImageFinder(LocalSettings):
         ImageLogger.step += 1
 
 
-class AutoPyMatcher(ImageFinder):
+class AutoPyFinder(Finder):
     """Simple matching backend provided by AutoPy."""
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using AutoPy."""
-        super(AutoPyMatcher, self).__init__(configure=False, synchronize=False)
+        super(AutoPyFinder, self).__init__(configure=False, synchronize=False)
 
         # other attributes
         self._bitmapcache = {}
@@ -356,7 +380,7 @@ class AutoPyMatcher(ImageFinder):
         if category != "autopy":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(AutoPyMatcher, self).configure_backend(backend="autopy", reset=True)
+            super(AutoPyFinder, self).configure_backend(backend="autopy", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -372,6 +396,9 @@ class AutoPyMatcher(ImageFinder):
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
+
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
 
         See base method for details.
 
@@ -432,7 +459,7 @@ class AutoPyMatcher(ImageFinder):
         return matches
 
 
-class ContourMatcher(ImageFinder):
+class ContourFinder(Finder):
     """
     Contour matching backend provided by OpenCV.
 
@@ -443,7 +470,7 @@ class ContourMatcher(ImageFinder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's contour matching."""
-        super(ContourMatcher, self).__init__(configure=False, synchronize=False)
+        super(ContourFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["contour"] = "contour_extractors"
@@ -464,11 +491,11 @@ class ContourMatcher(ImageFinder):
         if category not in ["contour", "threshold"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(ContourMatcher, self).configure_backend("contour", reset=True)
+            super(ContourFinder, self).configure_backend("contour", reset=True)
         if category == "contour" and backend is None:
             backend = "mixed"
         elif category == "threshold" and backend is None:
-            backend = "adaptive"
+            backend = GlobalConfig.contour_threshold_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -528,6 +555,9 @@ class ContourMatcher(ImageFinder):
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
+
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
 
         See base method for details.
 
@@ -691,12 +721,12 @@ class ContourMatcher(ImageFinder):
         ImageLogger.step += 1
 
 
-class TemplateMatcher(ImageFinder):
+class TemplateFinder(Finder):
     """Template matching backend provided by OpenCV."""
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's template matching."""
-        super(TemplateMatcher, self).__init__(configure=False, synchronize=False)
+        super(TemplateFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["template"] = "template_matchers"
@@ -716,9 +746,9 @@ class TemplateMatcher(ImageFinder):
         if category != "template":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(TemplateMatcher, self).configure_backend("template", reset=True)
+            super(TemplateFinder, self).configure_backend("template", reset=True)
         if backend is None:
-            backend = GlobalSettings.template_match_backend
+            backend = GlobalConfig.template_match_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -741,6 +771,8 @@ class TemplateMatcher(ImageFinder):
         """
         Custom implementation of the base method.
 
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
         :raises: :py:class:`UnsupportedBackendError` if the choice of template
                  matches is not among the supported ones
 
@@ -899,7 +931,7 @@ class TemplateMatcher(ImageFinder):
         ImageLogger.step += 1
 
 
-class FeatureMatcher(ImageFinder):
+class FeatureFinder(Finder):
     """
     Feature matching backend provided by OpenCV.
 
@@ -909,7 +941,7 @@ class FeatureMatcher(ImageFinder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's feature matching."""
-        super(FeatureMatcher, self).__init__(configure=False, synchronize=False)
+        super(FeatureFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["feature"] = "feature_projectors"
@@ -927,9 +959,9 @@ class FeatureMatcher(ImageFinder):
         self.algorithms["feature_extractors"] = ("ORB", "BRISK")
 
         # other attributes
-        self._detector = None
-        self._extractor = None
-        self._matcher = None
+        self.detector = None
+        self.extractor = None
+        self.matcher = None
 
         # additional preparation
         if configure:
@@ -941,15 +973,15 @@ class FeatureMatcher(ImageFinder):
         if category not in ["feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(FeatureMatcher, self).configure_backend("feature", reset=True)
+            super(FeatureFinder, self).configure_backend("feature", reset=True)
         if category == "feature" and backend is None:
             backend = "mixed"
         elif category == "fdetect" and backend is None:
-            backend = GlobalSettings.feature_detect_backend
+            backend = GlobalConfig.feature_detect_backend
         elif category == "fextract" and backend is None:
-            backend = GlobalSettings.feature_extract_backend
+            backend = GlobalConfig.feature_extract_backend
         elif category == "fmatch" and backend is None:
-            backend = GlobalSettings.feature_match_backend
+            backend = GlobalConfig.feature_match_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -972,12 +1004,12 @@ class FeatureMatcher(ImageFinder):
 
             import cv2
             feature_detector_create = getattr(cv2, "%s_create" % backend)
-            self._detector = backend_obj = feature_detector_create()
+            backend_obj = feature_detector_create()
 
         elif category == "fextract":
             import cv2
             descriptor_extractor_create = getattr(cv2, "%s_create" % backend)
-            self._extractor = backend_obj = descriptor_extractor_create()
+            backend_obj = descriptor_extractor_create()
 
         elif category == "fmatch":
             if backend == "in-house-region":
@@ -999,7 +1031,7 @@ class FeatureMatcher(ImageFinder):
                     import cv2
                     # NOTE: descriptor matcher creation is kept the old way while feature
                     # detection and extraction not - example of the untidy maintenance of OpenCV
-                    self._matcher = backend_obj = cv2.DescriptorMatcher_create(backend)
+                    backend_obj = cv2.DescriptorMatcher_create(backend)
 
                     # BUG: a bug of OpenCV leads to crash if parameters
                     # are extracted from the matcher interface although
@@ -1035,6 +1067,18 @@ class FeatureMatcher(ImageFinder):
         """
         Custom implementation of the base method.
 
+        Some relevant parameters are:
+            * detect filter - works for certain detectors and
+                determines how many initial features are
+                detected in an image (e.g. hessian threshold for
+                SURF detector)
+            * match filter - determines what part of all matches
+                returned by feature matcher remain good matches
+            * project filter - determines what part of the good
+                matches are considered inliers
+            * ratio test - boolean for whether to perform a ratio test
+            * symmetry test - boolean for whether to perform a symmetry test
+
         See base method for details.
         """
         self.__configure_backend(backend, category, reset)
@@ -1064,24 +1108,33 @@ class FeatureMatcher(ImageFinder):
         if category not in ["feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(FeatureMatcher, self).synchronize_backend("feature", reset=True)
+            super(FeatureFinder, self).synchronize_backend("feature", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
+
         backend_obj = None
         if category == "feature":
             # nothing to sync
             return
         elif category == "fdetect":
-            backend_obj = self._detector
+            import cv2
+            feature_detector_create = getattr(cv2, "%s_create" % backend)
+            backend_obj = feature_detector_create()
         elif category == "fextract":
-            backend_obj = self._extractor
+            import cv2
+            descriptor_extractor_create = getattr(cv2, "%s_create" % backend)
+            backend_obj = descriptor_extractor_create()
         elif category == "fmatch":
-            backend_obj = self._matcher
+            import cv2
+            # NOTE: descriptor matcher creation is kept the old way while feature
+            # detection and extraction not - example of the untidy maintenance of OpenCV
+            backend_obj = cv2.DescriptorMatcher_create(backend)
             # BUG: a bug of OpenCV leads to crash if parameters
             # are extracted from the matcher interface although
             # the API supports it - skip fmatch for now
+            self.matcher = backend_obj
             return
-        if backend_obj is None or (backend is not None and backend_obj.__class__.__name__ != backend):
-            backend = category if backend is None else backend
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
         for attribute in dir(backend_obj):
             if not attribute.startswith("get"):
@@ -1097,12 +1150,13 @@ class FeatureMatcher(ImageFinder):
                 set_param(val)
                 log.log(0, "Synced %s to %s", param, val)
                 self.params[category][param].value = val
+
         if category == "fdetect":
-            self._detector = backend_obj
+            self.detector = backend_obj
         elif category == "fextract":
-            self._extractor = backend_obj
+            self.extractor = backend_obj
         elif category == "fmatch":
-            self._matcher = backend_obj
+            self.matcher = backend_obj
 
     def synchronize_backend(self, backend=None, category="feature", reset=False):
         """
@@ -1136,6 +1190,9 @@ class FeatureMatcher(ImageFinder):
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
+
+        :param needle: target iamge to search for
+        :type needle: :py:class:`Image`
 
         See base method for details.
 
@@ -1173,7 +1230,7 @@ class FeatureMatcher(ImageFinder):
             x, y = hpoints[0]
             w, h = tuple(numpy.abs(numpy.subtract(hpoints[3], hpoints[0])))
             # TODO: projecting offset requires more effort
-            matches = [Match(x, y, w, h, self.imglog.similarities[-1])]
+            matches = [Match(x, y, w, h, 0, 0, self.imglog.similarities[-1])]
             self.imglog.log(30)
             return matches
         self.imglog.log(40)
@@ -1253,12 +1310,12 @@ class FeatureMatcher(ImageFinder):
             self.synchronize_backend(category="fextract")
 
             # keypoints
-            nkeypoints = self._detector.detect(ngray)
-            hkeypoints = self._detector.detect(hgray)
+            nkeypoints = self.detector.detect(ngray)
+            hkeypoints = self.detector.detect(hgray)
 
             # feature vectors (descriptors)
-            (nkeypoints, ndescriptors) = self._extractor.compute(ngray, nkeypoints)
-            (hkeypoints, hdescriptors) = self._extractor.compute(hgray, hkeypoints)
+            (nkeypoints, ndescriptors) = self.extractor.compute(ngray, nkeypoints)
+            (hkeypoints, hdescriptors) = self.extractor.compute(hgray, hkeypoints)
 
         else:
             raise UnsupportedBackendError("Feature detector %s is not among the supported"
@@ -1341,25 +1398,25 @@ class FeatureMatcher(ImageFinder):
 
         # find and filter matches through tests
         if match == "in-house-region":
-            matches = self._matcher.regionMatch(ndescriptors, hdescriptors,
-                                                nkeypoints, hkeypoints,
-                                                self.params["fmatch"]["refinements"].value,
-                                                self.params["fmatch"]["recalc_interval"].value,
-                                                self.params["fmatch"]["variants_k"].value,
-                                                self.params["fmatch"]["variants_ratio"].value)
+            matches = self.matcher.regionMatch(ndescriptors, hdescriptors,
+                                               nkeypoints, hkeypoints,
+                                               self.params["fmatch"]["refinements"].value,
+                                               self.params["fmatch"]["recalc_interval"].value,
+                                               self.params["fmatch"]["variants_k"].value,
+                                               self.params["fmatch"]["variants_ratio"].value)
         else:
             if self.params["fmatch"]["ratioTest"].value:
-                matches = self._matcher.knnMatch(ndescriptors, hdescriptors, 2)
+                matches = self.matcher.knnMatch(ndescriptors, hdescriptors, 2)
                 matches = ratio_test(matches)
             else:
-                matches = self._matcher.knnMatch(ndescriptors, hdescriptors, 1)
+                matches = self.matcher.knnMatch(ndescriptors, hdescriptors, 1)
                 matches = [m[0] for m in matches]
             if self.params["fmatch"]["symmetryTest"].value:
                 if self.params["fmatch"]["ratioTest"].value:
-                    hmatches = self._matcher.knnMatch(hdescriptors, ndescriptors, 2)
+                    hmatches = self.matcher.knnMatch(hdescriptors, ndescriptors, 2)
                     hmatches = ratio_test(hmatches)
                 else:
-                    hmatches = self._matcher.knnMatch(hdescriptors, ndescriptors, 1)
+                    hmatches = self.matcher.knnMatch(hdescriptors, ndescriptors, 1)
                     hmatches = [hm[0] for hm in hmatches]
                 matches = symmetry_test(matches, hmatches)
 
@@ -1499,7 +1556,7 @@ class FeatureMatcher(ImageFinder):
             cv2.circle(hotmap, (int(x), int(y)), radius, (r, g, b))
 
 
-class CascadeMatcher(ImageFinder):
+class CascadeFinder(Finder):
     """
     Cascade matching backend provided by OpenCV.
 
@@ -1515,7 +1572,7 @@ class CascadeMatcher(ImageFinder):
 
     def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
         """Build a CV backend using OpenCV's cascade matching options."""
-        super(CascadeMatcher, self).__init__(configure=False, synchronize=False)
+        super(CascadeFinder, self).__init__(configure=False, synchronize=False)
 
         # additional preparation (no synchronization available)
         if configure:
@@ -1530,7 +1587,7 @@ class CascadeMatcher(ImageFinder):
         if category != "cascade":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(CascadeMatcher, self).configure_backend("cascade", reset=True)
+            super(CascadeFinder, self).configure_backend("cascade", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -1595,7 +1652,7 @@ class CascadeMatcher(ImageFinder):
         return matches
 
 
-class TextMatcher(ContourMatcher):
+class TextFinder(ContourFinder):
     """
     Text matching backend provided by OpenCV.
 
@@ -1611,7 +1668,7 @@ class TextMatcher(ContourMatcher):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's text matching options."""
-        super(TextMatcher, self).__init__(configure=False, synchronize=False)
+        super(TextFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["text"] = "text_matchers"
@@ -1643,17 +1700,17 @@ class TextMatcher(ContourMatcher):
         if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["contour", "threshold"]:
-            ContourMatcher.configure_backend(self, backend, category, reset)
+            ContourFinder.configure_backend(self, backend, category, reset)
             return
 
         if reset:
-            ImageFinder.configure_backend(self, "text", reset=True)
+            Finder.configure_backend(self, "text", reset=True)
         if category == "text" and backend is None:
             backend = "mixed"
         elif category == "tdetect" and backend is None:
-            backend = "erstat"
+            backend = GlobalConfig.text_detect_backend
         elif category == "ocr" and backend is None:
-            backend = "tesseract"
+            backend = GlobalConfig.text_ocr_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -1736,9 +1793,10 @@ class TextMatcher(ContourMatcher):
         if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            ImageFinder.synchronize_backend(self, "text", reset=True)
+            Finder.synchronize_backend(self, "text", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
         import cv2
         datapath = self.params["text"]["datapath"].value
@@ -1746,7 +1804,7 @@ class TextMatcher(ContourMatcher):
             # nothing to sync
             return
 
-        elif category == "tdetect" and self.params["tdetect"]["backend"] == "erstat":
+        elif category == "tdetect" and backend == "erstat":
             self.erc1 = cv2.text.loadClassifierNM1(os.path.join(datapath, 'trained_classifierNM1.xml'))
             self.erf1 = cv2.text.createERFilterNM1(self.erc1,
                                                    self.params["tdetect"]["thresholdDelta"].value,
@@ -1762,13 +1820,13 @@ class TextMatcher(ContourMatcher):
             return
 
         elif category == "ocr":
-            if self.params["ocr"]["backend"] == "tesseract":
+            if backend == "tesseract":
                 self.ocr = cv2.text.OCRTesseract_create(datapath,
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
                                                         oem=self.params[category]["oem"].value,
                                                         psmode=self.params[category]["psmode"].value)
-            elif self.params["ocr"]["backend"] in ["hmm", "beamSearch"]:
+            elif backend in ["hmm", "beamSearch"]:
 
                 import numpy
                 # vocabulary is strictly related with the XML data so remains hardcoded here
@@ -1781,7 +1839,7 @@ class TextMatcher(ContourMatcher):
                 transition_p = numpy.fromstring(transition_p_data.group(1).strip(), sep=' ').reshape(62,62)
                 emission_p = numpy.eye(62, dtype=numpy.float64)
 
-                if self.params["ocr"]["backend"] == "hmm":
+                if backend == "hmm":
                     classifier_data = os.path.join(datapath, 'OCRHMM_knn_model_data.xml.gz')
                     if self.params["ocr"]["classifier"].value == 1:
                         classifier = cv2.text.loadOCRHMMClassifierNM(classifier_data)
@@ -1795,7 +1853,7 @@ class TextMatcher(ContourMatcher):
                     classifier = cv2.text.loadOCRBeamSearchClassifierCNN(classifier_data)
                     self.ocr = cv2.text.OCRBeamSearchDecoder_create(classifier, vocabulary, transition_p, emission_p)
             else:
-                raise ValueError("Invalid OCR backend '%s'" % self.params["ocr"]["backend"])
+                raise ValueError("Invalid OCR backend '%s'" % backend)
 
     def synchronize_backend(self, backend=None, category="text", reset=False):
         """
@@ -2088,7 +2146,7 @@ class TextMatcher(ContourMatcher):
         ImageLogger.step += 1
 
 
-class HybridMatcher(TemplateMatcher, FeatureMatcher):
+class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
     """
     Hybrid matcher using both OpenCV's template and feature matching.
 
@@ -2102,28 +2160,28 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's template and feature matching."""
-        super(HybridMatcher, self).__init__(configure=False, synchronize=False)
+        super(TemplateFeatureFinder, self).__init__(configure=False, synchronize=False)
 
-        self.categories["hybrid"] = "hybrid_matchers"
-        self.algorithms["hybrid_matchers"] = ("mixed",)
+        self.categories["tempfeat"] = "tempfeat_matchers"
+        self.algorithms["tempfeat_matchers"] = ("mixed",)
 
         if configure:
             self.__configure(reset=True)
         if synchronize:
-            FeatureMatcher.synchronize(self, reset=False)
+            FeatureFinder.synchronize(self, reset=False)
 
-    def __configure_backend(self, backend=None, category="hybrid", reset=False):
-        if category not in ["hybrid", "template", "feature", "fdetect", "fextract", "fmatch"]:
+    def __configure_backend(self, backend=None, category="tempfeat", reset=False):
+        if category not in ["tempfeat", "template", "feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["feature", "fdetect", "fextract", "fmatch"]:
-            FeatureMatcher.configure_backend(self, backend, category, reset)
+            FeatureFinder.configure_backend(self, backend, category, reset)
             return
         elif category == "template":
-            TemplateMatcher.configure_backend(self, backend, category, reset)
+            TemplateFinder.configure_backend(self, backend, category, reset)
             return
 
         if reset:
-            ImageFinder.configure_backend(self, "hybrid", reset=True)
+            Finder.configure_backend(self, "tempfeat", reset=True)
         if backend is None:
             backend = "mixed"
         if backend not in self.algorithms[self.categories[category]]:
@@ -2134,7 +2192,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         self.params[category]["backend"] = backend
         self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0, 0.1, 0.1)
 
-    def configure_backend(self, backend=None, category="hybrid", reset=False):
+    def configure_backend(self, backend=None, category="tempfeat", reset=False):
         """
         Custom implementation of the base method.
 
@@ -2144,7 +2202,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
     def __configure(self, template_match=None, feature_detect=None,
                   feature_extract=None, feature_match=None, reset=True):
-        self.__configure_backend(category="hybrid", reset=reset)
+        self.__configure_backend(category="tempfeat", reset=reset)
         self.__configure_backend(template_match, "template")
         self.__configure_backend(category="feature")
         self.__configure_backend(feature_detect, "fdetect")
@@ -2160,6 +2218,20 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         """
         self.__configure(template_match, feature_detect, feature_extract, feature_match, reset)
 
+    def synchronize(self, feature_detect=None, feature_extract=None,
+                    feature_match=None, reset=True):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        Finder.synchronize_backend(self, "tempfeat", reset=reset)
+        FeatureFinder.synchronize(self,
+                                  feature_detect=feature_detect,
+                                  feature_extract=feature_extract,
+                                  feature_match=feature_match,
+                                  reset=False)
+
     def find(self, needle, haystack):
         """
         Custom implementation of the base method.
@@ -2173,9 +2245,9 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         ImageLogger.accumulate_logging = True
 
         # use a different lower similarity for the template matching
-        template_similarity = self.params["hybrid"]["front_similarity"].value
+        template_similarity = self.params["tempfeat"]["front_similarity"].value
         feature_similarity = self.params["find"]["similarity"].value
-        log.debug("Using hybrid matching with template similarity %s "
+        log.debug("Using tempfeat matching with template similarity %s "
                   "and feature similarity %s", template_similarity,
                   feature_similarity)
 
@@ -2185,7 +2257,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
 
         self.params["find"]["similarity"].value = template_similarity
         # call specifically the template find variant here
-        template_maxima = TemplateMatcher.find(self, needle, haystack)
+        template_maxima = TemplateFinder.find(self, needle, haystack)
 
         self.params["find"]["similarity"].value = feature_similarity
         # dump correct matching settings
@@ -2306,7 +2378,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         elif len(self.imglog.hotmaps) == 0:
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
-        # knowing how the hybrid works this estimates
+        # knowing how the tempfeat works this estimates
         # the expected number of cases starting from 1 (i+1)
         # to make sure the winner is the first alphabetically
         candidate_num = len(self.imglog.similarities) / 2
@@ -2330,194 +2402,7 @@ class HybridMatcher(TemplateMatcher, FeatureMatcher):
         ImageLogger.step += 1
 
 
-class Hybrid2to1Matcher(HybridMatcher):
-    """
-    Hybrid matcher using both OpenCV's template and feature matching.
-
-    Two thirds feature matching and one third template matching.
-    Divide the haystack into x,y subregions and perform feature
-    matching once for each dx,dy translation of each subregion.
-
-    .. warning:: This matcher is currently not supported by our configuration.
-    """
-
-    def __init__(self, configure=True, synchronize=True):
-        """Build a CV backend using OpenCV's template and feature matching."""
-        super(Hybrid2to1Matcher, self).__init__(configure=False, synchronize=False)
-
-        # additional preparation (no synchronization available)
-        if configure:
-            self.__configure_backend(reset=True)
-
-    def __configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None, reset=True):
-        super(Hybrid2to1Matcher, self).configure(template_match, feature_detect,
-                                                 feature_extract, feature_match,
-                                                 reset=reset)
-        self.__configure_backend(category="hybrid2to1", reset=False)
-
-    def configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None, reset=True):
-        """
-        Custom implementation of the base methods.
-
-        See base methods for details.
-        """
-        self.__configure(template_match, feature_detect, feature_extract, feature_match, reset)
-
-    def __configure_backend(self, backend=None, category="hybrid2to1", reset=False):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if category != "hybrid2to1":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
-        if reset:
-            super(Hybrid2to1Matcher, self).configure_backend("hybrid2to1", reset=True)
-
-        self.params[category] = {}
-        self.params[category]["backend"] = "none"
-        self.params[category]["x"] = CVParameter(1000, 1, None)
-        self.params[category]["y"] = CVParameter(1000, 1, None)
-        self.params[category]["dx"] = CVParameter(100, 1, None)
-        self.params[category]["dy"] = CVParameter(100, 1, None)
-
-    def configure_backend(self, backend=None, category="hybrid2to1", reset=False):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        self.__configure_backend(backend, category, reset)
-
-    def find(self, needle, haystack):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-
-        .. warning:: If this search is intensive (you use small frequent
-            subregions) please disable or reduce the image logging.
-
-        .. todo:: Currently this method is dangerous due to a possible
-            memory leak. Therefore avoid getting closer to a more normal
-            template matching or any small size and delta (x,y and dx,dy) that
-            will cause too many match attempts.
-
-        Example for normal template matching::
-
-            find_2to1hybrid(n, h, s, n.width, n.height, 1, 1)
-
-        Example to divide the screen into four quadrants and jump with distance
-        halves of these quadrants::
-
-            find_2to1hybrid(n, h, s, h.width/2, h.height/2, h.width/4, h.height/4)
-        """
-        # accumulate one template and multiple feature cases
-        ImageLogger.accumulate_logging = True
-
-        x = self.params["find"]["x"].value
-        y = self.params["find"]["y"].value
-        dx = self.params["find"]["dx"].value
-        dy = self.params["find"]["dy"].value
-        log.debug("Using 2to1 hybrid matching with x:%s y:%s, dx:%s, dy:%s",
-                  x, y, dx, dy)
-
-        import cv2
-        import numpy
-        ngray = cv2.cvtColor(numpy.array(needle.pil_image), cv2.COLOR_RGB2GRAY)
-        hgray = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
-        hcanvas = numpy.array(haystack.pil_image)
-
-        frame_points = []
-        frame_points.append((needle.width / 2, needle.height / 2))
-        frame_points.extend([(0, 0), (needle.width, 0), (0, needle.height),
-                             (needle.width, needle.height)])
-
-        # the translation distance cannot be larger than the haystack
-        dx = min(dx, haystack.width)
-        dy = min(dy, haystack.height)
-        import math
-        nx = int(math.ceil(float(max(haystack.width - x, 0)) / dx) + 1)
-        ny = int(math.ceil(float(max(haystack.height - y, 0)) / dy) + 1)
-        log.debug("Dividing haystack into %ix%i pieces", nx, ny)
-        result = numpy.zeros((ny, nx))
-
-        matches_grid = {}
-        matches = []
-        from match import Match
-        for i in range(nx):
-            for j in range(ny):
-                left = i * dx
-                right = min(haystack.width, i * dx + x)
-                up = j * dy
-                down = min(haystack.height, j * dy + y)
-                log.debug("Region up-down is %s and left-right is %s",
-                          (up, down), (left, right))
-
-                haystack_region = hgray[up:down, left:right]
-                haystack_region = haystack_region.copy()
-                hotmap_region = hcanvas[up:down, left:right]
-                hotmap_region = hotmap_region.copy()
-
-                # uncomment this block in order to view the filling of the results
-                # (marked with 1.0 when filled) and the different ndarray shapes
-                #result[j][i] = 1.0
-                log.log(0, "%s", result)
-                log.log(0, "shapes: hcanvas %s, hgray %s, ngray %s, res %s\n",
-                        hcanvas.shape, hgray.shape, ngray.shape, result.shape)
-
-                res = self._project_features(frame_points, ngray, haystack_region,
-                                             self.params["find"]["similarity"].value,
-                                             hotmap_region)
-                result[j][i] = self.imglog.similarities[-1]
-
-                if res is None:
-                    log.debug("No acceptable match in region %s", (i, j))
-                    continue
-                else:
-                    matches_grid[(j, i)] = Match(left + self.imglog.locations[-1][0],
-                                                 up + self.imglog.locations[-1][1],
-                                                 needle.width, needle.height,
-                                                 needle.center_offset.x, needle.center_offset.y,
-                                                 result[j][i])
-                    matches.append(matches_grid[(j, i)])
-                    self.imglog.locations[-1] = matches_grid[(j, i)]
-                    log.debug("Acceptable best match with similarity %s starting at %s in region %s",
-                              self.imglog.similarities[-1], matches_grid[(j, i)], (i, j))
-
-        # release the accumulated logging from subroutines
-        ImageLogger.accumulate_logging = False
-        self.imglog.log(30)
-        return matches
-
-    def log(self, lvl):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        # below selected logging level
-        if lvl < self.imglog.logging_level:
-            return
-        # logging is being collected for a specific logtype
-        elif ImageLogger.accumulate_logging:
-            return
-        # no hotmaps to log
-        elif len(self.imglog.hotmaps) == 0:
-            raise MissingHotmapError("No matching was performed in order to be image logged")
-
-        for i in range(len(self.imglog.hotmaps)):
-            name = "imglog%s-3hotmap-2to1-subregion%s-%s.png" % (self.imglog.printable_step,
-                                                                 i, self.imglog.similarities[i])
-            self.imglog.dump_hotmap(name, self.imglog.hotmaps[i])
-
-        self.imglog.clear()
-        ImageLogger.step += 1
-
-
-class DeepMatcher(ImageFinder):
+class DeepFinder(Finder):
     """
     Deep learning matching backend provided by PyTorch.
 
@@ -2528,7 +2413,7 @@ class DeepMatcher(ImageFinder):
 
     def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
         """Build a CV backend using OpenCV's text matching options."""
-        super(DeepMatcher, self).__init__(configure=False, synchronize=False)
+        super(DeepFinder, self).__init__(configure=False, synchronize=False)
 
         # other attributes
         self.net = None
@@ -2548,7 +2433,7 @@ class DeepMatcher(ImageFinder):
         if category != "deep":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(DeepMatcher, self).configure_backend("deep", reset=True)
+            super(DeepFinder, self).configure_backend("deep", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -2584,9 +2469,10 @@ class DeepMatcher(ImageFinder):
         if category != "deep":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(DeepMatcher, self).synchronize_backend("deep", reset=True)
+            super(DeepFinder, self).synchronize_backend("deep", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
         # class-specific dependencies
         import torch.nn as nn
@@ -2854,7 +2740,7 @@ class DeepMatcher(ImageFinder):
         ImageLogger.step += 1
 
 
-class CustomMatcher(ImageFinder):
+class CustomFinder(Finder):
     """
     Custom matching backend with in-house CV algorithms.
 
@@ -2870,7 +2756,7 @@ class CustomMatcher(ImageFinder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using custom matching."""
-        super(CustomMatcher, self).__init__(self, configure=False, synchronize=False)
+        super(CustomFinder, self).__init__(self, configure=False, synchronize=False)
 
         # additional preparation (no synchronization available)
         if configure:
@@ -2880,7 +2766,7 @@ class CustomMatcher(ImageFinder):
         if category != "custom":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(CustomMatcher, self).configure_backend("custom", reset=True)
+            super(CustomFinder, self).configure_backend("custom", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -2909,9 +2795,9 @@ class CustomMatcher(ImageFinder):
         In-house feature detection algorithm.
 
         :param needle: image to look for
-        :type needle: :py:class:`image.Image`
+        :type needle: :py:class:`target.Image`
         :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
+        :type haystack: :py:class:`target.Image`
 
         .. warning:: This method is currently not fully implemented. The current
                      MSER might not be used in the actual implementation.
@@ -3142,26 +3028,26 @@ class CustomMatcher(ImageFinder):
         return matches
 
 
-class ImageSetFinder(ImageFinder):
+class HybridFinder(Finder):
     """
-    Match one of a set of images usually representing the same thing.
+    Match a target through a sequence of differently configured attempts.
 
-    This matcher can work with any other matcher in the background.
-    What it will do is provide with alternatives if a match fails.
-
-    .. note:: This only works with matchers using image targets.
+    This matcher can work with any other matcher in the background and with
+    unique or repeating matchers for each step. If a step fails, the matcher
+    tries the next available along the fallback chain or fails if the end of
+    the chain is reached.
     """
 
     def __init__(self, configure=True, synchronize=True):
-        """Build an image set finder."""
-        super(ImageSetFinder, self).__init__(configure=False, synchronize=False)
+        """Build a hybrid matcher."""
+        super(HybridFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
-        self.categories["set"] = "set_find_methods"
-        self.algorithms["set_find_methods"] = ("autopy", "contour", "template", "feature", "hybrid")
+        self.categories["hybrid"] = "hybrid_methods"
+        self.algorithms["hybrid_methods"] = ("autopy", "contour", "template", "feature", "tempfeat")
 
         # other attributes
-        self._matcher = None
+        self.matcher = None
 
         # additional preparation
         if configure:
@@ -3169,14 +3055,14 @@ class ImageSetFinder(ImageFinder):
         if synchronize:
             self.__synchronize_backend(reset=False)
 
-    def __configure_backend(self, backend=None, category="set", reset=False):
-        if category != "set":
+    def __configure_backend(self, backend=None, category="hybrid", reset=False):
+        if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             # backends are the same as the ones for the base class
-            super(ImageSetFinder, self).configure_backend(backend=backend, reset=True)
+            super(HybridFinder, self).configure_backend(backend=backend, reset=True)
         if backend is None:
-            backend = GlobalSettings.find_image_backend
+            backend = GlobalConfig.hybrid_match_backend
         if backend not in self.algorithms[self.categories[category]]:
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
@@ -3184,7 +3070,7 @@ class ImageSetFinder(ImageFinder):
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
-    def configure_backend(self, backend=None, category="set", reset=False):
+    def configure_backend(self, backend=None, category="hybrid", reset=False):
         """
         Custom implementation of the base method.
 
@@ -3192,30 +3078,34 @@ class ImageSetFinder(ImageFinder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend=None, category="set", reset=False):
-        if category != "set":
+    def __synchronize_backend(self, backend=None, category="hybrid", reset=False):
+        if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            # backends are the same as the ones for the base class
-            super(ImageSetFinder, self).synchronize_backend(backend, reset=True)
-        if backend is None:
-            backend = GlobalSettings.find_image_backend
-        if backend not in self.algorithms[self.categories[category]]:
+            super(HybridFinder, self).synchronize_backend("hybrid", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+        backend = self.params[category]["backend"]
 
-        # this matcher will only work with image-based matchers
+        # default matcher in case of a simple chain without own matching config
         if backend == "autopy":
-            self._matcher = AutoPyMatcher()
+            self.matcher = AutoPyFinder()
         elif backend == "contour":
-            self._matcher = ContourMatcher()
+            self.matcher = ContourFinder()
         elif backend == "template":
-            self._matcher = TemplateMatcher()
+            self.matcher = TemplateFinder()
         elif backend == "feature":
-            self._matcher = FeatureMatcher()
-        elif backend == "hybrid":
-            self._matcher = HybridMatcher()
+            self.matcher = FeatureFinder()
+        elif backend == "cascade":
+            self.matcher = CascadeFinder()
+        elif backend == "text":
+            self.matcher = TextFinder()
+        elif backend == "tempfeat":
+            self.matcher = TemplateFeatureFinder()
+        elif backend == "deep":
+            self.matcher = DeepFinder()
 
-    def synchronize_backend(self, backend=None, category="set", reset=False):
+    def synchronize_backend(self, backend=None, category="hybrid", reset=False):
         """
         Custom implementation of the base method.
 
@@ -3228,11 +3118,23 @@ class ImageSetFinder(ImageFinder):
         Custom implementation of the base method.
 
         See base method for details.
-
-        .. todo:: This hasn't been fully integrated yet.
         """
-        for image in needle:
-            matches = self._matcher.find(image, haystack)
+        try:
+            iter(needle)
+        except TypeError:
+            # one step chains can be of any target type
+            log.debug("Defaulting to one step chain %s", needle)
+            needle = [needle]
+
+        for step_needle in needle:
+
+            if step_needle.use_own_settings and not isinstance(step_needle.match_settings, HybridFinder):
+                matcher = step_needle.match_settings
+            else:
+                matcher = self.matcher
+
+            matches = matcher.find(step_needle, haystack)
             if len(matches) > 0:
                 return matches
+
         return []

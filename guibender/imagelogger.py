@@ -17,7 +17,7 @@ import os
 import shutil
 import PIL.Image
 
-from settings import GlobalSettings
+from config import GlobalConfig
 
 
 class ImageLogger(object):
@@ -40,12 +40,12 @@ class ImageLogger(object):
     accumulate_logging = False
 
     #: level for the image logging
-    logging_level = GlobalSettings.image_logging_level
+    logging_level = GlobalConfig.image_logging_level
     #: destination for the image logging in order to dump images
     #: (the executing code decides when to clean this directory)
-    logging_destination = GlobalSettings.image_logging_destination
+    logging_destination = GlobalConfig.image_logging_destination
     #: number of digits for the counter of logged steps
-    step_width = GlobalSettings.image_logging_step_width
+    step_width = GlobalConfig.image_logging_step_width
 
     def __init__(self):
         """Build an imagelogger object."""
@@ -57,10 +57,10 @@ class ImageLogger(object):
         self.locations = []
 
         # sync these static methods with the general settings at each use
-        ImageLogger.logging_level = GlobalSettings.image_logging_level
+        ImageLogger.logging_level = GlobalConfig.image_logging_level
         # NOTE: the executing code decides when to clean this directory
-        ImageLogger.logging_destination = GlobalSettings.image_logging_destination
-        ImageLogger.step_width = GlobalSettings.image_logging_step_width
+        ImageLogger.logging_destination = GlobalConfig.image_logging_destination
+        ImageLogger.step_width = GlobalConfig.image_logging_step_width
 
     def get_printable_step(self):
         """
@@ -139,7 +139,7 @@ class ImageLogger(object):
             # NOTE: some modes cannot be saved unless converted to RGB
             if pil_image.mode != 'RGB':
                 pil_image = pil_image.convert('RGB')
-        pil_image.save(path, compress_level=GlobalSettings.image_quality)
+        pil_image.save(path, compress_level=GlobalConfig.image_quality)
 
     def clear(self):
         """Clear all accumulated logging including hotmaps, similarities, and locations."""

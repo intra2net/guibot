@@ -22,7 +22,7 @@ log = logging.getLogger('guibender.settings')
 from errors import *
 
 
-class GlobalSettings(type):
+class GlobalConfig(type):
     """
     Metaclass used for the definition of static properties (the settings).
 
@@ -54,11 +54,15 @@ class GlobalSettings(type):
 
     # backends shared between all instances
     _desktop_control_backend = "autopy"
-    _find_image_backend = "hybrid"
+    _find_backend = "hybrid"
+    _contour_threshold_backend = "adaptive"
     _template_match_backend = "ccoeff_normed"
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "ORB"
     _feature_match_backend = "BruteForce-Hamming"
+    _text_detect_backend = "erstat"
+    _text_ocr_backend = "tesseract"
+    _hybrid_match_backend = "autopy"
 
     def click_delay(self, value=None):
         """
@@ -70,75 +74,75 @@ class GlobalSettings(type):
         :rtype: float or None
         """
         if value is None:
-            return GlobalSettings._click_delay
+            return GlobalConfig._click_delay
         else:
-            GlobalSettings._click_delay = value
+            GlobalConfig._click_delay = value
     #: time interval between two clicks in a double click
     click_delay = property(fget=click_delay, fset=click_delay)
 
     def delay_after_drag(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.click_delay` but with
+        Same as :py:func:`GlobalConfig.click_delay` but with
 
         :param value: timeout before drag operation
         """
         if value is None:
-            return GlobalSettings._drag_delay
+            return GlobalConfig._drag_delay
         else:
-            GlobalSettings._drag_delay = value
+            GlobalConfig._drag_delay = value
     #: timeout before drag operation
     delay_after_drag = property(fget=delay_after_drag, fset=delay_after_drag)
 
     def delay_before_drop(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.click_delay` but with
+        Same as :py:func:`GlobalConfig.click_delay` but with
 
         :param value: timeout before drop operation
         """
         if value is None:
-            return GlobalSettings._drop_delay
+            return GlobalConfig._drop_delay
         else:
-            GlobalSettings._drop_delay = value
+            GlobalConfig._drop_delay = value
     #: timeout before drop operation
     delay_before_drop = property(fget=delay_before_drop, fset=delay_before_drop)
 
     def delay_before_keys(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.click_delay` but with
+        Same as :py:func:`GlobalConfig.click_delay` but with
 
         :param value: timeout before key press operation
         """
         if value is None:
-            return GlobalSettings._keys_delay
+            return GlobalConfig._keys_delay
         else:
-            GlobalSettings._keys_delay = value
+            GlobalConfig._keys_delay = value
     #: timeout before key press operation
     delay_before_keys = property(fget=delay_before_keys, fset=delay_before_keys)
 
     def delay_between_keys(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.click_delay` but with
+        Same as :py:func:`GlobalConfig.click_delay` but with
 
         :param value: time interval between two consecutively typed keys
         """
         if value is None:
-            return GlobalSettings._type_delay
+            return GlobalConfig._type_delay
         else:
-            GlobalSettings._type_delay = value
+            GlobalConfig._type_delay = value
     #: time interval between two consecutively typed keys
     delay_between_keys = property(fget=delay_between_keys, fset=delay_between_keys)
 
     def rescan_speed_on_find(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.click_delay` but with
+        Same as :py:func:`GlobalConfig.click_delay` but with
 
         :param value: time interval between two image matching attempts
                       (used to reduce overhead on the CPU)
         """
         if value is None:
-            return GlobalSettings._rescan_speed_on_find
+            return GlobalConfig._rescan_speed_on_find
         else:
-            GlobalSettings._rescan_speed_on_find = value
+            GlobalConfig._rescan_speed_on_find = value
     #: time interval between two image matching attempts (used to reduce overhead on the CPU)
     rescan_speed_on_find = property(fget=rescan_speed_on_find, fset=rescan_speed_on_find)
 
@@ -163,9 +167,9 @@ class GlobalSettings(type):
         The use of this is to allow you to perform some configuration first.
         """
         if value is None:
-            return GlobalSettings._screen_autoconnect
+            return GlobalConfig._screen_autoconnect
         elif value == True or value == False:
-            GlobalSettings._screen_autoconnect = value
+            GlobalConfig._screen_autoconnect = value
         else:
             raise ValueError
     #: whether to perform complete initialization of the desktop control backend
@@ -173,7 +177,7 @@ class GlobalSettings(type):
 
     def preprocess_special_chars(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.screen_autoconnect` but with
+        Same as :py:func:`GlobalConfig.screen_autoconnect` but with
 
         :param value: whether to preprocess capital and special characters and
                       handle them internally
@@ -182,9 +186,9 @@ class GlobalSettings(type):
             autopy on linux (capital and special) and vncdotool (capital) backends.
         """
         if value is None:
-            return GlobalSettings._preprocess_special_chars
+            return GlobalConfig._preprocess_special_chars
         elif value == True or value == False:
-            GlobalSettings._preprocess_special_chars = value
+            GlobalConfig._preprocess_special_chars = value
         else:
             raise ValueError
     #: whether to preprocess capital and special characters and handle them internally
@@ -192,14 +196,14 @@ class GlobalSettings(type):
 
     def save_needle_on_error(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.screen_autoconnect` but with
+        Same as :py:func:`GlobalConfig.screen_autoconnect` but with
 
         :param value: whether to perform an extra needle dump on matching error
         """
         if value is None:
-            return GlobalSettings._save_needle_on_error
+            return GlobalConfig._save_needle_on_error
         elif value == True or value == False:
-            GlobalSettings._save_needle_on_error = value
+            GlobalConfig._save_needle_on_error = value
         else:
             raise ValueError
     #: whether to perform an extra needle dump on matching error
@@ -217,38 +221,38 @@ class GlobalSettings(type):
         .. seealso:: See the image logging documentation for more details.
         """
         if value is None:
-            return GlobalSettings._image_logging_level
+            return GlobalConfig._image_logging_level
         else:
-            GlobalSettings._image_logging_level = value
+            GlobalConfig._image_logging_level = value
     #: logging level similar to the python logging module
     image_logging_level = property(fget=image_logging_level, fset=image_logging_level)
 
     def image_logging_step_width(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_level` but with
+        Same as :py:func:`GlobalConfig.image_logging_level` but with
 
         :param value: number of digits when enumerating the image
                       logging steps, e.g. value=3 for 001, 002, etc.
         """
         if value is None:
-            return GlobalSettings._image_logging_step_width
+            return GlobalConfig._image_logging_step_width
         else:
-            GlobalSettings._image_logging_step_width = value
+            GlobalConfig._image_logging_step_width = value
     #: number of digits when enumerating the image logging steps, e.g. value=3 for 001, 002, etc.
     image_logging_step_width = property(fget=image_logging_step_width, fset=image_logging_step_width)
 
     def image_quality(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_level` but with
+        Same as :py:func:`GlobalConfig.image_logging_level` but with
 
         :param value: quality of the image dumps ranging from 0 for no compression
                       to 9 for maximum compression (used to save space and reduce
                       the disk space needed for image logging)
         """
         if value is None:
-            return GlobalSettings._image_quality
+            return GlobalConfig._image_quality
         else:
-            GlobalSettings._image_quality = value
+            GlobalConfig._image_quality = value
     #: quality of the image dumps ranging from 0 for no compression to 9 for maximum compression
     # (used to save space and reduce the disk space needed for image logging)
     image_quality = property(fget=image_quality, fset=image_quality)
@@ -263,15 +267,15 @@ class GlobalSettings(type):
         :rtype: str or None
         """
         if value is None:
-            return GlobalSettings._image_logging_destination
+            return GlobalConfig._image_logging_destination
         else:
-            GlobalSettings._image_logging_destination = value
+            GlobalConfig._image_logging_destination = value
     #: relative path of the image logging steps
     image_logging_destination = property(fget=image_logging_destination, fset=image_logging_destination)
 
     def desktop_control_backend(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
         :param value: name of the desktop control backend
         :raises: :py:class:`ValueError` if value is not among the supported backends
@@ -290,43 +294,67 @@ class GlobalSettings(type):
             i.e. the backend has to be installed or you will have unsatisfied imports.
         """
         if value is None:
-            return GlobalSettings._desktop_control_backend
+            return GlobalConfig._desktop_control_backend
         else:
             if value not in ["autopy", "qemu", "vncdotool"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
-            GlobalSettings._desktop_control_backend = value
+            GlobalConfig._desktop_control_backend = value
     #: name of the desktop control backend
     desktop_control_backend = property(fget=desktop_control_backend, fset=desktop_control_backend)
 
     # these methods do not check for valid values since this
-    # is already done at the equalizer on initialization
-    def find_image_backend(self, value=None):
+    # is already done during region and target initialization
+    def find_backend(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
         :param value: name of the computer vision backend
 
         Supported backends:
+            * autopy - simple bitmap matching provided by autopy
+            * contour - contour matching using overall shape estimation
             * template - template matching using correlation coefficients,
-                         square difference or the default autopy matching.
-            * feature - feature matching using a mixture of feature detection,
-                        extraction and matching algorithms.
-            * hybrid - a mixture of template and feature matching where the
-                       first is used as necessary and the second as sufficient stage.
+                         square difference, etc.
+            * feature - matching using a mixture of feature detection,
+                        extraction and matching algorithms
+            * cascade - matching using OpenCV pretrained Haar cascades
+            * text - text matching using ERStat or custom text detection,
+                     followed by tesseract or Hidden Markov Model OCR
+            * tempfeat - a mixture of template and feature matching where the
+                       first is used as necessary and the second as sufficient stage
+            * deep - deep learning matching using convolutional neural network but
+                     customizable to any type of deep neural network
+            * hybrid - use a composite approach with any of the above methods
+                       as matching steps in a fallback sequence
 
         .. warning:: To use a particular backend you need to satisfy its dependencies,
             i.e. the backend has to be installed or you will have unsatisfied imports.
         """
         if value is None:
-            return GlobalSettings._find_image_backend
+            return GlobalConfig._find_backend
         else:
-            GlobalSettings._find_image_backend = value
+            GlobalConfig._find_backend = value
     #: name of the computer vision backend
-    find_image_backend = property(fget=find_image_backend, fset=find_image_backend)
+    find_backend = property(fget=find_backend, fset=find_backend)
+
+    def contour_threshold_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+
+        :param value: name of the contour threshold backend
+
+        Supported backends: normal, adaptive, canny.
+        """
+        if value is None:
+            return GlobalConfig._contour_threshold_backend
+        else:
+            GlobalConfig._contour_threshold_backend = value
+    #: name of the contour threshold backend
+    contour_threshold_backend = property(fget=contour_threshold_backend, fset=contour_threshold_backend)
 
     def template_match_backend(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
         :param value: name of the template matching backend
 
@@ -334,15 +362,15 @@ class GlobalSettings(type):
         ccorr_normed, ccoeff_normed.
         """
         if value is None:
-            return GlobalSettings._template_match_backend
+            return GlobalConfig._template_match_backend
         else:
-            GlobalSettings._template_match_backend = value
+            GlobalConfig._template_match_backend = value
     #: name of the template matching backend
     template_match_backend = property(fget=template_match_backend, fset=template_match_backend)
 
     def feature_detect_backend(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
         :param value: name of the feature detection backend
 
@@ -350,44 +378,89 @@ class GlobalSettings(type):
         BruteForce-Hamming(2), in-house-raw, in-house-region.
         """
         if value is None:
-            return GlobalSettings._feature_detect_backend
+            return GlobalConfig._feature_detect_backend
         else:
-            GlobalSettings._feature_detect_backend = value
+            GlobalConfig._feature_detect_backend = value
     #: name of the feature detection backend
     feature_detect_backend = property(fget=feature_detect_backend, fset=feature_detect_backend)
 
     def feature_extract_backend(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
         :param value: name of the feature extraction backend
 
         Supported backends: ORB, FAST, STAR, GFTT, HARRIS, Dense, oldSURF.
         """
         if value is None:
-            return GlobalSettings._feature_extract_backend
+            return GlobalConfig._feature_extract_backend
         else:
-            GlobalSettings._feature_extract_backend = value
+            GlobalConfig._feature_extract_backend = value
     #: name of the feature extraction backend
     feature_extract_backend = property(fget=feature_extract_backend, fset=feature_extract_backend)
 
     def feature_match_backend(self, value=None):
         """
-        Same as :py:func:`GlobalSettings.image_logging_destination` but with
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
         :param value: name of the feature matching backend
 
         Supported backends: ORB, BRIEF, FREAK.
         """
         if value is None:
-            return GlobalSettings._feature_match_backend
+            return GlobalConfig._feature_match_backend
         else:
-            GlobalSettings._feature_match_backend = value
+            GlobalConfig._feature_match_backend = value
     #: name of the feature matching backend
     feature_match_backend = property(fget=feature_match_backend, fset=feature_match_backend)
 
+    def text_detect_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
-class GlobalSettings(object):
+        :param value: name of the text detection backend
+
+        Supported backends: erstat, contours, components.
+        """
+        if value is None:
+            return GlobalConfig._text_detect_backend
+        else:
+            GlobalConfig._text_detect_backend = value
+    #: name of the text detection backend
+    text_detect_backend = property(fget=text_detect_backend, fset=text_detect_backend)
+
+    def text_ocr_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+
+        :param value: name of the optical character recognition backend
+
+        Supported backends: tesseract, hmm, beamSearch.
+        """
+        if value is None:
+            return GlobalConfig._text_ocr_backend
+        else:
+            GlobalConfig._text_ocr_backend = value
+    #: name of the optical character recognition backend
+    text_ocr_backend = property(fget=text_ocr_backend, fset=text_ocr_backend)
+
+    def hybrid_match_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+
+        :param value: name of the hybrid matching backend for unconfigured one-step targets
+
+        Supported backends: all nonhybrid backends of :py:func:`GlobalConfig.find_backend`.
+        """
+        if value is None:
+            return GlobalConfig._hybrid_match_backend
+        else:
+            GlobalConfig._hybrid_match_backend = value
+    #: name of the hybrid matching backend for unconfigured one-step targets
+    hybrid_match_backend = property(fget=hybrid_match_backend, fset=hybrid_match_backend)
+
+
+class GlobalConfig(object):
     """
     Handler for default configuration present in all
     cases where no specific value is set.
@@ -395,10 +468,10 @@ class GlobalSettings(object):
     The methods of this class are shared among
     all of its instances.
     """
-    __metaclass__ = GlobalSettings
+    __metaclass__ = GlobalConfig
 
 
-class LocalSettings(object):
+class LocalConfig(object):
     """
     Container for the configuration of all desktop control and
     computer vision backends, responsible for making them behave

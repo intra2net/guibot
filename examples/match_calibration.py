@@ -20,23 +20,24 @@ import logging
 import shutil
 
 from guibender.settings import GlobalSettings
-from guibender.imagelogger import ImageLogger
 from guibender.path import Path
 from guibender.target import Image
 from guibender.errors import *
 from guibender.finder import *
+from guibender.calibrator import Calibrator
 
 
 # parameters to toy with
-NEEDLE = 'shape_blue_circle'
-HAYSTACK = 'all_shapes'
+NEEDLE = 'n_ibs'
+HAYSTACK = 'h_ibs_viewport'
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
+CALIBRATED_BENCHMARK = False
 
 
 # minimal setup
 logging.getLogger('').addHandler(logging.StreamHandler())
-logging.getLogger('').setLevel(logging.DEBUG)
+logging.getLogger('').setLevel(logging.INFO)
 GlobalSettings.image_logging_level = 0
 GlobalSettings.image_logging_destination = LOGPATH
 GlobalSettings.image_logging_step_width = 4
@@ -67,6 +68,7 @@ elif GlobalSettings.find_backend == "tempfeat":
     finder = TemplateFeatureMatcher()
 elif GlobalSettings.find_backend == "deep":
     finder = DeepMatcher()
+# non-default initial conditions for the calibration
 #finder.configure_backend(find_image = "feature")
 #finder.params["find"]["similarity"].value = 0.7
 #finder.params["tempfeat"]["front_similarity"].value = 0.5
@@ -75,6 +77,20 @@ elif GlobalSettings.find_backend == "deep":
 #finder.params["fdetect"]["hzoom"].value = 7.0
 #finder.params["fdetect"]["MaxFeatures"].value = 10
 finder.find(needle, haystack)
+
+
+# calibration and benchmarking
+calibrator = Calibrator()
+error_before = calibrator.calibrate(haystack, needle, finder)
+# categories to calibrate
+for category in ["find", "feature", "fdetect", "fextract", "fmatch"]:
+    finder.can_calibrate(category, True)
+error_after = calibrator.calibrate(haystack, needle, finder)
+logging.info("Error before and after calibration: %s -> %s", error_before, error_after)
+logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
+results = calibrator.benchmark(haystack, needle, calibration=CALIBRATED_BENCHMARK)
+logging.info("Benchmarking results (method, similarity, location, time):\n%s",
+             "\n".join([str(r) for r in results]))
 
 
 # cleanup steps

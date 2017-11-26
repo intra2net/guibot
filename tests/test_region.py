@@ -22,14 +22,14 @@ import shutil
 import subprocess
 import common_test
 
-from settings import GlobalSettings
-from imagepath import ImagePath
+from config import GlobalConfig
+from path import Path
 from location import Location
 from region import Region
 from match import Match
-from image import Image, Text
+from target import Image, Text
 from inputmap import Key
-from imagefinder import *
+from finder import *
 from desktopcontrol import *
 from errors import *
 
@@ -38,22 +38,22 @@ class RegionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.imagepath = ImagePath()
-        self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.path = Path()
+        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
         self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')
 
         # preserve values of static attributes
-        self.prev_loglevel = GlobalSettings.image_logging_level
-        self.prev_logpath = GlobalSettings.image_logging_destination
-        GlobalSettings.image_logging_level = 0
-        GlobalSettings.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
+        self.prev_loglevel = GlobalConfig.image_logging_level
+        self.prev_logpath = GlobalConfig.image_logging_destination
+        GlobalConfig.image_logging_level = 0
+        GlobalConfig.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
 
     @classmethod
     def tearDownClass(self):
-        GlobalSettings.image_logging_level = self.prev_loglevel
-        GlobalSettings.image_logging_destination = self.prev_logpath
+        GlobalConfig.image_logging_level = self.prev_loglevel
+        GlobalConfig.image_logging_destination = self.prev_logpath
 
     def setUp(self):
         self.child_img = None
@@ -61,11 +61,11 @@ class RegionTest(unittest.TestCase):
 
     def tearDown(self):
         self.close_windows()
-        if os.path.exists(GlobalSettings.image_logging_destination):
-            shutil.rmtree(GlobalSettings.image_logging_destination)
+        if os.path.exists(GlobalConfig.image_logging_destination):
+            shutil.rmtree(GlobalConfig.image_logging_destination)
 
     def show_image(self, filename):
-        filename = self.imagepath.search(filename)
+        filename = self.path.search(filename)
         self.child_img = subprocess.Popen(['python', self.script_img, filename])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
@@ -150,12 +150,12 @@ class RegionTest(unittest.TestCase):
         match = Region().find(Image('shape_blue_circle.png'))
 
         # Positive target offset
-        match_offset = Region().find(Image('shape_blue_circle.png').with_target_offset(200, 100))
+        match_offset = Region().find(Image('shape_blue_circle.png').with_center_offset(200, 100))
         self.assertEqual(match.target.x + 200, match_offset.target.x)
         self.assertEqual(match.target.y + 100, match_offset.target.y)
 
         # Negative target offset
-        match_offset = Region().find(Image('shape_blue_circle.png').with_target_offset(-50, -30))
+        match_offset = Region().find(Image('shape_blue_circle.png').with_center_offset(-50, -30))
         self.assertEqual(match.target.x - 50, match_offset.target.x)
         self.assertEqual(match.target.y - 30, match_offset.target.y)
 
@@ -175,7 +175,7 @@ class RegionTest(unittest.TestCase):
     def test_find_all(self):
         self.show_image('all_shapes')
         # initialize template matching region to support multiple matches
-        boxes = Region(cv=TemplateMatcher())
+        boxes = Region(cv=TemplateFinder())
 
         greenbox = Image('shape_green_box')
         matches = boxes.find_all(greenbox)
@@ -228,7 +228,7 @@ class RegionTest(unittest.TestCase):
     def test_find_zero_matches(self):
         self.show_image('all_shapes')
         # initialize template matching region to support multiple matches
-        boxes = Region(cv=TemplateMatcher())
+        boxes = Region(cv=TemplateFinder())
 
         matches = boxes.find_all(Image('shape_blue_circle'))
         self.assertEqual(len(matches), 1)
@@ -238,20 +238,63 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
         self.close_windows()
 
+    def test_find_guess_target(self):
+        self.show_image('all_shapes')
+        region = Region()
+        imgroot = os.path.join(common_test.unittest_dir, 'images')
+
+        # find image from string with and without extension
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.png')))
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.match')))
+        region.find('shape_blue_circle')
+        region.find_all('shape_blue_circle')
+        region.find('shape_blue_circle.png')
+        region.find_all('shape_blue_circle.png')
+
+        # guess from match file configuration (target has match config)
+        # precedence is given to match file configuration (then data file)
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.txt')))
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.match')))
+        try:
+            region.find('mouse down')
+            self.fail('exception was not thrown')
+        except FindError, e:
+            pass
+        try:
+            region.find_all('mouse down')
+            self.fail('exception was not thrown')
+        except FindError, e:
+            pass
+
+        # guess from data file extension (target has no match config)
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'circle.steps')))
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'circle.match')))
+        region.find('circle')
+        region.find_all('circle')
+
+        # fail with default type if nothing else works
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.xtx')))
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.match')))
+        self.default_target_type = Image
+        # autopy cannot handle a masked image
+        region.cv_backend = TemplateFinder()
+        region.find('shape_blue_circle_unknown.xtx')
+        region.find_all('shape_blue_circle_unknown.xtx')
+
     def test_sample(self):
         self.show_image('all_shapes')
 
         # autopy matching does not support similarity
-        shapes = Region(cv=AutoPyMatcher())
+        shapes = Region(cv=AutoPyFinder())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertEqual(similarity, 0.0)
 
         # initialize template matching region to support similarity
-        shapes = Region(cv=TemplateMatcher())
+        shapes = Region(cv=TemplateFinder())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
 
-        shapes = Region(cv=HybridMatcher())
+        shapes = Region(cv=TemplateFeatureFinder())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertEqual(similarity, 1.0)
 

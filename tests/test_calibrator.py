@@ -19,10 +19,10 @@ import unittest
 import pprint
 
 import common_test
-from imagefinder import FeatureMatcher
 from calibrator import Calibrator
-from imagepath import ImagePath
-from image import Image
+from path import Path
+from finder import *
+from target import *
 from errors import *
 
 
@@ -30,11 +30,11 @@ class CalibratorTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.imagepath = ImagePath()
-        self.imagepath.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.path = Path()
+        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
-        finder = FeatureMatcher()
+        finder = FeatureFinder()
         finder.imglog.logging_level = 10
         finder.configure()
         for category in calibrate_backends:
@@ -51,7 +51,8 @@ class CalibratorTest(unittest.TestCase):
     def test_calibrate_viewport(self):
         raw_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
         cal_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
-                                           ["find", "fmatch"])
+                                           ["find", "feature", "fdetect",
+                                            "fextract", "fmatch"])
 
         self.assertLessEqual(cal_error, raw_error,
                              "Match error after calibration must be "
@@ -60,7 +61,8 @@ class CalibratorTest(unittest.TestCase):
     def test_calibrate_rotation(self):
         raw_error = self.calibration_setUp('n_ibs', 'h_ibs_rotated', [])
         cal_error = self.calibration_setUp('n_ibs', 'h_ibs_rotated',
-                                           ["find", "fmatch"])
+                                           ["find", "feature", "fdetect",
+                                            "fextract", "fmatch"])
 
         self.assertLessEqual(cal_error, raw_error,
                              "Match error after calibration must be "
@@ -69,7 +71,8 @@ class CalibratorTest(unittest.TestCase):
     def test_calibrate_scaling(self):
         raw_error = self.calibration_setUp('n_ibs', 'h_ibs_scaled', [])
         cal_error = self.calibration_setUp('n_ibs', 'h_ibs_scaled',
-                                           ["find", "fmatch"])
+                                           ["find", "feature", "fdetect",
+                                            "fextract", "fmatch"])
 
         self.assertLessEqual(cal_error, raw_error,
                              "Match error after calibration must be "
@@ -109,8 +112,6 @@ class CalibratorTest(unittest.TestCase):
                                      "Template matching methods should be on the top")
 
     def test_benchmark_viewport_image(self):
-        # TODO: check this test after improving the calibrator
-        return
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')
         calibrator = Calibrator()
@@ -118,7 +119,7 @@ class CalibratorTest(unittest.TestCase):
         results = calibrator.benchmark(haystack, needle, calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
-                           "should be more than one for the blue circle")
+                           "should be more than one for the viewported image")
         top_results = results[:3]
         for result in top_results:
             self.assertRegexpMatches(result[0], "\w+-\w+-\w+",

@@ -19,16 +19,13 @@ TODO - hierarchical notes
   obtained from the template and from the feature matching in the hybrid case
   may prevent from abnormal results in any of the two matching subparts
 - calibration and parameter optimization still not finished and fully used
-      It is really necessary but at the moment we need more manual experience in
-      order to make it more usable. The ultimate calibration includes not just
-      matching but also competitors, i.e. it doesn't just obtain the optimum
-      similarity for the given needle and haystack but it minimizes the similarity
-      for spatial and temporal competitors where spatial means the others in the
-      same haystack while temporal extends it to others in nearby haystacks (time
-      frames). A tool for this might even offer ways to provide the desired match
-      so that even if it is suboptimal for the given parameters and another match
-      is enhanced, this could be reverted with some parameters that could possibly
-      be found through such calibration.
+    - add support for more matchers (CV backends)
+    - the ultimate calibration includes not just matching but also competitors
+        - it doesn't just obtain the optimum similarity for the given needle and
+          haystack but it minimizes the similarity for spatial and temporal
+          competitors where spatial means the others in the same haystack while
+          temporal extends it to others in nearby haystacks (time frames)
+        - stated as optimization problem: max_p(x+x') where x=x(p) and p \in /mathbb{R}^d
 - clicking target point - still reconsider whether to return the (0,0) needle point
   or its center since wild transformations are possible and defining the clicking point
   as (+n,+n) is not as consistent

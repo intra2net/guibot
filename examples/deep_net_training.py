@@ -25,9 +25,9 @@ import shutil
 
 from guibender.settings import GlobalSettings
 from guibender.imagelogger import ImageLogger
-from guibender.imagepath import ImagePath
-from guibender.image import Pattern, Image
-from guibender.imagefinder import DeepMatcher
+from guibender.path import Path
+from guibender.target import Pattern, Image
+from guibender.finder import DeepMatcher
 from guibender.errors import *
 
 
@@ -79,8 +79,8 @@ GlobalSettings.image_logging_level = 0
 GlobalSettings.image_logging_destination = LOGPATH
 GlobalSettings.image_logging_step_width = 4
 
-imagepath = ImagePath()
-imagepath.add_path('images/')
+path = Path()
+path.add_path('images/')
 
 ImageLogger.step = 1
 

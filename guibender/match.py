@@ -17,7 +17,7 @@
 from region import Region
 from location import Location
 from desktopcontrol import DesktopControl
-from imagefinder import ImageFinder
+from finder import Finder
 
 
 class Match(Region):
@@ -40,7 +40,7 @@ class Match(Region):
         :param float similarity: attained similarity of the match region
         """
         dc = DesktopControl() if dc is None else dc
-        cv = ImageFinder() if cv is None else cv
+        cv = Finder() if cv is None else cv
         super(Match, self).__init__(xpos, ypos, width, height, dc=dc, cv=cv)
         # custom DC and CV backends can be set later on by a region
         # if a match within the match will be needed (they are optional)

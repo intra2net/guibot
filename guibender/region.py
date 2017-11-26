@@ -17,12 +17,12 @@ import time
 import os
 
 # interconnected classes - carefully avoid circular reference
-from settings import GlobalSettings
+from config import GlobalConfig
 from location import Location
 from imagelogger import ImageLogger
 from errors import *
-from image import *
-from imagefinder import *
+from target import *
+from finder import *
 from desktopcontrol import *
 
 import logging
@@ -46,43 +46,46 @@ class Region(object):
         :param int height: height of the region (ypos+height for downright vertex y)
         :param dc: DC backend used for any desktop control
         :type dc: :py:class:`desktopcontrol.DesktopControl` or None
-        :param cv: CV backend used for any image finding
-        :type cv: :py:class:`imagefinder.ImageFinder` or None
+        :param cv: CV backend used for any target finding
+        :type cv: :py:class:`finder.Finder` or None
         :raises: :py:class:`UninitializedBackendError` if the region is empty
 
         If any of the backends is not defined a new one will be initiated
-        using the parameters defined in :py:class:`settings.GlobalSettings`.
+        using the parameters defined in :py:class:`settings.GlobalConfig`.
         If `width` or `height` remains zero, it will be set to the maximum
         available within the screen space.
         """
         if dc is None:
-            if GlobalSettings.desktop_control_backend == "autopy":
+            if GlobalConfig.desktop_control_backend == "autopy":
                 dc = AutoPyDesktopControl()
-            elif GlobalSettings.desktop_control_backend == "qemu":
+            elif GlobalConfig.desktop_control_backend == "qemu":
                 dc = QemuDesktopControl()
-            elif GlobalSettings.desktop_control_backend == "vncdotool":
+            elif GlobalConfig.desktop_control_backend == "vncdotool":
                 dc = VNCDoToolDesktopControl()
         if cv is None:
-            if GlobalSettings.find_image_backend == "autopy":
-                cv = AutoPyMatcher()
-            elif GlobalSettings.find_image_backend == "contour":
-                cv = ContourMatcher()
-            elif GlobalSettings.find_image_backend == "template":
-                cv = TemplateMatcher()
-            elif GlobalSettings.find_image_backend == "feature":
-                cv = FeatureMatcher()
-            elif GlobalSettings.find_image_backend == "cascade":
-                cv = CascadeMatcher()
-            elif GlobalSettings.find_image_backend == "text":
-                cv = TextMatcher()
-            elif GlobalSettings.find_image_backend == "hybrid":
-                cv = HybridMatcher()
-            elif GlobalSettings.find_image_backend == "deep":
-                cv = DeepMatcher()
+            if GlobalConfig.find_backend == "autopy":
+                cv = AutoPyFinder()
+            elif GlobalConfig.find_backend == "contour":
+                cv = ContourFinder()
+            elif GlobalConfig.find_backend == "template":
+                cv = TemplateFinder()
+            elif GlobalConfig.find_backend == "feature":
+                cv = FeatureFinder()
+            elif GlobalConfig.find_backend == "cascade":
+                cv = CascadeFinder()
+            elif GlobalConfig.find_backend == "text":
+                cv = TextFinder()
+            elif GlobalConfig.find_backend == "tempfeat":
+                cv = TemplateFeatureFinder()
+            elif GlobalConfig.find_backend == "deep":
+                cv = DeepFinder()
+            elif GlobalConfig.find_backend == "hybrid":
+                cv = HybridFinder()
 
         # since the backends are read/write make them public attributes
         self.dc_backend = dc
         self.cv_backend = cv
+        self.default_target_type = Image
 
         self._last_match = None
         self._xpos = xpos
@@ -245,7 +248,7 @@ class Region(object):
         """
         Getter for readonly attribute.
 
-        :returns: last match obtained from finding an image within the region
+        :returns: last match obtained from finding a target within the region
         :rtype: :py:class:`match.Match`
         """
         return self._last_match
@@ -374,43 +377,31 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     """Image expect methods"""
-    def find(self, image, timeout=10):
+    def find(self, target, timeout=10):
         """
-        Find an image on the screen.
+        Find a target (image, text, etc.) on the screen.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Target`
+        :param target: target to look for
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
-        :returns: match obtained from finding the image within the region
+        :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
         :raises: :py:class:`errors.FindError` if no match is found
 
-        This method is the main entrance to all our image finding capabilities
-        and is the milestone for all image expect methods.
+        This method is the main entrance to all our target finding capabilities
+        and is the milestone for all target expect methods.
         """
-        # handle some specific target types
-        if isinstance(image, basestring):
-            image = Image(image)
-        log.debug("Looking for target %s", image)
-
-        if image.use_own_settings:
-            log.debug("Using special settings to match %s", image)
-            cv_backend = image.match_settings
-        else:
-            if isinstance(image, Text) and not isinstance(self.cv_backend, TextMatcher):
-                raise IncompatibleTargetError("Need text matcher for matching text")
-            if isinstance(image, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
-                                                   isinstance(self.cv_backend, DeepMatcher)):
-                raise IncompatibleTargetError("Need pattern matcher for matching patterns")
-            image.match_settings = self.cv_backend
-            cv_backend = self.cv_backend
+        if isinstance(target, basestring):
+            target = self._target_from_string(target)
+        log.debug("Looking for target %s", target)
+        cv_backend = self._determine_cv_backend(target)
         dc_backend = self.dc_backend
 
         timeout_limit = time.time() + timeout
         while True:
             screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = cv_backend.find(image, screen_capture)
+            found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
                 from match import Match
                 match = found_pics[0]
@@ -420,51 +411,39 @@ class Region(object):
                 return self._last_match
 
             elif time.time() > timeout_limit:
-                if GlobalSettings.save_needle_on_error:
+                if GlobalConfig.save_needle_on_error:
                     if not os.path.exists(ImageLogger.logging_destination):
                         os.mkdir(ImageLogger.logging_destination)
-                    dump_path = GlobalSettings.image_logging_destination
+                    dump_path = GlobalConfig.image_logging_destination
                     hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
                     ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
                     screen_capture.save(hdump_path)
-                    image.save(ndump_path)
-                raise FindError(image)
+                    target.save(ndump_path)
+                raise FindError(target)
 
             else:
                 # don't hog the CPU
-                time.sleep(GlobalSettings.rescan_speed_on_find)
+                time.sleep(GlobalConfig.rescan_speed_on_find)
 
-    def find_all(self, image, timeout=10, allow_zero=False):
+    def find_all(self, target, timeout=10, allow_zero=False):
         """
-        Find multiples of an image on the screen.
+        Find multiples of a target on the screen.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Target`
+        :param target: target to look for
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :param bool allow_zero: whether to allow zero matches or raise error
-        :returns: matches obtained from finding the image within the region
+        :returns: matches obtained from finding the target within the region
         :rtype: [:py:class:`match.Match`]
         :raises: :py:class:`errors.FindError` if no matches are found
                  and zero matches are not allowed
 
         This method is similar the one above but allows for more than one match.
         """
-        # handle some specific target types
-        if isinstance(image, basestring):
-            image = Image(image)
-        log.debug("Looking for multiple occurrences of target %s", image)
-
-        if image.use_own_settings:
-            log.debug("Using special settings to match %s", image)
-            cv_backend = image.match_settings
-        else:
-            if isinstance(image, Text) and not isinstance(self.cv_backend, TextMatcher):
-                raise IncompatibleTargetError("Need text matcher for matching text")
-            if isinstance(image, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
-                                                   isinstance(self.cv_backend, DeepMatcher)):
-                raise IncompatibleTargetError("Need pattern matcher for matching patterns")
-            image.match_settings = self.cv_backend
-            cv_backend = self.cv_backend
+        if isinstance(target, basestring):
+            target = self._target_from_string(target)
+        log.debug("Looking for target %s", target)
+        cv_backend = self._determine_cv_backend(target)
         dc_backend = self.dc_backend
 
         # TODO: decide about updating the last_match attribute
@@ -473,7 +452,7 @@ class Region(object):
         while True:
             screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = cv_backend.find(image, screen_capture)
+            found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
                 from match import Match
                 for match in found_pics:
@@ -487,97 +466,126 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    if GlobalSettings.save_needle_on_error:
+                    if GlobalConfig.save_needle_on_error:
                         log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
                         screen_capture.save('/tmp/guibender_last_finderror.png')
-                        image.save('/tmp/guibender_last_finderror_needle.png')
-                    raise FindError(image)
+                        target.save('/tmp/guibender_last_finderror_needle.png')
+                    raise FindError(target)
 
             else:
                 # don't hog the CPU
-                time.sleep(GlobalSettings.rescan_speed_on_find)
+                time.sleep(GlobalConfig.rescan_speed_on_find)
 
-    def sample(self, image):
+    def _target_from_string(self, target_str):
+        # handle some specific target types
+        try:
+            # guess from a match file has the highest precedence
+            return Target.from_match_file(target_str)
+        except (IOError, FileNotFoundError) as ex:
+            log.debug(ex)
+            try:
+                # if a match file does not exist the data file must exist
+                return Target.from_data_file(target_str)
+            except IncompatibleTargetFileError, ex:
+                log.debug(ex)
+                # if anything else goes wrong fail on the default type
+                return self.default_target_type(target_str)
+
+    def _determine_cv_backend(self, target):
+        if target.use_own_settings:
+            log.debug("Using special settings to match %s", target)
+            return target.match_settings
+        if isinstance(target, Text) and not isinstance(self.cv_backend, TextFinder):
+            raise IncompatibleTargetError("Need text matcher for matching text")
+        if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeFinder) or
+                                               isinstance(self.cv_backend, DeepFinder)):
+            raise IncompatibleTargetError("Need pattern matcher for matching patterns")
+        if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridFinder):
+            raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
+        target.match_settings = self.cv_backend
+        return self.cv_backend
+
+    def sample(self, target):
         """
-        Sample the similarity between and image and the screen,
-        i.e. an empirical probability that the image is on the screen.
+        Sample the similarity between a target and the screen,
+        i.e. an empirical probability that the target is on the screen.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`target.Target`
         :returns: similarity with best match on the screen
         :rtype: float
 
         .. note:: Not all matchers support a 'similarity' value. The ones that don't
-            will return zero similarity (similarly to the image logging case).
+            will return zero similarity (similarly to the target logging case).
         """
-        log.debug("Looking for image %s", image)
-        if isinstance(image, basestring):
-            image = Image(image)
-        if not image.use_own_settings:
-            image.match_settings = self.cv_backend
-            image.use_own_settings = True
-        image = image.with_similarity(0.0)
-        match = self.find(image)
+        log.debug("Looking for target %s", target)
+        if isinstance(target, basestring):
+            target = Image(target)
+        if not target.use_own_settings:
+            target.match_settings = self.cv_backend
+            target.use_own_settings = True
+        target = target.with_similarity(0.0)
+        match = self.find(target)
         similarity = match.similarity
         return similarity
 
-    def exists(self, image, timeout=0):
+    def exists(self, target, timeout=0):
         """
-        Check if an image exists on the screen using the image matching
+        Check if a target exists on the screen using the matching
         success as a threshold for the existence.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
-        :returns: match obtained from finding the image within the region
+        :returns: match obtained from finding the target within the region
                   or nothing if no match is found
         :rtype: :py:class:`match.Match` or None
         """
-        log.debug("Checking if %s is present", image)
+        log.debug("Checking if %s is present", target)
         try:
-            return self.find(image, timeout)
+            return self.find(target, timeout)
         except FindError:
             pass
         return None
 
-    def wait(self, image, timeout=30):
+    def wait(self, target, timeout=30):
         """
-        Wait for an image to appear (be matched) with a given timeout
+        Wait for a target to appear (be matched) with a given timeout
         as failing tolerance.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
-        :returns: match obtained from finding the image within the region
+        :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
         :raises: :py:class:`errors.FindError` if no match is found
         """
-        log.info("Waiting for %s", image)
-        return self.find(image, timeout)
+        log.info("Waiting for %s", target)
+        return self.find(target, timeout)
 
-    def wait_vanish(self, image, timeout=30):
+    def wait_vanish(self, target, timeout=30):
         """
-        Wait for an image to disappear (be unmatched, i.e. matched
+        Wait for a target to disappear (be unmatched, i.e. matched
         without success) with a given timeout as failing tolerance.
 
-        :param image: image to look for
-        :type image: str or :py:class:`image.Image`
+        :param target: target to look for
+        :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
-        :returns: whether the image disappeared from the region
+        :returns: whether the target disappeared from the region
         :rtype: bool
         :raises: :py:class:`errors.NotFindError` if match is still found
         """
-        log.info("Waiting for %s to vanish", image)
+        log.info("Waiting for %s to vanish", target)
         expires = time.time() + timeout
         while time.time() < expires:
-            if self.exists(image, 0) is None:
+            if self.exists(target, 0) is None:
                 return True
 
             # don't hog the CPU
             time.sleep(0.2)
 
-        # image is still there
-        raise NotFindError(image)
+        # target is still there
+        raise NotFindError(target)
 
     """Mouse methods"""
     def idle(self, timeout):
@@ -599,170 +607,170 @@ class Region(object):
         time.sleep(timeout)
         return self
 
-    def hover(self, image_or_location):
+    def hover(self, target_or_location):
         """
-        Hover the mouse over an image or location.
+        Hover the mouse over a target or location.
 
-        :param image_or_location: image or location to hover to
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Target`
-        :returns: match from finding the image or nothing if hovering over a known location
+        :param target_or_location: target or location to hover to
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`target.Target`
+        :returns: match from finding the target or nothing if hovering over a known location
         :rtype: :py:class:`match.Match` or None
         """
-        log.info("Hovering over %s", image_or_location)
+        log.info("Hovering over %s", target_or_location)
 
         # Handle Match
         from match import Match
-        if isinstance(image_or_location, Match):
-            self.dc_backend.mouse_move(image_or_location.target)
+        if isinstance(target_or_location, Match):
+            self.dc_backend.mouse_move(target_or_location.target)
             return None
 
         # Handle Location
-        if isinstance(image_or_location, Location):
-            self.dc_backend.mouse_move(image_or_location)
+        if isinstance(target_or_location, Location):
+            self.dc_backend.mouse_move(target_or_location)
             return None
 
         # Find target (image, text, pattern) or str
-        match = self.find(image_or_location)
+        match = self.find(target_or_location)
         self.dc_backend.mouse_move(match.target)
 
         return match
 
-    def click(self, image_or_location, modifiers=None):
+    def click(self, target_or_location, modifiers=None):
         """
-        Click on an image or location using the left mouse button and
+        Click on a target or location using the left mouse button and
         optionally holding special keys.
 
-        :param image_or_location: image or location to click on
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Image`
+        :param target_or_location: target or location to click on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`target.Target`
         :param modifiers: special keys to hold during clicking
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
-        :returns: match from finding the image or nothing if clicking on a known location
+        :returns: match from finding the target or nothing if clicking on a known location
         :rtype: :py:class:`match.Match` or None
 
         The special keys refer to a list of key modifiers, e.g.::
 
-            self.click('my_image', [KeyModifier.MOD_CTRL, 'x']).
+            self.click('my_target', [KeyModifier.MOD_CTRL, 'x']).
         """
-        match = self.hover(image_or_location)
-        log.info("Clicking at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Clicking at %s", target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 1, modifiers)
         return match
 
-    def right_click(self, image_or_location, modifiers=None):
+    def right_click(self, target_or_location, modifiers=None):
         """
-        Click on an image or location using the right mouse button and
+        Click on a target or location using the right mouse button and
         optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
-        match = self.hover(image_or_location)
-        log.info("Right clicking at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Right clicking at %s", target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.RIGHT_BUTTON, 1, modifiers)
         return match
 
-    def double_click(self, image_or_location, modifiers=None):
+    def double_click(self, target_or_location, modifiers=None):
         """
-        Double click on an image or location using the left mouse button
+        Double click on a target or location using the left mouse button
         and optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
-        match = self.hover(image_or_location)
-        log.info("Double clicking at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Double clicking at %s", target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 2, modifiers)
         return match
 
-    def multi_click(self, image_or_location, count=3, modifiers=None):
+    def multi_click(self, target_or_location, count=3, modifiers=None):
         """
-        Click N times on an image or location using the left mouse button
+        Click N times on a target or location using the left mouse button
         and optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
-        match = self.hover(image_or_location)
-        log.info("Clicking %s times at %s", count, image_or_location)
+        match = self.hover(target_or_location)
+        log.info("Clicking %s times at %s", count, target_or_location)
         if modifiers != None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
 
-    def mouse_down(self, image_or_location, button=None):
+    def mouse_down(self, target_or_location, button=None):
         """
-        Hold down an arbitrary mouse button on an image or location.
+        Hold down an arbitrary mouse button on a target or location.
 
-        :param image_or_location: image or location to toggle on
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Image`
+        :param target_or_location: target or location to toggle on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`target.Target`
         :param button: button index depending on backend (default is left button)
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :type button: int or None
-        :returns: match from finding the image or nothing if toggling on a known location
+        :returns: match from finding the target or nothing if toggling on a known location
         :rtype: :py:class:`match.Match` or None
         """
         if button is None:
             button = self.LEFT_BUTTON
-        match = self.hover(image_or_location)
-        log.debug("Holding down the mouse at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.debug("Holding down the mouse at %s", target_or_location)
         self.dc_backend.mouse_down(button)
         return match
 
-    def mouse_up(self, image_or_location, button=None):
+    def mouse_up(self, target_or_location, button=None):
         """
-        Release an arbitrary mouse button on an image or location.
+        Release an arbitrary mouse button on a target or location.
 
-        :param image_or_location: image or location to toggle on
-        :type image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                 str or :py:class:`image.Image`
+        :param target_or_location: target or location to toggle on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`target.Target`
         :param button: button index depending on backend (default is left button)
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :type button: int or None
-        :returns: match from finding the image or nothing if toggling on a known location
+        :returns: match from finding the target or nothing if toggling on a known location
         :rtype: :py:class:`match.Match` or None
         """
         if button is None:
             button = self.LEFT_BUTTON
-        match = self.hover(image_or_location)
-        log.debug("Holding up the mouse at %s", image_or_location)
+        match = self.hover(target_or_location)
+        log.debug("Holding up the mouse at %s", target_or_location)
         self.dc_backend.mouse_up(button)
         return match
 
-    def drag_drop(self, src_image_or_location, dst_image_or_location, modifiers=None):
+    def drag_drop(self, src_target_or_location, dst_target_or_location, modifiers=None):
         """
-        Drag from and drop at an image or location optionally holding special keys.
+        Drag from and drop at a target or location optionally holding special keys.
 
-        :param src_image_or_location: image or location to drag from
-        :type src_image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                     str or :py:class:`image.Image`
-        :param dst_image_or_location: image or location to drop at
-        :type dst_image_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
-                                     str or :py:class:`image.Image`
+        :param src_target_or_location: target or location to drag from
+        :type src_target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                     str or :py:class:`target.Target`
+        :param dst_target_or_location: target or location to drop at
+        :type dst_target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                     str or :py:class:`target.Target`
         :param modifiers: special keys to hold during dragging and dropping
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :type modifiers: [str]
-        :returns: match from finding the image or nothing if dropping at a known location
+        :returns: match from finding the target or nothing if dropping at a known location
         :rtype: :py:class:`match.Match` or None
         """
-        self.drag_from(src_image_or_location, modifiers)
-        match = self.drop_at(dst_image_or_location, modifiers)
+        self.drag_from(src_target_or_location, modifiers)
+        match = self.drop_at(dst_target_or_location, modifiers)
         return match
 
-    def drag_from(self, image_or_location, modifiers=None):
+    def drag_from(self, target_or_location, modifiers=None):
         """
-        Drag from an image or location optionally holding special keys.
+        Drag from a target or location optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.drag_drop`
-        but with `image_or_location` as `src_image_or_location`.
+        but with `target_or_location` as `src_target_or_location`.
         """
-        match = self.hover(image_or_location)
+        match = self.hover(target_or_location)
 
         time.sleep(0.2)
         if modifiers != None:
@@ -770,23 +778,23 @@ class Region(object):
             self.dc_backend.keys_toggle(modifiers, True)
             #self.dc_backend.keys_toggle(["Ctrl"], True)
 
-        log.info("Dragging %s", image_or_location)
+        log.info("Dragging %s", target_or_location)
         self.dc_backend.mouse_down(self.LEFT_BUTTON)
-        time.sleep(GlobalSettings.delay_after_drag)
+        time.sleep(GlobalConfig.delay_after_drag)
 
         return match
 
-    def drop_at(self, image_or_location, modifiers=None):
+    def drop_at(self, target_or_location, modifiers=None):
         """
-        Drop at an image or location optionally holding special keys.
+        Drop at a target or location optionally holding special keys.
 
         Arguments and return values are analogical to :py:func:`Region.drag_drop`
-        but with `image_or_location` as `dst_image_or_location`.
+        but with `target_or_location` as `dst_target_or_location`.
         """
-        match = self.hover(image_or_location)
-        time.sleep(GlobalSettings.delay_before_drop)
+        match = self.hover(target_or_location)
+        time.sleep(GlobalConfig.delay_before_drop)
 
-        log.info("Dropping at %s", image_or_location)
+        log.info("Dropping at %s", target_or_location)
         self.dc_backend.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
@@ -812,26 +820,26 @@ class Region(object):
             self.press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
-        time.sleep(GlobalSettings.delay_before_keys)
+        time.sleep(GlobalConfig.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return self
 
-    def press_at(self, keys, image_or_location):
+    def press_at(self, keys, target_or_location):
         """
         Press a single key or a list of keys simultaneously
-        at a specified image or location.
+        at a specified target or location.
 
         This method is similar to :py:func:`Region.press_keys` but
         with an extra argument like :py:func:`Region.click`.
         """
-        keys_list = self._parse_keys(keys, image_or_location)
-        match = self.click(image_or_location)
-        time.sleep(GlobalSettings.delay_before_keys)
+        keys_list = self._parse_keys(keys, target_or_location)
+        match = self.click(target_or_location)
+        time.sleep(GlobalConfig.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return match
 
-    def _parse_keys(self, keys, image_or_location=None):
-        at_str = " at %s" % image_or_location if image_or_location else ""
+    def _parse_keys(self, keys, target_or_location=None):
+        at_str = " at %s" % target_or_location if target_or_location else ""
 
         keys_list = []
         # if not a list (i.e. if a single key)
@@ -885,7 +893,7 @@ class Region(object):
         typing special keys.
         """
         text_list = self._parse_text(text)
-        time.sleep(GlobalSettings.delay_before_keys)
+        time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
@@ -893,19 +901,19 @@ class Region(object):
         self.dc_backend.keys_type(text_list, modifiers)
         return self
 
-    def type_at(self, text, image_or_location, modifiers=None):
+    def type_at(self, text, target_or_location, modifiers=None):
         """
         Type a list of consecutive character keys (without special keys)
-        at a specified image or location.
+        at a specified target or location.
 
         This method is similar to :py:func:`Region.type_text` but
         with an extra argument like :py:func:`Region.click`.
         """
-        text_list = self._parse_text(text, image_or_location)
+        text_list = self._parse_text(text, target_or_location)
         match = None
-        if image_or_location != None:
-            match = self.click(image_or_location)
-        time.sleep(GlobalSettings.delay_before_keys)
+        if target_or_location != None:
+            match = self.click(target_or_location)
+        time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
             if isinstance(modifiers, basestring):
                 modifiers = [modifiers]
@@ -913,8 +921,8 @@ class Region(object):
         self.dc_backend.keys_type(text_list, modifiers)
         return match
 
-    def _parse_text(self, text, image_or_location=None):
-        at_str = " at %s" % image_or_location if image_or_location else ""
+    def _parse_text(self, text, target_or_location=None):
+        at_str = " at %s" % target_or_location if target_or_location else ""
 
         text_list = []
         if isinstance(text, basestring):
