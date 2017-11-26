@@ -175,7 +175,7 @@ class RegionTest(unittest.TestCase):
     def test_find_all(self):
         self.show_image('all_shapes')
         # initialize template matching region to support multiple matches
-        boxes = Region(cv=TemplateMatcher())
+        boxes = Region(cv=TemplateFinder())
 
         greenbox = Image('shape_green_box')
         matches = boxes.find_all(greenbox)
@@ -228,7 +228,7 @@ class RegionTest(unittest.TestCase):
     def test_find_zero_matches(self):
         self.show_image('all_shapes')
         # initialize template matching region to support multiple matches
-        boxes = Region(cv=TemplateMatcher())
+        boxes = Region(cv=TemplateFinder())
 
         matches = boxes.find_all(Image('shape_blue_circle'))
         self.assertEqual(len(matches), 1)
@@ -277,7 +277,7 @@ class RegionTest(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.match')))
         self.default_target_type = Image
         # autopy cannot handle a masked image
-        region.cv_backend = TemplateMatcher()
+        region.cv_backend = TemplateFinder()
         region.find('shape_blue_circle_unknown.xtx')
         region.find_all('shape_blue_circle_unknown.xtx')
 
@@ -285,16 +285,16 @@ class RegionTest(unittest.TestCase):
         self.show_image('all_shapes')
 
         # autopy matching does not support similarity
-        shapes = Region(cv=AutoPyMatcher())
+        shapes = Region(cv=AutoPyFinder())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertEqual(similarity, 0.0)
 
         # initialize template matching region to support similarity
-        shapes = Region(cv=TemplateMatcher())
+        shapes = Region(cv=TemplateFinder())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
 
-        shapes = Region(cv=TemplateFeatureMatcher())
+        shapes = Region(cv=TemplateFeatureFinder())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertEqual(similarity, 1.0)
 

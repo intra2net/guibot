@@ -109,23 +109,23 @@ class FinderTest(unittest.TestCase):
         finder.configure_backend("feature")
         self.assertEqual(finder.params["find"]["backend"], "feature")
 
-        finder = AutoPyMatcher()
+        finder = AutoPyFinder()
         finder.configure()
         self.assertEqual(finder.params["find"]["backend"], "autopy")
 
-        finder = TemplateMatcher()
+        finder = TemplateFinder()
         finder.configure_backend("ccoeff_normed", reset=True)
         self.assertEqual(finder.params["find"]["backend"], "template")
         self.assertEqual(finder.params["template"]["backend"], "ccoeff_normed")
 
-        finder = FeatureMatcher()
+        finder = FeatureFinder()
         finder.configure()
         # test that a parameter of ORB (the current and default detector)
         # is present in parameters while a parameter of KAZE is not present
         self.assertTrue(finder.params["fdetect"].has_key("MaxFeatures"))
         self.assertFalse(finder.params["fdetect"].has_key("NOctaves"))
 
-        finder = TemplateFeatureMatcher()
+        finder = TemplateFeatureFinder()
         finder.configure(feature_detect="KAZE", feature_extract="ORB", feature_match="BruteForce")
         self.assertEqual(finder.params["find"]["backend"], "tempfeat")
         self.assertEqual(finder.params["template"]["backend"], "ccoeff_normed")
@@ -158,7 +158,7 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce-Hamming")
 
     def test_autopy_same(self):
-        finder = AutoPyMatcher()
+        finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 1.0
         matches = finder.find(Image('shape_blue_circle'), Image('all_shapes'))
 
@@ -176,7 +176,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "autopy")
 
     def test_autopy_nomatch(self):
-        finder = AutoPyMatcher()
+        finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 0.25
         matches = finder.find(Image('n_ibs'), Image('all_shapes'))
 
@@ -189,7 +189,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "autopy")
 
     def test_contour_same(self):
-        finder = ContourMatcher()
+        finder = ContourFinder()
         # shape matching is not perfect
         finder.params["find"]["similarity"].value = 0.99
         i = 1
@@ -229,7 +229,7 @@ class FinderTest(unittest.TestCase):
                 i += 1
 
     def test_contour_nomatch(self):
-        finder = ContourMatcher()
+        finder = ContourFinder()
         finder.params["find"]["similarity"].value = 0.25
         i = 1
 
@@ -261,7 +261,7 @@ class FinderTest(unittest.TestCase):
                 i += 1
 
     def test_template_same(self):
-        finder = TemplateMatcher()
+        finder = TemplateFinder()
         finder.params["find"]["similarity"].value = 1.0
         i = 1
 
@@ -297,7 +297,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     def test_template_nomatch(self):
-        finder = TemplateMatcher()
+        finder = TemplateFinder()
         finder.params["find"]["similarity"].value = 0.25
         i = 1
 
@@ -329,7 +329,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     def test_template_nocolor(self):
-        finder = TemplateMatcher()
+        finder = TemplateFinder()
         # template matching without color is not perfect
         finder.params["find"]["similarity"].value = 0.99
 
@@ -346,7 +346,7 @@ class FinderTest(unittest.TestCase):
             self.assertEqual(matches[0].height, 151)
 
     def test_template_multiple(self):
-        finder = TemplateMatcher()
+        finder = TemplateFinder()
         finder.find(Image('shape_red_box'), Image('all_shapes'))
 
         # verify dumped files count and names
@@ -365,7 +365,7 @@ class FinderTest(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     def test_feature_same(self):
-        finder = FeatureMatcher()
+        finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
         i = 1
 
@@ -408,7 +408,7 @@ class FinderTest(unittest.TestCase):
                         i += 1
 
     def test_feature_nomatch(self):
-        finder = FeatureMatcher()
+        finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
         i = 1
 
@@ -447,7 +447,7 @@ class FinderTest(unittest.TestCase):
                         i += 1
 
     def test_feature_scaling(self):
-        finder = FeatureMatcher()
+        finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
         matches = finder.find(Image('n_ibs'), Image('h_ibs_scaled'))
         self.assertEqual(len(matches), 1)
@@ -457,7 +457,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 150, delta=10)
 
     def test_feature_rotation(self):
-        finder = FeatureMatcher()
+        finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.45
         matches = finder.find(Image('n_ibs'), Image('h_ibs_rotated'))
         self.assertEqual(len(matches), 1)
@@ -467,7 +467,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
     def test_feature_viewport(self):
-        finder = FeatureMatcher()
+        finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.5
         matches = finder.find(Image('n_ibs'), Image('h_ibs_viewport'))
         self.assertEqual(len(matches), 1)
@@ -477,7 +477,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 250, delta=10)
 
     def test_cascade_same(self):
-        finder = CascadeMatcher()
+        finder = CascadeFinder()
         # no similarty parameter is supported - this is a binary match case
         finder.params["find"]["similarity"].value = 0.0
         matches = finder.find(Pattern('shape_blue_circle.xml'), Image('all_shapes'))
@@ -495,7 +495,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "cascade")
 
     def test_cascade_nomatch(self):
-        finder = CascadeMatcher()
+        finder = CascadeFinder()
         # no similarty parameter is supported - this is a binary match case
         finder.params["find"]["similarity"].value = 0.0
         matches = finder.find(Pattern('n_ibs.xml'), Image('all_shapes'))
@@ -509,7 +509,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "cascade")
 
     def test_cascade_scaling(self):
-        finder = CascadeMatcher()
+        finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_scaled'))
         self.assertEqual(len(matches), 1)
         # the original needle image was 150x150 with larger white margins
@@ -520,7 +520,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 165, delta=5)
 
     def test_cascade_rotation(self):
-        finder = CascadeMatcher()
+        finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_rotated'))
         # TODO: rotation does not work yet - increase angles in augmented data
         #self.assertEqual(len(matches), 1)
@@ -530,7 +530,7 @@ class FinderTest(unittest.TestCase):
         #self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
     def test_cascade_viewport(self):
-        finder = CascadeMatcher()
+        finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_viewport'))
         self.assertEqual(len(matches), 1)
         # the original needle image was 150x150 with larger white margins
@@ -541,7 +541,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 250, delta=10)
 
     def test_text_same(self):
-        finder = TextMatcher()
+        finder = TextFinder()
         finder.params["find"]["similarity"].value = 1.0
         i = 1
 
@@ -598,7 +598,7 @@ class FinderTest(unittest.TestCase):
                 i += 1
 
     def test_text_nomatch(self):
-        finder = TextMatcher()
+        finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.25
         i = 1
 
@@ -643,7 +643,7 @@ class FinderTest(unittest.TestCase):
                 i += 1
 
     def test_text_basic(self):
-        finder = TextMatcher()
+        finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.7
         matches = finder.find(Text('Find the word here'), Image('sentence_sans'))
         self.assertEqual(len(matches), 1)
@@ -654,7 +654,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_bold(self):
-        finder = TextMatcher()
+        finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.8
         matches = finder.find(Text('Find the word'), Image('sentence_bold'))
         self.assertEqual(len(matches), 1)
@@ -664,7 +664,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_italic(self):
-        finder = TextMatcher()
+        finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.7
         matches = finder.find(Text('Find the word here'), Image('sentence_italic'))
         self.assertEqual(len(matches), 1)
@@ -674,7 +674,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_larger(self):
-        finder = TextMatcher()
+        finder = TextFinder()
         # TODO: this is too low to be a match (due to text detection)
         finder.params["find"]["similarity"].value = 0.4
         matches = finder.find(Text('Find the word'), Image('sentence_larger'))
@@ -686,7 +686,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_text_font(self):
-        finder = TextMatcher()
+        finder = TextFinder()
         # TODO: this is too low to be a match
         finder.params["find"]["similarity"].value = 0.3
         matches = finder.find(Text('Find the word here'), Image('sentence_font'))
@@ -697,7 +697,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     def test_tempfeat_same(self):
-        finder = TemplateFeatureMatcher()
+        finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
         i = 1
 
@@ -734,7 +734,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     def test_tempfeat_nomatch(self):
-        finder = TemplateFeatureMatcher()
+        finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
         i = 1
 
@@ -762,7 +762,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     def test_deep_same(self):
-        finder = DeepMatcher()
+        finder = DeepFinder()
         # shape matching is not perfect
         finder.params["find"]["similarity"].value = 0.99
         matches = finder.find(Pattern('shape_blue_circle.pth'), Image('all_shapes'))
@@ -791,7 +791,7 @@ class FinderTest(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     def test_deep_nomatch(self):
-        finder = DeepMatcher()
+        finder = DeepFinder()
         finder.params["find"]["similarity"].value = 0.25
         matches = finder.find(Pattern('n_ibs.pth'), Image('all_shapes'))
 
@@ -813,7 +813,7 @@ class FinderTest(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     def test_hybrid_same(self):
-        finder = HybridMatcher()
+        finder = HybridFinder()
         finder.configure_backend("autopy")
         finder.synchronize_backend("autopy")
         finder.params["find"]["similarity"].value = 1.0
@@ -831,7 +831,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "autopy")
 
     def test_hybrid_nomatch(self):
-        finder = HybridMatcher()
+        finder = HybridFinder()
         finder.configure_backend("autopy")
         finder.synchronize_backend("autopy")
         finder.params["find"]["similarity"].value = 1.0
@@ -844,7 +844,7 @@ class FinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(15, multistep=True)
 
     def test_hybrid_fallback(self):
-        finder = HybridMatcher()
+        finder = HybridFinder()
         finder.configure_backend("autopy")
         finder.synchronize_backend("autopy")
         finder.params["find"]["similarity"].value = 1.0
@@ -860,7 +860,7 @@ class FinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(8, multistep=True)
 
     def test_hybrid_multiconfig(self):
-        finder = HybridMatcher()
+        finder = HybridFinder()
         finder.configure_backend("autopy")
         finder.synchronize_backend("autopy")
         finder.params["find"]["similarity"].value = 1.0

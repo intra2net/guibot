@@ -64,23 +64,23 @@ class Region(object):
                 dc = VNCDoToolDesktopControl()
         if cv is None:
             if GlobalConfig.find_backend == "autopy":
-                cv = AutoPyMatcher()
+                cv = AutoPyFinder()
             elif GlobalConfig.find_backend == "contour":
-                cv = ContourMatcher()
+                cv = ContourFinder()
             elif GlobalConfig.find_backend == "template":
-                cv = TemplateMatcher()
+                cv = TemplateFinder()
             elif GlobalConfig.find_backend == "feature":
-                cv = FeatureMatcher()
+                cv = FeatureFinder()
             elif GlobalConfig.find_backend == "cascade":
-                cv = CascadeMatcher()
+                cv = CascadeFinder()
             elif GlobalConfig.find_backend == "text":
-                cv = TextMatcher()
+                cv = TextFinder()
             elif GlobalConfig.find_backend == "tempfeat":
-                cv = TemplateFeatureMatcher()
+                cv = TemplateFeatureFinder()
             elif GlobalConfig.find_backend == "deep":
-                cv = DeepMatcher()
+                cv = DeepFinder()
             elif GlobalConfig.find_backend == "hybrid":
-                cv = HybridMatcher()
+                cv = HybridFinder()
 
         # since the backends are read/write make them public attributes
         self.dc_backend = dc
@@ -495,12 +495,12 @@ class Region(object):
         if target.use_own_settings:
             log.debug("Using special settings to match %s", target)
             return target.match_settings
-        if isinstance(target, Text) and not isinstance(self.cv_backend, TextMatcher):
+        if isinstance(target, Text) and not isinstance(self.cv_backend, TextFinder):
             raise IncompatibleTargetError("Need text matcher for matching text")
-        if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeMatcher) or
-                                               isinstance(self.cv_backend, DeepMatcher)):
+        if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeFinder) or
+                                               isinstance(self.cv_backend, DeepFinder)):
             raise IncompatibleTargetError("Need pattern matcher for matching patterns")
-        if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridMatcher):
+        if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridFinder):
             raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
         target.match_settings = self.cv_backend
         return self.cv_backend

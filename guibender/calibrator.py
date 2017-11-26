@@ -17,9 +17,8 @@ import time
 import math
 import copy
 
-from imagelogger import ImageLogger
-
 import finder
+from imagelogger import ImageLogger
 from errors import *
 
 import logging
@@ -69,7 +68,7 @@ class Calibrator(object):
         ImageLogger.accumulate_logging = True
 
         # test all template matching methods
-        finder1 = finder.TemplateMatcher()
+        finder1 = finder.TemplateFinder()
         needle.match_settings.params["find"]["similarity"].value = 0.0
         for key in finder1.algorithms["template_matchers"]:
             for gray in (True, False):
@@ -90,7 +89,7 @@ class Calibrator(object):
                 finder1.imglog.clear()
 
         # test all feature matching methods
-        finder2 = finder.FeatureMatcher()
+        finder2 = finder.FeatureFinder()
         for key_fd in finder2.algorithms["feature_detectors"]:
             for key_fe in finder2.algorithms["feature_extractors"]:
                 for key_fm in finder2.algorithms["feature_matchers"]:

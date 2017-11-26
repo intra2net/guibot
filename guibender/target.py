@@ -97,23 +97,23 @@ class Target(object):
             self.use_own_settings = True
         else:
             if GlobalConfig.find_backend == "autopy":
-                self.match_settings = AutoPyMatcher()
+                self.match_settings = AutoPyFinder()
             elif GlobalConfig.find_backend == "contour":
-                self.match_settings = ContourMatcher()
+                self.match_settings = ContourFinder()
             elif GlobalConfig.find_backend == "template":
-                self.match_settings = TemplateMatcher()
+                self.match_settings = TemplateFinder()
             elif GlobalConfig.find_backend == "feature":
-                self.match_settings = FeatureMatcher()
+                self.match_settings = FeatureFinder()
             elif GlobalConfig.find_backend == "cascade":
-                self.match_settings = CascadeMatcher()
+                self.match_settings = CascadeFinder()
             elif GlobalConfig.find_backend == "text":
-                self.match_settings = TextMatcher()
+                self.match_settings = TextFinder()
             elif GlobalConfig.find_backend == "tempfeat":
-                self.match_settings = TemplateFeatureMatcher()
+                self.match_settings = TemplateFeatureFinder()
             elif GlobalConfig.find_backend == "deep":
-                self.match_settings = DeepMatcher()
+                self.match_settings = DeepFinder()
             elif GlobalConfig.find_backend == "hybrid":
-                self.match_settings = HybridMatcher()
+                self.match_settings = HybridFinder()
             self.use_own_settings = False
 
         self._center_offset = Location(0, 0)
@@ -162,7 +162,7 @@ class Target(object):
             try:
                 self.match_settings.synchronize()
             except UnsupportedBackendError:
-                # some matchers don't support synchronization
+                # some finders don't support synchronization
                 pass
             self.use_own_settings = True
 

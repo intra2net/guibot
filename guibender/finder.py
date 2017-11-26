@@ -162,23 +162,23 @@ class Finder(LocalConfig):
             backend_name = GlobalConfig.find_backend
 
         if backend_name == "autopy":
-            finder = AutoPyMatcher()
+            finder = AutoPyFinder()
         elif backend_name == "contour":
-            finder = ContourMatcher()
+            finder = ContourFinder()
         elif backend_name == "template":
-            finder = TemplateMatcher()
+            finder = TemplateFinder()
         elif backend_name == "feature":
-            finder = FeatureMatcher()
+            finder = FeatureFinder()
         elif backend_name == "cascade":
-            finder = CascadeMatcher()
+            finder = CascadeFinder()
         elif backend_name == "text":
-            finder = TextMatcher()
+            finder = TextFinder()
         elif backend_name == "tempfeat":
-            finder = TemplateFeatureMatcher()
+            finder = TemplateFeatureFinder()
         elif backend_name == "deep":
-            finder = DeepMatcher()
+            finder = DeepFinder()
         elif backend_name == "hybrid":
-            finder = HybridMatcher()
+            finder = HybridFinder()
         else:
             raise UnsupportedBackendError("No '%s' backend is supported" % backend_name)
 
@@ -362,12 +362,12 @@ class Finder(LocalConfig):
         ImageLogger.step += 1
 
 
-class AutoPyMatcher(Finder):
+class AutoPyFinder(Finder):
     """Simple matching backend provided by AutoPy."""
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using AutoPy."""
-        super(AutoPyMatcher, self).__init__(configure=False, synchronize=False)
+        super(AutoPyFinder, self).__init__(configure=False, synchronize=False)
 
         # other attributes
         self._bitmapcache = {}
@@ -380,7 +380,7 @@ class AutoPyMatcher(Finder):
         if category != "autopy":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(AutoPyMatcher, self).configure_backend(backend="autopy", reset=True)
+            super(AutoPyFinder, self).configure_backend(backend="autopy", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -459,7 +459,7 @@ class AutoPyMatcher(Finder):
         return matches
 
 
-class ContourMatcher(Finder):
+class ContourFinder(Finder):
     """
     Contour matching backend provided by OpenCV.
 
@@ -470,7 +470,7 @@ class ContourMatcher(Finder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's contour matching."""
-        super(ContourMatcher, self).__init__(configure=False, synchronize=False)
+        super(ContourFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["contour"] = "contour_extractors"
@@ -491,7 +491,7 @@ class ContourMatcher(Finder):
         if category not in ["contour", "threshold"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(ContourMatcher, self).configure_backend("contour", reset=True)
+            super(ContourFinder, self).configure_backend("contour", reset=True)
         if category == "contour" and backend is None:
             backend = "mixed"
         elif category == "threshold" and backend is None:
@@ -721,12 +721,12 @@ class ContourMatcher(Finder):
         ImageLogger.step += 1
 
 
-class TemplateMatcher(Finder):
+class TemplateFinder(Finder):
     """Template matching backend provided by OpenCV."""
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's template matching."""
-        super(TemplateMatcher, self).__init__(configure=False, synchronize=False)
+        super(TemplateFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["template"] = "template_matchers"
@@ -746,7 +746,7 @@ class TemplateMatcher(Finder):
         if category != "template":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(TemplateMatcher, self).configure_backend("template", reset=True)
+            super(TemplateFinder, self).configure_backend("template", reset=True)
         if backend is None:
             backend = GlobalConfig.template_match_backend
         if backend not in self.algorithms[self.categories[category]]:
@@ -931,7 +931,7 @@ class TemplateMatcher(Finder):
         ImageLogger.step += 1
 
 
-class FeatureMatcher(Finder):
+class FeatureFinder(Finder):
     """
     Feature matching backend provided by OpenCV.
 
@@ -941,7 +941,7 @@ class FeatureMatcher(Finder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's feature matching."""
-        super(FeatureMatcher, self).__init__(configure=False, synchronize=False)
+        super(FeatureFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["feature"] = "feature_projectors"
@@ -973,7 +973,7 @@ class FeatureMatcher(Finder):
         if category not in ["feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(FeatureMatcher, self).configure_backend("feature", reset=True)
+            super(FeatureFinder, self).configure_backend("feature", reset=True)
         if category == "feature" and backend is None:
             backend = "mixed"
         elif category == "fdetect" and backend is None:
@@ -1108,7 +1108,7 @@ class FeatureMatcher(Finder):
         if category not in ["feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(FeatureMatcher, self).synchronize_backend("feature", reset=True)
+            super(FeatureFinder, self).synchronize_backend("feature", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
         backend = self.params[category]["backend"]
@@ -1556,7 +1556,7 @@ class FeatureMatcher(Finder):
             cv2.circle(hotmap, (int(x), int(y)), radius, (r, g, b))
 
 
-class CascadeMatcher(Finder):
+class CascadeFinder(Finder):
     """
     Cascade matching backend provided by OpenCV.
 
@@ -1572,7 +1572,7 @@ class CascadeMatcher(Finder):
 
     def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
         """Build a CV backend using OpenCV's cascade matching options."""
-        super(CascadeMatcher, self).__init__(configure=False, synchronize=False)
+        super(CascadeFinder, self).__init__(configure=False, synchronize=False)
 
         # additional preparation (no synchronization available)
         if configure:
@@ -1587,7 +1587,7 @@ class CascadeMatcher(Finder):
         if category != "cascade":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(CascadeMatcher, self).configure_backend("cascade", reset=True)
+            super(CascadeFinder, self).configure_backend("cascade", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -1652,7 +1652,7 @@ class CascadeMatcher(Finder):
         return matches
 
 
-class TextMatcher(ContourMatcher):
+class TextFinder(ContourFinder):
     """
     Text matching backend provided by OpenCV.
 
@@ -1668,7 +1668,7 @@ class TextMatcher(ContourMatcher):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's text matching options."""
-        super(TextMatcher, self).__init__(configure=False, synchronize=False)
+        super(TextFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["text"] = "text_matchers"
@@ -1700,7 +1700,7 @@ class TextMatcher(ContourMatcher):
         if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["contour", "threshold"]:
-            ContourMatcher.configure_backend(self, backend, category, reset)
+            ContourFinder.configure_backend(self, backend, category, reset)
             return
 
         if reset:
@@ -2146,7 +2146,7 @@ class TextMatcher(ContourMatcher):
         ImageLogger.step += 1
 
 
-class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
+class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
     """
     Hybrid matcher using both OpenCV's template and feature matching.
 
@@ -2160,7 +2160,7 @@ class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using OpenCV's template and feature matching."""
-        super(TemplateFeatureMatcher, self).__init__(configure=False, synchronize=False)
+        super(TemplateFeatureFinder, self).__init__(configure=False, synchronize=False)
 
         self.categories["tempfeat"] = "tempfeat_matchers"
         self.algorithms["tempfeat_matchers"] = ("mixed",)
@@ -2168,16 +2168,16 @@ class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
         if configure:
             self.__configure(reset=True)
         if synchronize:
-            FeatureMatcher.synchronize(self, reset=False)
+            FeatureFinder.synchronize(self, reset=False)
 
     def __configure_backend(self, backend=None, category="tempfeat", reset=False):
         if category not in ["tempfeat", "template", "feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["feature", "fdetect", "fextract", "fmatch"]:
-            FeatureMatcher.configure_backend(self, backend, category, reset)
+            FeatureFinder.configure_backend(self, backend, category, reset)
             return
         elif category == "template":
-            TemplateMatcher.configure_backend(self, backend, category, reset)
+            TemplateFinder.configure_backend(self, backend, category, reset)
             return
 
         if reset:
@@ -2226,11 +2226,11 @@ class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
         See base method for details.
         """
         Finder.synchronize_backend(self, "tempfeat", reset=reset)
-        FeatureMatcher.synchronize(self,
-                                   feature_detect=feature_detect,
-                                   feature_extract=feature_extract,
-                                   feature_match=feature_match,
-                                   reset=False)
+        FeatureFinder.synchronize(self,
+                                  feature_detect=feature_detect,
+                                  feature_extract=feature_extract,
+                                  feature_match=feature_match,
+                                  reset=False)
 
     def find(self, needle, haystack):
         """
@@ -2257,7 +2257,7 @@ class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
 
         self.params["find"]["similarity"].value = template_similarity
         # call specifically the template find variant here
-        template_maxima = TemplateMatcher.find(self, needle, haystack)
+        template_maxima = TemplateFinder.find(self, needle, haystack)
 
         self.params["find"]["similarity"].value = feature_similarity
         # dump correct matching settings
@@ -2402,7 +2402,7 @@ class TemplateFeatureMatcher(TemplateMatcher, FeatureMatcher):
         ImageLogger.step += 1
 
 
-class DeepMatcher(Finder):
+class DeepFinder(Finder):
     """
     Deep learning matching backend provided by PyTorch.
 
@@ -2413,7 +2413,7 @@ class DeepMatcher(Finder):
 
     def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
         """Build a CV backend using OpenCV's text matching options."""
-        super(DeepMatcher, self).__init__(configure=False, synchronize=False)
+        super(DeepFinder, self).__init__(configure=False, synchronize=False)
 
         # other attributes
         self.net = None
@@ -2433,7 +2433,7 @@ class DeepMatcher(Finder):
         if category != "deep":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(DeepMatcher, self).configure_backend("deep", reset=True)
+            super(DeepFinder, self).configure_backend("deep", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -2469,7 +2469,7 @@ class DeepMatcher(Finder):
         if category != "deep":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(DeepMatcher, self).synchronize_backend("deep", reset=True)
+            super(DeepFinder, self).synchronize_backend("deep", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
         backend = self.params[category]["backend"]
@@ -2740,7 +2740,7 @@ class DeepMatcher(Finder):
         ImageLogger.step += 1
 
 
-class CustomMatcher(Finder):
+class CustomFinder(Finder):
     """
     Custom matching backend with in-house CV algorithms.
 
@@ -2756,7 +2756,7 @@ class CustomMatcher(Finder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using custom matching."""
-        super(CustomMatcher, self).__init__(self, configure=False, synchronize=False)
+        super(CustomFinder, self).__init__(self, configure=False, synchronize=False)
 
         # additional preparation (no synchronization available)
         if configure:
@@ -2766,7 +2766,7 @@ class CustomMatcher(Finder):
         if category != "custom":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(CustomMatcher, self).configure_backend("custom", reset=True)
+            super(CustomFinder, self).configure_backend("custom", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -3028,7 +3028,7 @@ class CustomMatcher(Finder):
         return matches
 
 
-class HybridMatcher(Finder):
+class HybridFinder(Finder):
     """
     Match a target through a sequence of differently configured attempts.
 
@@ -3040,7 +3040,7 @@ class HybridMatcher(Finder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a hybrid matcher."""
-        super(HybridMatcher, self).__init__(configure=False, synchronize=False)
+        super(HybridFinder, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["hybrid"] = "hybrid_methods"
@@ -3060,7 +3060,7 @@ class HybridMatcher(Finder):
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             # backends are the same as the ones for the base class
-            super(HybridMatcher, self).configure_backend(backend=backend, reset=True)
+            super(HybridFinder, self).configure_backend(backend=backend, reset=True)
         if backend is None:
             backend = GlobalConfig.hybrid_match_backend
         if backend not in self.algorithms[self.categories[category]]:
@@ -3082,28 +3082,28 @@ class HybridMatcher(Finder):
         if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(HybridMatcher, self).synchronize_backend("hybrid", reset=True)
+            super(HybridFinder, self).synchronize_backend("hybrid", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
         backend = self.params[category]["backend"]
 
         # default matcher in case of a simple chain without own matching config
         if backend == "autopy":
-            self.matcher = AutoPyMatcher()
+            self.matcher = AutoPyFinder()
         elif backend == "contour":
-            self.matcher = ContourMatcher()
+            self.matcher = ContourFinder()
         elif backend == "template":
-            self.matcher = TemplateMatcher()
+            self.matcher = TemplateFinder()
         elif backend == "feature":
-            self.matcher = FeatureMatcher()
+            self.matcher = FeatureFinder()
         elif backend == "cascade":
-            self.matcher = CascadeMatcher()
+            self.matcher = CascadeFinder()
         elif backend == "text":
-            self.matcher = TextMatcher()
+            self.matcher = TextFinder()
         elif backend == "tempfeat":
-            self.matcher = TemplateFeatureMatcher()
+            self.matcher = TemplateFeatureFinder()
         elif backend == "deep":
-            self.matcher = DeepMatcher()
+            self.matcher = DeepFinder()
 
     def synchronize_backend(self, backend=None, category="hybrid", reset=False):
         """
@@ -3128,7 +3128,7 @@ class HybridMatcher(Finder):
 
         for step_needle in needle:
 
-            if step_needle.use_own_settings and not isinstance(step_needle.match_settings, HybridMatcher):
+            if step_needle.use_own_settings and not isinstance(step_needle.match_settings, HybridFinder):
                 matcher = step_needle.match_settings
             else:
                 matcher = self.matcher
