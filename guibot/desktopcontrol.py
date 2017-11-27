@@ -1,23 +1,23 @@
 # Copyright 2013 Intranet AG / Thomas Jarosch and Plamen Dimitrov
 #
-# guibender is free software: you can redistribute it and/or modify
+# guibot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# guibender is distributed in the hope that it will be useful,
+# guibot is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with guibender.  If not, see <http://www.gnu.org/licenses/>.
+# along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
 import time
 import subprocess
 import logging
-log = logging.getLogger('guibender.desktopcontrol')
+log = logging.getLogger('guibot.desktopcontrol')
 
 import PIL.Image
 from tempfile import NamedTemporaryFile
@@ -192,7 +192,7 @@ class DesktopControl(LocalConfig):
             height = self._height - ypos
 
         # TODO: Switch to in-memory conversion - patch backends or request get_raw() from authors
-        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+        with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
             # NOTE: the file can be open twice on unix but only once on windows so simply
             # use the generated filename to avoid this difference and remove it manually
             filename = f.name
@@ -519,7 +519,7 @@ class QemuDesktopControl(DesktopControl):
             raise ValueError("No Qemu monitor was selected - please set a monitor object first.")
 
         # screen size
-        with NamedTemporaryFile(prefix='guibender', suffix='.ppm') as f:
+        with NamedTemporaryFile(prefix='guibot', suffix='.ppm') as f:
             filename = f.name
         self._backend_obj.screendump(filename=filename, debug=True)
         screen = PIL.Image.open(filename)
@@ -735,7 +735,7 @@ class VNCDoToolDesktopControl(DesktopControl):
         logging.getLogger('twisted').setLevel(logging.ERROR)
 
         # screen size
-        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+        with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
             filename = f.name
         screen = self._backend_obj.captureScreen(filename)
         os.unlink(filename)

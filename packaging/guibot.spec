@@ -4,7 +4,7 @@
 # "--with opencv" command line switch.
 %bcond_with opencv
 
-Name:           guibender
+Name:           guibot
 Version:        0.11
 Release:        3
 Summary:        GUI testing tool
@@ -47,15 +47,15 @@ BuildArch:      noarch
 
 %install
 rm -rf %{buildroot}
-%{__install} -d %{buildroot}%{python_sitelib}/guibender/guibender
-%{__install} -d %{buildroot}%{python_sitelib}/guibender/tests/images
-%{__install} -d %{buildroot}%{python_sitelib}/guibender/examples/images
-%{__install} -d %{buildroot}%{python_sitelib}/guibender/misc/tessdata
-%{__cp} -a guibender/* %{buildroot}%{python_sitelib}/guibender/guibender
-%{__cp} -a tests/* %{buildroot}%{python_sitelib}/guibender/tests
-%{__cp} -a examples/* %{buildroot}%{python_sitelib}/guibender/examples
-%{__cp} -a misc/* %{buildroot}%{python_sitelib}/guibender/misc
-%{__install} -t %{buildroot}%{python_sitelib}/guibender/ __init__.py run_tests.sh
+%{__install} -d %{buildroot}%{python_sitelib}/guibot/guibot
+%{__install} -d %{buildroot}%{python_sitelib}/guibot/tests/images
+%{__install} -d %{buildroot}%{python_sitelib}/guibot/examples/images
+%{__install} -d %{buildroot}%{python_sitelib}/guibot/misc/tessdata
+%{__cp} -a guibot/* %{buildroot}%{python_sitelib}/guibot/guibot
+%{__cp} -a tests/* %{buildroot}%{python_sitelib}/guibot/tests
+%{__cp} -a examples/* %{buildroot}%{python_sitelib}/guibot/examples
+%{__cp} -a misc/* %{buildroot}%{python_sitelib}/guibot/misc
+%{__install} -t %{buildroot}%{python_sitelib}/guibot/ __init__.py run_tests.sh
 
 
 %clean
@@ -65,29 +65,29 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %doc LICENSE doc/api doc/tutorials
-#%config guibender.cfg
-#%ghost guibender.log
+#%config guibot.cfg
+#%ghost guibot.log
 #%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6
 #  %{python_sitelib}/%{name}-%{version}-py?.?.egg-info
 #%endif
 # top level dir
-%dir %{python_sitelib}/guibender
-%{python_sitelib}/guibender/__init__.py
-%exclude %{python_sitelib}/guibender/__init__.pyc
-%exclude %{python_sitelib}/guibender/__init__.pyo
-%{python_sitelib}/guibender/guibender
-%exclude %{python_sitelib}/guibender/guibender/*.pyc
-%exclude %{python_sitelib}/guibender/guibender/*.pyo
-%{python_sitelib}/guibender/tests
-%exclude %{python_sitelib}/guibender/tests/*.pyc
-%exclude %{python_sitelib}/guibender/tests/*.pyo
-%{python_sitelib}/guibender/examples
-%exclude %{python_sitelib}/guibender/examples/*.pyc
-%exclude %{python_sitelib}/guibender/examples/*.pyo
-%{python_sitelib}/guibender/misc
-%exclude %{python_sitelib}/guibender/misc/*.pyc
-%exclude %{python_sitelib}/guibender/misc/*.pyo
-%{python_sitelib}/guibender/run_tests.sh
+%dir %{python_sitelib}/guibot
+%{python_sitelib}/guibot/__init__.py
+%exclude %{python_sitelib}/guibot/__init__.pyc
+%exclude %{python_sitelib}/guibot/__init__.pyo
+%{python_sitelib}/guibot/guibot
+%exclude %{python_sitelib}/guibot/guibot/*.pyc
+%exclude %{python_sitelib}/guibot/guibot/*.pyo
+%{python_sitelib}/guibot/tests
+%exclude %{python_sitelib}/guibot/tests/*.pyc
+%exclude %{python_sitelib}/guibot/tests/*.pyo
+%{python_sitelib}/guibot/examples
+%exclude %{python_sitelib}/guibot/examples/*.pyc
+%exclude %{python_sitelib}/guibot/examples/*.pyo
+%{python_sitelib}/guibot/misc
+%exclude %{python_sitelib}/guibot/misc/*.pyc
+%exclude %{python_sitelib}/guibot/misc/*.pyo
+%{python_sitelib}/guibot/run_tests.sh
 
 
 %changelog

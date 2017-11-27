@@ -1,37 +1,37 @@
 # Copyright 2013 Intranet AG / Thomas Jarosch
 #
-# guibender is free software: you can redistribute it and/or modify
+# guibot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# guibender is distributed in the hope that it will be useful,
+# guibot is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with guibender.  If not, see <http://www.gnu.org/licenses/>.
+# along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 #
 
 
-class GuiBenderError(Exception):
-    """GuiBender exception base class"""
+class GuiBotError(Exception):
+    """GuiBot exception base class"""
 
 
-class FileNotFoundError(GuiBenderError):
+class FileNotFoundError(GuiBotError):
     """Exception raised when a picture file cannot be found on disc"""
 
 
-class IncompatibleTargetError(GuiBenderError):
+class IncompatibleTargetError(GuiBotError):
     """Exception raised when a matched target is of type that cannot be handled by the finder"""
 
 
-class IncompatibleTargetFileError(GuiBenderError):
+class IncompatibleTargetFileError(GuiBotError):
     """Exception raised when a matched target is restored from a file of unsupported type"""
 
 
-class FindError(GuiBenderError):
+class FindError(GuiBotError):
     """Exception raised when an Image cannot be found on the screen"""
 
     def __init__(self, failed_target=None):
@@ -48,7 +48,7 @@ class FindError(GuiBenderError):
         super(FindError, self).__init__(message)
 
 
-class NotFindError(GuiBenderError):
+class NotFindError(GuiBotError):
     """Exception raised when an Image can be found on the screen but should not be"""
 
     def __init__(self, failed_target=None):
@@ -65,13 +65,13 @@ class NotFindError(GuiBenderError):
         super(NotFindError, self).__init__(message)
 
 
-class UnsupportedBackendError(GuiBenderError):
+class UnsupportedBackendError(GuiBotError):
     """Exception raised when a non-existent method is used for finding a target"""
 
 
-class MissingHotmapError(GuiBenderError):
+class MissingHotmapError(GuiBotError):
     """Exception raised when an attempt to access a non-existent hotmap in the image logger is made"""
 
 
-class UninitializedBackendError(GuiBenderError):
+class UninitializedBackendError(GuiBotError):
     """Exception raised when a region is created within an empty screen (a disconnected desktop control backend)"""

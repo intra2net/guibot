@@ -19,12 +19,12 @@ sys.path.insert(0, '..')
 import logging
 import shutil
 
-from guibender.config import GlobalConfig
-from guibender.path import Path
-from guibender.target import Image
-from guibender.errors import *
-from guibender.finder import *
-from guibender.calibrator import Calibrator
+from guibot.config import GlobalConfig
+from guibot.path import Path
+from guibot.target import Image
+from guibot.errors import *
+from guibot.finder import *
+from guibot.calibrator import Calibrator
 
 
 # parameters to toy with

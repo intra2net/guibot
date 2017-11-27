@@ -23,12 +23,13 @@ sys.path.insert(0, '..')
 import logging
 import shutil
 
-from guibender.config import GlobalConfig
-from guibender.imagelogger import ImageLogger
-from guibender.path import Path
-from guibender.target import Pattern, Image
-from guibender.finder import DeepFinder
-from guibender.errors import *
+from guibot.config import GlobalConfig
+from guibot.settings import GlobalSettings
+from guibot.imagelogger import ImageLogger
+from guibot.path import Path
+from guibot.target import Pattern, Image
+from guibot.finder import DeepFinder
+from guibot.errors import *
 
 
 # parameters to toy with

@@ -1,17 +1,17 @@
 # Copyright 2013 Intranet AG / Thomas Jarosch and Plamen Dimitrov
 #
-# guibender is free software: you can redistribute it and/or modify
+# guibot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# guibender is distributed in the hope that it will be useful,
+# guibot is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with guibender.  If not, see <http://www.gnu.org/licenses/>.
+# along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
 import re
@@ -27,7 +27,7 @@ from path import Path
 from errors import *
 
 import logging
-log = logging.getLogger('guibender.finder')
+log = logging.getLogger('guibot.finder')
 
 
 class CVParameter(object):
@@ -426,7 +426,7 @@ class AutoPyFinder(Finder):
             self._bitmapcache[needle.filename] = autopy_needle
 
         # TODO: Use in-memory conversion
-        with NamedTemporaryFile(prefix='guibender', suffix='.png') as f:
+        with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
             haystack.save(f.name)
             autopy_screenshot = bitmap.Bitmap.open(f.name)
 

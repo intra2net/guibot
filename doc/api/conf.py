@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# guibender documentation build configuration file, created by
+# guibot documentation build configuration file, created by
 # sphinx-quickstart on Sun Feb 19 14:19:00 2017.
 #
 # This file is execfile()d with the current directory set to its
@@ -54,7 +54,7 @@ source_suffix = '.rst'
 master_doc = 'modules'
 
 # General information about the project.
-project = u'guibender'
+project = u'guibot'
 copyright = u'2017, Plamen Dimitrov and Thomas Jarosch'
 author = u'Plamen Dimitrov and Thomas Jarosch'
 
@@ -139,7 +139,7 @@ html_theme = 'default'  # was 'alabaster'
 # The name for this set of Sphinx documents.
 # "<project> v<release> documentation" by default.
 #
-# html_title = u'guibender v0.11'
+# html_title = u'guibot v0.11'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
 #
@@ -239,7 +239,7 @@ html_static_path = ['_static']
 # html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'guibenderdoc'
+htmlhelp_basename = 'guibotdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 
@@ -265,7 +265,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'guibender.tex', u'guibender Documentation',
+    (master_doc, 'guibot.tex', u'guibot Documentation',
      u'Plamen Dimitrov and Thomas Jarosch', 'manual'),
 ]
 
@@ -307,7 +307,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'guibender', u'guibender Documentation',
+    (master_doc, 'guibot', u'guibot Documentation',
      [author], 1)
 ]
 
@@ -322,8 +322,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'guibender', u'guibender Documentation',
-     author, 'guibender', 'One line description of project.',
+    (master_doc, 'guibot', u'guibot Documentation',
+     author, 'guibot', 'One line description of project.',
      'Miscellaneous'),
 ]
 
@@ -372,4 +372,4 @@ def setup(app):
     # custom setup to include constructors to be documented
     app.connect('autodoc-skip-member', skip_class_members)
     # import main package here to be able to import all sphinx-apidoc imported modules
-    import guibender
+    import guibot

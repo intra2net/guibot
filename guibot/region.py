@@ -1,17 +1,17 @@
 # Copyright 2013 Intranet AG / Thomas Jarosch and Plamen Dimitrov
 #
-# guibender is free software: you can redistribute it and/or modify
+# guibot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
 #
-# guibender is distributed in the hope that it will be useful,
+# guibot is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with guibender.  If not, see <http://www.gnu.org/licenses/>.
+# along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 #
 import time
 import os
@@ -26,7 +26,7 @@ from finder import *
 from desktopcontrol import *
 
 import logging
-log = logging.getLogger('guibender.region')
+log = logging.getLogger('guibot.region')
 
 
 class Region(object):
@@ -467,9 +467,9 @@ class Region(object):
                     return last_matches
                 else:
                     if GlobalConfig.save_needle_on_error:
-                        log.info("Dumping the haystack at /tmp/guibender_last_finderror.png")
-                        screen_capture.save('/tmp/guibender_last_finderror.png')
-                        target.save('/tmp/guibender_last_finderror_needle.png')
+                        log.info("Dumping the haystack at /tmp/guibot_last_finderror.png")
+                        screen_capture.save('/tmp/guibot_last_finderror.png')
+                        target.save('/tmp/guibot_last_finderror_needle.png')
                     raise FindError(target)
 
             else:

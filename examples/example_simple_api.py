@@ -11,7 +11,7 @@ sys.path.insert(0, '..')
 # and it will print "Shapes exist"
 
 
-from guibender.guibender_simple import *
+from guibot.guibot_simple import *
 
 
 add_path('images')
