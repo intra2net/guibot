@@ -24,7 +24,7 @@ class FileNotFoundError(GuiBenderError):
 
 
 class IncompatibleTargetError(GuiBenderError):
-    """Exception raised when a matched target is of type that cannot be handled by the matcher"""
+    """Exception raised when a matched target is of type that cannot be handled by the finder"""
 
 
 class IncompatibleTargetFileError(GuiBenderError):

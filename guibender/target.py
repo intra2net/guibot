@@ -332,7 +332,7 @@ class Image(Target):
         :rtype: :py:class:`target.Image`
 
         The image is compressed upon saving with a PNG compression setting
-        specified by :py:func:`settings.GlobalConfig.image_quality`.
+        specified by :py:func:`config.GlobalConfig.image_quality`.
         """
         super(Image, self).save(filename)
         filename += ".png" if os.path.splitext(filename)[1] != ".png" else ""

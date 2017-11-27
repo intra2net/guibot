@@ -175,14 +175,14 @@ class Calibrator(object):
         Optimize a set of parameters for a minimal matching error.
 
         :param params: configuration for the CV backend
-        :type params: {str, {str, :py:class:`settings.CVParameter`}}
+        :type params: {str, {str, :py:class:`finder.CVParameter`}}
         :param run_function: a function that accepts a list of tested parameters
                              and returns the error that should be minimized
         :type run_function: function
         :param int max_attempts: maximal number of refinements to reach
                                  the parameter delta below the tolerance
         :returns: the configuration with the minimal error
-        :rtype: ({str, {str, :py:class:`settings.CVParameter`}}, float)
+        :rtype: ({str, {str, :py:class:`finder.CVParameter`}}, float)
 
         .. note:: Special credits for this approach should be given to Prof. Sebastian
             Thrun, who explained it in his Artificial Intelligence for Robotics class.

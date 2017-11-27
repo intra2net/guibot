@@ -29,7 +29,7 @@ class ImageLogger(object):
     (an image with additional drawn information on it), the matched
     similarity and the matched coordinates.
 
-    Generally, each matcher class takes care of its own image logging,
+    Generally, each finder class takes care of its own image logging,
     performing drawing or similar operations on the spot and deciding
     which hotmaps (also their names and order) to dump.
     """

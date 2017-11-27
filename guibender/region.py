@@ -51,7 +51,7 @@ class Region(object):
         :raises: :py:class:`UninitializedBackendError` if the region is empty
 
         If any of the backends is not defined a new one will be initiated
-        using the parameters defined in :py:class:`settings.GlobalConfig`.
+        using the parameters defined in :py:class:`config.GlobalConfig`.
         If `width` or `height` remains zero, it will be set to the maximum
         available within the screen space.
         """

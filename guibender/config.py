@@ -28,12 +28,12 @@ class GlobalConfig(type):
 
     We overwrite the name of the class in order to avoid documenting
     all settings here and adding an empty actual class. Instead, the resulting
-    documentation contains just the settings class (using this as metaclass)
+    documentation contains just the config class (using this as metaclass)
     and all settings respectively. In this way the front user should not worry
     about such implementation detail and simply use the provided properties.
 
     For those that like to think about it nonetheless: All methods of the
-    resulting settings class are therefore static since they are methods of
+    resulting config class are therefore static since they are methods of
     a class object, i.e. a metaclass instance.
     """
 
@@ -562,7 +562,7 @@ class LocalConfig(object):
 
         If multiple categories are available and just some of them are configured,
         the rest will be reset to defaults. To configure specific category without
-        changing others, use :py:function:`configure`.
+        changing others, use :py:func:`configure`.
         """
         self.configure_backend(reset=reset)
 
