@@ -1,7 +1,8 @@
-*** Codename: guibender ***
-- GUI automation using computer vision + fuzzy images
-
 *** Dependencies ***
+Here is a hierarchical list of dependencies depending on your choice of computer vision and desktop
+control backends. In addition it includes problems you can encounter and ways to solve them. For
+windows, you just need to find the required packages most of which are fully available as well.
+
 - python2.7
     - usually preinstalled on Linux systems
 - python-imaging
@@ -62,5 +63,7 @@
         - xdotool (on linux)
     - Qemu
         - qemu, virt-test
+        - having these simply pass the qemu monitor as parameter
     - VNCDoTool
         - vncdotool
+        - python setup.py install (in vncdotool folder)

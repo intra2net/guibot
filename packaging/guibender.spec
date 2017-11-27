@@ -1,5 +1,8 @@
 # Get python "site-lib" path by executing small python script
 %{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
+# Build with OpenCV support - default is 0 and needs to be activated with
+# "--with opencv" command line switch.
+%bcond_with opencv
 
 Name:           guibender
 Version:        0.11
@@ -12,16 +15,12 @@ URL:            http://developer.intra2net.com
 # TODO: source location?
 Source0:        http://developer.intra2net.com/%{name}-%{version}.tar.gz
 
-# There are some conditional dependencies that we will require upon use,
-# in particular one of autopy/vncdotool/qemu-kvm for the desktop control
-# backend.
-# for autopy: download or find modules -> copy to /usr/lib/python2.7/site-packages/autopy/
-# for vncdotool: download -> python setup.py install (in vncdotool folder)
-# for qemu: need to have autotest with virt-test installed then simply pass the qemu monitor as parameter
-# TODO: opencv must be turned into conditional dependency only if we use
-# particular computer vision backends.
+Requires:       python = 2.7
+Requires:       python-pillow
+%if %{with opencv}
 Requires:       opencv >= 3.1
 Requires:       opencv-python
+%endif
 
 %description
 A tool to use for GUI testing using OpenCV and PyTorch.
