@@ -19,7 +19,7 @@ sys.path.insert(0, '..')
 import logging
 import shutil
 
-from guibender.settings import GlobalSettings
+from guibender.config import GlobalConfig
 from guibender.imagelogger import ImageLogger
 from guibender.path import Path
 from guibender.target import Image
@@ -37,9 +37,9 @@ REMOVE_LOGPATH = False
 # minimal setup
 logging.getLogger('').addHandler(logging.StreamHandler())
 logging.getLogger('').setLevel(logging.DEBUG)
-GlobalSettings.image_logging_level = 0
-GlobalSettings.image_logging_destination = LOGPATH
-GlobalSettings.image_logging_step_width = 4
+GlobalConfig.image_logging_level = 0
+GlobalConfig.image_logging_destination = LOGPATH
+GlobalConfig.image_logging_step_width = 4
 
 path = Path()
 path.add_path('images/')
@@ -51,22 +51,22 @@ haystack = Image(HAYSTACK)
 
 
 # the matching step
-if GlobalSettings.find_backend == "autopy":
-    finder = AutoPyMatcher()
-elif GlobalSettings.find_backend == "contour":
-    finder = ContourMatcher()
-elif GlobalSettings.find_backend == "template":
-    finder = TemplateMatcher()
-elif GlobalSettings.find_backend == "feature":
-    finder = FeatureMatcher()
-elif GlobalSettings.find_backend == "cascade":
-    finder = CascadeMatcher()
-elif GlobalSettings.find_backend == "text":
-    finder = TextMatcher()
-elif GlobalSettings.find_backend == "tempfeat":
-    finder = TemplateFeatureMatcher()
-elif GlobalSettings.find_backend == "deep":
-    finder = DeepMatcher()
+if GlobalConfig.find_backend == "autopy":
+    finder = AutoPyFinder()
+elif GlobalConfig.find_backend == "contour":
+    finder = ContourFinder()
+elif GlobalConfig.find_backend == "template":
+    finder = TemplateFinder()
+elif GlobalConfig.find_backend == "feature":
+    finder = FeatureFinder()
+elif GlobalConfig.find_backend == "cascade":
+    finder = CascadeFinder()
+elif GlobalConfig.find_backend == "text":
+    finder = TextFinder()
+elif GlobalConfig.find_backend == "tempfeat":
+    finder = TemplateFeatureFinder()
+elif GlobalConfig.find_backend == "deep":
+    finder = DeepFinder()
 #finder.configure_backend(find_image = "feature")
 #finder.params["find"]["similarity"].value = 0.7
 #finder.params["tempfeat"]["front_similarity"].value = 0.5
@@ -80,6 +80,6 @@ finder.find(needle, haystack)
 # cleanup steps
 if REMOVE_LOGPATH:
     shutil.rmtree(LOGPATH)
-GlobalSettings.image_logging_level = logging.ERROR
-GlobalSettings.image_logging_destination = "./imglog"
-GlobalSettings.image_logging_step_width = 3
+GlobalConfig.image_logging_level = logging.ERROR
+GlobalConfig.image_logging_destination = "./imglog"
+GlobalConfig.image_logging_step_width = 3

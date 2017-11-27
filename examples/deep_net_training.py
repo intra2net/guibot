@@ -23,11 +23,11 @@ sys.path.insert(0, '..')
 import logging
 import shutil
 
-from guibender.settings import GlobalSettings
+from guibender.config import GlobalConfig
 from guibender.imagelogger import ImageLogger
 from guibender.path import Path
 from guibender.target import Pattern, Image
-from guibender.finder import DeepMatcher
+from guibender.finder import DeepFinder
 from guibender.errors import *
 
 
@@ -43,7 +43,7 @@ TOTAL_STAGES = 10
 # training step
 logging.getLogger('').addHandler(logging.StreamHandler())
 logging.getLogger('').setLevel(logging.INFO)
-finder = DeepMatcher()
+finder = DeepFinder()
 # use this to load pretrained model and train futher
 #import torch
 #weights = torch.load(NEEDLE)
@@ -75,9 +75,9 @@ for i in range(EPOCHS_PER_STAGE):
 
 
 # minimal setup
-GlobalSettings.image_logging_level = 0
-GlobalSettings.image_logging_destination = LOGPATH
-GlobalSettings.image_logging_step_width = 4
+GlobalConfig.image_logging_level = 0
+GlobalConfig.image_logging_destination = LOGPATH
+GlobalConfig.image_logging_step_width = 4
 
 path = Path()
 path.add_path('images/')
@@ -98,6 +98,6 @@ matches = finder.find(needle, haystack)
 # cleanup steps
 if REMOVE_LOGPATH:
     shutil.rmtree(LOGPATH)
-GlobalSettings.image_logging_level = logging.ERROR
-GlobalSettings.image_logging_destination = "./imglog"
-GlobalSettings.image_logging_step_width = 3
+GlobalConfig.image_logging_level = logging.ERROR
+GlobalConfig.image_logging_destination = "./imglog"
+GlobalConfig.image_logging_step_width = 3
