@@ -20,7 +20,7 @@ import unittest
 import shutil
 
 import common_test
-from settings import GlobalConfig
+from config import GlobalConfig
 from path import Path
 from imagelogger import ImageLogger
 from target import Image, Text, Pattern, Chain

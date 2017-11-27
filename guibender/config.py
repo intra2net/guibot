@@ -17,7 +17,7 @@
 import re
 import os
 import logging
-log = logging.getLogger('guibender.settings')
+log = logging.getLogger('guibender.config')
 
 from errors import *
 
