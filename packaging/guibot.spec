@@ -15,7 +15,6 @@ URL:            http://developer.intra2net.com
 # TODO: source location?
 Source0:        http://developer.intra2net.com/%{name}-%{version}.tar.gz
 
-Requires:       python = 2.7
 Requires:       python-pillow
 %if %{with opencv}
 Requires:       opencv >= 3.1
