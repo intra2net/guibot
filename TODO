@@ -5,6 +5,7 @@ TODO - hierarchical notes
     - update all tutorials as content and format (ODS/PDF to Markdown)
     - module headers
     - website platform
+    - build instructions for newbies including rpm packaging
 - more and better unit tests
     - advanced unit tests to include all backend types (desktop control)?
     - apply hybrid backend
