@@ -2,7 +2,7 @@
 
 # Only needed if not installed system wide
 import sys
-sys.path.insert(0, '..')
+sys.path.insert(0, '../..')
 
 
 # Program start here
@@ -20,24 +20,23 @@ import logging
 import shutil
 
 from guibot.config import GlobalConfig
+from guibot.imagelogger import ImageLogger
 from guibot.path import Path
 from guibot.target import Image
 from guibot.errors import *
 from guibot.finder import *
-from guibot.calibrator import Calibrator
 
 
 # parameters to toy with
-NEEDLE = 'n_ibs'
-HAYSTACK = 'h_ibs_viewport'
+NEEDLE = 'shape_blue_circle'
+HAYSTACK = 'all_shapes'
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
-CALIBRATED_BENCHMARK = False
 
 
 # minimal setup
 logging.getLogger('').addHandler(logging.StreamHandler())
-logging.getLogger('').setLevel(logging.INFO)
+logging.getLogger('').setLevel(logging.DEBUG)
 GlobalConfig.image_logging_level = 0
 GlobalConfig.image_logging_destination = LOGPATH
 GlobalConfig.image_logging_step_width = 4
@@ -68,7 +67,6 @@ elif GlobalConfig.find_backend == "tempfeat":
     finder = TemplateFeatureFinder()
 elif GlobalConfig.find_backend == "deep":
     finder = DeepFinder()
-# non-default initial conditions for the calibration
 #finder.configure_backend(find_image = "feature")
 #finder.params["find"]["similarity"].value = 0.7
 #finder.params["tempfeat"]["front_similarity"].value = 0.5
@@ -77,20 +75,6 @@ elif GlobalConfig.find_backend == "deep":
 #finder.params["fdetect"]["hzoom"].value = 7.0
 #finder.params["fdetect"]["MaxFeatures"].value = 10
 finder.find(needle, haystack)
-
-
-# calibration and benchmarking
-calibrator = Calibrator()
-error_before = calibrator.calibrate(haystack, needle, finder)
-# categories to calibrate
-for category in ["find", "feature", "fdetect", "fextract", "fmatch"]:
-    finder.can_calibrate(category, True)
-error_after = calibrator.calibrate(haystack, needle, finder)
-logging.info("Error before and after calibration: %s -> %s", error_before, error_after)
-logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
-results = calibrator.benchmark(haystack, needle, calibration=CALIBRATED_BENCHMARK)
-logging.info("Benchmarking results (method, similarity, location, time):\n%s",
-             "\n".join([str(r) for r in results]))
 
 
 # cleanup steps

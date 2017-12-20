@@ -2,7 +2,7 @@
 
 # Only needed if not installed system wide
 import sys
-sys.path.insert(0, '..')
+sys.path.insert(0, '../..')
 
 
 # Program start here

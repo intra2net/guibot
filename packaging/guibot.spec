@@ -48,11 +48,9 @@ BuildArch:      noarch
 rm -rf %{buildroot}
 %{__install} -d %{buildroot}%{python_sitelib}/guibot/guibot
 %{__install} -d %{buildroot}%{python_sitelib}/guibot/tests/images
-%{__install} -d %{buildroot}%{python_sitelib}/guibot/examples/images
 %{__install} -d %{buildroot}%{python_sitelib}/guibot/misc/tessdata
 %{__cp} -a guibot/* %{buildroot}%{python_sitelib}/guibot/guibot
 %{__cp} -a tests/* %{buildroot}%{python_sitelib}/guibot/tests
-%{__cp} -a examples/* %{buildroot}%{python_sitelib}/guibot/examples
 %{__cp} -a misc/* %{buildroot}%{python_sitelib}/guibot/misc
 %{__install} -t %{buildroot}%{python_sitelib}/guibot/ __init__.py run_tests.sh
 
@@ -63,7 +61,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE doc/api doc/tutorials
+%doc LICENSE doc/api doc/tutorials doc/examples
 #%config guibot.cfg
 #%ghost guibot.log
 #%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6
@@ -80,9 +78,6 @@ rm -rf %{buildroot}
 %{python_sitelib}/guibot/tests
 %exclude %{python_sitelib}/guibot/tests/*.pyc
 %exclude %{python_sitelib}/guibot/tests/*.pyo
-%{python_sitelib}/guibot/examples
-%exclude %{python_sitelib}/guibot/examples/*.pyc
-%exclude %{python_sitelib}/guibot/examples/*.pyo
 %{python_sitelib}/guibot/misc
 %exclude %{python_sitelib}/guibot/misc/*.pyc
 %exclude %{python_sitelib}/guibot/misc/*.pyo
