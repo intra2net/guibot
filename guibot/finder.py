@@ -2156,6 +2156,10 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
     used as a heuristic for the feature matching. The current matcher
     will perform template matching first and then feature matching on
     the survived template matches to select among them one more time.
+
+    A separate (usually lower) front similarity is used for the first
+    stage template matching in order to remove a lot of noise that
+    would otherwise be distracting for the second stage feature matching.
     """
 
     def __init__(self, configure=True, synchronize=True):

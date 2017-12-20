@@ -2,10 +2,12 @@ TODO - hierarchical notes
 -------------------------
 
 - guibot init
-    - update all tutorials as content and format (ODS/PDF to Markdown)
-    - module headers
-    - website platform
+    - website platform - quick one or django or both
+        - bugzilla.guibot.org
+        - git.guibot.org
+        - download.guibot.org
     - build instructions for newbies including rpm packaging
+    - identical module headers with copyright/license notice
 - more and better unit tests
     - advanced unit tests to include all backend types (desktop control)?
     - apply hybrid backend
