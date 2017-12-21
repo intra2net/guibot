@@ -96,11 +96,11 @@ class GuiBotProxy(GuiBot):
 
     def click_expect(self, click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
         return self._proxify(super(GuiBotProxy, self).click_expect(click_image_or_location,
-                                                                      expect_image_or_location, modifiers, timeout))
+                                                                   expect_image_or_location, modifiers, timeout))
 
     def click_vanish(self, click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
         return self._proxify(super(GuiBotProxy, self).click_vanish(click_image_or_location,
-                                                                      expect_image_or_location, modifiers, timeout))
+                                                                   expect_image_or_location, modifiers, timeout))
 
     def click_at_index(self, anchor, index=0, find_number=3, timeout=10):
         return self._proxify(super(GuiBotProxy, self).click_at_index(anchor, index, find_number, timeout))
