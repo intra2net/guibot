@@ -10,8 +10,7 @@ TODO - hierarchical notes
     - identical module headers with copyright/license notice
 - more and better unit tests
     - advanced unit tests to include all backend types (desktop control)?
-    - apply hybrid backend
-    - add unit tests for each region method
+    - apply hybrid backend to simplify some of them
 - new methods test stage
     - various collected strange cases (special testing pairs)
     - training a button cascade requires even more experience

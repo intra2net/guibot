@@ -61,6 +61,8 @@ class RegionTest(unittest.TestCase):
         # initialize template matching region to support some minimal robustness
         GlobalConfig.hybrid_match_backend = "template"
         self.region = Region()
+        # reset to (0, 0) to avoid cursor on the same control (used many times)
+        self.region.hover(Location(0, 0))
 
     def tearDown(self):
         self.close_windows()
@@ -130,50 +132,90 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_double_click(self):
-        self.show_application()
-        self.region.idle(2).double_click(Text("double click"))
-        self.assertEqual(0, self.wait_end(self.child_app))
-        self.child_app = None
-
     def test_right_click(self):
         self.show_application()
         self.region.right_click(Text("context menu")).nearby(100).idle(3).click(Text("close"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_press_keys(self):
+    def test_double_click(self):
         self.show_application()
-        time.sleep(1)
-        self.region.press_keys(self.region.ESC)
+        self.region.double_click(Text("double click"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    def test_multi_click(self):
         self.show_application()
-        time.sleep(1)
-        self.region.press_keys([self.region.ALT, self.region.F4])
+        self.region.multi_click(Text("close on click"), count=1)
+        self.assertEqual(0, self.wait_end(self.child_app))
+
+        self.show_application()
+        self.region.multi_click(Text("double click"), count=2)
+        self.assertEqual(0, self.wait_end(self.child_app))
+
+        self.child_app = None
+
+    def test_click_expect(self):
+        self.show_application()
+
+        # TODO: improve the application window for these tests
+        #self.region.click_expect(Text("drag to close"))
+
+        self.region.click(Text("close on click"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_press_at(self):
+    def test_click_expect_different(self):
         self.show_application()
-        self.region.press_at([self.region.ESC], Text("type anything"))
+
+        # TODO: improve the application window for these tests
+        self.region.LEFT_BUTTON = self.region.RIGHT_BUTTON
+        self.region.click_expect(Text("context menu"), Text("close"))
+
+        self.region.click(Text("close"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_type_text(self):
+    def test_click_vanish(self):
         self.show_application()
-        # reset to (0,0) to avoid cursor on the same control (used many times)
-        self.region.hover(Location(0,0))
-        self.region.click(Text("type quit")).idle(0.2).type_text('quit')
+        self.region.click_vanish(Text("close on click"))
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_type_at(self):
+    def test_click_vanish_different(self):
         self.show_application()
-        # reset to (0,0) to avoid cursor on the same control (used many times)
-        self.region.hover(Location(0,0))
-        self.region.type_at('quit', Text("type quit"))
+        self.region.click_vanish(Text("close on click"), Text("mouse down"))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    def test_click_at_index(self):
+        self.show_application()
+        self.region.click_at_index(Text("close on click"), 0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    def test_mouse_down(self):
+        self.show_application()
+
+        self.region.mouse_down(Text("mouse down"))
+
+        # toggled buttons cleanup
+        self.region.dc_backend.mouse_up(self.region.LEFT_BUTTON)
+
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    def test_mouse_up(self):
+        self.show_application()
+
+        # TODO: the GUI only works if mouse-up event is on the previous location
+        # self.region.mouse_down(Location(0,0))
+        # self.region.mouse_up(Text("mouse up"))
+        match = self.region.find(Text("mouse up"))
+        self.region.mouse_down(match.target)
+
+        self.region.mouse_up(match.target)
+
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
@@ -208,31 +250,6 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    def test_mouse_down(self):
-        self.show_application()
-
-        self.region.idle(2).mouse_down(Text("mouse down"))
-
-        # toggled buttons cleanup
-        self.region.dc_backend.mouse_up(self.region.LEFT_BUTTON)
-
-        self.assertEqual(0, self.wait_end(self.child_app))
-        self.child_app = None
-
-    def test_mouse_up(self):
-        self.show_application()
-
-        # TODO: the GUI only works if mouse-up event is on the previous location
-        # self.region.mouse_down(Location(0,0))
-        # self.region.mouse_up(Text("mouse up"))
-        match = self.region.find(Text("mouse up"))
-        self.region.mouse_down(match.target)
-
-        self.region.mouse_up(match.target)
-
-        self.assertEqual(0, self.wait_end(self.child_app))
-        self.child_app = None
-
     def test_get_mouse_location(self):
         self.region.hover(Location(0, 0))
 
@@ -248,6 +265,49 @@ class RegionTest(unittest.TestCase):
         self.assertTrue(pos.x > 25 and pos.x < 35)
         self.assertTrue(pos.y > 15 and pos.y < 25)
 
+    def test_press_keys(self):
+        self.show_application()
+        time.sleep(1)
+        self.region.press_keys(self.region.ESC)
+        self.assertEqual(0, self.wait_end(self.child_app))
+
+        self.show_application()
+        time.sleep(1)
+        self.region.press_keys([self.region.ALT, self.region.F4])
+        self.assertEqual(0, self.wait_end(self.child_app))
+
+        self.child_app = None
+
+    def test_press_at(self):
+        self.show_application()
+        self.region.press_at([self.region.ESC], Text("type anything"))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    def test_type_text(self):
+        self.show_application()
+        self.region.click(Text("type quit")).idle(0.2).type_text('quit')
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    def test_type_at(self):
+        self.show_application()
+        self.region.type_at('quit', Text("type quit"))
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    def test_fill_at(self):
+        self.show_application()
+        self.region.fill_at(Text("type quit"), 'quit', 0, 0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    def test_select_at(self):
+        self.show_application()
+        self.region.right_click(Text("context menu"))
+        self.region.select_at(Text("close"), 1, 0, 0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
 
 if __name__ == '__main__':
     unittest.main()
