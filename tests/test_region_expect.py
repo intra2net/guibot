@@ -65,6 +65,15 @@ class RegionTest(unittest.TestCase):
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
 
+    def assertAlmostIn(self, match, matches, delta=5):
+        x, y = match
+        for m in matches:
+            mx, my = m
+            if abs(x - mx) <= delta:
+                if abs(y - my) <= delta:
+                    return
+        raise AssertionError("%s not near any of %s" % (match, matches))
+
     def show_image(self, filename):
         filename = self.path.search(filename)
         self.child_img = subprocess.Popen(['python', self.script_img, filename])
@@ -113,15 +122,17 @@ class RegionTest(unittest.TestCase):
         self.show_image('all_shapes')
 
         match = self.region.find(Image('shape_green_box'))
-        self.assertEqual((match.x, match.y), (30, 190))
-        self.assertEqual(67, match.width)
-        self.assertEqual(52, match.height)
+        self.assertAlmostEqual(match.x, 30, delta=5)
+        self.assertAlmostEqual(match.y, 190, delta=5)
+        self.assertAlmostEqual(70, match.width, delta=5)
+        self.assertAlmostEqual(50, match.height, delta=5)
 
         # Match again - this time just pass a filename
         match = self.region.find('shape_green_box')
-        self.assertEqual((match.x, match.y), (30, 190))
-        self.assertEqual(67, match.width)
-        self.assertEqual(52, match.height)
+        self.assertAlmostEqual(match.x, 30, delta=5)
+        self.assertAlmostEqual(match.y, 190, delta=5)
+        self.assertAlmostEqual(70, match.width, delta=5)
+        self.assertAlmostEqual(50, match.height, delta=5)
 
         # Test last match property
         last_match = self.region.last_match
@@ -164,50 +175,51 @@ class RegionTest(unittest.TestCase):
         greenbox = Image('shape_green_box')
         matches = self.region.find_all(greenbox)
         self.assertEqual(len(matches), 1)
-        self.assertEqual((matches[0].x, matches[0].y), (30, 190))
-        self.assertEqual(67, matches[0].width)
-        self.assertEqual(52, matches[0].height)
+        self.assertAlmostEqual(matches[0].x, 30, delta=5)
+        self.assertAlmostEqual(matches[0].y, 190, delta=5)
+        self.assertAlmostEqual(70, matches[0].width, delta=5)
+        self.assertAlmostEqual(50, matches[0].height, delta=5)
 
         redbox = Image('shape_red_box')
         matches = self.region.find_all(redbox)
-        expected_matches = [(27, 25), (319, 27), (317, 116)]
+        expected_matches = [(25, 25), (320, 25), (315, 115)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             self.region.hover(match)
             time.sleep(0.5)
-            self.assertIn((match.x, match.y), expected_matches)
-            self.assertEqual(68, match.width)
-            self.assertEqual(56, match.height)
+            self.assertAlmostIn((match.x, match.y), expected_matches)
+            self.assertAlmostEqual(70, match.width, delta=5)
+            self.assertAlmostEqual(60, match.height, delta=5)
 
         pinkbox = Image('shape_pink_box')
         # pink is similar to red, so the best fuzzy matches also
         # include the three red boxes when considering color
-        self.region.cv_backend.params["find"]["similarity"].value = 0.5
-        self.region.cv_backend.params["template"]["nocolor"].value = False
+        self.region.cv_backend.matcher.params["find"]["similarity"].value = 0.5
+        self.region.cv_backend.matcher.params["template"]["nocolor"].value = False
         matches = self.region.find_all(pinkbox)
         # approximately the above coordinates since maching different needle
-        expected_matches = [(26, 36), (320, 38), (318, 127), (30, 255)]
+        expected_matches = [(25, 35), (320, 40), (320, 125), (30, 255)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             self.region.hover(match)
             time.sleep(0.5)
-            self.assertIn((match.x, match.y), expected_matches)
-            self.assertEqual(69, match.width)
-            self.assertEqual(48, match.height)
+            self.assertAlmostIn((match.x, match.y), expected_matches)
+            self.assertAlmostEqual(70, match.width, delta=5)
+            self.assertAlmostEqual(50, match.height, delta=5)
 
         # ignore colors here so the best matches for the pink box
         # should be based on shape (the green and yellow box)
-        self.region.cv_backend.params["find"]["similarity"].value = 0.8
-        self.region.cv_backend.params["template"]["nocolor"].value = True
+        self.region.cv_backend.matcher.params["find"]["similarity"].value = 0.8
+        self.region.cv_backend.matcher.params["template"]["nocolor"].value = True
         matches = self.region.find_all(pinkbox)
-        expected_matches = [(28, 120), (31, 195), (30, 255)]
+        expected_matches = [(30, 120), (30, 195), (30, 255)]
         self.assertEqual(len(matches), len(expected_matches))
         for match in matches:
             self.region.hover(match)
             time.sleep(0.5)
-            self.assertIn((match.x, match.y), expected_matches)
-            self.assertEqual(69, match.width)
-            self.assertEqual(48, match.height)
+            self.assertAlmostIn((match.x, match.y), expected_matches)
+            self.assertAlmostEqual(70, match.width, delta=5)
+            self.assertAlmostEqual(50, match.height, delta=5)
 
     def test_find_zero_matches(self):
         self.show_image('all_shapes')
