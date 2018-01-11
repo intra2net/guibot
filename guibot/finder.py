@@ -662,16 +662,16 @@ class ContourFinder(Finder):
         # second stage: thresholding
         if self.params["threshold"]["backend"] == "normal":
             _, thresh_image = cv2.threshold(blur_image,
-                                             self.params["threshold"]["thresholdValue"].value,
-                                             self.params["threshold"]["thresholdMax"].value,
-                                             self.params["threshold"]["thresholdType"].value)
+                                            self.params["threshold"]["thresholdValue"].value,
+                                            self.params["threshold"]["thresholdMax"].value,
+                                            self.params["threshold"]["thresholdType"].value)
         elif self.params["threshold"]["backend"] == "adaptive":
             thresh_image = cv2.adaptiveThreshold(blur_image,
-                                                  self.params["threshold"]["thresholdMax"].value,
-                                                  self.params["threshold"]["adaptiveMethod"].value,
-                                                  self.params["threshold"]["thresholdType"].value,
-                                                  self.params["threshold"]["blockSize"].value,
-                                                  self.params["threshold"]["constant"].value)
+                                                 self.params["threshold"]["thresholdMax"].value,
+                                                 self.params["threshold"]["adaptiveMethod"].value,
+                                                 self.params["threshold"]["thresholdType"].value,
+                                                 self.params["threshold"]["blockSize"].value,
+                                                 self.params["threshold"]["constant"].value)
         elif self.params["threshold"]["backend"] == "canny":
             thresh_image = cv2.Canny(blur_image,
                                       self.params["threshold"]["threshold1"].value,
