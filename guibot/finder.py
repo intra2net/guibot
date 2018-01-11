@@ -1766,6 +1766,16 @@ class TextFinder(ContourFinder):
             self.params[category]["min_confidence"] = CVParameter(0, 0, 100)
             # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
             self.params[category]["component_level"] = CVParameter(0, 0, 1)
+            # zoom factor for improved OCR processing due to higher resolution
+            self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, None)
+            # border size to wrap around text field to improve recognition rate
+            self.params[category]["border_size"] = CVParameter(10, 0, None)
+            # 0 erode, 1 dilate, 2 both, 3 none
+            self.params[category]["erode_dilate"] = CVParameter(3, 0, 3)
+            # 0 MORPH_RECT, 1 MORPH_ELLIPSE, 2 MORPH_CROSS
+            self.params[category]["kernel_type"] = CVParameter(0, 0, 2)
+            self.params[category]["kernel_width"] = CVParameter(1, 0, 2)
+            self.params[category]["kernel_height"] = CVParameter(1, 0, 2)
 
     def configure_backend(self, backend=None, category="text", reset=False):
         """
@@ -1923,8 +1933,22 @@ class TextFinder(ContourFinder):
         matches = []
         for text_box in text_regions:
             text_img = img_haystack[text_box[1]:text_box[1]+text_box[3],text_box[0]:text_box[0]+text_box[2]]
+
+            # main OCR preprocessing stage
+            factor = self.params["ocr"]["zoom_factor"].value
+            log.debug("Zooming x%i candidate for improved OCR processing", factor)
+            text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
             text_img = self._binarize_image(text_img)
-            text_img = cv2.copyMakeBorder(text_img, 15, 15, 15, 15, cv2.BORDER_CONSTANT, 0)
+            border = int(factor * self.params["ocr"]["border_size"].value)
+            text_img = cv2.copyMakeBorder(text_img, border, border, border, border, cv2.BORDER_CONSTANT, 0)
+            if self.params["ocr"]["erode_dilate"].value < 3:
+                element = cv2.getStructuringElement(self.params["ocr"]["kernel_type"].value,
+                                                    (self.params["ocr"]["kernel_width"].value,
+                                                     self.params["ocr"]["kernel_height"].value))
+                if self.params["ocr"]["erode_dilate"].value in [0, 2]:
+                    text_img = cv2.erode(text_img, element)
+                if self.params["ocr"]["erode_dilate"].value in [1, 2]:
+                    text_img = cv2.dilate(text_img, element)
             self.imglog.hotmaps.append(text_img)
 
             # BUG: we hit segfault when using the BeamSearch OCR backend so disallow it
