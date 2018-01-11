@@ -313,16 +313,23 @@ class Finder(LocalConfig):
             logging.debug("Setting %s to fixed=%s for calibration", key, value.fixed)
 
     def copy(self):
-        acopy = type(self)()
+        acopy = type(self)(synchronize=False)
         for category in self.params.keys():
             try:
                 acopy.configure_backend(self.params[category]["backend"], category)
-                for param in self.params[category].keys():
-                    acopy.params[category][param] = copy.deepcopy(self.params[category][param])
+            except UnsupportedBackendError:
+                # some categories are not configurable
+                pass
+
+            for param in self.params[category].keys():
+                acopy.params[category][param] = copy.deepcopy(self.params[category][param])
+
+            try:
                 acopy.synchronize_backend(self.params[category]["backend"], category)
             except UnsupportedBackendError:
-                # some categories are not configurable or synchronizable
+                # some categories are not synchronizable
                 pass
+
         return acopy
 
     def find(self, needle, haystack):
