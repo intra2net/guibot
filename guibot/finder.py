@@ -518,14 +518,20 @@ class ContourFinder(Finder):
             self.params[category]["blurKernelSize"] = CVParameter(5, 1, None)
             self.params[category]["blurKernelSigma"] = CVParameter(0, 0, None)
             if backend == "normal":
+                # value of the threshold since it is nonadaptive and fixed
                 self.params[category]["thresholdValue"] = CVParameter(122, 0, 255)
                 self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
-                self.params[category]["thresholdType"] = CVParameter(1, 1, 5)
+                # 0 binary, 1 binar_inv, 2 trunc, 3 tozero, 4 tozero_inv, 5 mask, 6 otsu, 7 triangle
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 7)
             elif backend == "adaptive":
                 self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
-                self.params[category]["adaptiveMethod"] = CVParameter(1, 1, 2)
-                self.params[category]["thresholdType"] = CVParameter(1, 1, 2)
+                # 0 adaptive mean threshold, 1 adaptive gaussian (weighted mean) threshold
+                self.params[category]["adaptiveMethod"] = CVParameter(1, 0, 1)
+                # 0 normal, 1 inverted
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 1)
+                # size of the neighborhood to consider to adaptive thresholding
                 self.params[category]["blockSize"] = CVParameter(11, 1, None)
+                # constant to substract from the (weighted) calculated mean
                 self.params[category]["constant"] = CVParameter(2, 1, None)
             elif backend == "canny":
                 self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None)
@@ -1824,8 +1830,8 @@ class TextFinder(ContourFinder):
                 self.ocr = cv2.text.OCRTesseract_create(datapath,
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
-                                                        oem=self.params[category]["oem"].value,
-                                                        psmode=self.params[category]["psmode"].value)
+                                                        oem=self.params["ocr"]["oem"].value,
+                                                        psmode=self.params["ocr"]["psmode"].value)
             elif backend in ["hmm", "beamSearch"]:
 
                 import numpy
@@ -1935,9 +1941,10 @@ class TextFinder(ContourFinder):
             log.debug("OCR output = '%s'", output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
-            log.debug("similarity = '%s'", similarity)
+            log.debug("Similarity = '%s'", similarity)
             self.imglog.similarities.append(similarity)
             if similarity >= self.params["find"]["similarity"].value:
+                log.debug("Text at (%s, %s) is acceptable", text_box[0], text_box[1])
                 self.imglog.locations.append((text_box[0], text_box[1]))
                 x, y, w, h = text_box
                 dx, dy = needle.center_offset.x, needle.center_offset.y
@@ -2068,6 +2075,8 @@ class TextFinder(ContourFinder):
                     chars_for_text += 1
                     char_regions[j] = None
             if chars_for_text < min_chars_for_text:
+                logging.debug("Ignoring text contour with %s<%s characters",
+                              chars_for_text, min_chars_for_text)
                 continue
             x, y, w, h = region1
             cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
