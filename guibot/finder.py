@@ -1680,9 +1680,11 @@ class TextFinder(ContourFinder):
         self.categories["text"] = "text_matchers"
         self.categories["tdetect"] = "text_detectors"
         self.categories["ocr"] = "text_recognizers"
+        self.categories["threshold2"] = "threshold_filters2"
         self.algorithms["text_matchers"] = ("mixed",)
         self.algorithms["text_detectors"] = ("erstat", "contours", "components")
         self.algorithms["text_recognizers"] = ("tesseract", "hmm", "beamSearch")
+        self.algorithms["threshold_filters2"] = self.algorithms["threshold_filters"]
 
         # other attributes
         self.erc1 = None
@@ -1703,10 +1705,20 @@ class TextFinder(ContourFinder):
 
         See base method for details.
         """
-        if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
+        if category not in ["text", "tdetect", "ocr", "contour", "threshold", "threshold2"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["contour", "threshold"]:
             ContourFinder.configure_backend(self, backend, category, reset)
+            return
+        elif category in ["threshold2"]:
+            # simply duplicate the first threshold stage configuration
+            threshold1 = self.params.get("threshold", None)
+            ContourFinder.configure_backend(self, backend, "threshold", reset)
+            self.params[category] = self.params["threshold"]
+            if threshold1 is None:
+                del self.params["threshold"]
+            else:
+                self.params["threshold"] = threshold1
             return
 
         if reset:
@@ -1786,15 +1798,16 @@ class TextFinder(ContourFinder):
         self.__configure_backend(backend, category, reset)
 
     def __configure(self, text_detector=None, text_recognizer=None,
-                    threshold_filter=None, reset=True):
+                    threshold_filter=None, threshold_filter2=None, reset=True):
         self.__configure_backend(category="text", reset=reset)
         self.__configure_backend(text_detector, "tdetect")
         self.__configure_backend(text_recognizer, "ocr")
         self.__configure_backend(category="contour")
         self.__configure_backend(threshold_filter, "threshold")
+        self.__configure_backend(threshold_filter2, "threshold2")
 
     def configure(self, text_detector=None, text_recognizer=None,
-                  threshold_filter=None, reset=True):
+                  threshold_filter=None, threshold_filter2=None, reset=True):
         """
         Custom implementation of the base method.
 
@@ -1802,11 +1815,15 @@ class TextFinder(ContourFinder):
         :type text_detector: str or None
         :param text_recognizer: name of a preselected backend
         :type text_recognizer: str or None
+        :param threshold_filter: threshold filter for the text detection stage
+        :type threshold_filter: str or None
+        :param threshold_filter2: additional threshold filter for the OCR stage
+        :type threshold_filter2: str or None
         """
-        self.__configure(text_detector, text_recognizer, threshold_filter, reset)
+        self.__configure(text_detector, text_recognizer, threshold_filter, threshold_filter2, reset)
 
     def __synchronize_backend(self, backend=None, category="text", reset=False):
-        if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
+        if category not in ["text", "tdetect", "ocr", "contour", "threshold", "threshold2"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             Finder.synchronize_backend(self, "text", reset=True)
@@ -1816,7 +1833,7 @@ class TextFinder(ContourFinder):
 
         import cv2
         datapath = self.params["text"]["datapath"].value
-        if category == "text" or category in ["contour", "threshold"]:
+        if category == "text" or category in ["contour", "threshold", "threshold2"]:
             # nothing to sync
             return
 
@@ -1880,15 +1897,16 @@ class TextFinder(ContourFinder):
         self.__synchronize_backend(backend, category, reset)
 
     def __synchronize(self, text_detector=None, text_recognizer=None,
-                      threshold_filter=None, reset=True):
+                      threshold_filter=None, threshold_filter2=None, reset=True):
         self.__synchronize_backend(category="text", reset=reset)
         self.__synchronize_backend(text_detector, "tdetect")
         self.__synchronize_backend(text_recognizer, "ocr")
         self.__synchronize_backend(category="contour")
         self.__synchronize_backend(threshold_filter, "threshold")
+        self.__synchronize_backend(threshold_filter2, "threshold2")
 
     def synchronize(self, text_detector=None, text_recognizer=None,
-                    threshold_filter=None, reset=True):
+                    threshold_filter=None, threshold_filter2=None, reset=True):
         """
         Custom implementation of the base method.
 
@@ -1896,8 +1914,12 @@ class TextFinder(ContourFinder):
         :type text_detector: str or None
         :param text_recognizer: name of a preselected backend
         :type text_recognizer: str or None
+        :param threshold_filter: threshold filter for the text detection stage
+        :type threshold_filter: str or None
+        :param threshold_filter2: additional threshold filter for the OCR stage
+        :type threshold_filter2: str or None
         """
-        self.__synchronize(text_detector, text_recognizer, threshold_filter, reset)
+        self.__synchronize(text_detector, text_recognizer, threshold_filter, threshold_filter2, reset)
 
     def find(self, needle, haystack):
         """
@@ -1938,7 +1960,12 @@ class TextFinder(ContourFinder):
             factor = self.params["ocr"]["zoom_factor"].value
             log.debug("Zooming x%i candidate for improved OCR processing", factor)
             text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
-            text_img = self._binarize_image(text_img)
+            first_threshold = self.params["threshold"]
+            self.params["threshold"] = self.params["threshold2"]
+            try:
+                text_img = self._binarize_image(text_img)
+            finally:
+                self.params["threshold"] = first_threshold
             border = int(factor * self.params["ocr"]["border_size"].value)
             text_img = cv2.copyMakeBorder(text_img, border, border, border, border, cv2.BORDER_CONSTANT, 0)
             if self.params["ocr"]["erode_dilate"].value < 3:
