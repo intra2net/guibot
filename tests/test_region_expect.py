@@ -237,8 +237,8 @@ class RegionTest(unittest.TestCase):
         imgroot = os.path.join(common_test.unittest_dir, 'images')
 
         # find image from string with and without extension
-        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.png')))
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.match')))
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.png')))
         self.region.find('shape_blue_circle')
         self.region.find_all('shape_blue_circle')
         self.region.find('shape_blue_circle.png')
@@ -246,32 +246,48 @@ class RegionTest(unittest.TestCase):
 
         # guess from match file configuration (target has match config)
         # precedence is given to match file configuration (then data file)
-        self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.txt')))
         self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.match')))
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.txt')))
         try:
             self.region.find('mouse down')
             self.fail('exception was not thrown')
-        except FindError, e:
+        except FindError as e:
             pass
         try:
             self.region.find_all('mouse down')
             self.fail('exception was not thrown')
-        except FindError, e:
+        except FindError as e:
             pass
 
         # guess from data file extension (target has no match config)
-        self.assertTrue(os.path.exists(os.path.join(imgroot, 'circle.steps')))
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'circle.match')))
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'circle.steps')))
         self.region.find('circle')
         self.region.find_all('circle')
 
-        # fail with default type if nothing else works
-        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.xtx')))
+        # end with default type if also unknown data type
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.match')))
-        self.default_target_type = Image
+        self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.xtx')))
+        self.region.default_target_type = Image
         # NOTE: autopy cannot handle a masked image
         self.region.find('shape_blue_circle_unknown.xtx')
         self.region.find_all('shape_blue_circle_unknown.xtx')
+
+        # do not fail with default text type if also missing data file
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'mouse somewhere.match')))
+        self.assertFalse(os.path.exists(os.path.join(imgroot, 'mouse somewhere.txt')))
+        self.region.default_target_type = Text
+        self.region.cv_backend = TextFinder()
+        try:
+            self.region.find('mouse somewhere')
+            self.fail('exception was not thrown')
+        except FindError as e:
+            pass
+        try:
+            self.region.find_all('mouse somewhere')
+            self.fail('exception was not thrown')
+        except FindError as e:
+            pass
 
     def test_sample(self):
         self.show_image('all_shapes')
