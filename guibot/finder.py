@@ -2121,7 +2121,7 @@ class TextFinder(ContourFinder):
                     continue
                 x1, y1, w1, h1 = region1
                 x2, y2, w2, h2 = region2
-                if abs(x1 + w1 - x2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < dy:
+                if x2 - (x1 + w1) < dx and x1 - (x2 + w2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < 2*dy:
                     region1 = [min(x1,x2), min(y1,y2), max(x1+w1,x2+w2)-min(x1,x2), max(y1+h1,y2+h2)-min(y1,y2)]
                     chars_for_text += 1
                     char_regions[j] = None
