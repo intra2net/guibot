@@ -1758,6 +1758,8 @@ class TextFinder(ContourFinder):
                 self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None)
                 self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None)
                 self.params[category]["verticalVariance"] = CVParameter(10, 0, None)
+                # 0 horizontal, 1 vertical
+                self.params[category]["orientation"] = CVParameter(0, 0, 1)
                 self.params[category]["minChars"] = CVParameter(3, 0, None)
             elif backend == "components":
                 self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4)
@@ -2109,6 +2111,7 @@ class TextFinder(ContourFinder):
         # group characters into horizontally-correlated regions
         text_regions = []
         dx, dy = self.params["tdetect"]["horizontalSpacing"].value, self.params["tdetect"]["verticalVariance"].value
+        text_orientation = self.params["tdetect"]["orientation"].value
         min_chars_for_text = self.params["tdetect"]["minChars"].value
         for i, region1 in enumerate(char_regions):
             # region was already merged
@@ -2121,7 +2124,11 @@ class TextFinder(ContourFinder):
                     continue
                 x1, y1, w1, h1 = region1
                 x2, y2, w2, h2 = region2
-                if x2 - (x1 + w1) < dx and x1 - (x2 + w2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < 2*dy:
+                if text_orientation == 0:
+                    is_text = x2 - (x1 + w1) < dx and x1 - (x2 + w2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < 2*dy
+                elif text_orientation == 1:
+                    is_text = y2 - (y1 + h1) < dy and y1 - (y2 + h2) < dy and abs(x1 - x2) < dx and abs(w1 - w2) < 2*dx
+                if is_text:
                     region1 = [min(x1,x2), min(y1,y2), max(x1+w1,x2+w2)-min(x1,x2), max(y1+h1,y2+h2)-min(y1,y2)]
                     chars_for_text += 1
                     char_regions[j] = None
