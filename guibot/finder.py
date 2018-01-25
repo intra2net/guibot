@@ -14,6 +14,7 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
+import sys
 import re
 import copy
 try:
@@ -1988,9 +1989,24 @@ class TextFinder(ContourFinder):
             #vector<string> words;
             #vector<float> confidences;
             #output = ocr.run(group_img, &boxes, &words, &confidences, cv2.text.OCR_LEVEL_WORD)
-            output = self.ocr.run(text_img, text_img,
-                                  self.params["ocr"]["min_confidence"].value,
-                                  self.params["ocr"]["component_level"].value)
+            # redirection of tesseract's streams can only be done on the file descriptor level
+            # sys.stdout = open(os.devnull, 'w')
+            stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
+            stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
+            null_fo = open(os.devnull, 'wb')
+            with os.fdopen(os.dup(stdout_fd), 'wb') as cpout_fo:
+                with os.fdopen(os.dup(stderr_fd), 'wb') as cperr_fo:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    os.dup2(null_fo.fileno(), stdout_fd)
+                    os.dup2(null_fo.fileno(), stderr_fd)
+                    output = self.ocr.run(text_img, text_img,
+                                          self.params["ocr"]["min_confidence"].value,
+                                          self.params["ocr"]["component_level"].value)
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    os.dup2(cpout_fo.fileno(), stdout_fd)
+                    os.dup2(cperr_fo.fileno(), stderr_fd)
             log.debug("OCR output = '%s'", output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
