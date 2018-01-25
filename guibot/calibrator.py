@@ -197,20 +197,20 @@ class Calibrator(object):
 
         best_params = copy.deepcopy(params)
         best_error = run_function(params)
-        log.log(9, "%s %s", best_params, best_error)
+        log.log(9, "Start with error=%s for %s", best_error, best_params)
 
         n = 0
         while n < max_attempts and best_error > 0.0:
+            log.info("Try %s\%s, best error %s", n+1, max_attempts, best_error)
 
             # check whether the parameters have all deltas below their tolerance parameters
             all_tolerable = True
             for category in deltas:
                 for key in deltas[category]:
                     if deltas[category][key] > params[category][key].tolerance:
-                        log.log(9, "%s %s %s", category,
-                                key, params[category][key].value)
-                        log.log(9, "%s %s", deltas[category][key],
-                                params[category][key].tolerance)
+                        log.log(9, "Will attempt %s/%s with value %s, delta %s, tolerance %s",
+                                category, key, params[category][key].value,
+                                deltas[category][key], params[category][key].tolerance)
                         all_tolerable = False
                         break
             if all_tolerable:
@@ -220,12 +220,12 @@ class Calibrator(object):
                 for key in params[category].keys():
                     if (isinstance(params[category][key], finder.CVParameter) and
                             params[category][key].fixed):
-                        log.log(9, "skip fixed parameter: %s %s", category, key)
+                        log.log(9, "Skip fixed parameter: %s/%s", category, key)
                         continue
                     elif key == "backend":
                         continue
                     elif not isinstance(params[category][key], finder.CVParameter):
-                        log.warn("The parameter %s-%s is not a CV parameter!", category, key)
+                        log.warn("The parameter %s/%s is not a CV parameter!", category, key)
                         continue
                     else:
                         param = params[category][key]
@@ -252,7 +252,8 @@ class Calibrator(object):
                             param.value = True
                     else:
                         continue
-                    log.log(9, "+ %s d %s", params, deltas)
+                    log.log(9, "%s/%s: %s +> %s (delta: %s)", category, key,
+                            start_value, param.value, deltas[category][key])
 
                     error = run_function(params)
                     if error < best_error:
@@ -278,7 +279,8 @@ class Calibrator(object):
                             # the default boolean value was already checked
                             param.value = start_value
                             continue
-                        log.log(9, "- %s d %s", params, deltas)
+                        log.log(9, "%s/%s: %s -> %s (delta: %s)", category, key,
+                                start_value, param.value, deltas[category][key])
 
                         error = run_function(params)
                         if error < best_error:
@@ -289,7 +291,7 @@ class Calibrator(object):
                             param.value = start_value
                             deltas[category][key] *= 0.9
 
-            log.log(9, "%s %s", best_params, best_error)
+            log.log(9, "End with error=%s for %s", best_error, best_params)
             n += 1
 
         return (best_params, best_error)
