@@ -6,8 +6,8 @@
 
 Name:           guibot
 Version:        0.11
-Release:        3
-Summary:        GUI testing tool
+Release:        4
+Summary:        GUI automation tool
 
 Group:          Development/Tools
 License:        LGPLv3+
@@ -22,7 +22,7 @@ Requires:       opencv-python
 %endif
 
 %description
-A tool to use for GUI testing using OpenCV and PyTorch.
+A tool for GUI automation from testing to performing mundane tasks using OpenCV and PyTorch.
 
 #Patch1:        first_fix.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
