@@ -24,7 +24,6 @@ import logging
 import shutil
 
 from guibot.config import GlobalConfig
-from guibot.settings import GlobalSettings
 from guibot.imagelogger import ImageLogger
 from guibot.path import Path
 from guibot.target import Pattern, Image

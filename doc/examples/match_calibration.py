@@ -21,7 +21,7 @@ import shutil
 
 from guibot.config import GlobalConfig
 from guibot.path import Path
-from guibot.target import Image
+from guibot.target import *
 from guibot.errors import *
 from guibot.finder import *
 from guibot.calibrator import Calibrator
