@@ -36,7 +36,7 @@ class CVParameter(object):
 
     def __init__(self, value,
                  min_val=None, max_val=None,
-                 delta=1.0, tolerance=0.1,
+                 delta=10.0, tolerance=1.0,
                  fixed=True):
         """
         Build a computer vision parameter.
@@ -53,24 +53,19 @@ class CVParameter(object):
         :param bool fixed: whether the parameter is prevented from calibration
         """
         self.value = value
+
+        # initial (delta) and minimal (tolerance) variation step
         self.delta = delta
         self.tolerance = tolerance
 
-        # force specific tolerance and delta for bool and
-        # int parameters
-        if type(value) == bool:
-            self.delta = 0.0
-            self.tolerance = 1.0
-        elif type(value) == int:
-            self.delta = 1
-            self.tolerance = 0.9
-
-        if min_val != None:
+        # variation allowance range
+        if min_val is not None:
             assert value >= min_val
-        if max_val != None:
+        if max_val is not None:
             assert value <= max_val
         self.range = (min_val, max_val)
 
+        # fixed or allowed to be calibrated
         self.fixed = fixed
 
     def __repr__(self):
@@ -260,7 +255,7 @@ class Finder(LocalConfig):
         log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
-        self.params[category]["similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
+        self.params[category]["similarity"] = CVParameter(0.8, 0.0, 1.0)
         log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend=None, category="find", reset=False):
@@ -538,7 +533,7 @@ class ContourFinder(Finder):
                 # 0 normal, 1 inverted
                 self.params[category]["thresholdType"] = CVParameter(1, 0, 1)
                 # size of the neighborhood to consider to adaptive thresholding
-                self.params[category]["blockSize"] = CVParameter(11, 1, None)
+                self.params[category]["blockSize"] = CVParameter(11, 3, None, 20, 2)
                 # constant to substract from the (weighted) calculated mean
                 self.params[category]["constant"] = CVParameter(2, 1, None)
             elif backend == "canny":
@@ -1006,15 +1001,15 @@ class FeatureFinder(Finder):
 
         if category == "feature":
             # 0 for homography, 1 for fundamental matrix
-            self.params[category]["projectionMethod"] = CVParameter(0, 0, 1, None)
+            self.params[category]["projectionMethod"] = CVParameter(0, 0, 1)
             self.params[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 10.0, 1.0)
             self.params[category]["minDetectedFeatures"] = CVParameter(4, 1, None)
             self.params[category]["minMatchedFeatures"] = CVParameter(4, 1, None)
             # 0 for matched/detected ratio, 1 for projected/matched ratio
-            self.params[category]["similarityRatio"] = CVParameter(1, 0, 1, None)
+            self.params[category]["similarityRatio"] = CVParameter(1, 0, 1)
         elif category == "fdetect":
-            self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
-            self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
+            self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 0.1)
+            self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 0.1)
 
             import cv2
             feature_detector_create = getattr(cv2, "%s_create" % backend)
@@ -1033,7 +1028,7 @@ class FeatureFinder(Finder):
                 self.params[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0)
                 return
             else:
-                self.params[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1)
+                self.params[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1, 0.01)
                 self.params[category]["ratioTest"] = CVParameter(False)
                 self.params[category]["symmetryTest"] = CVParameter(False)
 
@@ -1068,7 +1063,7 @@ class FeatureFinder(Finder):
                 if category in ("fdetect", "fextract") and param == "FirstLevel":
                     self.params[category][param] = CVParameter(val, 0, 100)
                 elif category in ("fdetect", "fextract") and param == "MaxFeatures":
-                    self.params[category][param] = CVParameter(val, delta=1)
+                    self.params[category][param] = CVParameter(val, delta=10, tolerance=1)
                 elif category in ("fdetect", "fextract") and param == "WTA_K":
                     self.params[category][param] = CVParameter(val, 2, 4)
                 elif category in ("fdetect", "fextract") and param == "ScaleFactor":
@@ -1772,7 +1767,7 @@ class TextFinder(ContourFinder):
                 self.params[category]["orientation"] = CVParameter(0, 0, 1)
                 self.params[category]["minChars"] = CVParameter(3, 0, None)
             elif backend == "components":
-                self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4)
+                self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4, 4)
         elif category == "ocr":
             if backend == "tesseract":
                 # eng, deu, etc. (ISO 639-3)
@@ -2332,7 +2327,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
 
         self.params[category] = {}
         self.params[category]["backend"] = backend
-        self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0, 0.1, 0.1)
+        self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0)
 
     def configure_backend(self, backend=None, category="tempfeat", reset=False):
         """
