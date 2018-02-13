@@ -33,6 +33,9 @@ HAYSTACK = 'h_ibs_viewport'
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
 CALIBRATED_BENCHMARK = False
+ENABLED = ["fdetect", "fextract", "fmatch"]
+REFINEMENTS=10
+MAX_EXEC_TIME=1.0
 
 
 # minimal setup
@@ -81,11 +84,13 @@ finder.find(needle, haystack)
 
 # calibration and benchmarking
 calibrator = Calibrator()
-error_before = calibrator.calibrate(haystack, needle, finder)
+error_before = calibrator.calibrate(haystack, needle, finder, refinements=1)
 # categories to calibrate
-for category in ["find", "feature", "fdetect", "fextract", "fmatch"]:
+for category in ENABLED:
     finder.can_calibrate(category, True)
-error_after = calibrator.calibrate(haystack, needle, finder)
+# example parameter to solo allow for calibration:
+# finder.params["threshold2"]["blockSize"].fixed = False
+error_after = calibrator.calibrate(haystack, needle, finder, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Error before and after calibration: %s -> %s", error_before, error_after)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
 results = calibrator.benchmark(haystack, needle, calibration=CALIBRATED_BENCHMARK)
