@@ -191,39 +191,34 @@ class Calibrator(object):
         best_error = run_function(params)
         log.log(9, "Start with error=%s for %s", best_error, best_params)
 
-        n = 0
-        while n < max_attempts and best_error > 0.0:
+        for n in range(max_attempts):
             log.info("Try %s\%s, best error %s", n+1, max_attempts, best_error)
 
-            # check whether the parameters have all deltas below their tolerance parameters
-            all_tolerable = True
-            for category in params:
-                for key in params[category]:
-                    if (not isinstance(params[category][key], finder.CVParameter) or
-                            params[category][key].fixed):
-                        continue
-                    if params[category][key].delta > params[category][key].tolerance:
-                        log.log(9, "Will attempt %s/%s with value %s, delta %s, tolerance %s",
-                                category, key, params[category][key].value,
-                                params[category][key].delta, params[category][key].tolerance)
-                        all_tolerable = False
-                        break
-            if all_tolerable:
+            if best_error == 0.0:
+                log.info("Exiting due to zero error")
                 break
 
+            slowdown_flag = True
             for category in params.keys():
                 for key in params[category].keys():
-                    if (isinstance(params[category][key], finder.CVParameter) and
-                            params[category][key].fixed):
-                        log.log(9, "Skip fixed parameter: %s/%s", category, key)
+                    param = params[category][key]
+                    if key == "backend":
                         continue
-                    elif key == "backend":
-                        continue
-                    elif not isinstance(params[category][key], finder.CVParameter):
+                    elif not isinstance(param, finder.CVParameter):
                         log.warn("The parameter %s/%s is not a CV parameter!", category, key)
                         continue
+                    elif param.fixed:
+                        log.log(9, "Skip fixed parameter: %s/%s", category, key)
+                        continue
+                    elif isinstance(param.value, basestring):
+                        log.log(9, "Skip string parameter: %s/%s (calibration not supported)", category, key)
+                        continue
+                    elif param.delta < param.tolerance:
+                        log.log(9, "The parameter %s/%s has slowed down to %s below tolerance %s",
+                                category, key, param.delta, param.tolerance)
+                        continue
                     else:
-                        param = params[category][key]
+                        slowdown_flag = False
                         start_value = param.value
 
                     # add the delta to the current parameter
@@ -247,10 +242,10 @@ class Calibrator(object):
                             param.value = True
                     else:
                         continue
-                    log.log(9, "%s/%s: %s +> %s (delta: %s)", category, key,
-                            start_value, param.value, param.delta)
 
                     error = run_function(params)
+                    log.log(9, "%s/%s: %s +> %s (delta: %s) = %s (best: %s)", category, key,
+                            start_value, param.value, param.delta, error, best_error)
                     if error < best_error:
                         best_params = copy.deepcopy(params)
                         best_error = error
@@ -274,21 +269,24 @@ class Calibrator(object):
                             # the default boolean value was already checked
                             param.value = start_value
                             continue
-                        log.log(9, "%s/%s: %s -> %s (delta: %s)", category, key,
-                                start_value, param.value, param.delta)
 
                         error = run_function(params)
+                        log.log(9, "%s/%s: %s -> %s (delta: %s) = %s (best: %s)", category, key,
+                                start_value, param.value, param.delta, error, best_error)
                         if error < best_error:
                             best_params = copy.deepcopy(params)
                             best_error = error
                             param.delta *= 1.1
                         else:
+
                             param.value = start_value
                             param.delta *= 0.9
 
-            log.log(9, "End with error=%s for %s", best_error, best_params)
-            n += 1
+            if slowdown_flag:
+                log.info("Exiting due to sufficient slowdown for all parameters")
+                break
 
+        log.log(9, "End with error=%s for %s", best_error, best_params)
         return (best_params, best_error)
 
     def _get_last_criteria(self, finder, total_time):
