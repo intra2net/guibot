@@ -39,8 +39,11 @@ MAX_EXEC_TIME=1.0
 
 
 # minimal setup
-logging.getLogger('').addHandler(logging.StreamHandler())
+handler = logging.StreamHandler()
+logging.getLogger('').addHandler(handler)
 logging.getLogger('').setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
 GlobalConfig.image_logging_level = 0
 GlobalConfig.image_logging_destination = LOGPATH
 GlobalConfig.image_logging_step_width = 4

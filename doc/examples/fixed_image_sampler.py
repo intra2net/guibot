@@ -35,8 +35,11 @@ REMOVE_LOGPATH = False
 
 
 # minimal setup
-logging.getLogger('').addHandler(logging.StreamHandler())
+handler = logging.StreamHandler()
+logging.getLogger('').addHandler(handler)
 logging.getLogger('').setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
 GlobalConfig.image_logging_level = 0
 GlobalConfig.image_logging_destination = LOGPATH
 GlobalConfig.image_logging_step_width = 4

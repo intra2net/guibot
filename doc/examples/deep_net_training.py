@@ -41,8 +41,11 @@ TOTAL_STAGES = 10
 
 
 # training step
-logging.getLogger('').addHandler(logging.StreamHandler())
+handler = logging.StreamHandler()
+logging.getLogger('').addHandler(handler)
 logging.getLogger('').setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
 finder = DeepFinder()
 # use this to load pretrained model and train futher
 #import torch
