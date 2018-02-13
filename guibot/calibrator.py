@@ -235,7 +235,7 @@ class Calibrator(object):
                                               param.range[1])
                         else:
                             param.value = start_value + intdelta
-                    elif type(param.value == bool):
+                    elif type(param.value) == bool:
                         if param.value:
                             param.value = False
                         else:
@@ -259,7 +259,7 @@ class Calibrator(object):
                             else:
                                 param.value = start_value - param.delta
                         elif type(param.value) == int:
-                            intdelta = int(math.ceil(param.delta))
+                            intdelta = int(math.floor(param.delta))
                             if param.range[0] != None:
                                 param.value = max(start_value - intdelta,
                                                   param.range[0])
