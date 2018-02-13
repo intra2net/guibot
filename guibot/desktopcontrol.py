@@ -130,10 +130,10 @@ class DesktopControl(LocalConfig):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
-        log.log(0, "%s %s\n", category, self.params[category])
+        log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend=None, category="control", reset=False):
         """

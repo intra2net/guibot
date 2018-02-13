@@ -111,10 +111,10 @@ class CVParameter(object):
             else:
                 arg = str(arg)
 
-            log.log(0, "%s %s", arg, type(arg))
+            log.log(9, "%s %s", arg, type(arg))
             args.append(arg)
 
-        log.log(0, "%s", args)
+        log.log(9, "%s", args)
         return CVParameter(*args)
 
 
@@ -194,7 +194,7 @@ class Finder(LocalConfig):
                     param_string = parser.get(category, option)
                     if isinstance(finder.params[category][option], CVParameter):
                         param = CVParameter.from_string(param_string)
-                        log.log(0, "%s %s", param_string, param)
+                        log.log(9, "%s %s", param_string, param)
                     else:
                         param = param_string
                     finder.params[category][option] = param
@@ -220,7 +220,7 @@ class Finder(LocalConfig):
                 parser.add_section(section)
             parser.set(section, 'backend', finder.params[section]["backend"])
             for option in finder.params[section]:
-                log.log(0, "%s %s", section, option)
+                log.log(9, "%s %s", section, option)
                 parser.set(section, option, finder.params[section][option])
 
         if not filename.endswith(".match"):
@@ -257,11 +257,11 @@ class Finder(LocalConfig):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
         self.params[category]["similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
-        log.log(0, "%s %s\n", category, self.params[category])
+        log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend=None, category="find", reset=False):
         """
@@ -310,7 +310,7 @@ class Finder(LocalConfig):
                 value.fixed = True
             else:
                 value.fixed = not mark
-            logging.debug("Setting %s to fixed=%s for calibration", key, value.fixed)
+            log.debug("Setting %s/%s to fixed=%s for calibration", category, key, value.fixed)
 
     def copy(self):
         acopy = type(self)(synchronize=False)
@@ -508,7 +508,7 @@ class ContourFinder(Finder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
@@ -767,11 +767,11 @@ class TemplateFinder(Finder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
         self.params[category]["nocolor"] = CVParameter(False)
-        log.log(0, "%s %s\n", category, self.params[category])
+        log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend=None, category="template", reset=False):
         """
@@ -869,15 +869,15 @@ class TemplateFinder(Finder):
             match_y1 = min(maxLoc[1] + int(0.5 * needle.height), res_h)
 
             # log this only if performing deep internal debugging
-            log.log(0, "Wipe image matches in x [%s, %s]/[%s, %s]",
+            log.log(9, "Wipe image matches in x [%s, %s]/[%s, %s]",
                     match_x0, match_x1, 0, res_w)
-            log.log(0, "Wipe image matches in y [%s, %s]/[%s, %s]",
+            log.log(9, "Wipe image matches in y [%s, %s]/[%s, %s]",
                     match_y0, match_y1, 0, res_h)
 
             # clean found image to look for next safe distance match
             result[match_y0:match_y1,match_x0:match_x1] = 0.0
 
-            log.log(0, "Total maxima up to the point are %i", len(matches))
+            log.log(9, "Total maxima up to the point are %i", len(matches))
         log.debug("A total of %i matches found", len(matches))
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
@@ -1000,7 +1000,7 @@ class FeatureFinder(Finder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
@@ -1054,7 +1054,7 @@ class FeatureFinder(Finder):
 
         # examine the interface of the OpenCV backend to add extra parameters
         if category in ["fdetect", "fextract", "fmatch"]:
-            log.log(0, "%s %s", backend_obj, dir(backend_obj))
+            log.log(9, "%s %s", backend_obj, dir(backend_obj))
             for attribute in dir(backend_obj):
                 if not attribute.startswith("get"):
                     continue
@@ -1075,7 +1075,7 @@ class FeatureFinder(Finder):
                     self.params[category][param] = CVParameter(val, 1.01, 2.0)
                 else:
                     self.params[category][param] = CVParameter(val)
-                log.log(0, "%s=%s", param, val)
+                log.log(9, "%s=%s", param, val)
 
     def configure_backend(self, backend=None, category="feature", reset=False):
         """
@@ -1162,7 +1162,7 @@ class FeatureFinder(Finder):
                     continue
                 set_param = getattr(backend_obj, set_attribute)
                 set_param(val)
-                log.log(0, "Synced %s to %s", param, val)
+                log.log(9, "Synced %s to %s", param, val)
                 self.params[category][param].value = val
 
         if category == "fdetect":
@@ -1378,7 +1378,7 @@ class FeatureFinder(Finder):
                 else:
                     matches2.append(m[0])
 
-            log.log(0, "Ratio test result is %i/%i", len(matches2), len(matches))
+            log.log(9, "Ratio test result is %i/%i", len(matches2), len(matches))
             return matches2
 
         def symmetry_test(nmatches, hmatches):
@@ -1399,7 +1399,7 @@ class FeatureFinder(Finder):
                         matches2.append(m)
                         break
 
-            log.log(0, "Symmetry test result is %i/%i", len(matches2), len(matches))
+            log.log(9, "Symmetry test result is %i/%i", len(matches2), len(matches))
             return matches2
 
         # include only methods tested for compatibility
@@ -1439,7 +1439,7 @@ class FeatureFinder(Finder):
         match_hkeypoints = []
         matches = sorted(matches, key=lambda x: x.distance)
         for match in matches:
-            log.log(0, match.distance)
+            log.log(9, match.distance)
             match_nkeypoints.append(nkeypoints[match.queryIdx])
             match_hkeypoints.append(hkeypoints[match.trainIdx])
 
@@ -1451,7 +1451,7 @@ class FeatureFinder(Finder):
         # update the current achieved similarity if matching similarity is used:
         # won't be updated anymore if self.params["feature"]["similarityRatio"].value == 0
         self.imglog.similarities[-1] = match_similarity
-        log.log(0, "%s\\%s -> %f", len(match_nkeypoints),
+        log.log(9, "%s\\%s -> %f", len(match_nkeypoints),
                 len(nkeypoints), match_similarity)
 
         return (match_nkeypoints, match_hkeypoints)
@@ -1514,7 +1514,7 @@ class FeatureFinder(Finder):
         for location in locations_in_needle:
             (ox, oy) = (location[0], location[1])
             orig_center_wrapped = numpy.array([[[ox, oy]]], dtype=numpy.float32)
-            log.log(0, "%s %s", orig_center_wrapped.shape, H.shape)
+            log.log(9, "%s %s", orig_center_wrapped.shape, H.shape)
             match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
             (mx, my) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
             projected.append((int(mx), int(my)))
@@ -1523,7 +1523,7 @@ class FeatureFinder(Finder):
         if self.params["feature"]["similarityRatio"].value == 1:
             # override the match similarity if projectin-based similarity is preferred
             self.imglog.similarities[-1] = ransac_similarity
-        log.log(0, "%s\\%s -> %f", len(true_matches), len(mnkp), ransac_similarity)
+        log.log(9, "%s\\%s -> %f", len(true_matches), len(mnkp), ransac_similarity)
         self.imglog.locations.extend(projected)
 
         return projected
@@ -1743,7 +1743,7 @@ class TextFinder(ContourFinder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
@@ -2170,8 +2170,8 @@ class TextFinder(ContourFinder):
                 h > self.params["tdetect"]["maxHeight"].value or
                 ratio < self.params["tdetect"]["minAspectRatio"].value or
                 ratio > self.params["tdetect"]["maxAspectRatio"].value):
-                logging.debug("Ignoring contour with area %sx%s>%s and aspect ratio %s/%s=%s",
-                              w, h, area, w, h, ratio)
+                log.debug("Ignoring contour with area %sx%s>%s and aspect ratio %s/%s=%s",
+                          w, h, area, w, h, ratio)
                 continue
             else:
                 cv2.rectangle(char_canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
@@ -2204,8 +2204,8 @@ class TextFinder(ContourFinder):
                     chars_for_text += 1
                     char_regions[j] = None
             if chars_for_text < min_chars_for_text:
-                logging.debug("Ignoring text contour with %s<%s characters",
-                              chars_for_text, min_chars_for_text)
+                log.debug("Ignoring text contour with %s<%s characters",
+                          chars_for_text, min_chars_for_text)
                 continue
             x, y, w, h = region1
             cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
@@ -2416,7 +2416,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
             down = min(haystack.height, up + needle.height)
             left = upleft.x
             right = min(haystack.width, left + needle.width)
-            log.log(0, "Maximum up-down is %s and left-right is %s",
+            log.log(9, "Maximum up-down is %s and left-right is %s",
                     (up, down), (left, right))
 
             haystack_region = hgray[up:down, left:right]
@@ -3002,7 +3002,7 @@ class CustomFinder(Finder):
                 coord[1] = -1
             elif target[1] > origin[1]:
                 coord[1] = 1
-            log.log(0, "%s:%s=%s", origin, target, coord)
+            log.log(9, "%s:%s=%s", origin, target, coord)
             return coord
 
         def compare_pos(match1, match2):
@@ -3015,8 +3015,8 @@ class CustomFinder(Finder):
             if hc[1] != nc[1] and hc[1] != 0 and nc[1] != 0:
                 valid_positioning = False
 
-            log.log(0, "p1:p2 = %s in haystack and %s in needle", hc, nc)
-            log.log(0, "is their relative positioning valid? %s", valid_positioning)
+            log.log(9, "p1:p2 = %s in haystack and %s in needle", hc, nc)
+            log.log(9, "is their relative positioning valid? %s", valid_positioning)
 
             return valid_positioning
 
@@ -3027,7 +3027,7 @@ class CustomFinder(Finder):
             nominator = sum(float(not compare_pos(match, new_match)) for match in matches)
             denominator = float(len(matches))
             ratio = nominator / denominator
-            log.log(0, "model <-> match = %i disagreeing / %i total matches",
+            log.log(9, "model <-> match = %i disagreeing / %i total matches",
                     nominator, denominator)
 
             # avoid 0 mapping, i.e. giving 0 positional
@@ -3039,8 +3039,8 @@ class CustomFinder(Finder):
                 new_match.distance = 0.001
 
             cost = ratio * new_match.distance
-            log.log(0, "would be + %f cost", cost)
-            log.log(0, "match reduction: %s",
+            log.log(9, "would be + %f cost", cost)
+            log.log(9, "match reduction: %s",
                     cost / max(sum(m.distance for m in matches), 1))
 
             return cost
@@ -3049,7 +3049,7 @@ class CustomFinder(Finder):
                                 1, variants_ratio)
         matches = [variants[0] for variants in results]
         ratings = [None for _ in matches]
-        log.log(0, "%i matches in needle to start with", len(matches))
+        log.log(9, "%i matches in needle to start with", len(matches))
 
         # minimum one refinement is needed
         refinements = max(1, refinements)
@@ -3072,8 +3072,8 @@ class CustomFinder(Finder):
             outlier_index = ratings.index(max(ratings))
             outlier = matches[outlier_index]
             variants = results[outlier_index]
-            log.log(0, "outlier m%i with rating %i", outlier_index, max(ratings))
-            log.log(0, "%i match variants for needle match %i", len(variants), outlier_index)
+            log.log(9, "outlier m%i with rating %i", outlier_index, max(ratings))
+            log.log(9, "%i match variants for needle match %i", len(variants), outlier_index)
 
             # add the match variant with a minimal cost
             variant_costs = []
@@ -3086,9 +3086,9 @@ class CustomFinder(Finder):
                     assert variants[j].queryIdx == variants[j - 1].queryIdx
                     if variants[j].trainIdx == variants[j - 1].trainIdx:
                         continue
-                log.log(0, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)
-                log.log(0, "variant %i coord in n/h %s/%s", j, ncoord(variant), hcoord(variant))
-                log.log(0, "variant distance: %s", variant.distance)
+                log.log(9, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)
+                log.log(9, "variant %i coord in n/h %s/%s", j, ncoord(variant), hcoord(variant))
+                log.log(9, "variant distance: %s", variant.distance)
 
                 matches[outlier_index] = variant
                 variant_costs.append((j, match_cost(matches, variant)))
@@ -3096,7 +3096,7 @@ class CustomFinder(Finder):
             min_cost_index, min_cost = min(variant_costs, key=lambda x: x[1])
             min_cost_variant = variants[min_cost_index]
             # if variant_costs.index(min(variant_costs)) != 0:
-            log.log(0, "%s>%s i.e. variant %s", variant_costs, min_cost, min_cost_index)
+            log.log(9, "%s>%s i.e. variant %s", variant_costs, min_cost, min_cost_index)
             matches[outlier_index] = min_cost_variant
             ratings[outlier_index] = min_cost
 
@@ -3129,7 +3129,7 @@ class CustomFinder(Finder):
         if desc4kp > 1:
             desc1 = numpy.array(desc1, dtype=numpy.float32).reshape((-1, desc4kp))
             desc2 = numpy.array(desc2, dtype=numpy.float32).reshape((-1, desc4kp))
-            log.log(0, "%s %s", desc1.shape, desc2.shape)
+            log.log(9, "%s %s", desc1.shape, desc2.shape)
         else:
             desc1 = numpy.array(desc1, dtype=numpy.float32)
             desc2 = numpy.array(desc2, dtype=numpy.float32)
@@ -3138,7 +3138,7 @@ class CustomFinder(Finder):
         # kNN training - learn mapping from rows2 to kp2 index
         samples = desc2
         responses = numpy.arange(int(len(desc2) / desc4kp), dtype=numpy.float32)
-        log.log(0, "%s %s", len(samples), len(responses))
+        log.log(9, "%s %s", len(samples), len(responses))
         knn = cv2.KNearest()
         knn.train(samples, responses, maxK=k)
 
@@ -3146,13 +3146,13 @@ class CustomFinder(Finder):
         # retrieve index and value through enumeration
         for i, descriptor in enumerate(desc1):
             descriptor = numpy.array(descriptor, dtype=numpy.float32).reshape((1, desc_size))
-            log.log(0, "%s %s %s", i, descriptor.shape, samples[0].shape)
+            log.log(9, "%s %s %s", i, descriptor.shape, samples[0].shape)
             kmatches = []
             ratio = 1.0
 
             for ki in range(k):
                 _, res, _, dists = knn.find_nearest(descriptor, ki + 1)
-                log.log(0, "%s %s %s", ki, res, dists)
+                log.log(9, "%s %s %s", ki, res, dists)
                 if len(dists[0]) > 1 and autostop > 0.0:
 
                     # TODO: perhaps ratio from first to last ki?
@@ -3160,7 +3160,7 @@ class CustomFinder(Finder):
                     dist1 = dists[0][-2] + 0.0000001
                     dist2 = dists[0][-1] + 0.0000001
                     ratio = dist1 / dist2
-                    log.log(0, "%s %s", ratio, autostop)
+                    log.log(9, "%s %s", ratio, autostop)
                     if ratio < autostop:
                         break
 

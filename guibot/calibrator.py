@@ -197,7 +197,7 @@ class Calibrator(object):
 
         best_params = copy.deepcopy(params)
         best_error = run_function(params)
-        log.log(0, "%s %s", best_params, best_error)
+        log.log(9, "%s %s", best_params, best_error)
 
         n = 0
         while n < max_attempts and best_error > 0.0:
@@ -207,9 +207,9 @@ class Calibrator(object):
             for category in deltas:
                 for key in deltas[category]:
                     if deltas[category][key] > params[category][key].tolerance:
-                        log.log(0, "%s %s %s", category,
+                        log.log(9, "%s %s %s", category,
                                 key, params[category][key].value)
-                        log.log(0, "%s %s", deltas[category][key],
+                        log.log(9, "%s %s", deltas[category][key],
                                 params[category][key].tolerance)
                         all_tolerable = False
                         break
@@ -220,7 +220,7 @@ class Calibrator(object):
                 for key in params[category].keys():
                     if (isinstance(params[category][key], finder.CVParameter) and
                             params[category][key].fixed):
-                        log.log(0, "skip fixed parameter: %s %s", category, key)
+                        log.log(9, "skip fixed parameter: %s %s", category, key)
                         continue
                     elif key == "backend":
                         continue
@@ -252,7 +252,7 @@ class Calibrator(object):
                             param.value = True
                     else:
                         continue
-                    log.log(0, "+ %s d %s", params, deltas)
+                    log.log(9, "+ %s d %s", params, deltas)
 
                     error = run_function(params)
                     if error < best_error:
@@ -278,7 +278,7 @@ class Calibrator(object):
                             # the default boolean value was already checked
                             param.value = start_value
                             continue
-                        log.log(0, "- %s d %s", params, deltas)
+                        log.log(9, "- %s d %s", params, deltas)
 
                         error = run_function(params)
                         if error < best_error:
@@ -289,7 +289,7 @@ class Calibrator(object):
                             param.value = start_value
                             deltas[category][key] *= 0.9
 
-            log.log(0, "%s %s", best_params, best_error)
+            log.log(9, "%s %s", best_params, best_error)
             n += 1
 
         return (best_params, best_error)
