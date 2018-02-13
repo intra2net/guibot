@@ -187,14 +187,6 @@ class Calibrator(object):
         .. note:: Special credits for this approach should be given to Prof. Sebastian
             Thrun, who explained it in his Artificial Intelligence for Robotics class.
         """
-        deltas = {}
-        for category in params.keys():
-            deltas[category] = {}
-            for key in params[category].keys():
-                if (isinstance(params[category][key], finder.CVParameter) and
-                        not params[category][key].fixed):
-                    deltas[category][key] = params[category][key].delta
-
         best_params = copy.deepcopy(params)
         best_error = run_function(params)
         log.log(9, "Start with error=%s for %s", best_error, best_params)
@@ -205,12 +197,15 @@ class Calibrator(object):
 
             # check whether the parameters have all deltas below their tolerance parameters
             all_tolerable = True
-            for category in deltas:
-                for key in deltas[category]:
-                    if deltas[category][key] > params[category][key].tolerance:
+            for category in params:
+                for key in params[category]:
+                    if (not isinstance(params[category][key], finder.CVParameter) or
+                            params[category][key].fixed):
+                        continue
+                    if params[category][key].delta > params[category][key].tolerance:
                         log.log(9, "Will attempt %s/%s with value %s, delta %s, tolerance %s",
                                 category, key, params[category][key].value,
-                                deltas[category][key], params[category][key].tolerance)
+                                params[category][key].delta, params[category][key].tolerance)
                         all_tolerable = False
                         break
             if all_tolerable:
@@ -234,12 +229,12 @@ class Calibrator(object):
                     # add the delta to the current parameter
                     if type(param.value) == float:
                         if param.range[1] != None:
-                            param.value = min(start_value + deltas[category][key],
+                            param.value = min(start_value + param.delta,
                                               param.range[1])
                         else:
-                            param.value = start_value + deltas[category][key]
+                            param.value = start_value + param.delta
                     elif type(param.value) == int:
-                        intdelta = int(math.ceil((deltas[category][key])))
+                        intdelta = int(math.ceil(param.delta))
                         if param.range[1] != None:
                             param.value = min(start_value + intdelta,
                                               param.range[1])
@@ -253,23 +248,23 @@ class Calibrator(object):
                     else:
                         continue
                     log.log(9, "%s/%s: %s +> %s (delta: %s)", category, key,
-                            start_value, param.value, deltas[category][key])
+                            start_value, param.value, param.delta)
 
                     error = run_function(params)
                     if error < best_error:
                         best_params = copy.deepcopy(params)
                         best_error = error
-                        deltas[category][key] *= 1.1
+                        param.delta *= 1.1
                     else:
 
                         if type(param.value) == float:
                             if param.range[0] != None:
-                                param.value = max(start_value - deltas[category][key],
+                                param.value = max(start_value - param.delta,
                                                   param.range[0])
                             else:
-                                param.value = start_value - deltas[category][key]
+                                param.value = start_value - param.delta
                         elif type(param.value) == int:
-                            intdelta = int(math.ceil((deltas[category][key])))
+                            intdelta = int(math.ceil(param.delta))
                             if param.range[0] != None:
                                 param.value = max(start_value - intdelta,
                                                   param.range[0])
@@ -280,16 +275,16 @@ class Calibrator(object):
                             param.value = start_value
                             continue
                         log.log(9, "%s/%s: %s -> %s (delta: %s)", category, key,
-                                start_value, param.value, deltas[category][key])
+                                start_value, param.value, param.delta)
 
                         error = run_function(params)
                         if error < best_error:
                             best_params = copy.deepcopy(params)
                             best_error = error
-                            deltas[category][key] *= 1.1
+                            param.delta *= 1.1
                         else:
                             param.value = start_value
-                            deltas[category][key] *= 0.9
+                            param.delta *= 0.9
 
             log.log(9, "End with error=%s for %s", best_error, best_params)
             n += 1
