@@ -20,6 +20,16 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../..'))
 
+# Add mock modules to integrate better with platforms like ReadTheDocs. Any
+# modules that include C code will not be automatically imported in this online
+# platform which is understandable for security reasons. So we have to replace
+# them with mock modules in order for the build to succeed (we don't expect
+# these to be used for the documentation build in normal circumstances anyway).
+import mock
+MOCK_MODULES = ['numpy', 'scipy', 'Pyro4']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
