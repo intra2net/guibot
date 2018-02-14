@@ -149,6 +149,7 @@ class Calibrator(object):
                 log.warn("No match was found at this step (due to internal error or other)")
                 similarity = 0.0
             total_time = time.time() - start_time
+            finder.imglog.clear()
 
             # main penalty for bad quality of matching
             error = 1.0 - similarity
