@@ -10,7 +10,6 @@ log*.png
 
 # Sphinx documentation generation
 doc/api/_build
-*.rst
 
 # Backup files and stuff from patches
 *.orig
