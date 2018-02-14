@@ -17,7 +17,7 @@ import time
 import math
 import copy
 
-import finder
+from finder import *
 from imagelogger import ImageLogger
 from errors import *
 
@@ -42,9 +42,9 @@ class Calibrator(object):
         for a given needle and haystack.
 
         :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
+        :type haystack: :py:class:`target.Image`
+        :param needle: target to look for
+        :type needle: :py:class:`target.Target`
         :param bool calibration: whether to use calibration
         :param int refinements: number of refinements allowed to improve calibration
         :returns: list of (method, similarity, location, time) tuples sorted according to similarity
@@ -68,7 +68,7 @@ class Calibrator(object):
         ImageLogger.accumulate_logging = True
 
         # test all template matching methods
-        finder1 = finder.TemplateFinder()
+        finder1 = TemplateFinder()
         needle.match_settings.params["find"]["similarity"].value = 0.0
         for key in finder1.algorithms["template_matchers"]:
             for gray in (True, False):
@@ -89,7 +89,7 @@ class Calibrator(object):
                 finder1.imglog.clear()
 
         # test all feature matching methods
-        finder2 = finder.FeatureFinder()
+        finder2 = FeatureFinder()
         for key_fd in finder2.algorithms["feature_detectors"]:
             for key_fe in finder2.algorithms["feature_extractors"]:
                 for key_fm in finder2.algorithms["feature_matchers"]:
@@ -119,9 +119,9 @@ class Calibrator(object):
         an image finder for a given needle and haystack.
 
         :param haystack: image to look in
-        :type haystack: :py:class:`image.Image`
-        :param needle: image to look for
-        :type needle: :py:class:`image.Image`
+        :type haystack: :py:class:`target.Image`
+        :param needle: target to look for
+        :type needle: :py:class:`target.Target`
         :param finder: CV backend to calibrate
         :type finder: :py:class:`finder.Finder`
         :param int refinements: maximal number of refinements
@@ -203,7 +203,7 @@ class Calibrator(object):
                     param = params[category][key]
                     if key == "backend":
                         continue
-                    elif not isinstance(param, finder.CVParameter):
+                    elif not isinstance(param, CVParameter):
                         log.warn("The parameter %s/%s is not a CV parameter!", category, key)
                         continue
                     elif param.fixed:
