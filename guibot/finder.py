@@ -17,6 +17,7 @@ import os
 import sys
 import re
 import copy
+import random
 try:
     import configparser as config
 except ImportError:
@@ -42,7 +43,7 @@ class CVParameter(object):
         Build a computer vision parameter.
 
         :param value: value of the parameter
-        :type value: bool or int or float or None
+        :type value: bool or int or float or str or None
         :param min_val: lower boundary for the parameter range
         :type min_val: int or float or None
         :param max_val: upper boundary for the parameter range
@@ -111,6 +112,28 @@ class CVParameter(object):
 
         log.log(9, "%s", args)
         return CVParameter(*args)
+
+    def random_value(self):
+        """
+        Return a random value of the CV parameter given its range and type.
+
+        :returns: a random value comforming to the CV parameter range and type
+        :rtype: bool or int or float or str or None
+        """
+        if type(self.value) == float:
+            start = self.range[0] if self.range[0] is not None else -sys.float_info.max
+            end = self.range[1] if self.range[1] is not None else sys.float_info.max
+            return random.uniform(start, end)
+        elif type(self.value) == int:
+            start = self.range[0] if self.range[0] is not None else -sys.maxint
+            end = self.range[1] if self.range[1] is not None else sys.maxint
+            return random.randint(start, end)
+        elif type(self.value) == bool:
+            value = random.randint(0, 1)
+            return value == 1
+        else:
+            log.warning("Cannot generate random value for CV parameters other than float, int, and bool")
+            return self.value
 
 
 class Finder(LocalConfig):

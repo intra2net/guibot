@@ -85,7 +85,7 @@ elif GlobalConfig.find_backend == "deep":
 finder.find(needle, haystack)
 
 
-# calibration and benchmarking
+# calibration, searching, and benchmarking
 calibrator = Calibrator()
 similarity_before = calibrator.calibrate(haystack, needle, finder, refinements=1)
 # categories to calibrate
@@ -95,6 +95,10 @@ for category in ENABLED:
 # finder.params["threshold2"]["blockSize"].fixed = False
 similarity_after = calibrator.calibrate(haystack, needle, finder, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity before and after calibration: %s -> %s", similarity_before, similarity_after)
+logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
+similarity_global = calibrator.search(haystack, needle, finder, random_starts=100,
+                                      calibration=True, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
+logging.info("Similarity after search (Monte Carlo calibration): %s -> %s", similarity_before, similarity_global)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
 results = calibrator.benchmark(haystack, needle, calibration=CALIBRATED_BENCHMARK)
 logging.info("Benchmarking results (method, similarity, location, time):\n%s",

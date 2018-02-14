@@ -33,7 +33,8 @@ class Calibrator(object):
 
     Use the benchmarking method to choose the best algorithm to find your image.
     Use the calibration method to find the best parameters if you have already
-    chosen the algorithm.
+    chosen the algorithm. Use the search method to find the best parameters from
+    multiple random starts from a uniform or normal probability distribution.
     """
 
     def benchmark(self, haystack, needle, calibration=True, refinements=10):
@@ -112,6 +113,83 @@ class Calibrator(object):
         ImageLogger.accumulate_logging = False
         return sorted(results, key=lambda x: x[1], reverse=True)
 
+    def search(self, haystack, needle, finder, random_starts=1,
+               calibration=True, refinements=10, max_exec_time=0.5):
+        """
+        Search for the best match configuration for a given needle and haystack
+        using calibration from random initial conditions.
+
+        :param haystack: image to look in
+        :type haystack: :py:class:`target.Image`
+        :param needle: target to look for
+        :type needle: :py:class:`target.Target`
+        :param finder: CV backend to use in order to determine fixed and free params
+        :type finder: :py:class:`finder.Finder`
+        :param int random_starts: number of random starts to try with
+        :param bool calibration: whether to use calibration
+        :param int refinements: number of refinements allowed to improve calibration
+        :param float max_exec_time: maximum seconds for a matching attempt
+        :returns: maximized similarity
+        :rtype: float
+        """
+        def run(params):
+            finder.params = params
+
+            start_time = time.time()
+            try:
+                matches = finder.find(needle, haystack)
+                # pick similarity of the best match as representative
+                similarity = matches[0].similarity
+            except:
+                log.warn("No match was found at this step (due to internal error or other)")
+                similarity = 0.0
+            total_time = time.time() - start_time
+            finder.imglog.clear()
+
+            # main penalty for bad quality of matching
+            error = 1.0 - similarity
+            # extra penalty for slow solutions
+            error += max(total_time - max_exec_time, 0)
+            return error
+
+        self._prepare_params(finder)
+        # block logging for performance speedup
+        ImageLogger.accumulate_logging = True
+        best_error = self.run(finder, kwargs)
+        best_params = init_params = finder.params
+        for i in range(random_starts):
+            log.info("Random run %s\%s, best error %s", i+1, random_starts, best_error)
+
+            params = copy.deepcopy(init_params)
+            for category in params.keys():
+                for key in params[category].keys():
+                    param = params[category][key]
+                    if not isinstance(param, CVParameter):
+                        continue
+                    if not param.fixed:
+                        param.value = param.random_value()
+                        log.debug("Setting %s/%s to random value=%s", category, key, param.value)
+
+            finder.params = params
+            if calibration:
+                error = 1.0 - self.calibrate(haystack, needle, finder,
+                                             refinements=refinements, max_exec_time=max_exec_time)
+            else:
+                error = run(params)
+
+            if error < best_error:
+                log.info("Random start ended with smaller error %s < %s", error, best_error)
+                best_error = error
+                best_params = params
+            else:
+                log.debug("Random start ended with worse error %s > %s", error, best_error)
+
+        ImageLogger.accumulate_logging = False
+        log.info("Best error for all random starts is %s", best_error)
+        log.log(9, "Best parameters for all random starts:\n%s", best_params)
+        finder.params = best_params
+        return 1.0 - best_error
+
     def calibrate(self, haystack, needle, finder,
                   refinements=10, max_exec_time=0.5):
         """
@@ -157,14 +235,9 @@ class Calibrator(object):
             error += max(total_time - max_exec_time, 0)
             return error
 
+        self._prepare_params(finder)
         # block logging for performance speedup
         ImageLogger.accumulate_logging = True
-        # any similarity parameters will be reset to 0.0 to search optimally
-        finder.params["find"]["similarity"].value = 0.0
-        finder.params["find"]["similarity"].fixed = True
-        if "tempfeat" in finder.params.keys():
-            finder.params["tempfeat"]["front_similarity"].value = 0.0
-            finder.params["tempfeat"]["front_similarity"].fixed = True
         error = self.twiddle(finder.params, run, refinements)
         ImageLogger.accumulate_logging = False
 
@@ -285,6 +358,14 @@ class Calibrator(object):
 
         log.log(9, "End with error=%s for %s", best_error, params)
         return best_error
+
+    def _prepare_params(self, finder):
+        # any similarity parameters will be reset to 0.0 to search optimally
+        finder.params["find"]["similarity"].value = 0.0
+        finder.params["find"]["similarity"].fixed = True
+        if "tempfeat" in finder.params.keys():
+            finder.params["tempfeat"]["front_similarity"].value = 0.0
+            finder.params["tempfeat"]["front_similarity"].fixed = True
 
     def _get_last_criteria(self, finder, total_time):
         if len(finder.imglog.similarities) > 0:
