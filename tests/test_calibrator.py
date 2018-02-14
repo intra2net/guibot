@@ -49,34 +49,34 @@ class CalibratorTest(unittest.TestCase):
         return error
 
     def test_calibrate_viewport(self):
-        raw_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
-        cal_error = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
-                                           ["find", "feature", "fdetect",
-                                            "fextract", "fmatch"])
+        raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
+        cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
+                                                ["find", "feature", "fdetect",
+                                                 "fextract", "fmatch"])
 
-        self.assertLessEqual(cal_error, raw_error,
-                             "Match error after calibration must be "
-                             "less than the error before calibration")
+        self.assertLessEqual(raw_similarity, cal_similarity,
+                             "Match similarity before calibration must be "
+                             "less than the similarity after calibration")
 
     def test_calibrate_rotation(self):
-        raw_error = self.calibration_setUp('n_ibs', 'h_ibs_rotated', [])
-        cal_error = self.calibration_setUp('n_ibs', 'h_ibs_rotated',
-                                           ["find", "feature", "fdetect",
-                                            "fextract", "fmatch"])
+        raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated', [])
+        cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated',
+                                                ["find", "feature", "fdetect",
+                                                 "fextract", "fmatch"])
 
-        self.assertLessEqual(cal_error, raw_error,
-                             "Match error after calibration must be "
-                             "less than the error before calibration")
+        self.assertLessEqual(raw_similarity, cal_similarity,
+                             "Match similarity before calibration must be "
+                             "less than the similarity after calibration")
 
     def test_calibrate_scaling(self):
-        raw_error = self.calibration_setUp('n_ibs', 'h_ibs_scaled', [])
-        cal_error = self.calibration_setUp('n_ibs', 'h_ibs_scaled',
-                                           ["find", "feature", "fdetect",
-                                            "fextract", "fmatch"])
+        raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled', [])
+        cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled',
+                                                ["find", "feature", "fdetect",
+                                                 "fextract", "fmatch"])
 
-        self.assertLessEqual(cal_error, raw_error,
-                             "Match error after calibration must be "
-                             "less than the error before calibration")
+        self.assertLessEqual(raw_similarity, cal_similarity,
+                             "Match similarity before calibration must be "
+                             "less than the similarity after calibration")
 
     def test_benchmark_full_match(self):
         # TODO: check this test after improving the calibrator

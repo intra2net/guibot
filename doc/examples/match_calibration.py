@@ -87,14 +87,14 @@ finder.find(needle, haystack)
 
 # calibration and benchmarking
 calibrator = Calibrator()
-error_before = calibrator.calibrate(haystack, needle, finder, refinements=1)
+similarity_before = calibrator.calibrate(haystack, needle, finder, refinements=1)
 # categories to calibrate
 for category in ENABLED:
     finder.can_calibrate(category, True)
 # example parameter to solo allow for calibration:
 # finder.params["threshold2"]["blockSize"].fixed = False
-error_after = calibrator.calibrate(haystack, needle, finder, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
-logging.info("Error before and after calibration: %s -> %s", error_before, error_after)
+similarity_after = calibrator.calibrate(haystack, needle, finder, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
+logging.info("Similarity before and after calibration: %s -> %s", similarity_before, similarity_after)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
 results = calibrator.benchmark(haystack, needle, calibration=CALIBRATED_BENCHMARK)
 logging.info("Benchmarking results (method, similarity, location, time):\n%s",

@@ -126,7 +126,7 @@ class Calibrator(object):
         :type finder: :py:class:`finder.Finder`
         :param int refinements: maximal number of refinements
         :param float max_exec_time: maximum seconds for a matching attempt
-        :returns: minimized error (in terms of similarity)
+        :returns: maximized similarity
         :rtype: float
 
         This method calibrates only parameters that are not protected
@@ -164,11 +164,10 @@ class Calibrator(object):
         if "tempfeat" in finder.params.keys():
             finder.params["tempfeat"]["front_similarity"].value = 0.0
             finder.params["tempfeat"]["front_similarity"].fixed = True
-        best_params, error = self.twiddle(finder.params, run, refinements)
-        finder.params = best_params
+        error = self.twiddle(finder.params, run, refinements)
         ImageLogger.accumulate_logging = False
 
-        return error
+        return 1.0 - error
 
     def twiddle(self, params, run_function, max_attempts):
         """
@@ -182,14 +181,13 @@ class Calibrator(object):
         :param int max_attempts: maximal number of refinements to reach
                                  the parameter delta below the tolerance
         :returns: the configuration with the minimal error
-        :rtype: ({str, {str, :py:class:`finder.CVParameter`}}, float)
+        :rtype: float
 
         .. note:: Special credits for this approach should be given to Prof. Sebastian
             Thrun, who explained it in his Artificial Intelligence for Robotics class.
         """
-        best_params = copy.deepcopy(params)
         best_error = run_function(params)
-        log.log(9, "Start with error=%s for %s", best_error, best_params)
+        log.log(9, "Start with error=%s for %s", best_error, params)
 
         for n in range(max_attempts):
             log.info("Try %s\%s, best error %s", n+1, max_attempts, best_error)
@@ -247,7 +245,6 @@ class Calibrator(object):
                     log.log(9, "%s/%s: %s +> %s (delta: %s) = %s (best: %s)", category, key,
                             start_value, param.value, param.delta, error, best_error)
                     if error < best_error:
-                        best_params = copy.deepcopy(params)
                         best_error = error
                         param.delta *= 1.1
                     else:
@@ -274,7 +271,6 @@ class Calibrator(object):
                         log.log(9, "%s/%s: %s -> %s (delta: %s) = %s (best: %s)", category, key,
                                 start_value, param.value, param.delta, error, best_error)
                         if error < best_error:
-                            best_params = copy.deepcopy(params)
                             best_error = error
                             param.delta *= 1.1
                         else:
@@ -286,8 +282,8 @@ class Calibrator(object):
                 log.info("Exiting due to sufficient slowdown for all parameters")
                 break
 
-        log.log(9, "End with error=%s for %s", best_error, best_params)
-        return (best_params, best_error)
+        log.log(9, "End with error=%s for %s", best_error, params)
+        return best_error
 
     def _get_last_criteria(self, finder, total_time):
         if len(finder.imglog.similarities) > 0:
