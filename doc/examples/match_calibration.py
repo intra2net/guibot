@@ -96,7 +96,7 @@ for category in ENABLED:
 similarity_after = calibrator.calibrate(haystack, needle, finder, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity before and after calibration: %s -> %s", similarity_before, similarity_after)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
-similarity_global = calibrator.search(haystack, needle, finder, random_starts=100,
+similarity_global = calibrator.search(haystack, needle, finder, random_starts=100, uniform=False,
                                       calibration=True, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity after search (Monte Carlo calibration): %s -> %s", similarity_before, similarity_global)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))

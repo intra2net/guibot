@@ -113,7 +113,7 @@ class Calibrator(object):
         ImageLogger.accumulate_logging = False
         return sorted(results, key=lambda x: x[1], reverse=True)
 
-    def search(self, haystack, needle, finder, random_starts=1,
+    def search(self, haystack, needle, finder, random_starts=1, uniform=False,
                calibration=True, refinements=10, max_exec_time=0.5):
         """
         Search for the best match configuration for a given needle and haystack
@@ -126,11 +126,16 @@ class Calibrator(object):
         :param finder: CV backend to use in order to determine fixed and free params
         :type finder: :py:class:`finder.Finder`
         :param int random_starts: number of random starts to try with
+        :param bool uniform: whether to use uniform or normal distribution
         :param bool calibration: whether to use calibration
         :param int refinements: number of refinements allowed to improve calibration
         :param float max_exec_time: maximum seconds for a matching attempt
         :returns: maximized similarity
         :rtype: float
+
+        If normal distribution is used, the mean will be the current value of the
+        respective CV parameter and the standard variation will be determined from
+        its delta.
         """
         def run(params):
             finder.params = params
@@ -167,7 +172,9 @@ class Calibrator(object):
                     if not isinstance(param, CVParameter):
                         continue
                     if not param.fixed:
-                        param.value = param.random_value()
+                        mean = None if uniform else param.value
+                        deviation = None if uniform else param.delta
+                        param.value = param.random_value(mean, deviation)
                         log.debug("Setting %s/%s to random value=%s", category, key, param.value)
 
             finder.params = params

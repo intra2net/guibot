@@ -113,21 +113,38 @@ class CVParameter(object):
         log.log(9, "%s", args)
         return CVParameter(*args)
 
-    def random_value(self):
+    def random_value(self, mu=None, sigma=None):
         """
         Return a random value of the CV parameter given its range and type.
 
+        :param mu: mean for a normal distribution, uniform distribution if None
+        :type mu: bool or int or float or str or None
+        :param sigma: standard deviation for a normal distribution, quarter range if None
+                      (maximal range is equivalent to maximal data type values)
+        :type sigma: bool or int or float or str or None
         :returns: a random value comforming to the CV parameter range and type
         :rtype: bool or int or float or str or None
+
+        .. note:: Only uniform distribution is used for boolean values.
         """
         if type(self.value) == float:
             start = self.range[0] if self.range[0] is not None else -sys.float_info.max
             end = self.range[1] if self.range[1] is not None else sys.float_info.max
-            return random.uniform(start, end)
+            if mu is None:
+                return random.uniform(start, end)
+            elif sigma is None:
+                return min(max(random.gauss(mu, (start-end)/4), start), end)
+            else:
+                return min(max(random.gauss(mu, sigma), start), end)
         elif type(self.value) == int:
             start = self.range[0] if self.range[0] is not None else -sys.maxint
             end = self.range[1] if self.range[1] is not None else sys.maxint
-            return random.randint(start, end)
+            if mu is None:
+                return random.randint(start, end)
+            elif sigma is None:
+                return min(max(int(random.gauss(mu, (start-end)/4)), start), end)
+            else:
+                return min(max(int(random.gauss(mu, sigma)), start), end)
         elif type(self.value) == bool:
             value = random.randint(0, 1)
             return value == 1
