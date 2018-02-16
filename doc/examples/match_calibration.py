@@ -32,10 +32,13 @@ NEEDLE = 'n_ibs'
 HAYSTACK = 'h_ibs_viewport'
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
-CALIBRATED_BENCHMARK = False
 ENABLED = ["fdetect", "fextract", "fmatch"]
-REFINEMENTS=10
+MAX_ATTEMPTS=10
 MAX_EXEC_TIME=1.0
+RANDOM_STARTS=10
+UNIFORM_DRAW=False
+CALIBRATED_SEARCH = False
+CALIBRATED_BENCHMARK = False
 
 
 # minimal setup
@@ -86,21 +89,22 @@ finder.find(needle, haystack)
 
 
 # calibration, searching, and benchmarking
-calibrator = Calibrator()
-similarity_before = calibrator.calibrate(haystack, needle, finder, refinements=1)
+calibrator = Calibrator(needle, haystack)
+calibrator.run = calibrator.run_performance
+similarity_before = calibrator.calibrate(finder, max_attempts=1)
 # categories to calibrate
 for category in ENABLED:
     finder.can_calibrate(category, True)
 # example parameter to solo allow for calibration:
 # finder.params["threshold2"]["blockSize"].fixed = False
-similarity_after = calibrator.calibrate(haystack, needle, finder, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
+similarity_after = calibrator.calibrate(finder, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity before and after calibration: %s -> %s", similarity_before, similarity_after)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
-similarity_global = calibrator.search(haystack, needle, finder, random_starts=100, uniform=False,
-                                      calibration=True, refinements=REFINEMENTS, max_exec_time=MAX_EXEC_TIME)
+similarity_global = calibrator.search(finder, random_starts=RANDOM_STARTS, uniform=UNIFORM_DRAW,
+                                      calibration=CALIBRATED_SEARCH, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity after search (Monte Carlo calibration): %s -> %s", similarity_before, similarity_global)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
-results = calibrator.benchmark(haystack, needle, calibration=CALIBRATED_BENCHMARK)
+results = calibrator.benchmark(calibration=CALIBRATED_BENCHMARK, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Benchmarking results (method, similarity, location, time):\n%s",
              "\n".join([str(r) for r in results]))
 

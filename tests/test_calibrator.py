@@ -39,13 +39,12 @@ class CalibratorTest(unittest.TestCase):
         finder.configure()
         for category in calibrate_backends:
             finder.can_calibrate(category, True)
-        calibrator = Calibrator()
 
         haystack = Image(haystack)
         needle = Image(needle)
+        calibrator = Calibrator(needle, haystack)
 
-        error = calibrator.calibrate(haystack, needle, finder)
-        # print os.path.basename(needle.filename), os.path.basename(haystack.filename), error
+        error = calibrator.calibrate(finder)
         return error
 
     def test_calibrate_viewport(self):
@@ -83,9 +82,9 @@ class CalibratorTest(unittest.TestCase):
         return
         haystack = Image('all_shapes')
         needle = Image('all_shapes')
-        calibrator = Calibrator()
+        calibrator = Calibrator(needle, haystack)
 
-        results = calibrator.benchmark(haystack, needle, calibration=False)
+        results = calibrator.benchmark(calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
@@ -100,9 +99,9 @@ class CalibratorTest(unittest.TestCase):
     def test_benchmark_feature_poor_image(self):
         haystack = Image('all_shapes')
         needle = Image('shape_blue_circle')
-        calibrator = Calibrator()
+        calibrator = Calibrator(needle, haystack)
 
-        results = calibrator.benchmark(haystack, needle, calibration=False)
+        results = calibrator.benchmark(calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the blue circle")
@@ -114,9 +113,9 @@ class CalibratorTest(unittest.TestCase):
     def test_benchmark_viewport_image(self):
         haystack = Image('h_ibs_viewport')
         needle = Image('n_ibs')
-        calibrator = Calibrator()
+        calibrator = Calibrator(needle, haystack)
 
-        results = calibrator.benchmark(haystack, needle, calibration=False)
+        results = calibrator.benchmark(calibration=False)
         # pprint.pprint(results)
         self.assertGreater(len(results), 0, "The benchmarked methods "
                            "should be more than one for the viewported image")

@@ -37,17 +37,28 @@ class Calibrator(object):
     multiple random starts from a uniform or normal probability distribution.
     """
 
-    def benchmark(self, haystack, needle, calibration=True, refinements=10):
+    def __init__(self, needle, haystack):
         """
-        Perform benchmarking on all available algorithms of a finder
-        for a given needle and haystack.
+        Build a calibrator object for a given match case.
 
         :param haystack: image to look in
         :type haystack: :py:class:`target.Image`
         :param needle: target to look for
         :type needle: :py:class:`target.Target`
+        """
+        self.needle = needle
+        self.haystack = haystack
+
+        # this attribute can be changed to use different run function
+        self.run = self.run_default
+
+    def benchmark(self, calibration=True, max_attempts=10, **kwargs):
+        """
+        Perform benchmarking on all available algorithms of a finder
+        for a given needle and haystack.
+
         :param bool calibration: whether to use calibration
-        :param int refinements: number of refinements allowed to improve calibration
+        :param int max_attempts: number of refinements allowed to improve calibration
         :returns: list of (method, similarity, location, time) tuples sorted according to similarity
         :rtype: [(str, float, :py:class:`location.Location`, float)]
 
@@ -62,9 +73,10 @@ class Calibrator(object):
             for a given `needle` and `haystack`.
         .. todo:: The calibrator is currently implemented only for the template/feature matchers.
         """
+        needle, haystack = self.needle, self.haystack
         results = []
-        log.info("Performing benchmarking %s calibration and %s refinements",
-                 "with" if calibration else "without", refinements)
+        log.info("Performing benchmarking %s calibration",
+                 "with" if calibration else "without")
         # block logging since we need all its info after the matching finishes
         ImageLogger.accumulate_logging = True
 
@@ -100,8 +112,7 @@ class Calibrator(object):
 
                     finder2.configure(key_fd, key_fe, key_fm)
                     if calibration:
-                        self.calibrate(haystack, needle, finder2,
-                                       refinements=refinements)
+                        self.calibrate(finder2, max_attempts=max_attempts, **kwargs)
 
                     start_time = time.time()
                     finder2.find(needle, haystack)
@@ -113,23 +124,20 @@ class Calibrator(object):
         ImageLogger.accumulate_logging = False
         return sorted(results, key=lambda x: x[1], reverse=True)
 
-    def search(self, haystack, needle, finder, random_starts=1, uniform=False,
-               calibration=True, refinements=10, max_exec_time=0.5):
+    def search(self, finder, random_starts=1, uniform=False,
+               calibration=True, max_attempts=10, **kwargs):
         """
         Search for the best match configuration for a given needle and haystack
         using calibration from random initial conditions.
 
-        :param haystack: image to look in
-        :type haystack: :py:class:`target.Image`
-        :param needle: target to look for
-        :type needle: :py:class:`target.Target`
-        :param finder: CV backend to use in order to determine fixed and free params
+        :param finder: CV backend to use in order to determine deltas, fixed, and free
+                       parameters and ultimately tweak to minimize error
         :type finder: :py:class:`finder.Finder`
         :param int random_starts: number of random starts to try with
         :param bool uniform: whether to use uniform or normal distribution
         :param bool calibration: whether to use calibration
-        :param int refinements: number of refinements allowed to improve calibration
-        :param float max_exec_time: maximum seconds for a matching attempt
+        :param int max_attempts: maximal number of refinements to reach
+                                 the parameter delta below the tolerance
         :returns: maximized similarity
         :rtype: float
 
@@ -137,30 +145,10 @@ class Calibrator(object):
         respective CV parameter and the standard variation will be determined from
         its delta.
         """
-        def run(params):
-            finder.params = params
-
-            start_time = time.time()
-            try:
-                matches = finder.find(needle, haystack)
-                # pick similarity of the best match as representative
-                similarity = matches[0].similarity
-            except:
-                log.warn("No match was found at this step (due to internal error or other)")
-                similarity = 0.0
-            total_time = time.time() - start_time
-            finder.imglog.clear()
-
-            # main penalty for bad quality of matching
-            error = 1.0 - similarity
-            # extra penalty for slow solutions
-            error += max(total_time - max_exec_time, 0)
-            return error
-
         self._prepare_params(finder)
         # block logging for performance speedup
         ImageLogger.accumulate_logging = True
-        best_error = self.run(finder, kwargs)
+        best_error = self.run(finder, **kwargs)
         best_params = init_params = finder.params
         for i in range(random_starts):
             log.info("Random run %s\%s, best error %s", i+1, random_starts, best_error)
@@ -179,10 +167,9 @@ class Calibrator(object):
 
             finder.params = params
             if calibration:
-                error = 1.0 - self.calibrate(haystack, needle, finder,
-                                             refinements=refinements, max_exec_time=max_exec_time)
+                error = 1.0 - self.calibrate(finder, max_attempts=max_attempts, **kwargs)
             else:
-                error = run(params)
+                error = self.run(finder, **kwargs)
 
             if error < best_error:
                 log.info("Random start ended with smaller error %s < %s", error, best_error)
@@ -197,20 +184,15 @@ class Calibrator(object):
         finder.params = best_params
         return 1.0 - best_error
 
-    def calibrate(self, haystack, needle, finder,
-                  refinements=10, max_exec_time=0.5):
+    def calibrate(self, finder, max_attempts=10, **kwargs):
         """
-        Calibrate the available parameters (configuration or equalizer) of
-        an image finder for a given needle and haystack.
+        Calibrate the available match configuration for a given needle
+        and haystack minimizing the matchign error.
 
-        :param haystack: image to look in
-        :type haystack: :py:class:`target.Image`
-        :param needle: target to look for
-        :type needle: :py:class:`target.Target`
-        :param finder: CV backend to calibrate
+        :param finder: configuration for the CV backend to calibrate
         :type finder: :py:class:`finder.Finder`
-        :param int refinements: maximal number of refinements
-        :param float max_exec_time: maximum seconds for a matching attempt
+        :param int max_attempts: maximal number of refinements to reach
+                                 the parameter delta below the tolerance
         :returns: maximized similarity
         :rtype: float
 
@@ -218,57 +200,20 @@ class Calibrator(object):
         from calibration, i.e. that have `fixed` attribute set to false.
         In order to set all parameters of a background algorithm for calibration
         use the :py:func:`finder.Finder.can_calibrate` method first.
+        Any parameter values will only be changed if they improve the similarity,
+        i.e. minimize the error.
 
         .. note:: All similarity parameters will be reset to 0.0 after calibration
             and can be set by client code afterwards.
-        """
-        def run(params):
-            finder.params = params
-
-            start_time = time.time()
-            try:
-                matches = finder.find(needle, haystack)
-                # pick similarity of the best match as representative
-                similarity = matches[0].similarity
-            except:
-                log.warn("No match was found at this step (due to internal error or other)")
-                similarity = 0.0
-            total_time = time.time() - start_time
-            finder.imglog.clear()
-
-            # main penalty for bad quality of matching
-            error = 1.0 - similarity
-            # extra penalty for slow solutions
-            error += max(total_time - max_exec_time, 0)
-            return error
-
-        self._prepare_params(finder)
-        # block logging for performance speedup
-        ImageLogger.accumulate_logging = True
-        error = self.twiddle(finder.params, run, refinements)
-        ImageLogger.accumulate_logging = False
-
-        return 1.0 - error
-
-    def twiddle(self, params, run_function, max_attempts):
-        """
-        Optimize a set of parameters for a minimal matching error.
-
-        :param params: configuration for the CV backend
-        :type params: {str, {str, :py:class:`finder.CVParameter`}}
-        :param run_function: a function that accepts a list of tested parameters
-                             and returns the error that should be minimized
-        :type run_function: function
-        :param int max_attempts: maximal number of refinements to reach
-                                 the parameter delta below the tolerance
-        :returns: the configuration with the minimal error
-        :rtype: float
 
         .. note:: Special credits for this approach should be given to Prof. Sebastian
             Thrun, who explained it in his Artificial Intelligence for Robotics class.
         """
-        best_error = run_function(params)
-        log.log(9, "Start with error=%s for %s", best_error, params)
+        self._prepare_params(finder)
+        # block logging for performance speedup
+        ImageLogger.accumulate_logging = True
+        best_error = self.run(finder, **kwargs)
+        log.log(9, "Start with error=%s for %s", best_error, finder.params)
 
         for n in range(max_attempts):
             log.info("Try %s\%s, best error %s", n+1, max_attempts, best_error)
@@ -278,9 +223,9 @@ class Calibrator(object):
                 break
 
             slowdown_flag = True
-            for category in params.keys():
-                for key in params[category].keys():
-                    param = params[category][key]
+            for category in finder.params.keys():
+                for key in finder.params[category].keys():
+                    param = finder.params[category][key]
                     if key == "backend":
                         continue
                     elif not isinstance(param, CVParameter):
@@ -322,7 +267,7 @@ class Calibrator(object):
                     else:
                         continue
 
-                    error = run_function(params)
+                    error = self.run(finder, **kwargs)
                     log.log(9, "%s/%s: %s +> %s (delta: %s) = %s (best: %s)", category, key,
                             start_value, param.value, param.delta, error, best_error)
                     if error < best_error:
@@ -348,7 +293,7 @@ class Calibrator(object):
                             param.value = start_value
                             continue
 
-                        error = run_function(params)
+                        error = self.run(finder, **kwargs)
                         log.log(9, "%s/%s: %s -> %s (delta: %s) = %s (best: %s)", category, key,
                                 start_value, param.value, param.delta, error, best_error)
                         if error < best_error:
@@ -363,8 +308,60 @@ class Calibrator(object):
                 log.info("Exiting due to sufficient slowdown for all parameters")
                 break
 
-        log.log(9, "End with error=%s for %s", best_error, params)
-        return best_error
+        ImageLogger.accumulate_logging = False
+        log.log(9, "End with error=%s for %s", best_error, finder.params)
+        return 1.0 - best_error
+
+    def run_default(self, finder, **_kwargs):
+        """
+        Run a match case and return error from the match as dissimilarity.
+
+        :param finder: finder with match configuration to use for the run
+        :type finder: :py:class:`finder.Finder`
+        :returns: error obtained as unity minus similarity
+        :rtype: float
+        """
+        try:
+            matches = finder.find(self.needle, self.haystack)
+            # pick similarity of the best match as representative
+            similarity = matches[0].similarity
+        except:
+            log.warn("No match was found at this step (due to internal error or other)")
+            similarity = 0.0
+        finder.imglog.clear()
+
+        error = 1.0 - similarity
+        return error
+
+    def run_performance(self, finder, **kwargs):
+        """
+        Run a match case and return error from the match as dissimilarity
+        and linear performance penalty.
+
+        :param finder: finder with match configuration to use for the run
+        :type finder: :py:class:`finder.Finder`
+        :param float max_exec_time: maximum execution time before penalizing
+                                    the run by increasing the error linearly
+        :returns: error obtained as unity minus similarity
+        :rtype: float
+        """
+        max_exec_time = kwargs.get("max_exec_time", 1.0)
+        start_time = time.time()
+        try:
+            matches = finder.find(self.needle, self.haystack)
+            # pick similarity of the best match as representative
+            similarity = matches[0].similarity
+        except:
+            log.warn("No match was found at this step (due to internal error or other)")
+            similarity = 0.0
+        total_time = time.time() - start_time
+        finder.imglog.clear()
+
+        # main penalty for bad quality of matching
+        error = 1.0 - similarity
+        # extra penalty for slow solutions
+        error += max(total_time - max_exec_time, 0)
+        return error
 
     def _prepare_params(self, finder):
         # any similarity parameters will be reset to 0.0 to search optimally
