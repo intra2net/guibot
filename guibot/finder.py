@@ -48,12 +48,18 @@ class CVParameter(object):
         :type min_val: int or float or None
         :param max_val: upper boundary for the parameter range
         :type max_val: int or float or None
-        :param float delta: delta for the calibration
+        :param float delta: delta for the calibration and random value
                             (no calibration if `delta` < `tolerance`)
         :param float tolerance: tolerance of calibration
         :param bool fixed: whether the parameter is prevented from calibration
         :param bool enumerated: whether the parameter value belongs to an
                                 enumeration or to a range (distance matters)
+
+        As a rule of thumb a good choice for the parameter delta is one fourth
+        of the range since the delta will be used as standard deviation when
+        generating a random value for the parameter from a normal distribution.
+        The delta to tolerance ratio is basically the number of failing trials
+        before the parameter converges and is usually set to ten.
         """
         self.value = value
 
@@ -562,36 +568,36 @@ class ContourFinder(Finder):
 
         if category == "contour":
             # 1 RETR_EXTERNAL, 2 RETR_LIST, 3 RETR_CCOMP, 4 RETR_TREE
-            self.params[category]["retrievalMode"] = CVParameter(2, 1, 4)
+            self.params[category]["retrievalMode"] = CVParameter(2, 1, 4, enumerated=True)
             # 1 CHAIN_APPROX_NONE, 2 CHAIN_APPROX_SIMPLE, 3 CHAIN_APPROX_TC89_L1, 4 CHAIN_APPROX_TC89_KCOS
-            self.params[category]["approxMethod"] = CVParameter(2, 1, 4)
-            self.params[category]["minArea"] = CVParameter(0, 0, None)
+            self.params[category]["approxMethod"] = CVParameter(2, 1, 4, enumerated=True)
+            self.params[category]["minArea"] = CVParameter(0, 0, None, 100.0)
             # 1 L1 method, 2 L2 method, 3 L3 method
-            self.params[category]["contoursMatch"] = CVParameter(1, 1, 3)
+            self.params[category]["contoursMatch"] = CVParameter(1, 1, 3, enumerated=True)
         elif category == "threshold":
             # 1 normal, 2 median, 3 gaussian, 4 none
-            self.params[category]["blurType"] = CVParameter(4, 1, 4)
-            self.params[category]["blurKernelSize"] = CVParameter(5, 1, None)
-            self.params[category]["blurKernelSigma"] = CVParameter(0, 0, None)
+            self.params[category]["blurType"] = CVParameter(4, 1, 4, enumerated=True)
+            self.params[category]["blurKernelSize"] = CVParameter(5, 1, None, 100.0)
+            self.params[category]["blurKernelSigma"] = CVParameter(0, 0, None, 100.0)
             if backend == "normal":
                 # value of the threshold since it is nonadaptive and fixed
-                self.params[category]["thresholdValue"] = CVParameter(122, 0, 255)
-                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
+                self.params[category]["thresholdValue"] = CVParameter(122, 0, 255, 50.0)
+                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255, 20.0)
                 # 0 binary, 1 binar_inv, 2 trunc, 3 tozero, 4 tozero_inv, 5 mask, 6 otsu, 7 triangle
-                self.params[category]["thresholdType"] = CVParameter(1, 0, 7)
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 7, enumerated=True)
             elif backend == "adaptive":
-                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
+                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255, 20.0)
                 # 0 adaptive mean threshold, 1 adaptive gaussian (weighted mean) threshold
-                self.params[category]["adaptiveMethod"] = CVParameter(1, 0, 1)
+                self.params[category]["adaptiveMethod"] = CVParameter(1, 0, 1, enumerated=True)
                 # 0 normal, 1 inverted
-                self.params[category]["thresholdType"] = CVParameter(1, 0, 1)
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 1, enumerated=True)
                 # size of the neighborhood to consider to adaptive thresholding
-                self.params[category]["blockSize"] = CVParameter(11, 3, None, 20, 2)
+                self.params[category]["blockSize"] = CVParameter(11, 3, None, 200.0, 2.0)
                 # constant to substract from the (weighted) calculated mean
-                self.params[category]["constant"] = CVParameter(2, 1, None)
+                self.params[category]["constant"] = CVParameter(2, -255, 255, 1.0)
             elif backend == "canny":
-                self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None)
-                self.params[category]["threshold2"] = CVParameter(1000.0, 0.0, None)
+                self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None, 50.0)
+                self.params[category]["threshold2"] = CVParameter(1000.0, 0.0, None, 500.0)
 
     def configure_backend(self, backend=None, category="contour", reset=False):
         """
@@ -1054,15 +1060,15 @@ class FeatureFinder(Finder):
 
         if category == "feature":
             # 0 for homography, 1 for fundamental matrix
-            self.params[category]["projectionMethod"] = CVParameter(0, 0, 1)
-            self.params[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 10.0, 1.0)
+            self.params[category]["projectionMethod"] = CVParameter(0, 0, 1, enumerated=True)
+            self.params[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 50.0)
             self.params[category]["minDetectedFeatures"] = CVParameter(4, 1, None)
             self.params[category]["minMatchedFeatures"] = CVParameter(4, 1, None)
             # 0 for matched/detected ratio, 1 for projected/matched ratio
-            self.params[category]["similarityRatio"] = CVParameter(1, 0, 1)
+            self.params[category]["similarityRatio"] = CVParameter(1, 0, 1, enumerated=True)
         elif category == "fdetect":
-            self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 0.1)
-            self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 0.1)
+            self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 2.5)
+            self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 2.5)
 
             import cv2
             feature_detector_create = getattr(cv2, "%s_create" % backend)
@@ -1078,10 +1084,10 @@ class FeatureFinder(Finder):
                 self.params[category]["refinements"] = CVParameter(50, 1, None)
                 self.params[category]["recalc_interval"] = CVParameter(10, 1, None)
                 self.params[category]["variants_k"] = CVParameter(100, 1, None)
-                self.params[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0)
+                self.params[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0, 0.25)
                 return
             else:
-                self.params[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1, 0.01)
+                self.params[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.25, 0.01)
                 self.params[category]["ratioTest"] = CVParameter(False)
                 self.params[category]["symmetryTest"] = CVParameter(False)
 
@@ -1114,13 +1120,15 @@ class FeatureFinder(Finder):
 
                 # give more information about some better known parameters
                 if category in ("fdetect", "fextract") and param == "FirstLevel":
-                    self.params[category][param] = CVParameter(val, 0, 100)
+                    self.params[category][param] = CVParameter(val, 0, 100, 25)
                 elif category in ("fdetect", "fextract") and param == "MaxFeatures":
-                    self.params[category][param] = CVParameter(val, delta=10, tolerance=1)
+                    self.params[category][param] = CVParameter(val, 0, None, 100.0)
                 elif category in ("fdetect", "fextract") and param == "WTA_K":
-                    self.params[category][param] = CVParameter(val, 2, 4)
+                    self.params[category][param] = CVParameter(val, 2, 4, 1.0)
                 elif category in ("fdetect", "fextract") and param == "ScaleFactor":
-                    self.params[category][param] = CVParameter(val, 1.01, 2.0)
+                    self.params[category][param] = CVParameter(val, 1.01, 2.0, 0.25, 0.05)
+                elif category in ("fdetect", "fextract") and param == "NLevels":
+                    self.params[category][param] = CVParameter(val, 1, 100, 25, 0.5)
                 else:
                     self.params[category][param] = CVParameter(val)
                 log.log(9, "%s=%s", param, val)
@@ -1653,12 +1661,12 @@ class CascadeFinder(Finder):
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
-        self.params[category]["scaleFactor"] = CVParameter(1.1)
-        self.params[category]["minNeighbors"] = CVParameter(3, 0, None)
-        self.params[category]["minWidth"] = CVParameter(0, 0, None)
-        self.params[category]["maxWidth"] = CVParameter(1000, 0, None)
-        self.params[category]["minHeight"] = CVParameter(0, 0, None)
-        self.params[category]["maxHeight"] = CVParameter(1000, 0, None)
+        self.params[category]["scaleFactor"] = CVParameter(1.1, 0.0, None, 0.1)
+        self.params[category]["minNeighbors"] = CVParameter(3, 0, None, 1.0)
+        self.params[category]["minWidth"] = CVParameter(0, 0, None, 100.0)
+        self.params[category]["maxWidth"] = CVParameter(1000, 0, None, 100.0)
+        self.params[category]["minHeight"] = CVParameter(0, 0, None, 100.0)
+        self.params[category]["maxHeight"] = CVParameter(1000, 0, None, 100.0)
 
     def configure_backend(self, backend=None, category="cascade", reset=False):
         """
@@ -1799,28 +1807,30 @@ class TextFinder(ContourFinder):
             self.params[category]["datapath"] = CVParameter("misc")
         elif category == "tdetect":
             if backend == "erstat":
-                self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255)
-                self.params[category]["minArea"] = CVParameter(0.00025, 0.0, 1.0)
-                self.params[category]["maxArea"] = CVParameter(0.13, 0.0, 1.0)
-                self.params[category]["minProbability"] = CVParameter(0.4, 0.0, 1.0)
+                self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255, 50.0)
+                self.params[category]["minArea"] = CVParameter(0.00025, 0.0, 1.0, 0.25, 0.001)
+                self.params[category]["maxArea"] = CVParameter(0.13, 0.0, 1.0, 0.25, 0.001)
+                self.params[category]["minProbability"] = CVParameter(0.4, 0.0, 1.0, 0.25, 0.01)
                 self.params[category]["nonMaxSuppression"] = CVParameter(True)
-                self.params[category]["minProbabilityDiff"] = CVParameter(0.1, 0.0, 1.0)
-                self.params[category]["minProbability2"] = CVParameter(0.3, 0.0, 1.0)
+                self.params[category]["minProbabilityDiff"] = CVParameter(0.1, 0.0, 1.0, 0.25, 0.01)
+                self.params[category]["minProbability2"] = CVParameter(0.3, 0.0, 1.0, 0.25, 0.01)
             elif backend == "contours":
-                self.params[category]["maxArea"] = CVParameter(10000, 0, None)
-                self.params[category]["minWidth"] = CVParameter(1, 0, None)
-                self.params[category]["maxWidth"] = CVParameter(100, 0, None)
-                self.params[category]["minHeight"] = CVParameter(1, 0, None)
-                self.params[category]["maxHeight"] = CVParameter(100, 0, None)
-                self.params[category]["minAspectRatio"] = CVParameter(0.1, 0.0, None)
-                self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None)
-                self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None)
-                self.params[category]["verticalVariance"] = CVParameter(10, 0, None)
+                self.params[category]["maxArea"] = CVParameter(10000, 0, None, 1000.0, 10.0)
+                self.params[category]["minWidth"] = CVParameter(1, 0, None, 100.0)
+                self.params[category]["maxWidth"] = CVParameter(100, 0, None, 100.0)
+                self.params[category]["minHeight"] = CVParameter(1, 0, None, 100.0)
+                self.params[category]["maxHeight"] = CVParameter(100, 0, None, 100.0)
+                self.params[category]["minAspectRatio"] = CVParameter(0.1, 0.0, None, 10.0)
+                self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None, 10.0)
+                self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None, 10.0)
+                self.params[category]["verticalVariance"] = CVParameter(10, 0, None, 10.0)
                 # 0 horizontal, 1 vertical
-                self.params[category]["orientation"] = CVParameter(0, 0, 1)
-                self.params[category]["minChars"] = CVParameter(3, 0, None)
+                self.params[category]["orientation"] = CVParameter(0, 0, 1, enumerated=True)
+                self.params[category]["minChars"] = CVParameter(3, 0, None, 2.0)
             elif backend == "components":
-                self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4, 4)
+                # with equal delta and tolerance we ensure that only one failure will be
+                # allowed and no intermediary values between 4 and 8 will be selected
+                self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4.0, 4.0)
         elif category == "ocr":
             if backend == "tesseract":
                 # eng, deu, etc. (ISO 639-3)
@@ -1828,40 +1838,40 @@ class TextFinder(ContourFinder):
                 self.params[category]["char_whitelist"] = CVParameter("0123456789abcdefghijklmnopqrst"
                                                                       "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
                 # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
-                self.params[category]["oem"] = CVParameter(3, 0, 3)
+                self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
                 # 13 different page segmentation modes - see Tesseract API
-                self.params[category]["psmode"] = CVParameter(3, 0, 13)
+                self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
-                self.params[category]["component_level"] = CVParameter(1, 0, 1)
+                self.params[category]["component_level"] = CVParameter(1, 0, 1, enumerated=True)
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(False)
             elif backend == "hmm":
                 # 1 NM 2 CNN as classifiers for hidden markov models (see OpenCV documentation)
-                self.params[category]["classifier"] = CVParameter(1, 1, 2)
+                self.params[category]["classifier"] = CVParameter(1, 1, 2, enumerated=True)
                 # 0 OCR_LEVEL_WORD
-                self.params[category]["component_level"] = CVParameter(0, 0, 0)
+                self.params[category]["component_level"] = CVParameter(0, 0, 1, enumerated=True)
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(True)
             else:
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(True)
-            self.params[category]["min_confidence"] = CVParameter(0, 0, 100)
+            self.params[category]["min_confidence"] = CVParameter(0, 0, 100, 25.0)
             # zoom factor for improved OCR processing due to higher resolution
-            self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, None)
+            self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, 100.0, 25.0)
             # border size to wrap around text field to improve recognition rate
-            self.params[category]["border_size"] = CVParameter(10, 0, None)
+            self.params[category]["border_size"] = CVParameter(10, 0, 100, 25.0)
             # 0 erode, 1 dilate, 2 both, 3 none
-            self.params[category]["erode_dilate"] = CVParameter(3, 0, 3)
+            self.params[category]["erode_dilate"] = CVParameter(3, 0, 3, enumerated=True)
             # 0 MORPH_RECT, 1 MORPH_ELLIPSE, 2 MORPH_CROSS
-            self.params[category]["ed_kernel_type"] = CVParameter(0, 0, 2)
-            self.params[category]["ed_kernel_width"] = CVParameter(1, 0, 2)
-            self.params[category]["ed_kernel_height"] = CVParameter(1, 0, 2)
+            self.params[category]["ed_kernel_type"] = CVParameter(0, 0, 2, enumerated=True)
+            self.params[category]["ed_kernel_width"] = CVParameter(1, 1, 1000, 250.0, 2.0)
+            self.params[category]["ed_kernel_height"] = CVParameter(1, 1, 1000, 250.0, 2.0)
             # perform distance transform if ture or not if false
             self.params[category]["distance_transform"] = CVParameter(False)
             # 1 CV_DIST_L1, 2 CV_DIST_L2, 3 CV_DIST_C
-            self.params[category]["dt_distance_type"] = CVParameter(1, 1, 3)
+            self.params[category]["dt_distance_type"] = CVParameter(1, 1, 3, enumerated=True)
             # 0 (precise) or 3x3 or 5x5 (the latest only works with Euclidean distance CV_DIST_L2)
-            self.params[category]["dt_mask_size"] = CVParameter(3, 0, 5)
+            self.params[category]["dt_mask_size"] = CVParameter(3, 0, 5, 8.0, 2.0)
 
     def configure_backend(self, backend=None, category="text", reset=False):
         """
