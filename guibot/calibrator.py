@@ -252,20 +252,37 @@ class Calibrator(object):
                                               param.range[1])
                         else:
                             param.value = start_value + param.delta
-                    elif type(param.value) == int:
+                    elif type(param.value) == int and not param.enumerated:
                         intdelta = int(math.ceil(param.delta))
                         if param.range[1] != None:
                             param.value = min(start_value + intdelta,
                                               param.range[1])
                         else:
                             param.value = start_value + intdelta
+                    # remaining types require special handling
+                    elif type(param.value) == int and param.enumerated:
+                        delta_coeff = 0.9
+                        for mode in xrange(*param.range):
+                            if start_value == mode:
+                                continue
+                            param.value = mode
+                            error = self.run(finder, **kwargs)
+                            log.log(9, "%s/%s: %s +> %s (delta: %s) = %s (best: %s)", category, key,
+                                    start_value, param.value, param.delta, error, best_error)
+                            if error < best_error:
+                                best_error = error
+                                param.value = mode
+                                delta_coeff = 1.1
+                        param.delta *= delta_coeff
+                        continue
                     elif type(param.value) == bool:
                         if param.value:
                             param.value = False
                         else:
                             param.value = True
                     else:
-                        continue
+                        raise ValueError("Parameter %s/%s is of unsupported type %s",
+                                         category, key, type(param.value))
 
                     error = self.run(finder, **kwargs)
                     log.log(9, "%s/%s: %s +> %s (delta: %s) = %s (best: %s)", category, key,

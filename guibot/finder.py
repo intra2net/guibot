@@ -38,7 +38,7 @@ class CVParameter(object):
     def __init__(self, value,
                  min_val=None, max_val=None,
                  delta=10.0, tolerance=1.0,
-                 fixed=True):
+                 fixed=True, enumerated=False):
         """
         Build a computer vision parameter.
 
@@ -52,6 +52,8 @@ class CVParameter(object):
                             (no calibration if `delta` < `tolerance`)
         :param float tolerance: tolerance of calibration
         :param bool fixed: whether the parameter is prevented from calibration
+        :param bool enumerated: whether the parameter value belongs to an
+                                enumeration or to a range (distance matters)
         """
         self.value = value
 
@@ -60,14 +62,28 @@ class CVParameter(object):
         self.tolerance = tolerance
 
         # variation allowance range
+        self.min_val = min_val
         if min_val is not None:
             assert value >= min_val
+        elif type(self.value) == float:
+            min_val = -sys.float_info.max
+        elif type(self.value) == int:
+            min_val = -sys.maxint
+        self.max_val = max_val
         if max_val is not None:
             assert value <= max_val
+        elif type(self.value) == float:
+            max_val = sys.float_info.max
+        elif type(self.value) == int:
+            max_val = sys.maxint
         self.range = (min_val, max_val)
 
         # fixed or allowed to be calibrated
         self.fixed = fixed
+        # enumerable (e.g. modes) or range value
+        self.enumerated = enumerated
+        if self.enumerated and (self.min_val is None or self.max_val is None):
+            raise ValueError("Enumerated parameters must have a finite (usually small) range")
 
     def __repr__(self):
         """
@@ -76,8 +92,8 @@ class CVParameter(object):
         :returns: special syntax representation of the parameter
         :rtype: str
         """
-        return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s'>"
-                % (self.value, self.range[0], self.range[1], self.delta, self.tolerance, self.fixed))
+        return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s' enumerated='%s'>"
+                % (self.value, self.min_val, self.max_val, self.delta, self.tolerance, self.fixed, self.enumerated))
 
     @staticmethod
     def from_string(raw):
@@ -91,7 +107,7 @@ class CVParameter(object):
         """
         args = []
         string_args = re.match(r"<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
-                               r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
+                               r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)' enumerated='(\w+)'>",
                                raw).group(1, 2, 3, 4, 5, 6)
         for arg in string_args:
             if arg == "None":
@@ -127,19 +143,16 @@ class CVParameter(object):
 
         .. note:: Only uniform distribution is used for boolean values.
         """
+        start, end = self.range[0], self.range[1]
         if type(self.value) == float:
-            start = self.range[0] if self.range[0] is not None else -sys.float_info.max
-            end = self.range[1] if self.range[1] is not None else sys.float_info.max
-            if mu is None:
-                return random.uniform(start, end)
+            if mu is None or self.enumerated:
+                return random.uniform(self.range[0], self.range[1])
             elif sigma is None:
                 return min(max(random.gauss(mu, (start-end)/4), start), end)
             else:
                 return min(max(random.gauss(mu, sigma), start), end)
         elif type(self.value) == int:
-            start = self.range[0] if self.range[0] is not None else -sys.maxint
-            end = self.range[1] if self.range[1] is not None else sys.maxint
-            if mu is None:
+            if mu is None or self.enumerated:
                 return random.randint(start, end)
             elif sigma is None:
                 return min(max(int(random.gauss(mu, (start-end)/4)), start), end)
