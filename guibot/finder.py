@@ -667,7 +667,7 @@ class ContourFinder(Finder):
         if self.params["threshold"]["blurType"].value == 1:
             blur_image = cv2.blur(gray_image, (blurSize,blurSize))
         elif self.params["threshold"]["blurType"].value == 2:
-            blur_image = cv2.medianBlur(gray_image, (blurSize,blurSize))
+            blur_image = cv2.medianBlur(gray_image, blurSize)
         elif self.params["threshold"]["blurType"].value == 3:
             blur_image = cv2.GaussianBlur(gray_image, (blurSize,blurSize), blurDeviation)
         elif self.params["threshold"]["blurType"].value == 4:
