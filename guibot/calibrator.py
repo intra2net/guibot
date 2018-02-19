@@ -338,6 +338,8 @@ class Calibrator(object):
         :returns: error obtained as unity minus similarity
         :rtype: float
         """
+        self._handle_restricted_values(finder)
+
         try:
             matches = finder.find(self.needle, self.haystack)
             # pick similarity of the best match as representative
@@ -362,7 +364,9 @@ class Calibrator(object):
         :returns: error obtained as unity minus similarity
         :rtype: float
         """
+        self._handle_restricted_values(finder)
         max_exec_time = kwargs.get("max_exec_time", 1.0)
+
         start_time = time.time()
         try:
             matches = finder.find(self.needle, self.haystack)
@@ -379,6 +383,31 @@ class Calibrator(object):
         # extra penalty for slow solutions
         error += max(total_time - max_exec_time, 0)
         return error
+
+    def _handle_restricted_values(self, finder):
+        if finder.params.has_key("threshold"):
+            params = finder.params["threshold"]
+            if params["blurKernelSize"].value % 2 == 0:
+                params["blurKernelSize"].value += 1
+            if params["backend"] == "adaptive" and params["blockSize"].value % 2 == 0:
+                params["blockSize"].value += 1
+        if finder.params.has_key("threshold2"):
+            params = finder.params["threshold2"]
+            if params["blurKernelSize"].value % 2 == 0:
+                params["blurKernelSize"].value += 1
+            if params["backend"] == "adaptive" and params["blockSize"].value % 2 == 0:
+                params["blockSize"].value += 1
+        if finder.params.has_key("threshold3"):
+            params = finder.params["threshold3"]
+            if params["blurKernelSize"].value % 2 == 0:
+                params["blurKernelSize"].value += 1
+            if params["backend"] == "adaptive" and params["blockSize"].value % 2 == 0:
+                params["blockSize"].value += 1
+        if finder.params.has_key("ocr"):
+            params = finder.params["ocr"]
+            if params["dt_mask_size"].value not in [0, 3, 5]:
+                diffs = {m: abs(m - params["dt_mask_size"].value) for m in [0, 3, 5]}
+                params["dt_mask_size"].value = min(diffs, key=diffs.get)
 
     def _prepare_params(self, finder):
         # any similarity parameters will be reset to 0.0 to search optimally
