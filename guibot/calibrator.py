@@ -18,6 +18,7 @@ import math
 import copy
 
 from finder import *
+from target import Target
 from imagelogger import ImageLogger
 from errors import *
 
@@ -37,17 +38,29 @@ class Calibrator(object):
     multiple random starts from a uniform or normal probability distribution.
     """
 
-    def __init__(self, needle, haystack):
+    def __init__(self, needle=None, haystack=None, config=None):
         """
         Build a calibrator object for a given match case.
 
         :param haystack: image to look in
-        :type haystack: :py:class:`target.Image`
+        :type haystack: :py:class:`target.Image` or None
         :param needle: target to look for
-        :type needle: :py:class:`target.Target`
+        :type needle: :py:class:`target.Target` or None
         """
-        self.needle = needle
-        self.haystack = haystack
+        self.cases = []
+        if needle is not None and haystack is not None:
+            self.cases.append((needle, haystack))
+        elif config is not None:
+            with open(config, "r") as f:
+                for line in f.read().splitlines():
+                    needle, haystack = line.split(" ")
+                    needle = Target.from_data_file(needle)
+                    haystack = Target.from_data_file(haystack)
+                    self.cases.append((needle, haystack))
+                    log.info("Registering match case with needle %s and haystack %s", needle, haystack)
+        else:
+            raise ValueError("Need at least a single needle/haystack for calibration"
+                             " or a config file for more than one match case")
 
         # this attribute can be changed to use different run function
         self.run = self.run_default
@@ -73,7 +86,7 @@ class Calibrator(object):
             for a given `needle` and `haystack`.
         .. todo:: The calibrator is currently implemented only for the template/feature matchers.
         """
-        needle, haystack = self.needle, self.haystack
+        needle, haystack = self.cases[0]
         results = []
         log.info("Performing benchmarking %s calibration",
                  "with" if calibration else "without")
@@ -364,16 +377,19 @@ class Calibrator(object):
         """
         self._handle_restricted_values(finder)
 
-        try:
-            matches = finder.find(self.needle, self.haystack)
-            # pick similarity of the best match as representative
-            similarity = matches[0].similarity
-        except:
-            log.warn("No match was found at this step (due to internal error or other)")
-            similarity = 0.0
-        finder.imglog.clear()
+        total_similarity = 0.0
+        for needle, haystack in self.cases:
+            try:
+                matches = finder.find(needle, haystack)
+                # pick similarity of the best match as representative
+                similarity = matches[0].similarity
+            except:
+                log.warn("No match was found at this step (due to internal error or other)")
+                similarity = 0.0
+            finder.imglog.clear()
+            total_similarity += similarity
 
-        error = 1.0 - similarity
+        error = 1.0 - total_similarity / len(self.cases)
         return error
 
     def run_performance(self, finder, **kwargs):
@@ -391,20 +407,23 @@ class Calibrator(object):
         self._handle_restricted_values(finder)
         max_exec_time = kwargs.get("max_exec_time", 1.0)
 
-        start_time = time.time()
-        try:
-            matches = finder.find(self.needle, self.haystack)
-            # pick similarity of the best match as representative
-            similarity = matches[0].similarity
-        except:
-            log.warn("No match was found at this step (due to internal error or other)")
-            similarity = 0.0
-        total_time = time.time() - start_time
-        finder.imglog.clear()
+        total_similarity = 0.0
+        for needle, haystack in self.cases:
+            start_time = time.time()
+            try:
+                matches = finder.find(needle, haystack)
+                # pick similarity of the best match as representative
+                similarity = matches[0].similarity
+            except:
+                log.warn("No match was found at this step (due to internal error or other)")
+                similarity = 0.0
+            total_time = time.time() - start_time
+            finder.imglog.clear()
+            total_similarity += similarity
 
         # main penalty for bad quality of matching
-        error = 1.0 - similarity
-        # extra penalty for slow solutions
+        error = 1.0 - total_similarity / len(self.cases)
+        # extra penalty for slow solutions (linear)
         error += max(total_time - max_exec_time, 0)
         return error
 
