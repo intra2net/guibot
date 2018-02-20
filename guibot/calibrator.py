@@ -176,12 +176,18 @@ class Calibrator(object):
                 best_error = error
                 best_params = params
             else:
-                log.debug("Random start ended with worse error %s > %s", error, best_error)
+                log.debug("Random start did not end with smaller error %s >= %s", error, best_error)
 
         ImageLogger.accumulate_logging = False
         log.info("Best error for all random starts is %s", best_error)
-        log.log(9, "Best parameters for all random starts:\n%s", best_params)
         finder.params = best_params
+        log.log(9, "Best parameters for all random starts:")
+        for category in finder.params.keys():
+            for key in finder.params[category].keys():
+                param = finder.params[category][key]
+                if hasattr(param, "value"):
+                    log.log(9, "\t%s/%s with value %s +/- delta of %s",
+                            category, key, param.value, param.delta)
         return 1.0 - best_error
 
     def calibrate(self, finder, max_attempts=10, **kwargs):
@@ -201,7 +207,9 @@ class Calibrator(object):
         In order to set all parameters of a background algorithm for calibration
         use the :py:func:`finder.Finder.can_calibrate` method first.
         Any parameter values will only be changed if they improve the similarity,
-        i.e. minimize the error.
+        i.e. minimize the error. The deltas of the final parameters will represent
+        the maximal flat regions in positive and/or negative direction where the
+        same error is still obtained.
 
         .. note:: All similarity parameters will be reset to 0.0 after calibration
             and can be set by client code afterwards.
@@ -213,7 +221,7 @@ class Calibrator(object):
         # block logging for performance speedup
         ImageLogger.accumulate_logging = True
         best_error = self.run(finder, **kwargs)
-        log.log(9, "Start with error=%s for %s", best_error, finder.params)
+        log.log(9, "Calibration start with error=%s", best_error)
 
         for n in range(max_attempts):
             log.info("Try %s\%s, best error %s", n+1, max_attempts, best_error)
@@ -274,6 +282,7 @@ class Calibrator(object):
                                 param.value = mode
                                 delta_coeff = 1.1
                         param.delta *= delta_coeff
+                        param.max_delta = param.delta
                         continue
                     elif type(param.value) == bool:
                         if param.value:
@@ -290,6 +299,7 @@ class Calibrator(object):
                     if error < best_error:
                         best_error = error
                         param.delta *= 1.1
+                        param.max_delta = param.delta
                     else:
 
                         if type(param.value) == float:
@@ -316,17 +326,31 @@ class Calibrator(object):
                         if error < best_error:
                             best_error = error
                             param.delta *= 1.1
+                            param.max_delta = param.delta
                         else:
 
                             param.value = start_value
                             param.delta *= 0.9
+                            if error > best_error:
+                                param.max_delta = param.delta
 
             if slowdown_flag:
                 log.info("Exiting due to sufficient slowdown for all parameters")
                 break
 
         ImageLogger.accumulate_logging = False
-        log.log(9, "End with error=%s for %s", best_error, finder.params)
+        log.log(9, "Calibration end with error=%s for:", best_error)
+        for category in finder.params.keys():
+            for key in finder.params[category].keys():
+                param = finder.params[category][key]
+                if hasattr(param, "value"):
+                    if hasattr(param, "max_delta"):
+                        param.delta = param.max_delta
+                        delattr(param, "max_delta")
+                    elif param.fixed:
+                        param.delta = 0.0
+                    log.log(9, "\t%s/%s with value %s +/- delta of %s",
+                            category, key, param.value, param.delta)
         return 1.0 - best_error
 
     def run_default(self, finder, **_kwargs):

@@ -99,7 +99,6 @@ for category in ENABLED:
 # finder.params["threshold2"]["blockSize"].fixed = False
 similarity_after = calibrator.calibrate(finder, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity before and after calibration: %s -> %s", similarity_before, similarity_after)
-logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
 similarity_global = calibrator.search(finder, random_starts=RANDOM_STARTS, uniform=UNIFORM_DRAW,
                                       calibration=CALIBRATED_SEARCH, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity after search (Monte Carlo calibration): %s -> %s", similarity_before, similarity_global)
