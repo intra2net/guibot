@@ -430,6 +430,52 @@ class Calibrator(object):
         error += max(total_time - max_exec_time, 0)
         return error
 
+    def run_peak(self, finder, **kwargs):
+        """
+        Run a match case and return error from the match as failure to obtain
+        high similarity of one match and low similarity of all others.
+
+        :param finder: finder with match configuration to use for the run
+        :type finder: :py:class:`finder.Finder`
+        :param peak_location: (x, y) of the match whose similarity should be
+                              maximized while all the rest minimized
+        :type peak_location: (int, int)
+        :returns: error obtained as unity minus similarity
+        :rtype: float
+
+        This run function doesn't just obtain the optimum similarity for the best
+        match in each case of needle and haystack but it minimizes the similarity
+        for spatial competitors where spatial means other matches in the same
+        haystack. Keep in mind that since matching is performed with zero
+        similarity requirement, such matches might not be anything close to the
+        needle. This run function finds use cases where the other matches could
+        resemble the best one and we want to find configuration to better
+        discriminate against those.
+        """
+        self._handle_restricted_values(finder)
+        peak_location = kwargs.get("peak_location", (0,0))
+
+        total_similarity = 0.0
+        for needle, haystack, maximize in self.cases:
+            subtotal_similarity = 0.0
+            try:
+                matches = finder.find(needle, haystack)
+                for match in matches:
+                    if peak_location == (match.x, match.y):
+                        subtotal_similarity += match.similarity
+                    else:
+                        subtotal_similarity += 1.0 - match.similarity
+                # final match case similarity is the mean for all matches
+                similarity = subtotal_similarity / len(matches)
+            except:
+                log.warn("No match was found at this step (due to internal error or other)")
+                similarity = 0.0
+            finder.imglog.clear()
+            total_similarity += similarity if maximize else 1.0 - similarity
+
+        error = 1.0 - total_similarity / len(self.cases)
+        return error
+
     def _handle_restricted_values(self, finder):
         if finder.params.has_key("threshold"):
             params = finder.params["threshold"]

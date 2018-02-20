@@ -29,13 +29,6 @@ TODO - hierarchical notes
   may prevent from abnormal results in any of the two matching subparts
 - calibration and parameter optimization still not finished and fully used
     - add support for more matchers (CV backends)
-    - the ultimate calibration includes not just matching but also competitors
-        - train for data to match and data not to match to
-        - it doesn't just obtain the optimum similarity for the given needle and
-          haystack but it minimizes the similarity for spatial and temporal
-          competitors where spatial means the others in the same haystack while
-          temporal extends it to others in nearby haystacks (time frames)
-        - stated as optimization problem: max_p(x+x') where x=x(p) and p \in /mathbb{R}^d
 - clicking target point - still reconsider whether to return the (0,0) needle point
   or its center since wild transformations are possible and defining the clicking point
   as (+n,+n) is not as consistent
