@@ -49,15 +49,18 @@ class Calibrator(object):
         """
         self.cases = []
         if needle is not None and haystack is not None:
-            self.cases.append((needle, haystack))
+            self.cases.append((needle, haystack, True))
         elif config is not None:
             with open(config, "r") as f:
                 for line in f.read().splitlines():
-                    needle, haystack = line.split(" ")
+                    # each line has the shape "needle.ext haystack.ext max/min"
+                    needle, haystack, maximize = line.split(" ")
                     needle = Target.from_data_file(needle)
                     haystack = Target.from_data_file(haystack)
-                    self.cases.append((needle, haystack))
-                    log.info("Registering match case with needle %s and haystack %s", needle, haystack)
+                    maximize = maximize == "max"
+                    self.cases.append((needle, haystack, maximize))
+                    log.info("Registering match case with needle %s and haystack %s for %s",
+                             needle, haystack, "maximizing" if maximize else "minimizing")
         else:
             raise ValueError("Need at least a single needle/haystack for calibration"
                              " or a config file for more than one match case")
@@ -86,7 +89,7 @@ class Calibrator(object):
             for a given `needle` and `haystack`.
         .. todo:: The calibrator is currently implemented only for the template/feature matchers.
         """
-        needle, haystack = self.cases[0]
+        needle, haystack, _ = self.cases[0]
         results = []
         log.info("Performing benchmarking %s calibration",
                  "with" if calibration else "without")
@@ -378,7 +381,7 @@ class Calibrator(object):
         self._handle_restricted_values(finder)
 
         total_similarity = 0.0
-        for needle, haystack in self.cases:
+        for needle, haystack, maximize in self.cases:
             try:
                 matches = finder.find(needle, haystack)
                 # pick similarity of the best match as representative
@@ -387,7 +390,7 @@ class Calibrator(object):
                 log.warn("No match was found at this step (due to internal error or other)")
                 similarity = 0.0
             finder.imglog.clear()
-            total_similarity += similarity
+            total_similarity += similarity if maximize else 1.0 - similarity
 
         error = 1.0 - total_similarity / len(self.cases)
         return error
@@ -408,7 +411,7 @@ class Calibrator(object):
         max_exec_time = kwargs.get("max_exec_time", 1.0)
 
         total_similarity = 0.0
-        for needle, haystack in self.cases:
+        for needle, haystack, maximize in self.cases:
             start_time = time.time()
             try:
                 matches = finder.find(needle, haystack)
@@ -419,7 +422,7 @@ class Calibrator(object):
                 similarity = 0.0
             total_time = time.time() - start_time
             finder.imglog.clear()
-            total_similarity += similarity
+            total_similarity += similarity if maximize else 1.0 - similarity
 
         # main penalty for bad quality of matching
         error = 1.0 - total_similarity / len(self.cases)
