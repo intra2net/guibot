@@ -1783,6 +1783,8 @@ class TextFinder(ContourFinder):
             self.params[category]["component_level"] = CVParameter(0, 0, 1)
             # zoom factor for improved OCR processing due to higher resolution
             self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, None)
+            # perform custom image thresholding if set to true or leave it to the OCR
+            self.params[category]["binarize_text"] = CVParameter(False)
             # border size to wrap around text field to improve recognition rate
             self.params[category]["border_size"] = CVParameter(10, 0, None)
             # 0 erode, 1 dilate, 2 both, 3 none
@@ -1963,12 +1965,15 @@ class TextFinder(ContourFinder):
             factor = self.params["ocr"]["zoom_factor"].value
             log.debug("Zooming x%i candidate for improved OCR processing", factor)
             text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
-            first_threshold = self.params["threshold"]
-            self.params["threshold"] = self.params["threshold2"]
-            try:
-                text_img = self._binarize_image(text_img)
-            finally:
-                self.params["threshold"] = first_threshold
+            if self.params["ocr"]["binarize_text"].value:
+                first_threshold = self.params["threshold"]
+                self.params["threshold"] = self.params["threshold2"]
+                try:
+                    text_img = self._binarize_image(text_img)
+                finally:
+                    self.params["threshold"] = first_threshold
+            else:
+                text_img = cv2.cvtColor(text_img, cv2.COLOR_RGB2GRAY)
             border = int(factor * self.params["ocr"]["border_size"].value)
             text_img = cv2.copyMakeBorder(text_img, border, border, border, border, cv2.BORDER_CONSTANT, 0)
             if self.params["ocr"]["erode_dilate"].value < 3:
