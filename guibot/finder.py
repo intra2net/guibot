@@ -1780,7 +1780,7 @@ class TextFinder(ContourFinder):
             # 13 different page segmentation modes - see Tesseract API
             self.params[category]["min_confidence"] = CVParameter(0, 0, 100)
             # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
-            self.params[category]["component_level"] = CVParameter(0, 0, 1)
+            self.params[category]["component_level"] = CVParameter(1, 0, 1)
             # zoom factor for improved OCR processing due to higher resolution
             self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, None)
             # perform custom image thresholding if set to true or leave it to the OCR
@@ -2012,6 +2012,9 @@ class TextFinder(ContourFinder):
                     sys.stderr.flush()
                     os.dup2(cpout_fo.fileno(), stdout_fd)
                     os.dup2(cperr_fo.fileno(), stderr_fd)
+            if self.params["ocr"]["component_level"].value == 1:
+                # strip of the new line character which is never useful
+                output = output.rstrip()
             log.debug("OCR output = '%s'", output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
