@@ -1965,9 +1965,11 @@ class TextFinder(ContourFinder):
         from match import Match
         matches = []
         for text_box in text_regions:
-            text_img = img_haystack[text_box[1]:text_box[1]+text_box[3],text_box[0]:text_box[0]+text_box[2]]
 
             # main OCR preprocessing stage
+            border = self.params["ocr"]["border_size"].value
+            text_img = img_haystack[max(text_box[1]-border,0):min(text_box[1]+text_box[3]+border,img_haystack.shape[0]),
+                                    max(text_box[0]-border,0):min(text_box[0]+text_box[2]+border,img_haystack.shape[1])]
             factor = self.params["ocr"]["zoom_factor"].value
             log.debug("Zooming x%i candidate for improved OCR processing", factor)
             text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
@@ -1980,8 +1982,6 @@ class TextFinder(ContourFinder):
                     self.params["threshold"] = first_threshold
             else:
                 text_img = cv2.cvtColor(text_img, cv2.COLOR_RGB2GRAY)
-            border = int(factor * self.params["ocr"]["border_size"].value)
-            text_img = cv2.copyMakeBorder(text_img, border, border, border, border, cv2.BORDER_CONSTANT, 0)
             if self.params["ocr"]["erode_dilate"].value < 3:
                 element = cv2.getStructuringElement(self.params["ocr"]["kernel_type"].value,
                                                     (self.params["ocr"]["kernel_width"].value,
