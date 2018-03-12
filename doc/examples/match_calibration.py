@@ -103,7 +103,7 @@ similarity_global = calibrator.search(finder, random_starts=RANDOM_STARTS, unifo
                                       calibration=CALIBRATED_SEARCH, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Similarity after search (Monte Carlo calibration): %s -> %s", similarity_before, similarity_global)
 logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
-results = calibrator.benchmark(calibration=CALIBRATED_BENCHMARK, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
+results = calibrator.benchmark(finder, calibration=CALIBRATED_BENCHMARK, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
 logging.info("Benchmarking results (method, similarity, location, time):\n%s",
              "\n".join([str(r) for r in results]))
 

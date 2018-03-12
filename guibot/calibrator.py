@@ -68,11 +68,13 @@ class Calibrator(object):
         # this attribute can be changed to use different run function
         self.run = self.run_default
 
-    def benchmark(self, calibration=True, max_attempts=10, **kwargs):
+    def benchmark(self, finder, calibration=False, max_attempts=10, **kwargs):
         """
         Perform benchmarking on all available algorithms of a finder
         for a given needle and haystack.
 
+        :param finder: CV backend whose backend algorithms will be benchmarked
+        :type finder: :py:class:`finder.Finder`
         :param bool calibration: whether to use calibration
         :param int max_attempts: number of refinements allowed to improve calibration
         :returns: list of (method, similarity, location, time) tuples sorted according to similarity
@@ -87,7 +89,6 @@ class Calibrator(object):
             excluded from the dictionary. The dictionary can thus also be used to
             assess what are the available and working methods besides their success
             for a given `needle` and `haystack`.
-        .. todo:: The calibrator is currently implemented only for the template/feature matchers.
         """
         needle, haystack, _ = self.cases[0]
         results = []
@@ -96,46 +97,44 @@ class Calibrator(object):
         # block logging since we need all its info after the matching finishes
         ImageLogger.accumulate_logging = True
 
-        # test all template matching methods
-        finder1 = TemplateFinder()
-        needle.match_settings.params["find"]["similarity"].value = 0.0
-        for key in finder1.algorithms["template_matchers"]:
-            for gray in (True, False):
-                if gray:
-                    method = key + "_gray"
-                else:
-                    method = key
-                log.debug("Testing %s with %s:", needle.filename, method)
+        needle.use_own_settings = False
+        self._prepare_params(finder)
+        # obtain all categories in fixed order skipping root categories
+        ordered_categories = finder.categories.keys()
+        ordered_categories.remove("type")
+        ordered_categories.remove("find")
 
-                finder1.configure_backend(key, reset=True)
-                finder1.params["template"]["nocolor"].value = gray
+        # test all matching methods of the current finder
+        def backend_tuples(category_list, finder):
+            if len(category_list) == 0:
+                yield ()
+            else:
+                category = category_list[0]
+                backends = finder.algorithms[finder.categories[category]]
+                for backend in backends:
+                    for z in backend_tuples(category_list[1:], finder):
+                        yield (backend,) + z
+        for backend_tuple in backend_tuples(ordered_categories, finder):
+            method = "+".join(backend_tuple)
+            log.info("Testing %s with %s", needle, method)
 
-                start_time = time.time()
-                finder1.find(needle, haystack)
-                total_time = time.time() - start_time
-                similarity, location = self._get_last_criteria(finder1, total_time)
-                results.append((method, similarity, location, total_time))
-                finder1.imglog.clear()
+            for backend, category in zip(backend_tuple, ordered_categories):
+                finder.configure_backend(backend=backend, category=category, reset=False)
 
-        # test all feature matching methods
-        finder2 = FeatureFinder()
-        for key_fd in finder2.algorithms["feature_detectors"]:
-            for key_fe in finder2.algorithms["feature_extractors"]:
-                for key_fm in finder2.algorithms["feature_matchers"]:
+            if calibration:
+                self.calibrate(finder, max_attempts=max_attempts, **kwargs)
 
-                    method = "%s-%s-%s" % (key_fd, key_fe, key_fm)
-                    log.debug("Testing %s with %s:", needle.filename, method)
-
-                    finder2.configure(key_fd, key_fe, key_fm)
-                    if calibration:
-                        self.calibrate(finder2, max_attempts=max_attempts, **kwargs)
-
-                    start_time = time.time()
-                    finder2.find(needle, haystack)
-                    total_time = time.time() - start_time
-                    similarity, location = self._get_last_criteria(finder2, total_time)
-                    results.append((method, similarity, location, total_time))
-                    finder2.imglog.clear()
+            start_time = time.time()
+            try:
+                matches = finder.find(needle, haystack)
+            except:
+                log.warn("No match was found at this step (due to internal error or other)")
+                matches = []
+            total_time = time.time() - start_time
+            similarity, location = self._get_match_details(matches)
+            log.debug("Found needle at %s with similarity %s in %ss", location, similarity, total_time)
+            results.append((method, similarity, location, total_time))
+            finder.imglog.clear()
 
         ImageLogger.accumulate_logging = False
         return sorted(results, key=lambda x: x[1], reverse=True)
@@ -509,12 +508,12 @@ class Calibrator(object):
             finder.params["tempfeat"]["front_similarity"].value = 0.0
             finder.params["tempfeat"]["front_similarity"].fixed = True
 
-    def _get_last_criteria(self, finder, total_time):
-        if len(finder.imglog.similarities) > 0:
-            similarity = finder.imglog.similarities[-1]
-            location = finder.imglog.locations[-1]
+    def _get_match_details(self, matches):
+        if len(matches) > 0:
+            match = matches[0]
+            similarity = match.similarity
+            location = (match.x, match.y)
         else:
             similarity = 0.0
             location = None
-        log.debug("%s at %s in %s", similarity, location, total_time)
         return similarity, location

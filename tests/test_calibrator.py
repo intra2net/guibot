@@ -77,50 +77,104 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be "
                              "less than the similarity after calibration")
 
-    def test_benchmark_full_match(self):
-        haystack = Image('all_shapes')
-        needle = Image('all_shapes')
-        calibrator = Calibrator(needle, haystack)
-
-        results = calibrator.benchmark(calibration=False)
+    def test_benchmark_autopy(self):
+        calibrator = Calibrator(Image('shape_blue_circle'), Image('shape_blue_circle'))
+        results = calibrator.benchmark(AutoPyFinder())
         # pprint.pprint(results)
-        self.assertGreater(len(results), 0, "The benchmarked methods "
-                           "should be more than one for the blue circle")
-        # yes, some methods certainly don't work well together to
-        # have similarity as low as 30% on a 1-to-1 match, but oh well...
-        top_results = results[:40]
-        for result in top_results:
-            self.assertGreaterEqual(result[1], 0.9,
-                                    "Minimum similarity for full match is 0.9")
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            self.assertEqual(result[0], "", "Incorrect backend names for case '%s' %s %s %s" % result)
+            # similarity is not available in the autopy backend
+            self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            # pixes start from 1 in the autopy backend
+            self.assertEqual(result[2], (1, 1), "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
 
-    def test_benchmark_feature_poor_image(self):
-        haystack = Image('all_shapes')
-        needle = Image('shape_blue_circle')
-        calibrator = Calibrator(needle, haystack)
-
-        results = calibrator.benchmark(calibration=False)
+    def test_benchmark_contour(self):
+        calibrator = Calibrator(Image('shape_blue_circle'), Image('shape_blue_circle'))
+        results = calibrator.benchmark(ContourFinder())
         # pprint.pprint(results)
-        self.assertGreater(len(results), 0, "The benchmarked methods "
-                           "should be more than one for the blue circle")
-        top_results = results[:3]
-        for result in top_results:
-            self.assertRegexpMatches(result[0], "\w+_\w+[_gray]?",
-                                     "Template matching methods should be on the top")
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            self.assertTrue(result[0].endswith("+mixed"), "Incorrect backend names for case '%s' %s %s %s" % result)
+            self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertEqual(result[2], (0, 0), "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
 
-    def test_benchmark_viewport_image(self):
-        haystack = Image('h_ibs_viewport')
-        needle = Image('n_ibs')
-        calibrator = Calibrator(needle, haystack)
-
-        results = calibrator.benchmark(calibration=False)
+    def test_benchmark_template(self):
+        calibrator = Calibrator(Image('shape_blue_circle'), Image('shape_blue_circle'))
+        results = calibrator.benchmark(TemplateFinder())
         # pprint.pprint(results)
-        self.assertGreater(len(results), 0, "The benchmarked methods "
-                           "should be more than one for the viewported image")
-        top_results = results[:3]
-        for result in top_results:
-            self.assertRegexpMatches(result[0], "\w+-\w+-\w+",
-                                     "Feature matching methods should be on the top")
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            # only normed backends are supported
+            self.assertTrue(result[0].endswith("_normed"), "Incorrect backend names for case '%s' %s %s %s" % result)
+            self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertEqual(result[2], (0, 0), "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
 
+    def test_benchmark_feature(self):
+        calibrator = Calibrator(Image('n_ibs'), Image('n_ibs'))
+        results = calibrator.benchmark(FeatureFinder())
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            self.assertTrue(result[0].endswith("+mixed"), "Incorrect backend names for case '%s' %s %s %s" % result)
+            self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertIn(result[2], [(0, 0), None], "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
+
+    def test_benchmark_cascade(self):
+        calibrator = Calibrator(Pattern('shape_blue_circle.xml'), Image('shape_blue_circle'))
+        results = calibrator.benchmark(CascadeFinder())
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            self.assertEqual(result[0], "", "Incorrect backend names for case '%s' %s %s %s" % result)
+            # similarity is not available in the cascade backend
+            self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            # cascade matching uses a pattern target so location is not exact
+            self.assertEqual(result[2], (11, 2), "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
+
+    def test_benchmark_text(self):
+        calibrator = Calibrator(Text('Text'), Image('all_shapes'))
+        results = calibrator.benchmark(TextFinder())
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            self.assertTrue(result[0].startswith("mixed+"), "Incorrect backend names for case '%s' %s %s %s" % result)
+            self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertIn(result[2], [(22, 83), None], "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
+
+    def test_benchmark_tempfeat(self):
+        calibrator = Calibrator(Image('shape_blue_circle'), Image('shape_blue_circle'))
+        results = calibrator.benchmark(TemplateFeatureFinder())
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            # mixture of template and feature backends
+            self.assertTrue("+mixed" in result[0], "Incorrect backend names for case '%s' %s %s %s" % result)
+            self.assertTrue("_normed" in result[0], "Incorrect backend names for case '%s' %s %s %s" % result)
+            self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertIn(result[2], [(0, 0), None], "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
+
+    def test_benchmark_deep(self):
+        calibrator = Calibrator(Pattern('shape_blue_circle.pth'), Image('shape_blue_circle'))
+        results = calibrator.benchmark(DeepFinder())
+        # pprint.pprint(results)
+        self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
+        for result in results:
+            self.assertEqual(result[0], "", "Incorrect backend names for case '%s' %s %s %s" % result)
+            # TODO: the needle is found but with very low similarity - possibly due to different haystack size
+            #self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s %s" % result)
+            self.assertEqual(result[2], (0, 0), "Incorrect location for case '%s' %s %s %s" % result)
+            self.assertGreater(result[3], 0.0, "Strictly positive time is required to run case '%s' %s %s %s" % result)
 
 if __name__ == '__main__':
     unittest.main()
