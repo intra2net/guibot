@@ -1774,17 +1774,23 @@ class TextFinder(ContourFinder):
                 self.params[category]["oem"] = CVParameter(3, 0, 3)
                 # 13 different page segmentation modes - see Tesseract API
                 self.params[category]["psmode"] = CVParameter(3, 0, 13)
+                # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
+                self.params[category]["component_level"] = CVParameter(1, 0, 1)
+                # perform custom image thresholding if set to true or leave it to the OCR
+                self.params[category]["binarize_text"] = CVParameter(False)
             elif backend == "hmm":
                 # 1 NM 2 CNN as classifiers for hidden markov models (see OpenCV documentation)
                 self.params[category]["classifier"] = CVParameter(1, 1, 2)
-            # 13 different page segmentation modes - see Tesseract API
+                # 0 OCR_LEVEL_WORD
+                self.params[category]["component_level"] = CVParameter(0, 0, 0)
+                # perform custom image thresholding if set to true or leave it to the OCR
+                self.params[category]["binarize_text"] = CVParameter(True)
+            else:
+                # perform custom image thresholding if set to true or leave it to the OCR
+                self.params[category]["binarize_text"] = CVParameter(True)
             self.params[category]["min_confidence"] = CVParameter(0, 0, 100)
-            # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
-            self.params[category]["component_level"] = CVParameter(1, 0, 1)
             # zoom factor for improved OCR processing due to higher resolution
             self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, None)
-            # perform custom image thresholding if set to true or leave it to the OCR
-            self.params[category]["binarize_text"] = CVParameter(False)
             # border size to wrap around text field to improve recognition rate
             self.params[category]["border_size"] = CVParameter(10, 0, None)
             # 0 erode, 1 dilate, 2 both, 3 none
