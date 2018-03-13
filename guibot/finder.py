@@ -1239,7 +1239,7 @@ class FeatureFinder(Finder):
 
         similarity = self.params["find"]["similarity"].value
         hpoints = self._project_features(npoints, ngray, hgray, similarity)
-        if hpoints is not None:
+        if hpoints is not None and len(hpoints) > 0:
             from match import Match
             x, y = hpoints[0]
             w, h = tuple(numpy.abs(numpy.subtract(hpoints[3], hpoints[0])))
