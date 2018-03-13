@@ -78,8 +78,6 @@ class CalibratorTest(unittest.TestCase):
                              "less than the similarity after calibration")
 
     def test_benchmark_full_match(self):
-        # TODO: check this test after improving the calibrator
-        return
         haystack = Image('all_shapes')
         needle = Image('all_shapes')
         calibrator = Calibrator(needle, haystack)
@@ -90,11 +88,10 @@ class CalibratorTest(unittest.TestCase):
                            "should be more than one for the blue circle")
         # yes, some methods certainly don't work well together to
         # have similarity as low as 30% on a 1-to-1 match, but oh well...
-        top_results = results[:-15]
+        top_results = results[:40]
         for result in top_results:
-            # print result[1]
             self.assertGreaterEqual(result[1], 0.9,
-                                    "Minimum similarity for full match is 0.5")
+                                    "Minimum similarity for full match is 0.9")
 
     def test_benchmark_feature_poor_image(self):
         haystack = Image('all_shapes')
