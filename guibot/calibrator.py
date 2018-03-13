@@ -68,25 +68,24 @@ class Calibrator(object):
         # this attribute can be changed to use different run function
         self.run = self.run_default
 
-    def benchmark(self, finder, calibration=False, max_attempts=10, **kwargs):
+    def benchmark(self, finder, random_starts=0, uniform=False,
+                  calibration=False, max_attempts=10, **kwargs):
         """
         Perform benchmarking on all available algorithms of a finder
         for a given needle and haystack.
 
         :param finder: CV backend whose backend algorithms will be benchmarked
         :type finder: :py:class:`finder.Finder`
+        :param int random_starts: number of random starts to try with (0 for nonrandom)
+        :param bool uniform: whether to use uniform or normal distribution
         :param bool calibration: whether to use calibration
-        :param int max_attempts: number of refinements allowed to improve calibration
+        :param int max_attempts: maximal number of refinements to reach
+                                 the parameter delta below the tolerance
         :returns: list of (method, similarity, location, time) tuples sorted according to similarity
         :rtype: [(str, float, :py:class:`location.Location`, float)]
 
-        This method already uses :py:func:`Calibrator.calibrate` internally
-        to provide the best outcome for each compared method (optimal success).
-        To turn the calibration off and benchmark with your selected parameters,
-        set the `calibration` argument to false.
-
-        .. note:: Methods that are supported by OpenCV but currently don't work are
-            excluded from the dictionary. The dictionary can thus also be used to
+        .. note:: Methods that are supported by OpenCV and others but currently don't work
+            are excluded from the dictionary. The dictionary can thus also be used to
             assess what are the available and working methods besides their success
             for a given `needle` and `haystack`.
         """
@@ -120,8 +119,12 @@ class Calibrator(object):
 
             for backend, category in zip(backend_tuple, ordered_categories):
                 finder.configure_backend(backend=backend, category=category, reset=False)
+                finder.can_calibrate(category, calibration)
 
-            if calibration:
+            if random_starts > 0:
+                self.search(finder, random_starts=random_starts, uniform=uniform,
+                            calibration=calibration, max_attempts=max_attempts, **kwargs)
+            elif calibration:
                 self.calibrate(finder, max_attempts=max_attempts, **kwargs)
 
             start_time = time.time()
