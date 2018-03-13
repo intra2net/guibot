@@ -625,7 +625,7 @@ class ContourFinder(Finder):
                 # we don't allow collapsing into the same needle contour, i.e.
                 # the map from the needle to the haystack contours is injective
                 # -> so here we cross the entire row rather than one value in it
-                distances[index[0][0],:] = numpy.max(distances[:,j])
+                distances[index[0][0],:] = 1.1  # like this works even for similarity 0.0
                 matching_haystack_contours.append(haystack_contours[index[0][0]])
             average_distance = numpy.average(matching_haystack_distances)
             required_distance = 1.0 - self.params["find"]["similarity"].value
