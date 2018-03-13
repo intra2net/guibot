@@ -27,8 +27,7 @@ TODO - hierarchical notes
 - teamfeat matching improvements - maximum difference between the similarity
   obtained from the template and from the feature matching in the hybrid case
   may prevent from abnormal results in any of the two matching subparts
-- calibration and parameter optimization still not finished and fully used
-    - add support for more matchers (CV backends)
+- deep check all backends for errors and warnings, invalid deltas and ranges
 - clicking target point - still reconsider whether to return the (0,0) needle point
   or its center since wild transformations are possible and defining the clicking point
   as (+n,+n) is not as consistent
