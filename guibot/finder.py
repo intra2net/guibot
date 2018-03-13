@@ -1976,12 +1976,15 @@ class TextFinder(ContourFinder):
         final_hotmap = numpy.array(haystack.pil_image)
 
         # detect characters and group them into detected text
-        if self.params["tdetect"]["backend"] == "erstat":
+        backend = self.params["tdetect"]["backend"]
+        if backend == "erstat":
             text_regions = self._detect_text_erstat(haystack)
-        elif self.params["tdetect"]["backend"] == "contours":
+        elif backend == "contours":
             text_regions = self._detect_text_contours(haystack)
-        elif self.params["tdetect"]["backend"] == "components":
+        elif backend == "components":
             text_regions = self._detect_text_components(haystack)
+        else:
+            raise UnsupportedBackendError("Unsupported text detection backend %s" % backend)
 
         # perform optical character recognition on the final regions
         from match import Match
@@ -2024,7 +2027,7 @@ class TextFinder(ContourFinder):
             self.imglog.hotmaps.append(text_img)
 
             # BUG: we hit segfault when using the BeamSearch OCR backend so disallow it
-            if self.params["text"]["backend"] == "beamSearch":
+            if self.params["ocr"]["backend"] == "beamSearch":
                 raise NotImplementedError("Current version of BeamSearch segfaults so it's not yet available")
             # TODO: can't do this in python - available ony in C++
             #vector<Rect> boxes;
