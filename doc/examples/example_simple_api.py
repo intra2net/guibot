@@ -14,6 +14,7 @@ sys.path.insert(0, '../..')
 from guibot.guibot_simple import *
 
 
+initialize()
 add_path('images')
 
 if exists('all_shapes'):

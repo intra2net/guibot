@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -30,6 +29,36 @@ import errors
 from guibot import GuiBot
 
 
+def serialize_custom_error(class_obj):
+    """
+    Serialization method for the :py:class:`errors.UnsupportedBackendError`
+    which was chosen just as a sample.
+
+    :param class_obj: class object for the serialized error class
+    :type class_obj: classobj
+    :returns: serialization dictionary with the class name, arguments, and attributes
+    :rtype: {str, str or getset_descriptor or dictproxy}
+    """
+    serialized = {}
+    serialized["__class__"] = re.search("<class '(.+)'>", str(type(class_obj))).group(1)
+    serialized["args"] = class_obj.args
+    serialized["attributes"] = class_obj.__dict__
+    return serialized
+
+
+def register_exception_serialization():
+    """
+    We put here any exceptions that are too complicated for the default serialization
+    and define their serialization methods.
+
+    .. note:: This would not be needed if we were using the Pickle serializer but its
+        security problems at the moment made us prefer the serpent serializer paying
+        for it with some extra setup steps and functions below.
+    """
+    for exception in [errors.UnsupportedBackendError]:
+        Pyro4.util.SerializerBase.register_class_to_dict(exception, serialize_custom_error)
+
+
 class GuiBotProxy(GuiBot):
     """
     The proxy guibot object is just a wrapper around the actual guibot
@@ -45,6 +74,8 @@ class GuiBotProxy(GuiBot):
         # NOTE: the following attribute is set by Pyro when registering
         # this as a remote object
         self._pyroDaemon = None
+        # register exceptions as an extra step
+        register_exception_serialization()
 
     def _proxify(self, obj):
         if isinstance(obj, (int, float, bool, basestring)) or obj is None:
@@ -138,33 +169,3 @@ class GuiBotProxy(GuiBot):
 
     def select_at(self, anchor, image_or_index, dx, dy, dw=0, dh=0):
         return self._proxify(super(GuiBotProxy, self).select_at(anchor, image_or_index, dx, dy, dw, dh))
-
-
-"""
-We put here any exceptions that are too complicated for the default serialization
-and define their serialization methods.
-
-.. note:: This would not be needed if we were using the Pickle serializer but its
-    security problems at the moment made us prefer the serpent serializer paying
-    for it with some extra setup steps and functions below.
-"""
-exceptions = [errors.UnsupportedBackendError]
-
-def serialize_custom_error(class_obj):
-    """
-    Serialization method for the :py:class:`errors.UnsupportedBackendError`
-    which was chosen just as a sample.
-
-    :param class_obj: class object for the serialized error class
-    :type class_obj: classobj
-    :returns: serialization dictionary with the class name, arguments, and attributes
-    :rtype: {str, str or getset_descriptor or dictproxy}
-    """
-    serialized = {}
-    serialized["__class__"] = re.search("<class '(.+)'>", str(type(class_obj))).group(1)
-    serialized["args"] = class_obj.args
-    serialized["attributes"] = class_obj.__dict__
-    return serialized
-
-for exception in exceptions:
-    Pyro4.util.SerializerBase.register_class_to_dict(exception, serialize_custom_error)
