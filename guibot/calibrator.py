@@ -89,14 +89,12 @@ class Calibrator(object):
             assess what are the available and working methods besides their success
             for a given `needle` and `haystack`.
         """
-        needle, haystack, _ = self.cases[0]
         results = []
         log.info("Performing benchmarking %s calibration",
                  "with" if calibration else "without")
         # block logging since we need all its info after the matching finishes
         ImageLogger.accumulate_logging = True
 
-        needle.use_own_settings = False
         self._prepare_params(finder)
         # obtain all categories in fixed order skipping root categories
         ordered_categories = finder.categories.keys()
@@ -115,7 +113,7 @@ class Calibrator(object):
                         yield (backend,) + z
         for backend_tuple in backend_tuples(ordered_categories, finder):
             method = "+".join(backend_tuple)
-            log.info("Testing %s with %s", needle, method)
+            log.info("Benchmark testing with %s", method)
 
             for backend, category in zip(backend_tuple, ordered_categories):
                 finder.configure_backend(backend=backend, category=category, reset=False)
@@ -128,16 +126,10 @@ class Calibrator(object):
                 self.calibrate(finder, max_attempts=max_attempts, **kwargs)
 
             start_time = time.time()
-            try:
-                matches = finder.find(needle, haystack)
-            except:
-                log.warn("No match was found at this step (due to internal error or other)")
-                matches = []
+            similarity = 1.0 - self.run(finder, **kwargs)
             total_time = time.time() - start_time
-            similarity, location = self._get_match_details(matches)
-            log.debug("Found needle at %s with similarity %s in %ss", location, similarity, total_time)
-            results.append((method, similarity, location, total_time))
-            finder.imglog.clear()
+            log.debug("Obtained similarity %s from %s in %ss", similarity, method, total_time)
+            results.append((method, similarity, total_time))
 
         ImageLogger.accumulate_logging = False
         return sorted(results, key=lambda x: x[1], reverse=True)
@@ -510,13 +502,3 @@ class Calibrator(object):
         if "tempfeat" in finder.params.keys():
             finder.params["tempfeat"]["front_similarity"].value = 0.0
             finder.params["tempfeat"]["front_similarity"].fixed = True
-
-    def _get_match_details(self, matches):
-        if len(matches) > 0:
-            match = matches[0]
-            similarity = match.similarity
-            location = (match.x, match.y)
-        else:
-            similarity = 0.0
-            location = None
-        return similarity, location
