@@ -360,7 +360,9 @@ class Finder(LocalConfig):
             if not isinstance(value, CVParameter):
                 continue
             # BUG: force fix parameters that have internal bugs
-            if category == "fextract" and value == "bytes":
+            if category == "fextract" and key == "bytes":
+                value.fixed = True
+            elif category == "fdetect" and key == "Extended":
                 value.fixed = True
             else:
                 value.fixed = not mark
@@ -1120,7 +1122,7 @@ class FeatureFinder(Finder):
 
                 # give more information about some better known parameters
                 if category in ("fdetect", "fextract") and param == "FirstLevel":
-                    self.params[category][param] = CVParameter(val, 0, 100, 25)
+                    self.params[category][param] = CVParameter(val, 0, None, 100, 25)
                 elif category in ("fdetect", "fextract") and param == "MaxFeatures":
                     self.params[category][param] = CVParameter(val, 0, None, 100.0)
                 elif category in ("fdetect", "fextract") and param == "WTA_K":
@@ -1129,6 +1131,10 @@ class FeatureFinder(Finder):
                     self.params[category][param] = CVParameter(val, 1.01, 2.0, 0.25, 0.05)
                 elif category in ("fdetect", "fextract") and param == "NLevels":
                     self.params[category][param] = CVParameter(val, 1, 100, 25, 0.5)
+                elif category in ("fdetect", "fextract") and param == "NLevels":
+                    self.params[category][param] = CVParameter(val, 1, 100, 25, 0.5)
+                elif category in ("fdetect", "fextract") and param == "PatchSize":
+                    self.params[category][param] = CVParameter(val, 2, None, 100, 25)
                 else:
                     self.params[category][param] = CVParameter(val)
                 log.log(9, "%s=%s", param, val)
