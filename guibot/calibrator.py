@@ -69,7 +69,7 @@ class Calibrator(object):
         self.run = self.run_default
 
     def benchmark(self, finder, random_starts=0, uniform=False,
-                  calibration=False, max_attempts=10, **kwargs):
+                  calibration=False, max_attempts=3, **kwargs):
         """
         Perform benchmarking on all available algorithms of a finder
         for a given needle and haystack.
@@ -135,7 +135,7 @@ class Calibrator(object):
         return sorted(results, key=lambda x: x[1], reverse=True)
 
     def search(self, finder, random_starts=1, uniform=False,
-               calibration=True, max_attempts=10, **kwargs):
+               calibration=True, max_attempts=3, **kwargs):
         """
         Search for the best match configuration for a given needle and haystack
         using calibration from random initial conditions.
@@ -200,7 +200,7 @@ class Calibrator(object):
                             category, key, param.value, param.delta)
         return 1.0 - best_error
 
-    def calibrate(self, finder, max_attempts=10, **kwargs):
+    def calibrate(self, finder, max_attempts=3, **kwargs):
         """
         Calibrate the available match configuration for a given needle
         and haystack minimizing the matchign error.
