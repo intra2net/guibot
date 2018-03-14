@@ -24,7 +24,6 @@ import logging
 import shutil
 
 from guibot.config import GlobalConfig
-from guibot.settings import GlobalSettings
 from guibot.imagelogger import ImageLogger
 from guibot.path import Path
 from guibot.target import Pattern, Image
@@ -32,18 +31,30 @@ from guibot.finder import DeepFinder
 from guibot.errors import *
 
 
-# parameters to toy with
-NEEDLE = 'shape_blue_circle.pth'
-HAYSTACK = 'all_shapes'
+# Parameters to toy with
+path = Path()
+path.add_path('images/')
+NEEDLE = Pattern('shape_blue_circle.pth')
+HAYSTACK = Image('all_shapes')
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
 EPOCHS_PER_STAGE = 10
 TOTAL_STAGES = 10
 
 
-# training step
-logging.getLogger('').addHandler(logging.StreamHandler())
+# Overall logging setup
+handler = logging.StreamHandler()
+logging.getLogger('').addHandler(handler)
 logging.getLogger('').setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+GlobalConfig.image_logging_level = 0
+GlobalConfig.image_logging_destination = LOGPATH
+GlobalConfig.image_logging_step_width = 4
+ImageLogger.step = 1
+
+
+# Main configuration and training steps
 finder = DeepFinder()
 # use this to load pretrained model and train futher
 #import torch
@@ -75,28 +86,13 @@ for i in range(EPOCHS_PER_STAGE):
     finder.test('samples_test.pth', 'targets_test.pth')
 
 
-# minimal setup
-GlobalConfig.image_logging_level = 0
-GlobalConfig.image_logging_destination = LOGPATH
-GlobalConfig.image_logging_step_width = 4
-
-path = Path()
-path.add_path('images/')
-
-ImageLogger.step = 1
-
-needle = Pattern(NEEDLE)
-haystack = Image(HAYSTACK)
-
-needle.use_own_settings = True
-settings = needle.match_settings
+# Test trained network on a single test sample with image logging
+NEEDLE.use_own_settings = True
+settings = NEEDLE.match_settings
+matches = finder.find(NEEDLE, HAYSTACK)
 
 
-# test trained network on a single test sample with image logging
-matches = finder.find(needle, haystack)
-
-
-# cleanup steps
+# Final cleanup steps
 if REMOVE_LOGPATH:
     shutil.rmtree(LOGPATH)
 GlobalConfig.image_logging_level = logging.ERROR

@@ -17,83 +17,109 @@ sys.path.insert(0, '../..')
 
 
 import logging
+import pprint
 import shutil
 
 from guibot.config import GlobalConfig
 from guibot.path import Path
-from guibot.target import Image
+from guibot.target import *
 from guibot.errors import *
 from guibot.finder import *
 from guibot.calibrator import Calibrator
 
 
-# parameters to toy with
-NEEDLE = 'n_ibs'
-HAYSTACK = 'h_ibs_viewport'
+# Parameters to toy with
+path = Path()
+path.add_path('images/')
+BACKEND = "template"
+# could be Text('Text') or any other target type
+NEEDLE = Image('shape_blue_circle')
+HAYSTACK = Image('all_shapes')
+# calibration/search enabled backend categories
+ENABLED = ["template"]  # extra example: ["ocr", "threshold2"]
+MAX_ATTEMPTS=10
+MAX_EXEC_TIME=1.0
+RANDOM_STARTS=10
+UNIFORM_DRAW=False
+CALIBRATED_SEARCH = False
+CALIBRATED_BENCHMARK = False
+BENCHMARK_RANDOM_STARTS=0
+# image logging variables
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
-CALIBRATED_BENCHMARK = False
 
 
-# minimal setup
-logging.getLogger('').addHandler(logging.StreamHandler())
+# Overall logging setup
+handler = logging.StreamHandler()
+logging.getLogger('').addHandler(handler)
 logging.getLogger('').setLevel(logging.INFO)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
 GlobalConfig.image_logging_level = 0
 GlobalConfig.image_logging_destination = LOGPATH
 GlobalConfig.image_logging_step_width = 4
-
-path = Path()
-path.add_path('images/')
-
 ImageLogger.step = 1
 
-needle = Image(NEEDLE)
-haystack = Image(HAYSTACK)
 
-
-# the matching step
+# Main configuration steps
+GlobalConfig.find_backend = BACKEND
 if GlobalConfig.find_backend == "autopy":
-    finder = AutoPyFinder()
+    finder = AutoPyFinder(synchronize=False)
 elif GlobalConfig.find_backend == "contour":
-    finder = ContourFinder()
+    finder = ContourFinder(synchronize=False)
 elif GlobalConfig.find_backend == "template":
-    finder = TemplateFinder()
+    finder = TemplateFinder(synchronize=False)
 elif GlobalConfig.find_backend == "feature":
-    finder = FeatureFinder()
+    finder = FeatureFinder(synchronize=False)
 elif GlobalConfig.find_backend == "cascade":
-    finder = CascadeFinder()
+    finder = CascadeFinder(synchronize=False)
 elif GlobalConfig.find_backend == "text":
-    finder = TextFinder()
+    finder = TextFinder(synchronize=False)
 elif GlobalConfig.find_backend == "tempfeat":
-    finder = TemplateFeatureFinder()
+    finder = TemplateFeatureFinder(synchronize=False)
 elif GlobalConfig.find_backend == "deep":
-    finder = DeepFinder()
-# non-default initial conditions for the calibration
-#finder.configure_backend(find_image = "feature")
+    finder = DeepFinder(synchronize=False)
+# non-default initial conditions for the calibration of various finder types
+#finder.configure(text_detector="contours")
+#finder.configure_backend(backend="sqdiff_normed", category="template")
 #finder.params["find"]["similarity"].value = 0.7
 #finder.params["tempfeat"]["front_similarity"].value = 0.5
 #finder.params["feature"]["ransacReprojThreshold"].value = 25.0
-#finder.params["fdetect"]["nzoom"].value = 7.0
-#finder.params["fdetect"]["hzoom"].value = 7.0
 #finder.params["fdetect"]["MaxFeatures"].value = 10
-finder.find(needle, haystack)
+#finder.params["text"]["datapath"].value = "../../misc"
+#finder.params["ocr"]["oem"].value = 0
+#finder.params["tdetect"]["verticalVariance"].value = 5
+#finder.params["threshold"]["blockSize"].value = 3
+# synchronize at this stage to take into account all configuration
+finder.synchronize()
 
 
-# calibration and benchmarking
-calibrator = Calibrator()
-error_before = calibrator.calibrate(haystack, needle, finder)
+# Main steps: calibration, searching, and benchmarking
+calibrator = Calibrator(NEEDLE, HAYSTACK)
+# uncomment this to use a list of needles and haystacks instead
+#calibrator = Calibrator(config="pairs.list")
+calibrator.run = calibrator.run_performance
+# uncomment these for alternative run functions
+#calibrator.run = calibrator.run_default
+#calibrator.run = calibrator.run_peak
+similarity_before = calibrator.calibrate(finder, max_attempts=1)
 # categories to calibrate
-for category in ["find", "feature", "fdetect", "fextract", "fmatch"]:
+for category in ENABLED:
     finder.can_calibrate(category, True)
-error_after = calibrator.calibrate(haystack, needle, finder)
-logging.info("Error before and after calibration: %s -> %s", error_before, error_after)
-logging.info("Best found parameters:\n%s\n", "\n".join([str(p) for p in finder.params.items()]))
-results = calibrator.benchmark(haystack, needle, calibration=CALIBRATED_BENCHMARK)
-logging.info("Benchmarking results (method, similarity, location, time):\n%s",
-             "\n".join([str(r) for r in results]))
+# example parameter to solo allow for calibration:
+#finder.params["threshold2"]["blockSize"].fixed = False
+similarity_after = calibrator.calibrate(finder, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
+logging.info("Similarity before and after calibration: %s -> %s", similarity_before, similarity_after)
+similarity_global = calibrator.search(finder, random_starts=RANDOM_STARTS, uniform=UNIFORM_DRAW,
+                                      calibration=CALIBRATED_SEARCH, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
+logging.info("Similarity after search (Monte Carlo calibration): %s -> %s", similarity_before, similarity_global)
+logging.info("Best found parameters:\n%s", pprint.pformat(finder.params))
+results = calibrator.benchmark(finder, random_starts=BENCHMARK_RANDOM_STARTS, uniform=UNIFORM_DRAW,
+                               calibration=CALIBRATED_BENCHMARK, max_attempts=MAX_ATTEMPTS, max_exec_time=MAX_EXEC_TIME)
+logging.info("Benchmarking results (method, similarity, location, time):\n%s", pprint.pformat(results))
 
 
-# cleanup steps
+# Final cleanup steps
 if REMOVE_LOGPATH:
     shutil.rmtree(LOGPATH)
 GlobalConfig.image_logging_level = logging.ERROR

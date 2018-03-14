@@ -17,6 +17,7 @@ import os
 import sys
 import re
 import copy
+import random
 try:
     import configparser as config
 except ImportError:
@@ -36,42 +37,59 @@ class CVParameter(object):
 
     def __init__(self, value,
                  min_val=None, max_val=None,
-                 delta=1.0, tolerance=0.1,
-                 fixed=True):
+                 delta=10.0, tolerance=1.0,
+                 fixed=True, enumerated=False):
         """
         Build a computer vision parameter.
 
         :param value: value of the parameter
-        :type value: bool or int or float or None
+        :type value: bool or int or float or str or None
         :param min_val: lower boundary for the parameter range
         :type min_val: int or float or None
         :param max_val: upper boundary for the parameter range
         :type max_val: int or float or None
-        :param float delta: delta for the calibration
+        :param float delta: delta for the calibration and random value
                             (no calibration if `delta` < `tolerance`)
         :param float tolerance: tolerance of calibration
         :param bool fixed: whether the parameter is prevented from calibration
+        :param bool enumerated: whether the parameter value belongs to an
+                                enumeration or to a range (distance matters)
+
+        As a rule of thumb a good choice for the parameter delta is one fourth
+        of the range since the delta will be used as standard deviation when
+        generating a random value for the parameter from a normal distribution.
+        The delta to tolerance ratio is basically the number of failing trials
+        before the parameter converges and is usually set to ten.
         """
         self.value = value
+
+        # initial (delta) and minimal (tolerance) variation step
         self.delta = delta
         self.tolerance = tolerance
 
-        # force specific tolerance and delta for bool and
-        # int parameters
-        if type(value) == bool:
-            self.delta = 0.0
-            self.tolerance = 1.0
-        elif type(value) == int:
-            self.delta = 1
-            self.tolerance = 0.9
-
-        if min_val != None:
+        # variation allowance range
+        self.min_val = min_val
+        if min_val is not None:
             assert value >= min_val
-        if max_val != None:
+        elif type(self.value) == float:
+            min_val = -sys.float_info.max
+        elif type(self.value) == int:
+            min_val = -sys.maxint
+        self.max_val = max_val
+        if max_val is not None:
             assert value <= max_val
+        elif type(self.value) == float:
+            max_val = sys.float_info.max
+        elif type(self.value) == int:
+            max_val = sys.maxint
         self.range = (min_val, max_val)
 
+        # fixed or allowed to be calibrated
         self.fixed = fixed
+        # enumerable (e.g. modes) or range value
+        self.enumerated = enumerated
+        if self.enumerated and (self.min_val is None or self.max_val is None):
+            raise ValueError("Enumerated parameters must have a finite (usually small) range")
 
     def __repr__(self):
         """
@@ -80,8 +98,8 @@ class CVParameter(object):
         :returns: special syntax representation of the parameter
         :rtype: str
         """
-        return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s'>"
-                % (self.value, self.range[0], self.range[1], self.delta, self.tolerance, self.fixed))
+        return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s' enumerated='%s'>"
+                % (self.value, self.min_val, self.max_val, self.delta, self.tolerance, self.fixed, self.enumerated))
 
     @staticmethod
     def from_string(raw):
@@ -95,7 +113,7 @@ class CVParameter(object):
         """
         args = []
         string_args = re.match(r"<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
-                               r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)'>",
+                               r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)' enumerated='(\w+)'>",
                                raw).group(1, 2, 3, 4, 5, 6)
         for arg in string_args:
             if arg == "None":
@@ -111,11 +129,47 @@ class CVParameter(object):
             else:
                 arg = str(arg)
 
-            log.log(0, "%s %s", arg, type(arg))
+            log.log(9, "%s %s", arg, type(arg))
             args.append(arg)
 
-        log.log(0, "%s", args)
+        log.log(9, "%s", args)
         return CVParameter(*args)
+
+    def random_value(self, mu=None, sigma=None):
+        """
+        Return a random value of the CV parameter given its range and type.
+
+        :param mu: mean for a normal distribution, uniform distribution if None
+        :type mu: bool or int or float or str or None
+        :param sigma: standard deviation for a normal distribution, quarter range if None
+                      (maximal range is equivalent to maximal data type values)
+        :type sigma: bool or int or float or str or None
+        :returns: a random value comforming to the CV parameter range and type
+        :rtype: bool or int or float or str or None
+
+        .. note:: Only uniform distribution is used for boolean values.
+        """
+        start, end = self.range[0], self.range[1]
+        if type(self.value) == float:
+            if mu is None or self.enumerated:
+                return random.uniform(self.range[0], self.range[1])
+            elif sigma is None:
+                return min(max(random.gauss(mu, (start-end)/4), start), end)
+            else:
+                return min(max(random.gauss(mu, sigma), start), end)
+        elif type(self.value) == int:
+            if mu is None or self.enumerated:
+                return random.randint(start, end)
+            elif sigma is None:
+                return min(max(int(random.gauss(mu, (start-end)/4)), start), end)
+            else:
+                return min(max(int(random.gauss(mu, sigma)), start), end)
+        elif type(self.value) == bool:
+            value = random.randint(0, 1)
+            return value == 1
+        else:
+            log.warning("Cannot generate random value for CV parameters other than float, int, and bool")
+            return self.value
 
 
 class Finder(LocalConfig):
@@ -194,7 +248,7 @@ class Finder(LocalConfig):
                     param_string = parser.get(category, option)
                     if isinstance(finder.params[category][option], CVParameter):
                         param = CVParameter.from_string(param_string)
-                        log.log(0, "%s %s", param_string, param)
+                        log.log(9, "%s %s", param_string, param)
                     else:
                         param = param_string
                     finder.params[category][option] = param
@@ -220,7 +274,7 @@ class Finder(LocalConfig):
                 parser.add_section(section)
             parser.set(section, 'backend', finder.params[section]["backend"])
             for option in finder.params[section]:
-                log.log(0, "%s %s", section, option)
+                log.log(9, "%s %s", section, option)
                 parser.set(section, option, finder.params[section][option])
 
         if not filename.endswith(".match"):
@@ -257,11 +311,11 @@ class Finder(LocalConfig):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
-        self.params[category]["similarity"] = CVParameter(0.8, 0.0, 1.0, 0.1, 0.1)
-        log.log(0, "%s %s\n", category, self.params[category])
+        self.params[category]["similarity"] = CVParameter(0.8, 0.0, 1.0)
+        log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend=None, category="find", reset=False):
         """
@@ -306,11 +360,13 @@ class Finder(LocalConfig):
             if not isinstance(value, CVParameter):
                 continue
             # BUG: force fix parameters that have internal bugs
-            if category == "fextract" and value == "bytes":
+            if category == "fextract" and key == "bytes":
+                value.fixed = True
+            elif category == "fdetect" and key == "Extended":
                 value.fixed = True
             else:
                 value.fixed = not mark
-            logging.debug("Setting %s to fixed=%s for calibration", key, value.fixed)
+            log.debug("Setting %s/%s to fixed=%s for calibration", category, key, value.fixed)
 
     def copy(self):
         acopy = type(self)(synchronize=False)
@@ -508,42 +564,42 @@ class ContourFinder(Finder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
         if category == "contour":
             # 1 RETR_EXTERNAL, 2 RETR_LIST, 3 RETR_CCOMP, 4 RETR_TREE
-            self.params[category]["retrievalMode"] = CVParameter(2, 1, 4)
+            self.params[category]["retrievalMode"] = CVParameter(2, 1, 4, enumerated=True)
             # 1 CHAIN_APPROX_NONE, 2 CHAIN_APPROX_SIMPLE, 3 CHAIN_APPROX_TC89_L1, 4 CHAIN_APPROX_TC89_KCOS
-            self.params[category]["approxMethod"] = CVParameter(2, 1, 4)
-            self.params[category]["minArea"] = CVParameter(0, 0, None)
+            self.params[category]["approxMethod"] = CVParameter(2, 1, 4, enumerated=True)
+            self.params[category]["minArea"] = CVParameter(0, 0, None, 100.0)
             # 1 L1 method, 2 L2 method, 3 L3 method
-            self.params[category]["contoursMatch"] = CVParameter(1, 1, 3)
+            self.params[category]["contoursMatch"] = CVParameter(1, 1, 3, enumerated=True)
         elif category == "threshold":
             # 1 normal, 2 median, 3 gaussian, 4 none
-            self.params[category]["blurType"] = CVParameter(4, 1, 4)
-            self.params[category]["blurKernelSize"] = CVParameter(5, 1, None)
-            self.params[category]["blurKernelSigma"] = CVParameter(0, 0, None)
+            self.params[category]["blurType"] = CVParameter(4, 1, 4, enumerated=True)
+            self.params[category]["blurKernelSize"] = CVParameter(5, 1, None, 100.0)
+            self.params[category]["blurKernelSigma"] = CVParameter(0, 0, None, 100.0)
             if backend == "normal":
                 # value of the threshold since it is nonadaptive and fixed
-                self.params[category]["thresholdValue"] = CVParameter(122, 0, 255)
-                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
+                self.params[category]["thresholdValue"] = CVParameter(122, 0, 255, 50.0)
+                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255, 20.0)
                 # 0 binary, 1 binar_inv, 2 trunc, 3 tozero, 4 tozero_inv, 5 mask, 6 otsu, 7 triangle
-                self.params[category]["thresholdType"] = CVParameter(1, 0, 7)
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 7, enumerated=True)
             elif backend == "adaptive":
-                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
+                self.params[category]["thresholdMax"] = CVParameter(255, 0, 255, 20.0)
                 # 0 adaptive mean threshold, 1 adaptive gaussian (weighted mean) threshold
-                self.params[category]["adaptiveMethod"] = CVParameter(1, 0, 1)
+                self.params[category]["adaptiveMethod"] = CVParameter(1, 0, 1, enumerated=True)
                 # 0 normal, 1 inverted
-                self.params[category]["thresholdType"] = CVParameter(1, 0, 1)
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 1, enumerated=True)
                 # size of the neighborhood to consider to adaptive thresholding
-                self.params[category]["blockSize"] = CVParameter(11, 1, None)
+                self.params[category]["blockSize"] = CVParameter(11, 3, None, 200.0, 2.0)
                 # constant to substract from the (weighted) calculated mean
-                self.params[category]["constant"] = CVParameter(2, 1, None)
+                self.params[category]["constant"] = CVParameter(2, -255, 255, 1.0)
             elif backend == "canny":
-                self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None)
-                self.params[category]["threshold2"] = CVParameter(1000.0, 0.0, None)
+                self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None, 50.0)
+                self.params[category]["threshold2"] = CVParameter(1000.0, 0.0, None, 500.0)
 
     def configure_backend(self, backend=None, category="contour", reset=False):
         """
@@ -667,7 +723,7 @@ class ContourFinder(Finder):
         if self.params["threshold"]["blurType"].value == 1:
             blur_image = cv2.blur(gray_image, (blurSize,blurSize))
         elif self.params["threshold"]["blurType"].value == 2:
-            blur_image = cv2.medianBlur(gray_image, (blurSize,blurSize))
+            blur_image = cv2.medianBlur(gray_image, blurSize)
         elif self.params["threshold"]["blurType"].value == 3:
             blur_image = cv2.GaussianBlur(gray_image, (blurSize,blurSize), blurDeviation)
         elif self.params["threshold"]["blurType"].value == 4:
@@ -767,11 +823,11 @@ class TemplateFinder(Finder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
         self.params[category]["nocolor"] = CVParameter(False)
-        log.log(0, "%s %s\n", category, self.params[category])
+        log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend=None, category="template", reset=False):
         """
@@ -869,15 +925,15 @@ class TemplateFinder(Finder):
             match_y1 = min(maxLoc[1] + int(0.5 * needle.height), res_h)
 
             # log this only if performing deep internal debugging
-            log.log(0, "Wipe image matches in x [%s, %s]/[%s, %s]",
+            log.log(9, "Wipe image matches in x [%s, %s]/[%s, %s]",
                     match_x0, match_x1, 0, res_w)
-            log.log(0, "Wipe image matches in y [%s, %s]/[%s, %s]",
+            log.log(9, "Wipe image matches in y [%s, %s]/[%s, %s]",
                     match_y0, match_y1, 0, res_h)
 
             # clean found image to look for next safe distance match
             result[match_y0:match_y1,match_x0:match_x1] = 0.0
 
-            log.log(0, "Total maxima up to the point are %i", len(matches))
+            log.log(9, "Total maxima up to the point are %i", len(matches))
         log.debug("A total of %i matches found", len(matches))
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
@@ -1000,21 +1056,21 @@ class FeatureFinder(Finder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
         if category == "feature":
             # 0 for homography, 1 for fundamental matrix
-            self.params[category]["projectionMethod"] = CVParameter(0, 0, 1, None)
-            self.params[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 10.0, 1.0)
+            self.params[category]["projectionMethod"] = CVParameter(0, 0, 1, enumerated=True)
+            self.params[category]["ransacReprojThreshold"] = CVParameter(0.0, 0.0, 200.0, 50.0)
             self.params[category]["minDetectedFeatures"] = CVParameter(4, 1, None)
             self.params[category]["minMatchedFeatures"] = CVParameter(4, 1, None)
             # 0 for matched/detected ratio, 1 for projected/matched ratio
-            self.params[category]["similarityRatio"] = CVParameter(1, 0, 1, None)
+            self.params[category]["similarityRatio"] = CVParameter(1, 0, 1, enumerated=True)
         elif category == "fdetect":
-            self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
-            self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 1.0, 1.0)
+            self.params[category]["nzoom"] = CVParameter(1.0, 1.0, 10.0, 2.5)
+            self.params[category]["hzoom"] = CVParameter(1.0, 1.0, 10.0, 2.5)
 
             import cv2
             feature_detector_create = getattr(cv2, "%s_create" % backend)
@@ -1030,10 +1086,10 @@ class FeatureFinder(Finder):
                 self.params[category]["refinements"] = CVParameter(50, 1, None)
                 self.params[category]["recalc_interval"] = CVParameter(10, 1, None)
                 self.params[category]["variants_k"] = CVParameter(100, 1, None)
-                self.params[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0)
+                self.params[category]["variants_ratio"] = CVParameter(0.33, 0.0001, 1.0, 0.25)
                 return
             else:
-                self.params[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.1)
+                self.params[category]["ratioThreshold"] = CVParameter(0.65, 0.0, 1.0, 0.25, 0.01)
                 self.params[category]["ratioTest"] = CVParameter(False)
                 self.params[category]["symmetryTest"] = CVParameter(False)
 
@@ -1054,7 +1110,7 @@ class FeatureFinder(Finder):
 
         # examine the interface of the OpenCV backend to add extra parameters
         if category in ["fdetect", "fextract", "fmatch"]:
-            log.log(0, "%s %s", backend_obj, dir(backend_obj))
+            log.log(9, "%s %s", backend_obj, dir(backend_obj))
             for attribute in dir(backend_obj):
                 if not attribute.startswith("get"):
                     continue
@@ -1066,16 +1122,22 @@ class FeatureFinder(Finder):
 
                 # give more information about some better known parameters
                 if category in ("fdetect", "fextract") and param == "FirstLevel":
-                    self.params[category][param] = CVParameter(val, 0, 100)
+                    self.params[category][param] = CVParameter(val, 0, None, 100, 25)
                 elif category in ("fdetect", "fextract") and param == "MaxFeatures":
-                    self.params[category][param] = CVParameter(val, delta=1)
+                    self.params[category][param] = CVParameter(val, 0, None, 100.0)
                 elif category in ("fdetect", "fextract") and param == "WTA_K":
-                    self.params[category][param] = CVParameter(val, 2, 4)
+                    self.params[category][param] = CVParameter(val, 2, 4, 1.0)
                 elif category in ("fdetect", "fextract") and param == "ScaleFactor":
-                    self.params[category][param] = CVParameter(val, 1.01, 2.0)
+                    self.params[category][param] = CVParameter(val, 1.01, 2.0, 0.25, 0.05)
+                elif category in ("fdetect", "fextract") and param == "NLevels":
+                    self.params[category][param] = CVParameter(val, 1, 100, 25, 0.5)
+                elif category in ("fdetect", "fextract") and param == "NLevels":
+                    self.params[category][param] = CVParameter(val, 1, 100, 25, 0.5)
+                elif category in ("fdetect", "fextract") and param == "PatchSize":
+                    self.params[category][param] = CVParameter(val, 2, None, 100, 25)
                 else:
                     self.params[category][param] = CVParameter(val)
-                log.log(0, "%s=%s", param, val)
+                log.log(9, "%s=%s", param, val)
 
     def configure_backend(self, backend=None, category="feature", reset=False):
         """
@@ -1162,7 +1224,7 @@ class FeatureFinder(Finder):
                     continue
                 set_param = getattr(backend_obj, set_attribute)
                 set_param(val)
-                log.log(0, "Synced %s to %s", param, val)
+                log.log(9, "Synced %s to %s", param, val)
                 self.params[category][param].value = val
 
         if category == "fdetect":
@@ -1378,7 +1440,7 @@ class FeatureFinder(Finder):
                 else:
                     matches2.append(m[0])
 
-            log.log(0, "Ratio test result is %i/%i", len(matches2), len(matches))
+            log.log(9, "Ratio test result is %i/%i", len(matches2), len(matches))
             return matches2
 
         def symmetry_test(nmatches, hmatches):
@@ -1399,7 +1461,7 @@ class FeatureFinder(Finder):
                         matches2.append(m)
                         break
 
-            log.log(0, "Symmetry test result is %i/%i", len(matches2), len(matches))
+            log.log(9, "Symmetry test result is %i/%i", len(matches2), len(matches))
             return matches2
 
         # include only methods tested for compatibility
@@ -1439,7 +1501,7 @@ class FeatureFinder(Finder):
         match_hkeypoints = []
         matches = sorted(matches, key=lambda x: x.distance)
         for match in matches:
-            log.log(0, match.distance)
+            log.log(9, match.distance)
             match_nkeypoints.append(nkeypoints[match.queryIdx])
             match_hkeypoints.append(hkeypoints[match.trainIdx])
 
@@ -1451,7 +1513,7 @@ class FeatureFinder(Finder):
         # update the current achieved similarity if matching similarity is used:
         # won't be updated anymore if self.params["feature"]["similarityRatio"].value == 0
         self.imglog.similarities[-1] = match_similarity
-        log.log(0, "%s\\%s -> %f", len(match_nkeypoints),
+        log.log(9, "%s\\%s -> %f", len(match_nkeypoints),
                 len(nkeypoints), match_similarity)
 
         return (match_nkeypoints, match_hkeypoints)
@@ -1514,7 +1576,7 @@ class FeatureFinder(Finder):
         for location in locations_in_needle:
             (ox, oy) = (location[0], location[1])
             orig_center_wrapped = numpy.array([[[ox, oy]]], dtype=numpy.float32)
-            log.log(0, "%s %s", orig_center_wrapped.shape, H.shape)
+            log.log(9, "%s %s", orig_center_wrapped.shape, H.shape)
             match_center_wrapped = cv2.perspectiveTransform(orig_center_wrapped, H)
             (mx, my) = (match_center_wrapped[0][0][0], match_center_wrapped[0][0][1])
             projected.append((int(mx), int(my)))
@@ -1523,7 +1585,7 @@ class FeatureFinder(Finder):
         if self.params["feature"]["similarityRatio"].value == 1:
             # override the match similarity if projectin-based similarity is preferred
             self.imglog.similarities[-1] = ransac_similarity
-        log.log(0, "%s\\%s -> %f", len(true_matches), len(mnkp), ransac_similarity)
+        log.log(9, "%s\\%s -> %f", len(true_matches), len(mnkp), ransac_similarity)
         self.imglog.locations.extend(projected)
 
         return projected
@@ -1605,12 +1667,12 @@ class CascadeFinder(Finder):
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
-        self.params[category]["scaleFactor"] = CVParameter(1.1)
-        self.params[category]["minNeighbors"] = CVParameter(3, 0, None)
-        self.params[category]["minWidth"] = CVParameter(0, 0, None)
-        self.params[category]["maxWidth"] = CVParameter(1000, 0, None)
-        self.params[category]["minHeight"] = CVParameter(0, 0, None)
-        self.params[category]["maxHeight"] = CVParameter(1000, 0, None)
+        self.params[category]["scaleFactor"] = CVParameter(1.1, 0.0, None, 0.1)
+        self.params[category]["minNeighbors"] = CVParameter(3, 0, None, 1.0)
+        self.params[category]["minWidth"] = CVParameter(0, 0, None, 100.0)
+        self.params[category]["maxWidth"] = CVParameter(1000, 0, None, 100.0)
+        self.params[category]["minHeight"] = CVParameter(0, 0, None, 100.0)
+        self.params[category]["maxHeight"] = CVParameter(1000, 0, None, 100.0)
 
     def configure_backend(self, backend=None, category="cascade", reset=False):
         """
@@ -1743,7 +1805,7 @@ class TextFinder(ContourFinder):
             raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
                                           "%s" % (backend, self.algorithms[self.categories[category]]))
 
-        log.log(0, "Setting backend for %s to %s", category, backend)
+        log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
@@ -1751,28 +1813,30 @@ class TextFinder(ContourFinder):
             self.params[category]["datapath"] = CVParameter("misc")
         elif category == "tdetect":
             if backend == "erstat":
-                self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255)
-                self.params[category]["minArea"] = CVParameter(0.00025, 0.0, 1.0)
-                self.params[category]["maxArea"] = CVParameter(0.13, 0.0, 1.0)
-                self.params[category]["minProbability"] = CVParameter(0.4, 0.0, 1.0)
+                self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255, 50.0)
+                self.params[category]["minArea"] = CVParameter(0.00025, 0.0, 1.0, 0.25, 0.001)
+                self.params[category]["maxArea"] = CVParameter(0.13, 0.0, 1.0, 0.25, 0.001)
+                self.params[category]["minProbability"] = CVParameter(0.4, 0.0, 1.0, 0.25, 0.01)
                 self.params[category]["nonMaxSuppression"] = CVParameter(True)
-                self.params[category]["minProbabilityDiff"] = CVParameter(0.1, 0.0, 1.0)
-                self.params[category]["minProbability2"] = CVParameter(0.3, 0.0, 1.0)
+                self.params[category]["minProbabilityDiff"] = CVParameter(0.1, 0.0, 1.0, 0.25, 0.01)
+                self.params[category]["minProbability2"] = CVParameter(0.3, 0.0, 1.0, 0.25, 0.01)
             elif backend == "contours":
-                self.params[category]["maxArea"] = CVParameter(10000, 0, None)
-                self.params[category]["minWidth"] = CVParameter(1, 0, None)
-                self.params[category]["maxWidth"] = CVParameter(100, 0, None)
-                self.params[category]["minHeight"] = CVParameter(1, 0, None)
-                self.params[category]["maxHeight"] = CVParameter(100, 0, None)
-                self.params[category]["minAspectRatio"] = CVParameter(0.1, 0.0, None)
-                self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None)
-                self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None)
-                self.params[category]["verticalVariance"] = CVParameter(10, 0, None)
+                self.params[category]["maxArea"] = CVParameter(10000, 0, None, 1000.0, 10.0)
+                self.params[category]["minWidth"] = CVParameter(1, 0, None, 100.0)
+                self.params[category]["maxWidth"] = CVParameter(100, 0, None, 100.0)
+                self.params[category]["minHeight"] = CVParameter(1, 0, None, 100.0)
+                self.params[category]["maxHeight"] = CVParameter(100, 0, None, 100.0)
+                self.params[category]["minAspectRatio"] = CVParameter(0.1, 0.0, None, 10.0)
+                self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None, 10.0)
+                self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None, 10.0)
+                self.params[category]["verticalVariance"] = CVParameter(10, 0, None, 10.0)
                 # 0 horizontal, 1 vertical
-                self.params[category]["orientation"] = CVParameter(0, 0, 1)
-                self.params[category]["minChars"] = CVParameter(3, 0, None)
+                self.params[category]["orientation"] = CVParameter(0, 0, 1, enumerated=True)
+                self.params[category]["minChars"] = CVParameter(3, 0, None, 2.0)
             elif backend == "components":
-                self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4)
+                # with equal delta and tolerance we ensure that only one failure will be
+                # allowed and no intermediary values between 4 and 8 will be selected
+                self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4.0, 4.0)
         elif category == "ocr":
             if backend == "tesseract":
                 # eng, deu, etc. (ISO 639-3)
@@ -1780,40 +1844,40 @@ class TextFinder(ContourFinder):
                 self.params[category]["char_whitelist"] = CVParameter("0123456789abcdefghijklmnopqrst"
                                                                       "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
                 # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
-                self.params[category]["oem"] = CVParameter(3, 0, 3)
+                self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
                 # 13 different page segmentation modes - see Tesseract API
-                self.params[category]["psmode"] = CVParameter(3, 0, 13)
+                self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
-                self.params[category]["component_level"] = CVParameter(1, 0, 1)
+                self.params[category]["component_level"] = CVParameter(1, 0, 1, enumerated=True)
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(False)
             elif backend == "hmm":
                 # 1 NM 2 CNN as classifiers for hidden markov models (see OpenCV documentation)
-                self.params[category]["classifier"] = CVParameter(1, 1, 2)
+                self.params[category]["classifier"] = CVParameter(1, 1, 2, enumerated=True)
                 # 0 OCR_LEVEL_WORD
-                self.params[category]["component_level"] = CVParameter(0, 0, 0)
+                self.params[category]["component_level"] = CVParameter(0, 0, 1, enumerated=True)
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(True)
             else:
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(True)
-            self.params[category]["min_confidence"] = CVParameter(0, 0, 100)
+            self.params[category]["min_confidence"] = CVParameter(0, 0, 100, 25.0)
             # zoom factor for improved OCR processing due to higher resolution
-            self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, None)
+            self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, 100.0, 25.0)
             # border size to wrap around text field to improve recognition rate
-            self.params[category]["border_size"] = CVParameter(10, 0, None)
+            self.params[category]["border_size"] = CVParameter(10, 0, 100, 25.0)
             # 0 erode, 1 dilate, 2 both, 3 none
-            self.params[category]["erode_dilate"] = CVParameter(3, 0, 3)
+            self.params[category]["erode_dilate"] = CVParameter(3, 0, 3, enumerated=True)
             # 0 MORPH_RECT, 1 MORPH_ELLIPSE, 2 MORPH_CROSS
-            self.params[category]["ed_kernel_type"] = CVParameter(0, 0, 2)
-            self.params[category]["ed_kernel_width"] = CVParameter(1, 0, 2)
-            self.params[category]["ed_kernel_height"] = CVParameter(1, 0, 2)
+            self.params[category]["ed_kernel_type"] = CVParameter(0, 0, 2, enumerated=True)
+            self.params[category]["ed_kernel_width"] = CVParameter(1, 1, 1000, 250.0, 2.0)
+            self.params[category]["ed_kernel_height"] = CVParameter(1, 1, 1000, 250.0, 2.0)
             # perform distance transform if ture or not if false
             self.params[category]["distance_transform"] = CVParameter(False)
             # 1 CV_DIST_L1, 2 CV_DIST_L2, 3 CV_DIST_C
-            self.params[category]["dt_distance_type"] = CVParameter(1, 1, 3)
+            self.params[category]["dt_distance_type"] = CVParameter(1, 1, 3, enumerated=True)
             # 0 (precise) or 3x3 or 5x5 (the latest only works with Euclidean distance CV_DIST_L2)
-            self.params[category]["dt_mask_size"] = CVParameter(3, 0, 5)
+            self.params[category]["dt_mask_size"] = CVParameter(3, 0, 5, 8.0, 2.0)
 
     def configure_backend(self, backend=None, category="text", reset=False):
         """
@@ -2170,8 +2234,8 @@ class TextFinder(ContourFinder):
                 h > self.params["tdetect"]["maxHeight"].value or
                 ratio < self.params["tdetect"]["minAspectRatio"].value or
                 ratio > self.params["tdetect"]["maxAspectRatio"].value):
-                logging.debug("Ignoring contour with area %sx%s>%s and aspect ratio %s/%s=%s",
-                              w, h, area, w, h, ratio)
+                log.debug("Ignoring contour with area %sx%s>%s and aspect ratio %s/%s=%s",
+                          w, h, area, w, h, ratio)
                 continue
             else:
                 cv2.rectangle(char_canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
@@ -2204,8 +2268,8 @@ class TextFinder(ContourFinder):
                     chars_for_text += 1
                     char_regions[j] = None
             if chars_for_text < min_chars_for_text:
-                logging.debug("Ignoring text contour with %s<%s characters",
-                              chars_for_text, min_chars_for_text)
+                log.debug("Ignoring text contour with %s<%s characters",
+                          chars_for_text, min_chars_for_text)
                 continue
             x, y, w, h = region1
             cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
@@ -2332,7 +2396,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
 
         self.params[category] = {}
         self.params[category]["backend"] = backend
-        self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0, 0.1, 0.1)
+        self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0)
 
     def configure_backend(self, backend=None, category="tempfeat", reset=False):
         """
@@ -2416,7 +2480,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
             down = min(haystack.height, up + needle.height)
             left = upleft.x
             right = min(haystack.width, left + needle.width)
-            log.log(0, "Maximum up-down is %s and left-right is %s",
+            log.log(9, "Maximum up-down is %s and left-right is %s",
                     (up, down), (left, right))
 
             haystack_region = hgray[up:down, left:right]
@@ -3002,7 +3066,7 @@ class CustomFinder(Finder):
                 coord[1] = -1
             elif target[1] > origin[1]:
                 coord[1] = 1
-            log.log(0, "%s:%s=%s", origin, target, coord)
+            log.log(9, "%s:%s=%s", origin, target, coord)
             return coord
 
         def compare_pos(match1, match2):
@@ -3015,8 +3079,8 @@ class CustomFinder(Finder):
             if hc[1] != nc[1] and hc[1] != 0 and nc[1] != 0:
                 valid_positioning = False
 
-            log.log(0, "p1:p2 = %s in haystack and %s in needle", hc, nc)
-            log.log(0, "is their relative positioning valid? %s", valid_positioning)
+            log.log(9, "p1:p2 = %s in haystack and %s in needle", hc, nc)
+            log.log(9, "is their relative positioning valid? %s", valid_positioning)
 
             return valid_positioning
 
@@ -3027,7 +3091,7 @@ class CustomFinder(Finder):
             nominator = sum(float(not compare_pos(match, new_match)) for match in matches)
             denominator = float(len(matches))
             ratio = nominator / denominator
-            log.log(0, "model <-> match = %i disagreeing / %i total matches",
+            log.log(9, "model <-> match = %i disagreeing / %i total matches",
                     nominator, denominator)
 
             # avoid 0 mapping, i.e. giving 0 positional
@@ -3039,8 +3103,8 @@ class CustomFinder(Finder):
                 new_match.distance = 0.001
 
             cost = ratio * new_match.distance
-            log.log(0, "would be + %f cost", cost)
-            log.log(0, "match reduction: %s",
+            log.log(9, "would be + %f cost", cost)
+            log.log(9, "match reduction: %s",
                     cost / max(sum(m.distance for m in matches), 1))
 
             return cost
@@ -3049,7 +3113,7 @@ class CustomFinder(Finder):
                                 1, variants_ratio)
         matches = [variants[0] for variants in results]
         ratings = [None for _ in matches]
-        log.log(0, "%i matches in needle to start with", len(matches))
+        log.log(9, "%i matches in needle to start with", len(matches))
 
         # minimum one refinement is needed
         refinements = max(1, refinements)
@@ -3072,8 +3136,8 @@ class CustomFinder(Finder):
             outlier_index = ratings.index(max(ratings))
             outlier = matches[outlier_index]
             variants = results[outlier_index]
-            log.log(0, "outlier m%i with rating %i", outlier_index, max(ratings))
-            log.log(0, "%i match variants for needle match %i", len(variants), outlier_index)
+            log.log(9, "outlier m%i with rating %i", outlier_index, max(ratings))
+            log.log(9, "%i match variants for needle match %i", len(variants), outlier_index)
 
             # add the match variant with a minimal cost
             variant_costs = []
@@ -3086,9 +3150,9 @@ class CustomFinder(Finder):
                     assert variants[j].queryIdx == variants[j - 1].queryIdx
                     if variants[j].trainIdx == variants[j - 1].trainIdx:
                         continue
-                log.log(0, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)
-                log.log(0, "variant %i coord in n/h %s/%s", j, ncoord(variant), hcoord(variant))
-                log.log(0, "variant distance: %s", variant.distance)
+                log.log(9, "variant %i is m%i/%i in n/h", j, variant.queryIdx, variant.trainIdx)
+                log.log(9, "variant %i coord in n/h %s/%s", j, ncoord(variant), hcoord(variant))
+                log.log(9, "variant distance: %s", variant.distance)
 
                 matches[outlier_index] = variant
                 variant_costs.append((j, match_cost(matches, variant)))
@@ -3096,7 +3160,7 @@ class CustomFinder(Finder):
             min_cost_index, min_cost = min(variant_costs, key=lambda x: x[1])
             min_cost_variant = variants[min_cost_index]
             # if variant_costs.index(min(variant_costs)) != 0:
-            log.log(0, "%s>%s i.e. variant %s", variant_costs, min_cost, min_cost_index)
+            log.log(9, "%s>%s i.e. variant %s", variant_costs, min_cost, min_cost_index)
             matches[outlier_index] = min_cost_variant
             ratings[outlier_index] = min_cost
 
@@ -3129,7 +3193,7 @@ class CustomFinder(Finder):
         if desc4kp > 1:
             desc1 = numpy.array(desc1, dtype=numpy.float32).reshape((-1, desc4kp))
             desc2 = numpy.array(desc2, dtype=numpy.float32).reshape((-1, desc4kp))
-            log.log(0, "%s %s", desc1.shape, desc2.shape)
+            log.log(9, "%s %s", desc1.shape, desc2.shape)
         else:
             desc1 = numpy.array(desc1, dtype=numpy.float32)
             desc2 = numpy.array(desc2, dtype=numpy.float32)
@@ -3138,7 +3202,7 @@ class CustomFinder(Finder):
         # kNN training - learn mapping from rows2 to kp2 index
         samples = desc2
         responses = numpy.arange(int(len(desc2) / desc4kp), dtype=numpy.float32)
-        log.log(0, "%s %s", len(samples), len(responses))
+        log.log(9, "%s %s", len(samples), len(responses))
         knn = cv2.KNearest()
         knn.train(samples, responses, maxK=k)
 
@@ -3146,13 +3210,13 @@ class CustomFinder(Finder):
         # retrieve index and value through enumeration
         for i, descriptor in enumerate(desc1):
             descriptor = numpy.array(descriptor, dtype=numpy.float32).reshape((1, desc_size))
-            log.log(0, "%s %s %s", i, descriptor.shape, samples[0].shape)
+            log.log(9, "%s %s %s", i, descriptor.shape, samples[0].shape)
             kmatches = []
             ratio = 1.0
 
             for ki in range(k):
                 _, res, _, dists = knn.find_nearest(descriptor, ki + 1)
-                log.log(0, "%s %s %s", ki, res, dists)
+                log.log(9, "%s %s %s", ki, res, dists)
                 if len(dists[0]) > 1 and autostop > 0.0:
 
                     # TODO: perhaps ratio from first to last ki?
@@ -3160,7 +3224,7 @@ class CustomFinder(Finder):
                     dist1 = dists[0][-2] + 0.0000001
                     dist2 = dists[0][-1] + 0.0000001
                     ratio = dist1 / dist2
-                    log.log(0, "%s %s", ratio, autostop)
+                    log.log(9, "%s %s", ratio, autostop)
                     if ratio < autostop:
                         break
 
