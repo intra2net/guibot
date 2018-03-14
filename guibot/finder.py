@@ -2269,7 +2269,7 @@ class TextFinder(ContourFinder):
                                                                              self.imglog.similarities[i-2]),
                                     self.imglog.hotmaps[i])
 
-        similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
+        similarity = max(self.imglog.similarities) if len(self.imglog.similarities) > 0 else 0.0
         self.imglog.dump_hotmap("imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity),
                                 self.imglog.hotmaps[-1])
 
