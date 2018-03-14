@@ -27,14 +27,19 @@ from guibot.target import *
 from guibot.finder import *
 
 
-# parameters to toy with
-NEEDLE = 'shape_blue_circle'
-HAYSTACK = 'all_shapes'
+# Parameters to toy with
+path = Path()
+path.add_path('images/')
+BACKEND = "template"
+# could be Text('Text') or any other target type
+NEEDLE = Image('shape_blue_circle')
+HAYSTACK = Image('all_shapes')
+# image logging variables
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
 
 
-# minimal setup
+# Overall logging setup
 handler = logging.StreamHandler()
 logging.getLogger('').addHandler(handler)
 logging.getLogger('').setLevel(logging.DEBUG)
@@ -43,44 +48,47 @@ handler.setFormatter(formatter)
 GlobalConfig.image_logging_level = 0
 GlobalConfig.image_logging_destination = LOGPATH
 GlobalConfig.image_logging_step_width = 4
-
-path = Path()
-path.add_path('images/')
-
 ImageLogger.step = 1
 
-needle = Image(NEEDLE)
-haystack = Image(HAYSTACK)
 
-
-# the matching step
+# Main configuration steps
+GlobalConfig.find_backend = BACKEND
 if GlobalConfig.find_backend == "autopy":
-    finder = AutoPyFinder()
+    finder = AutoPyFinder(synchronize=False)
 elif GlobalConfig.find_backend == "contour":
-    finder = ContourFinder()
+    finder = ContourFinder(synchronize=False)
 elif GlobalConfig.find_backend == "template":
-    finder = TemplateFinder()
+    finder = TemplateFinder(synchronize=False)
 elif GlobalConfig.find_backend == "feature":
-    finder = FeatureFinder()
+    finder = FeatureFinder(synchronize=False)
 elif GlobalConfig.find_backend == "cascade":
-    finder = CascadeFinder()
+    finder = CascadeFinder(synchronize=False)
 elif GlobalConfig.find_backend == "text":
-    finder = TextFinder()
+    finder = TextFinder(synchronize=False)
 elif GlobalConfig.find_backend == "tempfeat":
-    finder = TemplateFeatureFinder()
+    finder = TemplateFeatureFinder(synchronize=False)
 elif GlobalConfig.find_backend == "deep":
-    finder = DeepFinder()
-#finder.configure_backend(find_image = "feature")
+    finder = DeepFinder(synchronize=False)
+# example configuration from various finder types
+#finder.configure(text_detector="contours")
+#finder.configure_backend(backend="sqdiff_normed", category="template")
 #finder.params["find"]["similarity"].value = 0.7
 #finder.params["tempfeat"]["front_similarity"].value = 0.5
 #finder.params["feature"]["ransacReprojThreshold"].value = 25.0
-#finder.params["fdetect"]["nzoom"].value = 7.0
-#finder.params["fdetect"]["hzoom"].value = 7.0
 #finder.params["fdetect"]["MaxFeatures"].value = 10
-finder.find(needle, haystack)
+#finder.params["text"]["datapath"].value = "../../misc"
+#finder.params["ocr"]["oem"].value = 0
+#finder.params["tdetect"]["verticalVariance"].value = 5
+#finder.params["threshold"]["blockSize"].value = 3
+# synchronize at this stage to take into account all configuration
+finder.synchronize()
 
 
-# cleanup steps
+# Main matching step
+finder.find(NEEDLE, HAYSTACK)
+
+
+# Final cleanup steps
 if REMOVE_LOGPATH:
     shutil.rmtree(LOGPATH)
 GlobalConfig.image_logging_level = logging.ERROR
