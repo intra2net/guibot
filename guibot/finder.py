@@ -14,6 +14,7 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 #
 import os
+import sys
 import re
 import copy
 try:
@@ -518,14 +519,20 @@ class ContourFinder(Finder):
             self.params[category]["blurKernelSize"] = CVParameter(5, 1, None)
             self.params[category]["blurKernelSigma"] = CVParameter(0, 0, None)
             if backend == "normal":
+                # value of the threshold since it is nonadaptive and fixed
                 self.params[category]["thresholdValue"] = CVParameter(122, 0, 255)
                 self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
-                self.params[category]["thresholdType"] = CVParameter(1, 1, 5)
+                # 0 binary, 1 binar_inv, 2 trunc, 3 tozero, 4 tozero_inv, 5 mask, 6 otsu, 7 triangle
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 7)
             elif backend == "adaptive":
                 self.params[category]["thresholdMax"] = CVParameter(255, 0, 255)
-                self.params[category]["adaptiveMethod"] = CVParameter(1, 1, 2)
-                self.params[category]["thresholdType"] = CVParameter(1, 1, 2)
+                # 0 adaptive mean threshold, 1 adaptive gaussian (weighted mean) threshold
+                self.params[category]["adaptiveMethod"] = CVParameter(1, 0, 1)
+                # 0 normal, 1 inverted
+                self.params[category]["thresholdType"] = CVParameter(1, 0, 1)
+                # size of the neighborhood to consider to adaptive thresholding
                 self.params[category]["blockSize"] = CVParameter(11, 1, None)
+                # constant to substract from the (weighted) calculated mean
                 self.params[category]["constant"] = CVParameter(2, 1, None)
             elif backend == "canny":
                 self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None)
@@ -662,16 +669,16 @@ class ContourFinder(Finder):
         # second stage: thresholding
         if self.params["threshold"]["backend"] == "normal":
             _, thresh_image = cv2.threshold(blur_image,
-                                             self.params["threshold"]["thresholdValue"].value,
-                                             self.params["threshold"]["thresholdMax"].value,
-                                             self.params["threshold"]["thresholdType"].value)
+                                            self.params["threshold"]["thresholdValue"].value,
+                                            self.params["threshold"]["thresholdMax"].value,
+                                            self.params["threshold"]["thresholdType"].value)
         elif self.params["threshold"]["backend"] == "adaptive":
             thresh_image = cv2.adaptiveThreshold(blur_image,
-                                                  self.params["threshold"]["thresholdMax"].value,
-                                                  self.params["threshold"]["adaptiveMethod"].value,
-                                                  self.params["threshold"]["thresholdType"].value,
-                                                  self.params["threshold"]["blockSize"].value,
-                                                  self.params["threshold"]["constant"].value)
+                                                 self.params["threshold"]["thresholdMax"].value,
+                                                 self.params["threshold"]["adaptiveMethod"].value,
+                                                 self.params["threshold"]["thresholdType"].value,
+                                                 self.params["threshold"]["blockSize"].value,
+                                                 self.params["threshold"]["constant"].value)
         elif self.params["threshold"]["backend"] == "canny":
             thresh_image = cv2.Canny(blur_image,
                                       self.params["threshold"]["threshold1"].value,
@@ -1674,9 +1681,13 @@ class TextFinder(ContourFinder):
         self.categories["text"] = "text_matchers"
         self.categories["tdetect"] = "text_detectors"
         self.categories["ocr"] = "text_recognizers"
+        self.categories["threshold2"] = "threshold_filters2"
+        self.categories["threshold3"] = "threshold_filters3"
         self.algorithms["text_matchers"] = ("mixed",)
         self.algorithms["text_detectors"] = ("erstat", "contours", "components")
         self.algorithms["text_recognizers"] = ("tesseract", "hmm", "beamSearch")
+        self.algorithms["threshold_filters2"] = tuple(self.algorithms["threshold_filters"])
+        self.algorithms["threshold_filters3"] = tuple(self.algorithms["threshold_filters"])
 
         # other attributes
         self.erc1 = None
@@ -1697,10 +1708,20 @@ class TextFinder(ContourFinder):
 
         See base method for details.
         """
-        if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
+        if category not in ["text", "tdetect", "ocr", "contour", "threshold", "threshold2", "threshold3"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["contour", "threshold"]:
             ContourFinder.configure_backend(self, backend, category, reset)
+            return
+        elif category in ["threshold2", "threshold3"]:
+            # simply duplicate the first threshold stage configuration
+            threshold1 = self.params.get("threshold", None)
+            ContourFinder.configure_backend(self, backend, "threshold", reset)
+            self.params[category] = self.params["threshold"]
+            if threshold1 is None:
+                del self.params["threshold"]
+            else:
+                self.params["threshold"] = threshold1
             return
 
         if reset:
@@ -1740,6 +1761,8 @@ class TextFinder(ContourFinder):
                 self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None)
                 self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None)
                 self.params[category]["verticalVariance"] = CVParameter(10, 0, None)
+                # 0 horizontal, 1 vertical
+                self.params[category]["orientation"] = CVParameter(0, 0, 1)
                 self.params[category]["minChars"] = CVParameter(3, 0, None)
             elif backend == "components":
                 self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4)
@@ -1753,13 +1776,37 @@ class TextFinder(ContourFinder):
                 self.params[category]["oem"] = CVParameter(3, 0, 3)
                 # 13 different page segmentation modes - see Tesseract API
                 self.params[category]["psmode"] = CVParameter(3, 0, 13)
+                # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
+                self.params[category]["component_level"] = CVParameter(1, 0, 1)
+                # perform custom image thresholding if set to true or leave it to the OCR
+                self.params[category]["binarize_text"] = CVParameter(False)
             elif backend == "hmm":
                 # 1 NM 2 CNN as classifiers for hidden markov models (see OpenCV documentation)
                 self.params[category]["classifier"] = CVParameter(1, 1, 2)
-            # 13 different page segmentation modes - see Tesseract API
+                # 0 OCR_LEVEL_WORD
+                self.params[category]["component_level"] = CVParameter(0, 0, 0)
+                # perform custom image thresholding if set to true or leave it to the OCR
+                self.params[category]["binarize_text"] = CVParameter(True)
+            else:
+                # perform custom image thresholding if set to true or leave it to the OCR
+                self.params[category]["binarize_text"] = CVParameter(True)
             self.params[category]["min_confidence"] = CVParameter(0, 0, 100)
-            # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
-            self.params[category]["component_level"] = CVParameter(0, 0, 1)
+            # zoom factor for improved OCR processing due to higher resolution
+            self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, None)
+            # border size to wrap around text field to improve recognition rate
+            self.params[category]["border_size"] = CVParameter(10, 0, None)
+            # 0 erode, 1 dilate, 2 both, 3 none
+            self.params[category]["erode_dilate"] = CVParameter(3, 0, 3)
+            # 0 MORPH_RECT, 1 MORPH_ELLIPSE, 2 MORPH_CROSS
+            self.params[category]["ed_kernel_type"] = CVParameter(0, 0, 2)
+            self.params[category]["ed_kernel_width"] = CVParameter(1, 0, 2)
+            self.params[category]["ed_kernel_height"] = CVParameter(1, 0, 2)
+            # perform distance transform if ture or not if false
+            self.params[category]["distance_transform"] = CVParameter(False)
+            # 1 CV_DIST_L1, 2 CV_DIST_L2, 3 CV_DIST_C
+            self.params[category]["dt_distance_type"] = CVParameter(1, 1, 3)
+            # 0 (precise) or 3x3 or 5x5 (the latest only works with Euclidean distance CV_DIST_L2)
+            self.params[category]["dt_mask_size"] = CVParameter(3, 0, 5)
 
     def configure_backend(self, backend=None, category="text", reset=False):
         """
@@ -1770,15 +1817,19 @@ class TextFinder(ContourFinder):
         self.__configure_backend(backend, category, reset)
 
     def __configure(self, text_detector=None, text_recognizer=None,
-                    threshold_filter=None, reset=True):
+                    threshold_filter=None, threshold_filter2=None,
+                    threshold_filter3=None, reset=True):
         self.__configure_backend(category="text", reset=reset)
         self.__configure_backend(text_detector, "tdetect")
         self.__configure_backend(text_recognizer, "ocr")
         self.__configure_backend(category="contour")
         self.__configure_backend(threshold_filter, "threshold")
+        self.__configure_backend(threshold_filter2, "threshold2")
+        self.__configure_backend(threshold_filter3, "threshold3")
 
     def configure(self, text_detector=None, text_recognizer=None,
-                  threshold_filter=None, reset=True):
+                  threshold_filter=None, threshold_filter2=None,
+                  threshold_filter3=None, reset=True):
         """
         Custom implementation of the base method.
 
@@ -1786,11 +1837,19 @@ class TextFinder(ContourFinder):
         :type text_detector: str or None
         :param text_recognizer: name of a preselected backend
         :type text_recognizer: str or None
+        :param threshold_filter: threshold filter for the text detection stage
+        :type threshold_filter: str or None
+        :param threshold_filter2: additional threshold filter for the OCR stage
+        :type threshold_filter2: str or None
+        :param threshold_filter3: additional threshold filter for distance transformation
+        :type threshold_filter3: str or None
         """
-        self.__configure(text_detector, text_recognizer, threshold_filter, reset)
+        self.__configure(text_detector, text_recognizer,
+                         threshold_filter, threshold_filter2, threshold_filter3,
+                         reset)
 
     def __synchronize_backend(self, backend=None, category="text", reset=False):
-        if category not in ["text", "tdetect", "ocr", "contour", "threshold"]:
+        if category not in ["text", "tdetect", "ocr", "contour", "threshold", "threshold2", "threshold3"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             Finder.synchronize_backend(self, "text", reset=True)
@@ -1800,7 +1859,7 @@ class TextFinder(ContourFinder):
 
         import cv2
         datapath = self.params["text"]["datapath"].value
-        if category == "text" or category in ["contour", "threshold"]:
+        if category == "text" or category in ["contour", "threshold", "threshold2"]:
             # nothing to sync
             return
 
@@ -1824,8 +1883,8 @@ class TextFinder(ContourFinder):
                 self.ocr = cv2.text.OCRTesseract_create(datapath,
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
-                                                        oem=self.params[category]["oem"].value,
-                                                        psmode=self.params[category]["psmode"].value)
+                                                        oem=self.params["ocr"]["oem"].value,
+                                                        psmode=self.params["ocr"]["psmode"].value)
             elif backend in ["hmm", "beamSearch"]:
 
                 import numpy
@@ -1864,15 +1923,19 @@ class TextFinder(ContourFinder):
         self.__synchronize_backend(backend, category, reset)
 
     def __synchronize(self, text_detector=None, text_recognizer=None,
-                      threshold_filter=None, reset=True):
+                      threshold_filter=None, threshold_filter2=None,
+                      threshold_filter3=None, reset=True):
         self.__synchronize_backend(category="text", reset=reset)
         self.__synchronize_backend(text_detector, "tdetect")
         self.__synchronize_backend(text_recognizer, "ocr")
         self.__synchronize_backend(category="contour")
         self.__synchronize_backend(threshold_filter, "threshold")
+        self.__synchronize_backend(threshold_filter2, "threshold2")
+        self.__synchronize_backend(threshold_filter3, "threshold3")
 
     def synchronize(self, text_detector=None, text_recognizer=None,
-                    threshold_filter=None, reset=True):
+                    threshold_filter=None, threshold_filter2=None,
+                    threshold_filter3=None, reset=True):
         """
         Custom implementation of the base method.
 
@@ -1880,8 +1943,16 @@ class TextFinder(ContourFinder):
         :type text_detector: str or None
         :param text_recognizer: name of a preselected backend
         :type text_recognizer: str or None
+        :param threshold_filter: threshold filter for the text detection stage
+        :type threshold_filter: str or None
+        :param threshold_filter2: additional threshold filter for the OCR stage
+        :type threshold_filter2: str or None
+        :param threshold_filter3: additional threshold filter for distance transformation
+        :type threshold_filter3: str or None
         """
-        self.__synchronize(text_detector, text_recognizer, threshold_filter, reset)
+        self.__synchronize(text_detector, text_recognizer,
+                           threshold_filter, threshold_filter2, threshold_filter3,
+                           reset)
 
     def find(self, needle, haystack):
         """
@@ -1905,39 +1976,92 @@ class TextFinder(ContourFinder):
         final_hotmap = numpy.array(haystack.pil_image)
 
         # detect characters and group them into detected text
-        if self.params["tdetect"]["backend"] == "erstat":
+        backend = self.params["tdetect"]["backend"]
+        if backend == "erstat":
             text_regions = self._detect_text_erstat(haystack)
-        elif self.params["tdetect"]["backend"] == "contours":
+        elif backend == "contours":
             text_regions = self._detect_text_contours(haystack)
-        elif self.params["tdetect"]["backend"] == "components":
+        elif backend == "components":
             text_regions = self._detect_text_components(haystack)
+        else:
+            raise UnsupportedBackendError("Unsupported text detection backend %s" % backend)
 
         # perform optical character recognition on the final regions
         from match import Match
         matches = []
+        def binarize_step(threshold, text_img):
+            if self.params["ocr"]["binarize_text"].value:
+                first_threshold = self.params["threshold"]
+                self.params["threshold"] = self.params[threshold]
+                try:
+                    text_img = self._binarize_image(text_img)
+                finally:
+                    self.params["threshold"] = first_threshold
+                    return text_img
+            else:
+                return cv2.cvtColor(text_img, cv2.COLOR_RGB2GRAY)
         for text_box in text_regions:
-            text_img = img_haystack[text_box[1]:text_box[1]+text_box[3],text_box[0]:text_box[0]+text_box[2]]
-            text_img = self._binarize_image(text_img)
-            text_img = cv2.copyMakeBorder(text_img, 15, 15, 15, 15, cv2.BORDER_CONSTANT, 0)
+
+            # main OCR preprocessing stage
+            border = self.params["ocr"]["border_size"].value
+            text_img = img_haystack[max(text_box[1]-border,0):min(text_box[1]+text_box[3]+border,img_haystack.shape[0]),
+                                    max(text_box[0]-border,0):min(text_box[0]+text_box[2]+border,img_haystack.shape[1])]
+            factor = self.params["ocr"]["zoom_factor"].value
+            log.debug("Zooming x%i candidate for improved OCR processing", factor)
+            text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
+            text_img = binarize_step("threshold2", text_img)
+            if self.params["ocr"]["distance_transform"].value:
+                text_img = cv2.distanceTransform(text_img,
+                                                 self.params["ocr"]["dt_distance_type"].value,
+                                                 self.params["ocr"]["dt_mask_size"].value)
+                text_img = cv2.cvtColor(numpy.asarray(text_img, dtype='uint8'), cv2.COLOR_GRAY2RGB)
+                text_img = binarize_step("threshold3", text_img)
+            if self.params["ocr"]["erode_dilate"].value < 3:
+                element = cv2.getStructuringElement(self.params["ocr"]["ed_kernel_type"].value,
+                                                    (self.params["ocr"]["ed_kernel_width"].value,
+                                                     self.params["ocr"]["ed_kernel_height"].value))
+                if self.params["ocr"]["erode_dilate"].value in [0, 2]:
+                    text_img = cv2.erode(text_img, element)
+                if self.params["ocr"]["erode_dilate"].value in [1, 2]:
+                    text_img = cv2.dilate(text_img, element)
             self.imglog.hotmaps.append(text_img)
 
             # BUG: we hit segfault when using the BeamSearch OCR backend so disallow it
-            if self.params["text"]["backend"] == "beamSearch":
+            if self.params["ocr"]["backend"] == "beamSearch":
                 raise NotImplementedError("Current version of BeamSearch segfaults so it's not yet available")
             # TODO: can't do this in python - available ony in C++
             #vector<Rect> boxes;
             #vector<string> words;
             #vector<float> confidences;
             #output = ocr.run(group_img, &boxes, &words, &confidences, cv2.text.OCR_LEVEL_WORD)
-            output = self.ocr.run(text_img, text_img,
-                                  self.params["ocr"]["min_confidence"].value,
-                                  self.params["ocr"]["component_level"].value)
+            # redirection of tesseract's streams can only be done on the file descriptor level
+            # sys.stdout = open(os.devnull, 'w')
+            stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
+            stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
+            null_fo = open(os.devnull, 'wb')
+            with os.fdopen(os.dup(stdout_fd), 'wb') as cpout_fo:
+                with os.fdopen(os.dup(stderr_fd), 'wb') as cperr_fo:
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    os.dup2(null_fo.fileno(), stdout_fd)
+                    os.dup2(null_fo.fileno(), stderr_fd)
+                    output = self.ocr.run(text_img, text_img,
+                                          self.params["ocr"]["min_confidence"].value,
+                                          self.params["ocr"]["component_level"].value)
+                    sys.stdout.flush()
+                    sys.stderr.flush()
+                    os.dup2(cpout_fo.fileno(), stdout_fd)
+                    os.dup2(cperr_fo.fileno(), stderr_fd)
+            if self.params["ocr"]["component_level"].value == 1:
+                # strip of the new line character which is never useful
+                output = output.rstrip()
             log.debug("OCR output = '%s'", output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
-            log.debug("similarity = '%s'", similarity)
+            log.debug("Similarity = '%s'", similarity)
             self.imglog.similarities.append(similarity)
             if similarity >= self.params["find"]["similarity"].value:
+                log.debug("Text at (%s, %s) is acceptable", text_box[0], text_box[1])
                 self.imglog.locations.append((text_box[0], text_box[1]))
                 x, y, w, h = text_box
                 dx, dy = needle.center_offset.x, needle.center_offset.y
@@ -2051,6 +2175,7 @@ class TextFinder(ContourFinder):
         # group characters into horizontally-correlated regions
         text_regions = []
         dx, dy = self.params["tdetect"]["horizontalSpacing"].value, self.params["tdetect"]["verticalVariance"].value
+        text_orientation = self.params["tdetect"]["orientation"].value
         min_chars_for_text = self.params["tdetect"]["minChars"].value
         for i, region1 in enumerate(char_regions):
             # region was already merged
@@ -2063,11 +2188,17 @@ class TextFinder(ContourFinder):
                     continue
                 x1, y1, w1, h1 = region1
                 x2, y2, w2, h2 = region2
-                if abs(x1 + w1 - x2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < dy:
+                if text_orientation == 0:
+                    is_text = x2 - (x1 + w1) < dx and x1 - (x2 + w2) < dx and abs(y1 - y2) < dy and abs(h1 - h2) < 2*dy
+                elif text_orientation == 1:
+                    is_text = y2 - (y1 + h1) < dy and y1 - (y2 + h2) < dy and abs(x1 - x2) < dx and abs(w1 - w2) < 2*dx
+                if is_text:
                     region1 = [min(x1,x2), min(y1,y2), max(x1+w1,x2+w2)-min(x1,x2), max(y1+h1,y2+h2)-min(y1,y2)]
                     chars_for_text += 1
                     char_regions[j] = None
             if chars_for_text < min_chars_for_text:
+                logging.debug("Ignoring text contour with %s<%s characters",
+                              chars_for_text, min_chars_for_text)
                 continue
             x, y, w, h = region1
             cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
@@ -2138,7 +2269,7 @@ class TextFinder(ContourFinder):
                                                                              self.imglog.similarities[i-2]),
                                     self.imglog.hotmaps[i])
 
-        similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
+        similarity = max(self.imglog.similarities) if len(self.imglog.similarities) > 0 else 0.0
         self.imglog.dump_hotmap("imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity),
                                 self.imglog.hotmaps[-1])
 

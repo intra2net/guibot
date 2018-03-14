@@ -484,9 +484,9 @@ class Region(object):
         except (IOError, FileNotFoundError) as ex:
             log.debug(ex)
             try:
-                # if a match file does not exist the data file must exist
+                # if a match file does not exist but a data file exists
                 return Target.from_data_file(target_str)
-            except IncompatibleTargetFileError, ex:
+            except (IncompatibleTargetFileError, FileNotFoundError) as ex:
                 log.debug(ex)
                 # if anything else goes wrong fail on the default type
                 return self.default_target_type(target_str)
