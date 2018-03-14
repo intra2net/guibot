@@ -1,4 +1,4 @@
-# Copyright 2013 Intranet AG / Thomas Jarosch
+# Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -12,7 +12,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
-#
 
 from region import Region
 from location import Location

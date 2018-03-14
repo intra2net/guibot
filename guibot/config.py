@@ -1,4 +1,4 @@
-# Copyright 2013 Intranet AG / Plamen Dimitrov and Thomas Jarosch
+# Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -12,7 +12,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
-#
 
 import re
 import os
@@ -598,3 +597,4 @@ class LocalConfig(object):
         :param bool reset: whether to (re)sync all parent backends as well
         """
         self.synchronize_backend(reset=reset)
+
