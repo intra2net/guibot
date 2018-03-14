@@ -187,7 +187,18 @@ class CalibratorTest(unittest.TestCase):
         self.benchmark_setUp()
         calibrator = Calibrator(Text('Text'), Image('all_shapes'))
         for calibration, random_starts in [(False, 0), (False, 1), (True, 0), (True, 1)]:
-            results = calibrator.benchmark(TextFinder(), calibration=calibration, random_starts=random_starts)
+            finder = TextFinder()
+            # the text backend has too many benchmarking combinations so let's restrict here
+            finder.algorithms["threshold_filters2"] = ("adaptive",)
+            finder.algorithms["threshold_filters3"] = ("adaptive",)
+            finder.algorithms["threshold_filters2"] = ("adaptive",)
+            finder.algorithms["threshold_filters3"] = ("adaptive",)
+            # also get rid of these since they are not implemented anyway
+            finder.algorithms["text_detectors"] = list(finder.algorithms["text_detectors"])
+            finder.algorithms["text_detectors"].remove("components")
+            finder.algorithms["text_recognizers"] = list(finder.algorithms["text_recognizers"])
+            finder.algorithms["text_recognizers"].remove("beamSearch")
+            results = calibrator.benchmark(finder, calibration=calibration, random_starts=random_starts)
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
