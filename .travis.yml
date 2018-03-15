@@ -1,0 +1,19 @@
+language: python
+python:
+  - "2.7"
+
+# install any dependencies
+#install: "pip install -r requirements.txt"
+
+# run tests
+script:
+#  - python tests/test_calibrator.py
+#  - python tests/test_desktopcontrol.py
+#  - python tests/test_finder.py
+  - python tests/test_path.py
+#  - python tests/test_region_calc.py
+#  - python tests/test_region_control.py
+#  - python tests/test_region_expect.py
+#  - python tests/test_target.py
+# ultimately we want
+#  - sh run_tests.sh
