@@ -22,7 +22,9 @@ Requires:       opencv-python
 %endif
 
 %description
-A tool for GUI automation from testing to performing mundane tasks using OpenCV and PyTorch.
+A tool for GUI automation using a variety of computer vision and desktop control backends.
+Supported CV backends are based on OpenCV, PyTorch, and autopy, and supported DC backends
+on autopy, vncdotool, and qemu.
 
 #Patch1:        first_fix.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
