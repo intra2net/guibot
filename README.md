@@ -1,4 +1,4 @@
-# guibot
+# guibot ![CI status](https://travis-ci.org/intra2net/guibot.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/guibot/badge/?version=latest)](http://guibot.readthedocs.io/en/latest/?badge=latest)
 
 **guibot** is a tool for GUI automation from testing to performing mundane tasks using OpenCV and PyTorch.
 
