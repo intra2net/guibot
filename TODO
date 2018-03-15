@@ -1,13 +1,10 @@
 TODO - hierarchical notes
 -------------------------
 
-- guibot init
-    - website platform - quick one or django or both
-        - bugzilla.guibot.org
-        - git.guibot.org
-        - download.guibot.org
-    - build instructions for newbies including rpm packaging
-    - identical module headers with copyright/license notice
+- guibot publishing
+    - README
+    - wikis
+    - build automation (travic CI) and documentation
 - more and better unit tests
     - advanced unit tests to include all backend types (desktop control)?
     - apply hybrid backend to simplify some of them
