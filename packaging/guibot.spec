@@ -63,7 +63,7 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE doc/api doc/tutorials doc/examples
+%doc LICENSE docs/api docs/tutorials docs/examples
 #%config guibot.cfg
 #%ghost guibot.log
 #%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6

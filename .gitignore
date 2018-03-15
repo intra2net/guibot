@@ -9,7 +9,7 @@ log*.png
 *.cfg
 
 # Sphinx documentation generation
-doc/api/_build
+docs/api/_build
 
 # Backup files and stuff from patches
 *.orig
