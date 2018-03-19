@@ -1,1 +1,4 @@
 theme: jekyll-theme-minimal
+# Use repository's default title and description also for the web page
+#title: An alternative title
+#description: An alternative description.
