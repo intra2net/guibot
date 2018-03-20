@@ -5,6 +5,12 @@ TODO - hierarchical notes
     - README
     - wikis
     - build automation (travic CI) and documentation
+        - Qt4 for the region tests?
+        - packaging parallels
+            - update of the packaging documentation with pip/rpm/deb/win
+            - downloadable package (pypi, github release, or own page)
+            - travis rpm packaging with docker - deb packaging??
+        - ultimately deal with unit test improvements and extensions for desktop backends
 - more and better unit tests
     - advanced unit tests to include all backend types (desktop control)?
     - apply hybrid backend to simplify some of them
