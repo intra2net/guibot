@@ -17,3 +17,7 @@ script:
 #  - python tests/test_target.py
 # ultimately we want
 #  - sh run_tests.sh
+
+# use this to disable email notifications (e.g. while testing configuration)
+#notifications:
+#email: false
