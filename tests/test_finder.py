@@ -468,13 +468,13 @@ class FinderTest(unittest.TestCase):
 
     def test_feature_viewport(self):
         finder = FeatureFinder()
-        finder.params["find"]["similarity"].value = 0.5
+        finder.params["find"]["similarity"].value = 0.4
         matches = finder.find(Image('n_ibs'), Image('h_ibs_viewport'))
         self.assertEqual(len(matches), 1)
         self.assertAlmostEqual(matches[0].x, 68, delta=5)
         self.assertAlmostEqual(matches[0].y, 18, delta=5)
         self.assertAlmostEqual(matches[0].width, 160, delta=10)
-        self.assertAlmostEqual(matches[0].height, 250, delta=10)
+        self.assertAlmostEqual(matches[0].height, 235, delta=10)
 
     def test_cascade_same(self):
         finder = CascadeFinder()
