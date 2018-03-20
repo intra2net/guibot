@@ -11,7 +11,7 @@ addons:
       - libxtst-dev
 
 # install any dependencies
-#install: "pip install -r requirements.txt"
+install: "pip install -r packaging/pip_requirements.txt"
 
 before_script:
   - export DISPLAY=:99.0
@@ -24,10 +24,10 @@ script:
 #  - python tests/test_desktopcontrol.py
 #  - python tests/test_finder.py
   - python tests/test_path.py
-#  - python tests/test_region_calc.py
+  - python tests/test_region_calc.py
 #  - python tests/test_region_control.py
 #  - python tests/test_region_expect.py
-#  - python tests/test_target.py
+  - python tests/test_target.py
 # ultimately we want
 #  - sh run_tests.sh
 
