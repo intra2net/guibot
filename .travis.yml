@@ -1,6 +1,14 @@
 language: python
 python:
   - "2.7"
+matrix:
+  include:
+  - env: INSTALL_VARIANT=pip
+  - env: INSTALL_VARIANT=rpm
+  - env: INSTALL_VARIANT=deb
+
+services:
+  - docker
 
 addons:
   apt:
