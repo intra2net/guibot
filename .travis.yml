@@ -20,9 +20,9 @@ before_script:
 
 # run tests
 script:
-#  - python tests/test_calibrator.py
-#  - python tests/test_desktopcontrol.py
-#  - python tests/test_finder.py
+  - python tests/test_calibrator.py
+  - python tests/test_desktopcontrol.py
+  - python tests/test_finder.py
   - python tests/test_path.py
   - python tests/test_region_calc.py
 #  - python tests/test_region_control.py

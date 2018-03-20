@@ -1,1 +1,8 @@
+# minimal
 Pillow
+
+# backends
+autopy
+opencv-contrib-python
+http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl
+torchvision
