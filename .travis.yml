@@ -18,8 +18,9 @@ addons:
       - libx11-dev
       - libxtst-dev
 
-# install any dependencies
-install: "pip install -r packaging/pip_requirements.txt"
+# install any dependencies and build package
+install:
+  - if [[ $INSTALL_VARIANT == "pip" ]]; then travis_retry pip install -r packaging/pip_requirements.txt; fi
 
 before_script:
   - export DISPLAY=:99.0
@@ -28,6 +29,7 @@ before_script:
 
 # run tests
 script:
+  - if [[ $INSTALL_VARIANT != "pip" ]]; then cd packaging && bash packager_docker.sh && cd ..; fi
   - python tests/test_calibrator.py
   - python tests/test_desktopcontrol.py
   - python tests/test_finder.py
