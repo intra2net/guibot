@@ -43,7 +43,7 @@ Homepage: http://guibot.org
 Documentation: http://guibot.readthedocs.io
 
 Installation:
-https://github.com/intra2net/guibot/blob/master/packaging/backend\_dependencies.lst
+https://github.com/intra2net/guibot/blob/master/packaging/backend\_dependencies.md
 
 Issue tracking: https://github.com/intra2net/guibot/issues
 

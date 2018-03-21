@@ -1,4 +1,5 @@
-*** Dependencies ***
+# Dependencies
+
 Here is a hierarchical list of dependencies depending on your choice of computer vision and desktop
 control backends. In addition it includes problems you can encounter and ways to solve them. For
 windows, you just need to find the required packages most of which are fully available as well.
@@ -20,7 +21,7 @@ windows, you just need to find the required packages most of which are fully ava
                 - on Ubuntu there is an error with the alert module import
                     - solution is to comment it in the __init__ module since we don't need it anyway
     - contour, template, feature, cascade matching
-        - numpy, opencv, opencv-python (python-numpy, opencv-python on ubuntu)
+        - numpy, opencv, opencv-python (python-numpy, python-opencv on ubuntu)
     - text matching (OCR)
         - numpy, opencv, opencv-python (same as above)
         - tesseract
@@ -50,7 +51,7 @@ windows, you just need to find the required packages most of which are fully ava
     - deep learning based matching
         - pyTorch
             - steps:
-                pip install http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl 
+                pip install http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl
                 pip install torchvision
             - notes:
                 - on Fedora and CentOS this should suffice
