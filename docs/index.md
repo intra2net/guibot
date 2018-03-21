@@ -39,4 +39,4 @@ The current way to get the code is to clone the git repository
 git clone --depth 1 https://github.com/intra2net/guibot
 ```
 
-RPM packages can also be produced from the SPEC file provided in the packaging folder. More an easier ways to download the source wil lbe added in the future.
+RPM and Debian packages can also be produced from the SPEC file provided in the packaging folder. For more information, check the README or packaging page.
