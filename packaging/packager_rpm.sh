@@ -23,4 +23,9 @@ export DISPLAY=:99.0
 Xvfb :99 -screen 0 1024x768x16 &> xvfb.log  &
 sleep 3  # give xvfb some time to start
 
+# unit tests
+dnf install -y PyQt4
+cd /guibot
+sh run_tests.sh
+
 exit 0
