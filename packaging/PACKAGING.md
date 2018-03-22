@@ -11,18 +11,29 @@ In order to build an RPM/Debian package, you have to clone the repository
 git clone --depth 1 https://github.com/intra2net/guibot
 ```
 
-or to download the most recent release tarball. All following commands assume you are
-running from within the guibot folder.
+or to download the most recent release tarball. All packaging commands assume you are
+running from within the guibot folder and the same applies to installing additional
+PyPI dependencies.
 
 # PyPI
 
+To install guibot simply tun
+
+```
+pip install guibot
+```
+
+This will install only the most important dependencies leaving the optional ones out.
 To install all backend dependencies run the following within the guibot folder
 
 ```
 pip install -r packaging/pip_requirements.txt
 ```
 
-Currently only Python 2.7 is supported. A PyPI package should also be available later on.
+Currently only Python 2.7 is supported.
+
+> NOTE: The PyPI OpenCV version with contribution modules does not support text
+> matching so you will need an official RPM/Debian package for it.
 
 # RPM package
 
@@ -44,3 +55,6 @@ bash packaging/packager_deb.sh
 ```
 
 or use it in the same way as the RPM packager script.
+
+> NOTE: The Ubuntu OpenCV version is currently old and you need at least 3.0.0
+> to be able to use feature matching.
