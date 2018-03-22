@@ -137,6 +137,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_benchmark_contour(self):
         self.benchmark_setUp()
         # matching all shapes will require a modification of the minArea parameter

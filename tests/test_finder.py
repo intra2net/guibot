@@ -189,6 +189,7 @@ class FinderTest(unittest.TestCase):
         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "autopy")
         self._verify_single_hotmap(dumps, "autopy")
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_contour_same(self):
         finder = ContourFinder()
         # shape matching is not perfect
@@ -229,6 +230,7 @@ class FinderTest(unittest.TestCase):
                 shutil.rmtree(self.logpath)
                 i += 1
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_contour_nomatch(self):
         finder = ContourFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -535,6 +537,7 @@ class FinderTest(unittest.TestCase):
         #self.assertAlmostEqual(matches[0].width, 270, delta=10)
         #self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
+    @unittest.expectedFailure  # fails on some platforms
     def test_cascade_viewport(self):
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_viewport'))
