@@ -104,6 +104,7 @@ class FinderTest(unittest.TestCase):
         self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_configure_backend(self):
         finder = Finder()
         finder.configure_backend("feature")
@@ -364,6 +365,7 @@ class FinderTest(unittest.TestCase):
             self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_feature_same(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -407,6 +409,7 @@ class FinderTest(unittest.TestCase):
                         shutil.rmtree(self.logpath)
                         i += 1
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_feature_nomatch(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -446,6 +449,7 @@ class FinderTest(unittest.TestCase):
                         shutil.rmtree(self.logpath)
                         i += 1
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_feature_scaling(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -456,6 +460,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 100, delta=10)
         self.assertAlmostEqual(matches[0].height, 150, delta=10)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_feature_rotation(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.45
@@ -466,6 +471,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 270, delta=10)
         self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_feature_viewport(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.4
@@ -540,6 +546,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 250, delta=10)
         self.assertAlmostEqual(matches[0].height, 250, delta=10)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_text_same(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -597,6 +606,9 @@ class FinderTest(unittest.TestCase):
                 shutil.rmtree(self.logpath)
                 i += 1
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_text_nomatch(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -642,6 +654,9 @@ class FinderTest(unittest.TestCase):
                 shutil.rmtree(self.logpath)
                 i += 1
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_text_basic(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.7
@@ -653,6 +668,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 110, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_text_bold(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.8
@@ -663,6 +681,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 100, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_text_italic(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.7
@@ -673,6 +694,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 120, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_text_larger(self):
         finder = TextFinder()
         # TODO: this is too low to be a match (due to text detection)
@@ -685,6 +709,9 @@ class FinderTest(unittest.TestCase):
         #self.assertAlmostEqual(matches[0].width, 100, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_text_font(self):
         finder = TextFinder()
         # TODO: this is too low to be a match
@@ -696,6 +723,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 120, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_tempfeat_same(self):
         finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -733,6 +761,7 @@ class FinderTest(unittest.TestCase):
             shutil.rmtree(self.logpath)
             i += 1
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_tempfeat_nomatch(self):
         finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -830,6 +859,9 @@ class FinderTest(unittest.TestCase):
         self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "autopy")
         self._verify_single_hotmap(dumps, "autopy")
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_hybrid_nomatch(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")

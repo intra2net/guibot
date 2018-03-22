@@ -12,6 +12,10 @@ apt-get -y install python2.7
 apt-get -y install python-pil
 # contour, template, feature, cascade, text matching
 apt-get -y install python-numpy python-opencv
+# TODO: unbelievably, ubuntu still relies on OpenCV 2.X but we
+# won't add a custom installation from pip which we already do in
+# another variant. Instead, we will disable incompatible tests.
+export LEGACY_OPENCV=1
 # text matching
 apt-get -y install tesseract-ocr
 

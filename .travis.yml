@@ -3,12 +3,12 @@ python:
   - "2.7"
 matrix:
   include:
-    - env: INSTALL_VARIANT=pip
+    - env: INSTALL_VARIANT=pip DISABLE_OCR=1
     - env: INSTALL_VARIANT=rpm
     - env: INSTALL_VARIANT=deb
   allow_failures:
     # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
-    - env: INSTALL_VARIANT=pip
+    - env: INSTALL_VARIANT=pip DISABLE_OCR=1
 
 services:
   - docker
