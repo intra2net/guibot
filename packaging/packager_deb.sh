@@ -42,7 +42,7 @@ sleep 3  # give xvfb some time to start
 
 # unit tests
 apt-get install -y python-qt4
-cd /guibot
+cd /usr/lib/python2.7/dist-packages/guibot/
 sh run_tests.sh
 
 exit 0
