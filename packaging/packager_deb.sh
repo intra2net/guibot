@@ -26,7 +26,13 @@ pip install http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-li
 pip install torchvision
 
 # deb packaging
-# TODO: steps to preduce debuan package
+apt-get -y install dh-make devscripts
+VERSION=$(sed -n -e 's/^guibot[ \t]*(\([0-9]*.[0-9]*\)-[0-9]*).*/\1/p' /guibot/packaging/debian/changelog)
+cp -r /guibot /guibot-$VERSION
+cd /guibot-$VERSION/packaging
+debuild --no-tgz-check --no-lintian -i -us -uc -b
+cp ../guibot_$VERSION*.deb /guibot
+apt-get -y install /guibot/guibot_*.deb
 
 # virtual display
 apt-get -y install xvfb

@@ -1,0 +1,17 @@
+Source: guibot
+Section: python
+Priority: optional
+Maintainer: intra2net.com
+Homepage: http://guibot.org
+Build-Depends: debhelper (>= 7),
+               dh-python
+Standards-Version: 3.9.2
+X-Python-Version: = 2.7
+
+Package: guibot
+Architecture: all
+Depends: python-pil, ${python:Depends}
+Description: GUI automation tool
+ A tool for GUI automation using a variety of computer vision and desktop control backends.
+ Supported CV backends are based on OpenCV, PyTorch, and autopy, and supported DC backends
+ on autopy, vncdotool, and qemu.
