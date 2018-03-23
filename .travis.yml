@@ -12,6 +12,9 @@ matrix:
 
 services:
   - docker
+# docker images are not cached by travis due to vm recreation for each build
+cache:
+  - pip
 
 addons:
   apt:
