@@ -27,7 +27,8 @@ pip install torchvision
 
 # deb packaging
 apt-get -y install dh-make devscripts
-VERSION=$(sed -n -e 's/^guibot[ \t]*(\([0-9]*.[0-9]*\)-[0-9]*).*/\1/p' /guibot/packaging/debian/changelog)
+CHANGELOG_REVS=($(sed -n -e 's/^guibot[ \t]*(\([0-9]*.[0-9]*\)-[0-9]*).*/\1/p' /guibot/packaging/debian/changelog))
+VERSION=${CHANGELOG_REVS[0]}
 cp -r /guibot /guibot-$VERSION
 cd /guibot-$VERSION/packaging
 debuild --no-tgz-check --no-lintian -i -us -uc -b
