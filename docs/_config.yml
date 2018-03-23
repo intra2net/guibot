@@ -1,4 +1,10 @@
 theme: jekyll-theme-minimal
+
 # Use repository's default title and description also for the web page
 #title: An alternative title
 #description: An alternative description.
+
+# Use this to show the downloads - the three options hardcoded into an
+# HTML layout are GitHub ZIP/TAR + repeated "View on GitHub" but we would
+# prefer to have PIP/RPM/DEB instead. Cloning effort postponed for now.
+#show_downloads: "true"
