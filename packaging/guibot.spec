@@ -5,8 +5,8 @@
 %bcond_with opencv
 
 Name:           guibot
-Version:        0.11
-Release:        4
+Version:        0.20
+Release:        1
 Summary:        GUI automation tool
 
 Group:          Development/Tools
@@ -88,6 +88,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Mar 23 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.20-1
+- Fallback chains functionality
+- Multiple OCR fixes
+
 * Mon May 22 2017 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.11-2
 - Update from OpenCV 2.4 to OpenCV 3.1
 - Addition of CV backends like OCR (tesseract), CNN (PyTorch)
