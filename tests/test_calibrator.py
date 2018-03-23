@@ -58,6 +58,7 @@ class CalibratorTest(unittest.TestCase):
         # remove any randomness in the unit tests in the Monte Carlo search
         CVParameter.random_value = lambda self, _mu, _sigma: self.value
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_calibrate(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'n_ibs', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'n_ibs',
@@ -67,6 +68,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_calibrate_viewport(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
@@ -76,6 +78,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_calibrate_rotation(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated',
@@ -85,6 +88,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_calibrate_scaling(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled',
@@ -94,6 +98,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_calibrate_list(self):
         calibrator = self.list_setUp()
         # use a single finder type for these tests
@@ -106,6 +111,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_search(self):
         calibrator = self.list_setUp()
         # use a single finder type for these tests
@@ -131,6 +137,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_benchmark_contour(self):
         self.benchmark_setUp()
         # matching all shapes will require a modification of the minArea parameter
@@ -157,6 +164,8 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skip("Unit test takes too long")
+    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_benchmark_feature(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Image('n_ibs'), Image('n_ibs'))
@@ -183,6 +192,9 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_benchmark_text(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Text('Text'), Image('all_shapes'))
@@ -207,6 +219,8 @@ class CalibratorTest(unittest.TestCase):
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skip("Unit test takes too long")
+    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_benchmark_tempfeat(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Image('shape_blue_circle'), Image('all_shapes'))

@@ -1,19 +1,42 @@
 language: python
 python:
   - "2.7"
+matrix:
+  include:
+    - env: INSTALL_VARIANT=pip DISABLE_OCR=1
+    - env: INSTALL_VARIANT=rpm
+    - env: INSTALL_VARIANT=deb
+  allow_failures:
+    # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
+    - env: INSTALL_VARIANT=pip DISABLE_OCR=1
 
-# install any dependencies
-#install: "pip install -r requirements.txt"
+services:
+  - docker
+# docker images are not cached by travis due to vm recreation for each build
+cache:
+  - pip
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - libx11-dev
+      - libxtst-dev
+
+# install any dependencies and build package
+install:
+  - if [[ $INSTALL_VARIANT == "pip" ]]; then travis_retry pip install -r packaging/pip_requirements.txt; fi
+
+before_script:
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 3  # give xvfb some time to start
 
 # run tests
 script:
-#  - python tests/test_calibrator.py
-#  - python tests/test_desktopcontrol.py
-#  - python tests/test_finder.py
-  - python tests/test_path.py
-#  - python tests/test_region_calc.py
-#  - python tests/test_region_control.py
-#  - python tests/test_region_expect.py
-#  - python tests/test_target.py
-# ultimately we want
-#  - sh run_tests.sh
+  - if [[ $INSTALL_VARIANT != "pip" ]]; then cd packaging && bash packager_docker.sh && cd ..; else bash run_tests.sh; fi
+
+# use this to disable email notifications (e.g. while testing configuration)
+#notifications:
+#email: false

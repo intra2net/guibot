@@ -1,0 +1,13 @@
+# minimal
+Pillow
+
+# backends
+autopy
+opencv-contrib-python
+http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl
+torchvision
+
+# GUI to use for testing
+# TODO: while PyQt4 was present but based on configure.py in the past right
+# it is no longer available through PyPI until the maintainer updates the world
+# PyQt4

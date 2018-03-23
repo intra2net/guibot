@@ -11,9 +11,10 @@ Summary:        GUI automation tool
 
 Group:          Development/Tools
 License:        LGPLv3+
-URL:            http://developer.intra2net.com
-# TODO: source location?
-Source0:        http://developer.intra2net.com/%{name}-%{version}.tar.gz
+URL:            http://guibot.org
+# TODO: the package has a different name in GitHub, namely %{version}.tar.gz but in a
+# kind of stubborn way the setup macro would use the basename below so use a local tarball
+Source0:        https://github.com/intra2net/guibot/archive/%{name}-%{version}.tar.gz
 
 Requires:       python-pillow
 %if %{with opencv}
