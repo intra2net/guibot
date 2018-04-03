@@ -7,7 +7,7 @@ apt-get update
 # in some cases another repo has to be added
 #apt-get -y install software-properties-common
 #add-apt-repository ppa:fkrull/deadsnakes-python2.7
-apt-get -y install python2.7
+apt-get -y install python2.7 python-coverage
 # python-imaging
 apt-get -y install python-pil
 # contour, template, feature, cascade, text matching

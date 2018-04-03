@@ -3,7 +3,7 @@ set -e
 
 # rpm dependencies
 # python2.7
-dnf -y install python
+dnf -y install python python2-coverage
 # python-imaging
 dnf -y install python-pillow
 # contour, template, feature, cascade, text matching
