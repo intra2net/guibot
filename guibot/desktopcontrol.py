@@ -14,8 +14,8 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
 import time
-import subprocess
 import logging
 log = logging.getLogger('guibot.desktopcontrol')
 
@@ -475,6 +475,135 @@ class XDoToolDesktopControl(DesktopControl):
         if synchronize:
             self.__synchronize_backend(reset=False)
 
+    def get_mouse_location(self):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        pos = self._backend_obj.run("getmouselocation")
+        x = re.search("x:(\d+)", pos).group(1)
+        y = re.search("y:(\d+)", pos).group(1)
+        return Location(int(x), int(y))
+
+    def __configure_backend(self, backend=None, category="xdotool", reset=False):
+        if category != "xdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(XDoToolDesktopControl, self).configure_backend("xdotool", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+        self.params[category]["binary"] = "xdotool"
+
+    def configure_backend(self, backend=None, category="xdotool", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="xdotool", reset=False):
+        if category != "xdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(XDoToolDesktopControl, self).synchronize_backend("xdotool", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        import subprocess
+        class XDoTool(object):
+            def __init__(self, dc):
+                self.dc = dc
+            def run(self, command, *args):
+                process = [self.dc.params[category]["binary"]]
+                process += [command]
+                process += args
+                return subprocess.check_output(process, shell=False)
+        self._backend_obj = XDoTool(self)
+
+        self._width, self._height = self._backend_obj.run("getdisplaygeometry").split()
+        self._width, self._height = int(self._width), int(self._height)
+        self._pointer = self.get_mouse_location()
+        self._keymap = inputmap.XDoToolKey()
+        self._modmap = inputmap.XDoToolKeyModifier()
+        self._mousemap = inputmap.XDoToolMouseButton()
+
+    def synchronize_backend(self, backend=None, category="xdotool", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
+
+    def capture_screen(self, *args):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        xpos, ypos, width, height, filename = self._region_from_args(*args)
+        pil_image = PIL.Image.open(filename).convert('RGB')
+        os.unlink(filename)
+        return Image(None, pil_image)
+
+    def mouse_move(self, location, smooth=True):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if smooth:
+            # TODO: implement smooth mouse move?
+            pass
+        self._backend_obj.run("mousemove", str(location.x), str(location.y))
+
+    def mouse_click(self, button=None, count=3, modifiers=None):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        timeout = GlobalConfig.click_delay
+        button = self._mousemap.LEFT_BUTTON if button is None else button
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+        for _ in range(count):
+            self._backend_obj.run("click", str(button))
+            time.sleep(timeout)
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
+
+    def mouse_down(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self._backend_obj.run("mousedown", str(button))
+
+    def mouse_up(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self._backend_obj.run("mouseup", str(button))
+
+    def keys_toggle(self, keys, up_down):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        for key in keys:
+            if up_down:
+                self._backend_obj.run('keydown', str(key))
+            else:
+                self._backend_obj.run('keyup', str(key))
+
     def keys_type(self, text, modifiers):
         """
         Custom implementation of the base method.
@@ -485,7 +614,7 @@ class XDoToolDesktopControl(DesktopControl):
             self.keys_toggle(modifiers, True)
 
         for part in text:
-            subprocess.call(['xdotool', 'type', part], shell=False)
+            self._backend_obj.run('type', str(part))
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)

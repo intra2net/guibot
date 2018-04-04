@@ -58,6 +58,8 @@ class Region(object):
         if dc is None:
             if GlobalConfig.desktop_control_backend == "autopy":
                 dc = AutoPyDesktopControl()
+            elif GlobalConfig.desktop_control_backend == "xdotool":
+                dc = XDoToolDesktopControl()
             elif GlobalConfig.desktop_control_backend == "qemu":
                 dc = QemuDesktopControl()
             elif GlobalConfig.desktop_control_backend == "vncdotool":

@@ -245,6 +245,90 @@ class AutoPyKey(Key):
         self.KP_DECIMAL = None
 
 
+class XDoToolKey(Key):
+    """Helper to contain all key mappings for the xdotool DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the key map for the xdotool backend."""
+        self.ENTER = 'Return' # also 'enter'
+        self.TAB = 'Tab'
+        self.ESC = 'Escape'
+        self.BACKSPACE = 'BackSpace'
+        self.DELETE = 'Delete'
+        self.INSERT = 'Insert'
+
+        self.CTRL = 'ctrl'  # special handling
+        self.ALT = 'alt'  # special handling
+        self.SHIFT = 'shift'  # special handling
+        self.META = 'meta'  # special handling
+        self.RCTRL = 'CtrlR'
+        self.RALT = 'AltR'
+        self.RSHIFT = 'ShiftR'
+        self.RMETA = 'MetaR'
+
+        self.F1 = 'F1'
+        self.F2 = 'F2'
+        self.F3 = 'F3'
+        self.F4 = 'F4'
+        self.F5 = 'F5'
+        self.F6 = 'F6'
+        self.F7 = 'F7'
+        self.F8 = 'F8'
+        self.F9 = 'F9'
+        self.F10 = 'F10'
+        self.F11 = 'F11'
+        self.F12 = 'F12'
+        self.F13 = 'F13'
+        self.F14 = 'F14'
+        self.F15 = 'F15'
+        self.F16 = 'F16'
+        self.F17 = 'F17'
+        self.F18 = 'F18'
+        self.F19 = 'F19'
+        self.F20 = 'F20'
+
+        self.HOME = 'Home'
+        self.END = 'End'
+        self.LEFT = 'Left'
+        self.RIGHT = 'Right'
+        self.UP = 'Up'
+        self.DOWN = 'Down'
+        self.PAGE_DOWN = 'Page_Down'
+        self.PAGE_UP = 'Page_Up'
+
+        self.CAPS_LOCK = 'Caps_Lock'
+        # TODO: 'print screen' is not available
+        self.PRINTSCREEN = None
+        self.PAUSE = 'Pause'
+        self.SCROLL_LOCK = 'Scroll_Lock'
+        self.NUM_LOCK = 'Num_Lock'
+        # TODO: the following are not available
+        self.SYS_REQ = None
+        self.SUPER = None
+        self.RSUPER = None
+        self.HYPER = None
+        self.RHYPER = None
+        # TODO: 'menu' is not available
+        self.MENU = None
+
+        self.KP0 = 'KP_0'
+        self.KP1 = 'KP_1'
+        self.KP2 = 'KP_2'
+        self.KP3 = 'KP_3'
+        self.KP4 = 'KP_4'
+        self.KP5 = 'KP_5'
+        self.KP6 = 'KP_6'
+        self.KP7 = 'KP_7'
+        self.KP8 = 'KP_8'
+        self.KP9 = 'KP_9'
+        self.KP_ENTER = 'KP_Enter'
+        self.KP_DIVIDE = 'KP_Divide'
+        self.KP_MULTIPLY = 'KP_Multiply'
+        self.KP_SUBTRACT = 'KP_Subtract'
+        self.KP_ADD = 'KP_Add'
+        self.KP_DECIMAL = None
+
+
 class QemuKey(Key):
     """Helper to contain all key mappings for the Qemu DC backend."""
 
@@ -462,6 +546,19 @@ class AutoPyKeyModifier(KeyModifier):
         self.MOD_META = autopy.key.MOD_META
 
 
+class XDoToolKeyModifier(KeyModifier):
+    """Helper to contain all modifier key mappings for the xdotool DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the modifier key map for the xdotool backend."""
+        # TODO: 'none' is not available
+        self.MOD_NONE = None
+        self.MOD_CTRL = 'ctrl'
+        self.MOD_ALT = 'alt'
+        self.MOD_SHIFT = 'shift'
+        self.MOD_META = 'meta'
+
+
 class QemuKeyModifier(KeyModifier):
     """Helper to contain all modifier key mappings for the Qemu DC backend."""
 
@@ -524,6 +621,16 @@ class AutoPyMouseButton(MouseButton):
         self.LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
         self.RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
         self.CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
+
+
+class XDoToolMouseButton(MouseButton):
+    """Helper to contain all mouse button mappings for the xdotool DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the mouse button map for the xdotool backend."""
+        self.LEFT_BUTTON = 1
+        self.RIGHT_BUTTON = 3
+        self.CENTER_BUTTON = 2
 
 
 class QemuMouseButton(MouseButton):
