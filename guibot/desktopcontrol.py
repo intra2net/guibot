@@ -41,7 +41,7 @@ class DesktopControl(LocalConfig):
 
         # available and currently fully compatible methods
         self.categories["control"] = "control_methods"
-        self.algorithms["control_methods"] = ("autopy", "qemu", "vncdotool")
+        self.algorithms["control_methods"] = ("autopy", "xdotool", "qemu", "vncdotool")
 
         # other attributes
         self._backend_obj = None
@@ -325,8 +325,6 @@ class AutoPyDesktopControl(DesktopControl):
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
-        # autopy has diffrent problems on different OS so specify it
-        self.params[category]["os_type"] = "linux"
 
     def configure_backend(self, backend=None, category="autopy", reset=False):
         """
@@ -444,27 +442,50 @@ class AutoPyDesktopControl(DesktopControl):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
-        if self.params["autopy"]["os_type"] == "windows":
-            shift_chars = ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
-                           "_", "+", "{", "}", ":", "\"", "|", "<", ">", "?"]
-            capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            for part in text:
-                for char in str(part):
-                    if char in shift_chars and GlobalConfig.preprocess_special_chars:
-                        self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                    elif char in capital_chars and GlobalConfig.preprocess_special_chars:
-                        self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                    else:
-                        self._backend_obj.key.tap(char)
-                    time.sleep(GlobalConfig.delay_between_keys)
-                # TODO: Fix AutoPy to handle international chars and other stuff so
-                # that both the Linux and Windows version are reduced to autopy.key
-                # autopy.key.type_string(text)
-        elif self.params["autopy"]["os_type"] == "linux":
-            for part in text:
-                # HACK: use xdotool to handle various character encoding
-                # TODO: remove alltogether rather than using "--delay milliseconds"
-                subprocess.call(['xdotool', 'type', part], shell=False)
+        shift_chars = ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
+                       "_", "+", "{", "}", ":", "\"", "|", "<", ">", "?"]
+        capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        for part in text:
+            for char in str(part):
+                if char in shift_chars and GlobalConfig.preprocess_special_chars:
+                    self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
+                elif char in capital_chars and GlobalConfig.preprocess_special_chars:
+                    self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
+                else:
+                    self._backend_obj.key.tap(char)
+                time.sleep(GlobalConfig.delay_between_keys)
+            # alternative option:
+            # autopy.key.type_string(text)
+
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
+
+
+class XDoToolDesktopControl(DesktopControl):
+    """
+    Desktop control backend implemented through the xdotool client and
+    thus portable to Linux operating systems.
+    """
+
+    def __init__(self, configure=True, synchronize=True):
+        """Build a DC backend using XDoTool."""
+        super(XDoToolDesktopControl, self).__init__(configure=False, synchronize=False)
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
+
+    def keys_type(self, text, modifiers):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+
+        for part in text:
+            subprocess.call(['xdotool', 'type', part], shell=False)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)

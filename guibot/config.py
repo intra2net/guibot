@@ -314,7 +314,7 @@ class GlobalConfig(type):
         if value is None:
             return GlobalConfig._desktop_control_backend
         else:
-            if value not in ["autopy", "qemu", "vncdotool"]:
+            if value not in ["autopy", "xdotool", "vncdotool", "qemu"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
             GlobalConfig._desktop_control_backend = value
     #: name of the desktop control backend
