@@ -38,7 +38,7 @@ apt-get -y install /guibot/guibot_*.deb
 # virtual display
 apt-get -y install xvfb
 export DISPLAY=:99.0
-Xvfb :99 -screen 0 1024x768x16 &> xvfb.log  &
+Xvfb :99 -screen 0 1024x768x24 &> xvfb.log  &
 sleep 3  # give xvfb some time to start
 
 # unit tests

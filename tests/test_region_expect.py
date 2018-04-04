@@ -117,7 +117,6 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(300, region.width)
         self.assertEqual(200, region.height)
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_find(self):
         self.show_image('all_shapes')
 
@@ -141,7 +140,6 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(last_match.width, match.width)
         self.assertEqual(last_match.height, match.height)
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_find_center_offset(self):
         self.show_image('all_shapes.png')
 
@@ -170,7 +168,6 @@ class RegionTest(unittest.TestCase):
         except FindError, e:
             pass
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_find_all(self):
         self.show_image('all_shapes')
 
@@ -223,7 +220,6 @@ class RegionTest(unittest.TestCase):
             self.assertAlmostEqual(70, match.width, delta=5)
             self.assertAlmostEqual(50, match.height, delta=5)
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_find_zero_matches(self):
         self.show_image('all_shapes')
 
@@ -235,7 +231,9 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
         self.close_windows()
 
-    @unittest.expectedFailure  # fails on some platforms
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1",
+                     "Old OpenCV version or disabled OCR functionality")
     def test_find_guess_target(self):
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -293,7 +291,6 @@ class RegionTest(unittest.TestCase):
         except FindError as e:
             pass
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_sample(self):
         self.show_image('all_shapes')
 
@@ -307,13 +304,8 @@ class RegionTest(unittest.TestCase):
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
 
-        shapes = Region(cv=TemplateFeatureFinder())
-        similarity = shapes.sample(Image('shape_blue_circle'))
-        self.assertEqual(similarity, 1.0)
-
         self.close_windows()
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_exists(self):
         self.show_image('all_shapes')
 
@@ -325,7 +317,6 @@ class RegionTest(unittest.TestCase):
         match = self.region.exists(Image('shape_blue_circle'))
         self.assertEqual(None, match)
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_wait(self):
         self.show_image('all_shapes')
 
@@ -334,7 +325,6 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_wait_vanish(self):
         self.show_image('all_shapes')
 

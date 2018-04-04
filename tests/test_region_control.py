@@ -110,7 +110,6 @@ class RegionTest(unittest.TestCase):
 
             time.sleep(0.2)
 
-    @unittest.expectedFailure  # fails on some platforms
     def test_hover(self):
         self.show_image('all_shapes')
 
