@@ -328,24 +328,16 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_fill_at(self):
         self.show_application()
-        self.region.fill_at(Text("type quit"), 'quit', 0, 0)
+        self.region.fill_at(self.textedit_quit_control, 'quit', 0, 0)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_select_at(self):
         self.show_application()
-        self.region.right_click(Text("context menu"))
-        self.region.select_at(Text("close"), 1, 0, 0)
+        self.region.right_click(self.context_menu_control)
+        self.region.select_at(self.context_menu_close_control, 1, 0, 0, mark_clicks=0)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
