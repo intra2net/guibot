@@ -62,7 +62,7 @@ class GlobalConfig(type):
     _feature_match_backend = "BruteForce-Hamming"
     _text_detect_backend = "erstat"
     _text_ocr_backend = "tesseract"
-    _hybrid_match_backend = "autopy"
+    _hybrid_match_backend = "template"
 
     def click_delay(self, value=None):
         """

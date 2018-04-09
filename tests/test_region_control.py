@@ -70,8 +70,6 @@ class RegionTest(unittest.TestCase):
 
     def setUp(self):
         self.child_app = None
-        # initialize template matching region to support some minimal robustness
-        GlobalConfig.hybrid_match_backend = "template"
         self.region = Region()
 
     def tearDown(self):
