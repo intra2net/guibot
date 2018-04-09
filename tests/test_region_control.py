@@ -73,8 +73,6 @@ class RegionTest(unittest.TestCase):
         # initialize template matching region to support some minimal robustness
         GlobalConfig.hybrid_match_backend = "template"
         self.region = Region()
-        # reset to (0, 0) to avoid cursor on the same control (used many times)
-        self.region.hover(Location(0, 0))
 
     def tearDown(self):
         self.close_windows()
@@ -108,6 +106,19 @@ class RegionTest(unittest.TestCase):
                 break
 
             time.sleep(0.2)
+
+    def test_get_mouse_location(self):
+        self.region.hover(Location(0, 0))
+        pos = self.region.mouse_location
+        # Exact match currently not possible, autopy is not pixel perfect.
+        self.assertAlmostEqual(pos.x, 0, delta=1)
+        self.assertAlmostEqual(pos.y, 0, delta=1)
+
+        self.region.hover(Location(30, 20))
+        pos = self.region.mouse_location
+        # Exact match currently not possible, autopy is not pixel perfect.
+        self.assertAlmostEqual(pos.x, 30, delta=1)
+        self.assertAlmostEqual(pos.y, 20, delta=1)
 
     def test_hover(self):
         self.show_application()
@@ -230,21 +241,6 @@ class RegionTest(unittest.TestCase):
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
-
-    def test_get_mouse_location(self):
-        self.region.hover(Location(0, 0))
-
-        pos = self.region.mouse_location
-        # Exact match currently not possible, autopy is not pixel perfect.
-        self.assertTrue(pos.x < 5)
-        self.assertTrue(pos.y < 5)
-
-        self.region.hover(Location(30, 20))
-
-        pos = self.region.mouse_location
-        # Exact match currently not possible, autopy is not pixel perfect.
-        self.assertTrue(pos.x > 25 and pos.x < 35)
-        self.assertTrue(pos.y > 15 and pos.y < 25)
 
     @unittest.expectedFailure  # fails on some platforms
     def test_press_keys(self):
