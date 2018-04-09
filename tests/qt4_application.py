@@ -14,8 +14,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+import sys, os
 from PyQt4 import QtGui, QtCore
+
+
+import common_test
 
 
 app = QtGui.QApplication(sys.argv)
@@ -65,7 +68,6 @@ class ControlsWithLayout(QtGui.QWidget):
         right_click_view.setFixedSize(120, 130)
         right_click_view.setFont(QtGui.QFont(font_family, font_size))
         right_click_view.addItem('contextmenu')
-
         right_click_view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
         quit_action = QtGui.QAction("close", self)
@@ -85,6 +87,11 @@ class ControlsWithLayout(QtGui.QWidget):
         label4 = MouseUpQuitLabel("mouse up", self)
         label4.setFixedSize(120, 30)
         label4.setStyleSheet('QLabel { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
+
+        image1 = ImageQuitLabel(self)
+        image1.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir, "images/shape_red_box.png")))
+        image2 = ImageChangeLabel(image1, self)
+        image2.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir, "images/shape_green_box.png")))
 
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(button_click)
@@ -107,10 +114,17 @@ class ControlsWithLayout(QtGui.QWidget):
         vbox2.addStretch(1)
         vbox2.setAlignment(QtCore.Qt.AlignTop)
 
+        vbox3 = QtGui.QVBoxLayout()
+        vbox3.addWidget(image1)
+        vbox3.addWidget(image2)
+        vbox3.addStretch(1)
+        vbox3.setAlignment(QtCore.Qt.AlignTop)
+
         hbox2 = QtGui.QHBoxLayout()
         hbox2.addLayout(vbox)
         hbox2.addLayout(hbox)
         hbox2.addLayout(vbox2)
+        hbox2.addLayout(vbox3)
         hbox2.addStretch(1)
         hbox2.setAlignment(QtCore.Qt.AlignLeft)
 
@@ -174,6 +188,26 @@ class MouseUpQuitLabel(QtGui.QLabel):
 
     def mouseReleaseEvent(self, e):
         self.parent().close()
+
+
+class ImageQuitLabel(QtGui.QLabel):
+
+    def __init__(self, parent):
+        super(ImageQuitLabel, self).__init__(parent)
+
+    def mousePressEvent(self, e):
+        self.parent().close()
+
+
+class ImageChangeLabel(QtGui.QLabel):
+
+    def __init__(self, image, parent):
+        super(ImageChangeLabel, self).__init__(parent)
+        self.image = image
+
+    def mousePressEvent(self, e):
+        self.image.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir,
+                                                        "images/shape_black_box.png")))
 
 
 if __name__ == "__main__":

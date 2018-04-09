@@ -751,7 +751,8 @@ class Region(object):
         Find all instances of an anchor image and click on the one with the
         desired index given that they are horizontally then vertically sorted.
 
-        :param str anchor: image to find all matches of
+        :param anchor: image to find all matches of
+        :type anchor: str or :py:class:`target.Target`
         :param int index: index of the match to click on (assuming >=1 matches),
             sorted according to their (x,y) coordinates
         :param int find_number: expected number of matches which is necessary
