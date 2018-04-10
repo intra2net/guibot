@@ -247,6 +247,7 @@ class RegionTest(unittest.TestCase):
         self.region.press_keys(self.region.ESC)
         self.assertEqual(0, self.wait_end(self.child_app))
 
+        # BUG: Qt fails to register a close event in some cases
         self.show_application()
         time.sleep(1)
         self.region.press_keys([self.region.ALT, self.region.F4])

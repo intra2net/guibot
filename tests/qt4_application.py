@@ -141,8 +141,13 @@ class ControlsWithLayout(QtGui.QWidget):
             self.close()
 
     def keyPressEvent(self, e):
+        #print "event captured with " + str(e.key())
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
+
+    def closeEvent(self, e):
+        #print "close event captured"
+        self.close()
 
 
 class DragQuitLabel(QtGui.QLabel):
