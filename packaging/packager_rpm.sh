@@ -11,7 +11,7 @@ dnf -y install python2-numpy opencv-python
 # text matching
 dnf -y install tesseract
 # desktop control
-dnf -y install xdotool
+dnf -y install xdotool xwd ImageMagick
 
 # pip dependencies (not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python-devel libpng-devel redhat-rpm-config

@@ -545,6 +545,9 @@ class XDoToolDesktopControl(DesktopControl):
         See base method for details.
         """
         xpos, ypos, width, height, filename = self._region_from_args(*args)
+        import subprocess
+        xwd = subprocess.Popen(("xwd", "-silent", "-root"), stdout=subprocess.PIPE)
+        subprocess.call(("convert", "xwd:-", "-crop", "%sx%s+%s+%s" % (width, height, xpos, ypos), filename), stdin=xwd.stdout)
         pil_image = PIL.Image.open(filename).convert('RGB')
         os.unlink(filename)
         return Image(None, pil_image)

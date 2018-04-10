@@ -19,7 +19,7 @@ export LEGACY_OPENCV=1
 # text matching
 apt-get -y install tesseract-ocr
 # desktop control
-apt-get -y install xdotool
+apt-get -y install xdotool x11-apps imagemagick
 
 # pip dependencies (not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python-dev libpng12-dev python-pip
