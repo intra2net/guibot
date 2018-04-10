@@ -329,6 +329,92 @@ class XDoToolKey(Key):
         self.KP_DECIMAL = None
 
 
+class VNCDoToolKey(Key):
+    """Helper to contain all key mappings for the VNCDoTool DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the key map for the VNCDoTool backend."""
+        # TODO: it would be preferable to translate directly to RBF like
+        # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
+        self.ENTER = 'return' # also 'enter'
+        self.TAB = 'tab'
+        self.ESC = 'esc'
+        self.BACKSPACE = 'bsp'
+        self.DELETE = 'del' # also 'delete'
+        self.INSERT = 'ins'
+
+        self.CTRL = 'ctrl' # also 'lctrl'
+        self.ALT = 'alt' # also 'lalt'
+        self.SHIFT = 'shift' # also 'lshift'
+        self.META = 'meta' # also 'lmeta'
+        self.RCTRL = 'rctrl'
+        self.RALT = 'ralt'
+        self.RSHIFT = 'rshift'
+        self.RMETA = 'rmeta'
+
+        self.F1 = 'f1'
+        self.F2 = 'f2'
+        self.F3 = 'f3'
+        self.F4 = 'f4'
+        self.F5 = 'f5'
+        self.F6 = 'f6'
+        self.F7 = 'f7'
+        self.F8 = 'f8'
+        self.F9 = 'f9'
+        self.F10 = 'f10'
+        self.F11 = 'f11'
+        self.F12 = 'f12'
+        self.F13 = 'f13'
+        self.F14 = 'f14'
+        self.F15 = 'f15'
+        self.F16 = 'f16'
+        self.F17 = 'f17'
+        self.F18 = 'f18'
+        self.F19 = 'f19'
+        self.F20 = 'f20'
+
+        self.HOME = 'home'
+        self.END = 'end'
+        self.LEFT = 'left'
+        self.RIGHT = 'right'
+        self.UP = 'up'
+        self.DOWN = 'down'
+        self.PAGE_DOWN = 'pgdn'
+        self.PAGE_UP = 'pgup'
+
+        self.CAPS_LOCK = 'caplk'
+        # TODO: 'print screen' is not available
+        self.PRINTSCREEN = None
+        self.PAUSE = 'pause'
+        self.SCROLL_LOCK = 'scrlk'
+        self.NUM_LOCK = 'numlk'
+        self.SYS_REQ = 'sysrq'
+        self.SUPER = 'super' # also 'lsuper'
+        self.RSUPER = 'rsuper'
+        self.HYPER = 'hyper' # also 'lhyper'
+        self.RHYPER = 'rhyper'
+        # TODO: 'menu' is not available
+        self.MENU = None
+
+        self.KP0 = 'kp0'
+        self.KP1 = 'kp1'
+        self.KP2 = 'kp2'
+        self.KP3 = 'kp3'
+        self.KP4 = 'kp4'
+        self.KP5 = 'kp5'
+        self.KP6 = 'kp6'
+        self.KP7 = 'kp7'
+        self.KP8 = 'kp8'
+        self.KP9 = 'kp9'
+        self.KP_ENTER = 'kpenter'
+        # TODO: these are not available
+        self.KP_DIVIDE = None
+        self.KP_MULTIPLY = None
+        self.KP_SUBTRACT = None
+        self.KP_ADD = None
+        self.KP_DECIMAL = None
+
+
 class QemuKey(Key):
     """Helper to contain all key mappings for the Qemu DC backend."""
 
@@ -417,92 +503,6 @@ class QemuKey(Key):
         self.KP_DECIMAL = 'kp_decimal'
 
 
-class VNCDoToolKey(Key):
-    """Helper to contain all key mappings for the VNCDoTool DC backend."""
-
-    def __init__(self):
-        """Build an instance containing the key map for the VNCDoTool backend."""
-        # TODO: it would be preferable to translate directly to RBF like
-        # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
-        self.ENTER = 'return' # also 'enter'
-        self.TAB = 'tab'
-        self.ESC = 'esc'
-        self.BACKSPACE = 'bsp'
-        self.DELETE = 'del' # also 'delete'
-        self.INSERT = 'ins'
-
-        self.CTRL = 'ctrl' # also 'lctrl'
-        self.ALT = 'alt' # also 'lalt'
-        self.SHIFT = 'shift' # also 'lshift'
-        self.META = 'meta' # also 'lmeta'
-        self.RCTRL = 'rctrl'
-        self.RALT = 'ralt'
-        self.RSHIFT = 'rshift'
-        self.RMETA = 'rmeta'
-
-        self.F1 = 'f1'
-        self.F2 = 'f2'
-        self.F3 = 'f3'
-        self.F4 = 'f4'
-        self.F5 = 'f5'
-        self.F6 = 'f6'
-        self.F7 = 'f7'
-        self.F8 = 'f8'
-        self.F9 = 'f9'
-        self.F10 = 'f10'
-        self.F11 = 'f11'
-        self.F12 = 'f12'
-        self.F13 = 'f13'
-        self.F14 = 'f14'
-        self.F15 = 'f15'
-        self.F16 = 'f16'
-        self.F17 = 'f17'
-        self.F18 = 'f18'
-        self.F19 = 'f19'
-        self.F20 = 'f20'
-
-        self.HOME = 'home'
-        self.END = 'end'
-        self.LEFT = 'left'
-        self.RIGHT = 'right'
-        self.UP = 'up'
-        self.DOWN = 'down'
-        self.PAGE_DOWN = 'pgdn'
-        self.PAGE_UP = 'pgup'
-
-        self.CAPS_LOCK = 'caplk'
-        # TODO: 'print screen' is not available
-        self.PRINTSCREEN = None
-        self.PAUSE = 'pause'
-        self.SCROLL_LOCK = 'scrlk'
-        self.NUM_LOCK = 'numlk'
-        self.SYS_REQ = 'sysrq'
-        self.SUPER = 'super' # also 'lsuper'
-        self.RSUPER = 'rsuper'
-        self.HYPER = 'hyper' # also 'lhyper'
-        self.RHYPER = 'rhyper'
-        # TODO: 'menu' is not available
-        self.MENU = None
-
-        self.KP0 = 'kp0'
-        self.KP1 = 'kp1'
-        self.KP2 = 'kp2'
-        self.KP3 = 'kp3'
-        self.KP4 = 'kp4'
-        self.KP5 = 'kp5'
-        self.KP6 = 'kp6'
-        self.KP7 = 'kp7'
-        self.KP8 = 'kp8'
-        self.KP9 = 'kp9'
-        self.KP_ENTER = 'kpenter'
-        # TODO: these are not available
-        self.KP_DIVIDE = None
-        self.KP_MULTIPLY = None
-        self.KP_SUBTRACT = None
-        self.KP_ADD = None
-        self.KP_DECIMAL = None
-
-
 class KeyModifier(object):
     """Helper to contain all modifier key mappings for a custom desktop control backend."""
 
@@ -559,6 +559,19 @@ class XDoToolKeyModifier(KeyModifier):
         self.MOD_META = 'meta'
 
 
+class VNCDoToolKeyModifier(KeyModifier):
+    """Helper to contain all modifier key mappings for the VNCDoTool DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the modifier key map for the VNCDoTool backend."""
+        # TODO: 'none' is not available
+        self.MOD_NONE = None
+        self.MOD_CTRL = 'ctrl'
+        self.MOD_ALT = 'alt'
+        self.MOD_SHIFT = 'shift'
+        self.MOD_META = 'meta'
+
+
 class QemuKeyModifier(KeyModifier):
     """Helper to contain all modifier key mappings for the Qemu DC backend."""
 
@@ -571,19 +584,6 @@ class QemuKeyModifier(KeyModifier):
         self.MOD_SHIFT = 'shift'
         # TODO: 'meta' is not available
         self.MOD_META = None
-
-
-class VNCDoToolKeyModifier(KeyModifier):
-    """Helper to contain all modifier key mappings for the VNCDoTool DC backend."""
-
-    def __init__(self):
-        """Build an instance containing the modifier key map for the VNCDoTool backend."""
-        # TODO: 'none' is not available
-        self.MOD_NONE = None
-        self.MOD_CTRL = 'ctrl'
-        self.MOD_ALT = 'alt'
-        self.MOD_SHIFT = 'shift'
-        self.MOD_META = 'meta'
 
 
 class MouseButton(object):
@@ -633,16 +633,6 @@ class XDoToolMouseButton(MouseButton):
         self.CENTER_BUTTON = 2
 
 
-class QemuMouseButton(MouseButton):
-    """Helper to contain all mouse button mappings for the Qemu DC backend."""
-
-    def __init__(self):
-        """Build an instance containing the mouse button map for the Qemu backend."""
-        self.LEFT_BUTTON = 1
-        self.RIGHT_BUTTON = 4
-        self.CENTER_BUTTON = 2
-
-
 class VNCDoToolMouseButton(MouseButton):
     """Helper to contain all mouse button mappings for the VNCDoTool DC backend."""
 
@@ -652,3 +642,12 @@ class VNCDoToolMouseButton(MouseButton):
         self.RIGHT_BUTTON = 3
         self.CENTER_BUTTON = 2
 
+
+class QemuMouseButton(MouseButton):
+    """Helper to contain all mouse button mappings for the Qemu DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the mouse button map for the Qemu backend."""
+        self.LEFT_BUTTON = 1
+        self.RIGHT_BUTTON = 4
+        self.CENTER_BUTTON = 2
