@@ -645,10 +645,12 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
-        # hostname of the vnc server in case vncdotool backend is used
+        # hostname of the vnc server
         self.params[category]["vnc_hostname"] = "localhost"
-        # port of the vnc server in case vncdotool backend is used
+        # port of the vnc server
         self.params[category]["vnc_port"] = 0
+        # password for the vnc server
+        self.params[category]["vnc_password"] = None
 
     def configure_backend(self, backend=None, category="vncdotool", reset=False):
         """
@@ -668,7 +670,8 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         from vncdotool import api
         self._backend_obj = api.connect('%s:%i' % (self.params[category]["vnc_hostname"],
-                                                   self.params[category]["vnc_port"]))
+                                                   self.params[category]["vnc_port"]),
+                                        self.params[category]["vnc_password"])
         # for special characters preprocessing for the vncdotool
         self._backend_obj.factory.force_caps = True
 

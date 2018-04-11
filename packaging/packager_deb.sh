@@ -20,7 +20,7 @@ export LEGACY_OPENCV=1
 apt-get -y install tesseract-ocr
 # desktop control
 apt-get -y install xdotool x11-apps imagemagick
-apt-get -y install vnc-server
+apt-get -y install tightvncserver
 
 # pip dependencies (not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python-dev libpng12-dev python-pip

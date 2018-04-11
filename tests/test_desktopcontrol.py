@@ -15,6 +15,7 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import stat
 import shutil
 import unittest
 import subprocess
@@ -31,8 +32,24 @@ class DesktopControlTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
+        self.vncpass = "test1234"
+
+        passfile = "/root/.vnc/passwd"
+        if not os.path.isdir(os.path.dirname(passfile)):
+            os.mkdir(os.path.dirname(passfile))
+        os.environ["USER"] = "root"
+        with open(passfile, "wb") as f:
+            # NOTE: python 3 is far friendlier with this but use this for now
+            read, write = os.pipe()
+            os.write(write, self.vncpass)
+            os.close(write)
+            p = subprocess.check_output(("vncpasswd", "-f"),
+                                        stdin=read)
+            f.write(p)
+        os.chmod(passfile, stat.S_IREAD | stat.S_IWRITE)
+
         with open(os.devnull, 'wb') as devnull:
-            subprocess.check_call(("vncserver", ":0", "-SecurityTypes", "None"),
+            subprocess.check_call(("vncserver", ":0"),
                                   stdout=devnull, stderr=devnull)
 
     @classmethod
@@ -41,10 +58,17 @@ class DesktopControlTest(unittest.TestCase):
             subprocess.check_call(("vncserver", "-kill", ":0"),
                                   stdout=devnull, stderr=devnull)
 
+        if os.path.exists("/root/.vnc"):
+            shutil.rmtree("/root/.vnc")
+
     def setUp(self):
+        self.backends = [AutoPyDesktopControl(), XDoToolDesktopControl()]
+        vncdotool = VNCDoToolDesktopControl(synchronize=False)
+        vncdotool.params["vncdotool"]["vnc_password"] = self.vncpass
+        vncdotool.synchronize_backend()
+        self.backends += [vncdotool]
         # TODO: the Qemu DC backend is not fully developed
-        self.backends = (AutoPyDesktopControl(), XDoToolDesktopControl(),
-                         VNCDoToolDesktopControl())  # QemuDesktopControl()
+        # QemuDesktopControl()
 
     def tearDown(self):
         if os.path.exists(GlobalConfig.image_logging_destination):
