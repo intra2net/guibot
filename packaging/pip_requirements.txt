@@ -3,7 +3,7 @@ python-coverage==0.0.5
 Pillow==5.1.0
 
 # backends
-autopy==0.51
+autopy==1.0.1
 opencv-contrib-python==3.4.1.15
 http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl
 torchvision==0.2.1

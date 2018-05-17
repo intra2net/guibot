@@ -169,34 +169,34 @@ class AutoPyKey(Key):
         import autopy
         # commented out keys are not supported by autopy
         # TODO: this needs to be patched
-        self.ENTER = autopy.key.K_RETURN
+        self.ENTER = autopy.key.Code.RETURN
         self.TAB = None
-        self.ESC = autopy.key.K_ESCAPE
-        self.BACKSPACE = autopy.key.K_BACKSPACE
-        self.DELETE = autopy.key.K_DELETE
+        self.ESC = autopy.key.Code.ESCAPE
+        self.BACKSPACE = autopy.key.Code.BACKSPACE
+        self.DELETE = autopy.key.Code.DELETE
         self.INSERT = None
 
-        self.CTRL = autopy.key.K_CONTROL
-        self.ALT = autopy.key.K_ALT
-        self.SHIFT = autopy.key.K_SHIFT
-        self.META = autopy.key.K_META
+        self.CTRL = autopy.key.Code.CONTROL
+        self.ALT = autopy.key.Code.ALT
+        self.SHIFT = autopy.key.Code.SHIFT
+        self.META = autopy.key.Code.META
         self.RCTRL = None
         self.RALT = None
         self.RSHIFT = None
         self.RMETA = None
 
-        self.F1 = autopy.key.K_F1
-        self.F2 = autopy.key.K_F2
-        self.F3 = autopy.key.K_F3
-        self.F4 = autopy.key.K_F4
-        self.F5 = autopy.key.K_F5
-        self.F6 = autopy.key.K_F6
-        self.F7 = autopy.key.K_F7
-        self.F8 = autopy.key.K_F8
-        self.F9 = autopy.key.K_F9
-        self.F10 = autopy.key.K_F10
-        self.F11 = autopy.key.K_F11
-        self.F12 = autopy.key.K_F12
+        self.F1 = autopy.key.Code.F1
+        self.F2 = autopy.key.Code.F2
+        self.F3 = autopy.key.Code.F3
+        self.F4 = autopy.key.Code.F4
+        self.F5 = autopy.key.Code.F5
+        self.F6 = autopy.key.Code.F6
+        self.F7 = autopy.key.Code.F7
+        self.F8 = autopy.key.Code.F8
+        self.F9 = autopy.key.Code.F9
+        self.F10 = autopy.key.Code.F10
+        self.F11 = autopy.key.Code.F11
+        self.F12 = autopy.key.Code.F12
         self.F13 = None
         self.F14 = None
         self.F15 = None
@@ -206,16 +206,16 @@ class AutoPyKey(Key):
         self.F19 = None
         self.F20 = None
 
-        self.HOME = autopy.key.K_HOME
-        self.END = autopy.key.K_END
-        self.LEFT = autopy.key.K_LEFT
-        self.RIGHT = autopy.key.K_RIGHT
-        self.UP = autopy.key.K_UP
-        self.DOWN = autopy.key.K_DOWN
-        self.PAGE_DOWN = autopy.key.K_PAGEDOWN
-        self.PAGE_UP = autopy.key.K_PAGEUP
+        self.HOME = autopy.key.Code.HOME
+        self.END = autopy.key.Code.END
+        self.LEFT = autopy.key.Code.LEFT_ARROW
+        self.RIGHT = autopy.key.Code.RIGHT_ARROW
+        self.UP = autopy.key.Code.UP_ARROW
+        self.DOWN = autopy.key.Code.DOWN_ARROW
+        self.PAGE_DOWN = autopy.key.Code.PAGE_DOWN
+        self.PAGE_UP = autopy.key.Code.PAGE_UP
 
-        self.CAPS_LOCK = autopy.key.K_CAPSLOCK
+        self.CAPS_LOCK = autopy.key.Code.CAPS_LOCK
         self.PRINTSCREEN = None
         self.PAUSE = None
         self.SCROLL_LOCK = None
@@ -539,11 +539,12 @@ class AutoPyKeyModifier(KeyModifier):
     def __init__(self):
         """Build an instance containing the modifier key map for the AutoPy backend."""
         import autopy
-        self.MOD_NONE = autopy.key.MOD_NONE
-        self.MOD_CTRL = autopy.key.MOD_CONTROL
-        self.MOD_ALT = autopy.key.MOD_ALT
-        self.MOD_SHIFT = autopy.key.MOD_SHIFT
-        self.MOD_META = autopy.key.MOD_META
+        # TODO: 'none' is not available
+        self.MOD_NONE = None
+        self.MOD_CTRL = autopy.key.Modifier.CONTROL
+        self.MOD_ALT = autopy.key.Modifier.ALT
+        self.MOD_SHIFT = autopy.key.Modifier.SHIFT
+        self.MOD_META = autopy.key.Modifier.META
 
 
 class XDoToolKeyModifier(KeyModifier):
@@ -618,9 +619,9 @@ class AutoPyMouseButton(MouseButton):
     def __init__(self):
         """Build an instance containing the mouse button map for the AutoPy backend."""
         import autopy
-        self.LEFT_BUTTON = autopy.mouse.LEFT_BUTTON
-        self.RIGHT_BUTTON = autopy.mouse.RIGHT_BUTTON
-        self.CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
+        self.LEFT_BUTTON = autopy.mouse.Button.LEFT
+        self.RIGHT_BUTTON = autopy.mouse.Button.RIGHT
+        self.CENTER_BUTTON = autopy.mouse.Button.MIDDLE
 
 
 class XDoToolMouseButton(MouseButton):

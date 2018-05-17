@@ -943,20 +943,7 @@ class Region(object):
         at_str = " at %s" % target_or_location if target_or_location else ""
 
         keys_list = []
-        # if not a list (i.e. if a single key)
-        if isinstance(keys, int) or isinstance(keys, basestring):
-            key = keys
-            try:
-                log.info("Pressing key '%s'%s", self.dc_backend.keymap.to_string(key), at_str)
-            # if not a special key (i.e. if a character key)
-            except KeyError:
-                if isinstance(key, int):
-                    key = str(key)
-                elif len(key) > 1:
-                    raise # a key cannot be a string (text)
-                log.info("Pressing key '%s'%s", key, at_str)
-            keys_list.append(key)
-        else:
+        if isinstance(keys, list):
             key_strings = []
             for key in keys:
                 try:
@@ -971,6 +958,19 @@ class Region(object):
             log.info("Pressing together keys '%s'%s",
                      "'+'".join(keystr for keystr in key_strings),
                      at_str)
+        else:
+            # if not a list (i.e. if a single key)
+            key = keys
+            try:
+                log.info("Pressing key '%s'%s", self.dc_backend.keymap.to_string(key), at_str)
+            # if not a special key (i.e. if a character key)
+            except KeyError:
+                if isinstance(key, int):
+                    key = str(key)
+                elif len(key) > 1:
+                    raise # only left keys are chars
+                log.info("Pressing key '%s'%s", key, at_str)
+            keys_list.append(key)
         return keys_list
 
     def type_text(self, text, modifiers=None):
@@ -1096,7 +1096,7 @@ class Region(object):
             text.append(self.ESC)
         for part in text:
             try:
-                key_str = self.dc_backend.keymap.to_string(part)
+                _key_str = self.dc_backend.keymap.to_string(part)
                 self.press_keys(part)
             except KeyError:
                 self.type_text(part)

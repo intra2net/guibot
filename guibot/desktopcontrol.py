@@ -314,8 +314,8 @@ class AutoPyDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        pos = self._backend_obj.mouse.get_pos()
-        return Location(pos[0], pos[1])
+        loc = self._backend_obj.mouse.location()
+        return Location(int(loc[0] / self._scale), int(loc[1] / self._scale))
 
     def __configure_backend(self, backend=None, category="autopy", reset=False):
         if category != "autopy":
@@ -343,7 +343,10 @@ class AutoPyDesktopControl(DesktopControl):
         import autopy
         self._backend_obj = autopy
 
-        self._width, self._height = self._backend_obj.screen.get_size()
+        self._scale = self._backend_obj.screen.scale()
+        self._width, self._height = self._backend_obj.screen.size()
+        self._width = int(self._width * self._scale)
+        self._height = int(self._height * self._scale)
         self._pointer = self.get_mouse_location()
         self._keymap = inputmap.AutoPyKey()
         self._modmap = inputmap.AutoPyKeyModifier()
@@ -365,14 +368,14 @@ class AutoPyDesktopControl(DesktopControl):
         """
         xpos, ypos, width, height, filename = self._region_from_args(*args)
 
-        # BUG: AutoPy screen capture on Windows must use negative coordinates,
-        # but it doesn't and as a result any normal attempt to capture a subregion
-        # will fall outside of the screen (be black) - it also blocks us trying to
-        # use negative coordinates screaming that we are outside of the screen while
-        # thinking that the coordinates are positive - this was already registered
-        # as a bug on AutoPy's GitHub page but no progress has been made since that
-        # -> https://github.com/msanders/autopy/issues/32
-        autopy_bmp = self._backend_obj.bitmap.capture_screen(((xpos, ypos), (width, height)))
+        # autopy works in points and requires a minimum of one point along a dimension
+        xpos, ypos, width, height = xpos / self._scale, ypos / self._scale, width / self._scale, height / self._scale
+        xpos, ypos = xpos - (1.0 - width) if width < 1.0 else xpos, ypos - (1.0 - height) if height < 1.0 else ypos
+        height, width = 1.0 if height < 1.0 else height, 1.0 if width < 1.0 else width
+        try:
+            autopy_bmp = self._backend_obj.bitmap.capture_screen(((xpos, ypos), (width, height)))
+        except ValueError:
+            return Image(None, PIL.Image.new('RGB', (1,1)))
         autopy_bmp.save(filename)
 
         pil_image = PIL.Image.open(filename).convert('RGB')
@@ -385,12 +388,11 @@ class AutoPyDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        # TODO: sometimes this is not pixel perfect, i.e.
-        # need to investigate the AutoPy source later on
+        x, y = location.x / self._scale, location.y / self._scale
         if smooth:
-            self._backend_obj.mouse.smooth_move(location.x, location.y)
+            self._backend_obj.mouse.smooth_move(x, y)
         else:
-            self._backend_obj.mouse.move(location.x, location.y)
+            self._backend_obj.mouse.move(x, y)
 
     def mouse_click(self, button=None, count=1, modifiers=None):
         """
@@ -404,6 +406,9 @@ class AutoPyDesktopControl(DesktopControl):
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mouse.click(button)
+            # BUG: the mouse button is pressed down forever (on LEFT)
+            time.sleep(0.1)
+            self._backend_obj.mouse.toggle(button, False)
             time.sleep(timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
@@ -414,7 +419,7 @@ class AutoPyDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        self._backend_obj.mouse.toggle(True, button)
+        self._backend_obj.mouse.toggle(button, True)
 
     def mouse_up(self, button):
         """
@@ -422,7 +427,7 @@ class AutoPyDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        self._backend_obj.mouse.toggle(False, button)
+        self._backend_obj.mouse.toggle(button, False)
 
     def keys_toggle(self, keys, up_down):
         """
@@ -431,7 +436,7 @@ class AutoPyDesktopControl(DesktopControl):
         See base method for details.
         """
         for key in keys:
-            self._backend_obj.key.toggle(key, up_down)
+            self._backend_obj.key.toggle(key, up_down, [])
 
     def keys_type(self, text, modifiers):
         """
@@ -442,17 +447,9 @@ class AutoPyDesktopControl(DesktopControl):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
-        shift_chars = ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
-                       "_", "+", "{", "}", ":", "\"", "|", "<", ">", "?"]
-        capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
         for part in text:
             for char in str(part):
-                if char in shift_chars and GlobalConfig.preprocess_special_chars:
-                    self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                elif char in capital_chars and GlobalConfig.preprocess_special_chars:
-                    self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                else:
-                    self._backend_obj.key.tap(char)
+                self._backend_obj.key.tap(char, [])
                 time.sleep(GlobalConfig.delay_between_keys)
             # alternative option:
             # autopy.key.type_string(text)

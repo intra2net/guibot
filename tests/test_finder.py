@@ -166,9 +166,8 @@ class FinderTest(unittest.TestCase):
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        # AutoPy returns +1 pixel for both axes
-        self.assertEqual(matches[0].x, 105)
-        self.assertEqual(matches[0].y, 11)
+        self.assertEqual(matches[0].x, 104)
+        self.assertEqual(matches[0].y, 10)
         self.assertEqual(matches[0].width, 165)
         self.assertEqual(matches[0].height, 151)
 
@@ -854,9 +853,8 @@ class FinderTest(unittest.TestCase):
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        # AutoPy returns +1 pixel for both axes
-        self.assertEqual(matches[0].x, 105)
-        self.assertEqual(matches[0].y, 11)
+        self.assertEqual(matches[0].x, 104)
+        self.assertEqual(matches[0].y, 10)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(4)
@@ -888,9 +886,8 @@ class FinderTest(unittest.TestCase):
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        # AutoPy returns +1 pixel for both axes
-        self.assertEqual(matches[0].x, 105)
-        self.assertEqual(matches[0].y, 11)
+        self.assertEqual(matches[0].x, 104)
+        self.assertEqual(matches[0].y, 10)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(8, multistep=True)

@@ -486,7 +486,7 @@ class AutoPyFinder(Finder):
         self.imglog.hotmaps.append(haystack.pil_image.copy())
 
         # class-specific dependencies
-        from autopy import bitmap
+        from autopy import bitmap, screen
         from tempfile import NamedTemporaryFile
 
         if needle.filename in self._bitmapcache:
@@ -513,6 +513,7 @@ class AutoPyFinder(Finder):
         log.debug("Best acceptable match starting at %s", coord)
 
         if coord is not None:
+            coord = (int(coord[0]), int(coord[1]))
             similarity = self.params["find"]["similarity"].value
             self.imglog.locations.append(coord)
             self.imglog.similarities.append(similarity)
