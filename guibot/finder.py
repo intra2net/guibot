@@ -74,14 +74,14 @@ class CVParameter(object):
         elif type(self.value) == float:
             min_val = -sys.float_info.max
         elif type(self.value) == int:
-            min_val = -sys.maxint
+            min_val = -sys.maxsize
         self.max_val = max_val
         if max_val is not None:
             assert value <= max_val
         elif type(self.value) == float:
             max_val = sys.float_info.max
         elif type(self.value) == int:
-            max_val = sys.maxint
+            max_val = sys.maxsize
         self.range = (min_val, max_val)
 
         # fixed or allowed to be calibrated
@@ -2596,7 +2596,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         # knowing how the tempfeat works this estimates
         # the expected number of cases starting from 1 (i+1)
         # to make sure the winner is the first alphabetically
-        candidate_num = len(self.imglog.similarities) / 2
+        candidate_num = int(len(self.imglog.similarities) / 2)
         for i in range(candidate_num):
             name = "imglog%s-3hotmap-%stemplate-%s.png" % (self.imglog.printable_step,
                                                            i + 1, self.imglog.similarities[i])
@@ -2708,8 +2708,8 @@ class DeepFinder(Finder):
                 ow, oh = f.params["deep"]["owidth"].value, f.params["deep"]["oheight"].value
 
                 # calculate the number of inputs of the first linear layer
-                rw = ((iw - c1k + 1) / c1p - c2k + 1) / c2p
-                rh = ((ih - c1k + 1) / c1p - c2k + 1) / c2p
+                rw = int((int((iw - c1k + 1) / c1p) - c2k + 1) / c2p)
+                rh = int((int((ih - c1k + 1) / c1p) - c2k + 1) / c2p)
                 n = rw * rh * c2c
 
                 self.conv1 = nn.Conv2d(1, c1c, kernel_size=c1k)
@@ -2804,8 +2804,8 @@ class DeepFinder(Finder):
         # TODO: try Faster Region-CNNs, Single Shot MultiBox Detector, and YOLO
         matches = []
         from match import Match
-        dx = haystack.width / self.params["deep"]["owidth"].value
-        dy = haystack.height / self.params["deep"]["oheight"].value
+        dx = int(haystack.width / self.params["deep"]["owidth"].value)
+        dy = int(haystack.height / self.params["deep"]["oheight"].value)
         ys, xs = numpy.where(hotmap > self.params["find"]["similarity"].value)
         for (x, y) in zip(list(xs), list(ys)):
             similarity = hotmap[y,x]
@@ -2875,7 +2875,7 @@ class DeepFinder(Finder):
                 if batch_idx % self.params["deep"]["log_interval"].value == 0:
                     log.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                             epoch, batch_idx * len(data), len(train_loader.dataset),
-                            100. * batch_idx / len(train_loader), loss.data[0]))
+                            100 * batch_idx / len(train_loader), loss.data[0]))
 
         # save the network state if required
         if data_filename is not None:
@@ -2927,7 +2927,7 @@ class DeepFinder(Finder):
         # log measurements - this is the only testing action
         log.info('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
                 test_loss, correct, len(test_loader.dataset),
-                100. * correct / len(test_loader.dataset)))
+                100 * correct / len(test_loader.dataset)))
 
     def log(self, lvl):
         """

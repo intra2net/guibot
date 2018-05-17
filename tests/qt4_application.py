@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -136,17 +136,14 @@ class ControlsWithLayout(QtGui.QWidget):
 
     def quit_on_type(self):
         sender = self.sender()
-        # print sender, sender.text()
         if sender.text() == "quit":
             self.close()
 
     def keyPressEvent(self, e):
-        #print "event captured with " + str(e.key())
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
 
     def closeEvent(self, e):
-        #print "close event captured"
         self.close()
 
 

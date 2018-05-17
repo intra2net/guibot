@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -75,7 +75,7 @@ class RegionTest(unittest.TestCase):
 
     def show_image(self, filename):
         filename = self.path.search(filename)
-        self.child_img = subprocess.Popen(['python', self.script_img, filename])
+        self.child_img = subprocess.Popen(['python3', self.script_img, filename])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 
@@ -159,13 +159,13 @@ class RegionTest(unittest.TestCase):
         try:
             self.region.find(Image('shape_blue_circle.png'), 0)
             self.fail('exception was not thrown')
-        except FindError, e:
+        except FindError as e:
             pass
 
         try:
             self.region.find_all(Image('shape_blue_circle.png'), 0)
             self.fail('exception was not thrown')
-        except FindError, e:
+        except FindError as e:
             pass
 
     def test_find_all(self):

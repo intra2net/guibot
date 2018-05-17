@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -39,9 +39,8 @@ class DesktopControlTest(unittest.TestCase):
             os.mkdir(os.path.dirname(passfile))
         os.environ["USER"] = "root"
         with open(passfile, "wb") as f:
-            # NOTE: python 3 is far friendlier with this but use this for now
             read, write = os.pipe()
-            os.write(write, self.vncpass)
+            os.write(write, self.vncpass.encode())
             os.close(write)
             p = subprocess.check_output(("vncpasswd", "-f"),
                                         stdin=read)
@@ -90,9 +89,9 @@ class DesktopControlTest(unittest.TestCase):
             self.assertEquals(screen_height, captured.height)
 
             # Capture with coordiantes
-            captured = desktop.capture_screen(20, 10, screen_width / 2, screen_height / 2)
-            self.assertEquals(screen_width / 2, captured.width)
-            self.assertEquals(screen_height / 2, captured.height)
+            captured = desktop.capture_screen(20, 10, int(screen_width/2), int(screen_height/2))
+            self.assertEquals(int(screen_width/2), captured.width)
+            self.assertEquals(int(screen_height/2), captured.height)
 
             # Capture with Region
             region = Region(10, 10, 320, 200)

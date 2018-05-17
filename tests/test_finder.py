@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -124,8 +124,8 @@ class FinderTest(unittest.TestCase):
         finder.configure()
         # test that a parameter of ORB (the current and default detector)
         # is present in parameters while a parameter of KAZE is not present
-        self.assertTrue(finder.params["fdetect"].has_key("MaxFeatures"))
-        self.assertFalse(finder.params["fdetect"].has_key("NOctaves"))
+        self.assertIn("MaxFeatures", finder.params["fdetect"])
+        self.assertNotIn("NOctaves", finder.params["fdetect"])
 
         finder = TemplateFeatureFinder()
         finder.configure(feature_detect="KAZE", feature_extract="ORB", feature_match="BruteForce")
@@ -138,8 +138,8 @@ class FinderTest(unittest.TestCase):
 
         # test that a parameter of KAZE (the new detector) is now present
         # while the parameter of ORB is not present anymore
-        self.assertTrue(finder.params["fdetect"].has_key("NOctaves"))
-        self.assertFalse(finder.params["fdetect"].has_key("MaxFeatures"))
+        self.assertIn("NOctaves", finder.params["fdetect"])
+        self.assertNotIn("MaxFeatures", finder.params["fdetect"])
 
         # check consistency of all unchanged options
         finder.configure_backend("ccorr_normed", "template")
@@ -754,9 +754,9 @@ class FinderTest(unittest.TestCase):
                     self.assertNotIn('template', hotmap)
                     self.assertNotIn('feature', hotmap)
                 elif i % 2 == 1:
-                    self.assertIn('%sfeature' % ((i - 1) / 2 + 1), hotmap)
+                    self.assertIn('%ifeature' % int((i - 1) / 2 + 1), hotmap)
                 else:
-                    self.assertIn('%stemplate' % ((i - 1) / 2 + 1), hotmap)
+                    self.assertIn('%itemplate' % int((i - 1) / 2 + 1), hotmap)
                 # report achieved similarity in the end of the filename
                 self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
@@ -805,8 +805,8 @@ class FinderTest(unittest.TestCase):
         # TODO: need more precision to get y=10
         self.assertEqual(matches[0].y, 40)
         # based on a 15x15 output layer (network configuration)
-        self.assertEqual(matches[0].width, Image('all_shapes').width/15)
-        self.assertEqual(matches[0].height, Image('all_shapes').height/15)
+        self.assertEqual(matches[0].width, int(Image('all_shapes').width/15))
+        self.assertEqual(matches[0].height, int(Image('all_shapes').height/15))
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(5)

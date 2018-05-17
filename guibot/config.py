@@ -478,7 +478,7 @@ class GlobalConfig(type):
     hybrid_match_backend = property(fget=hybrid_match_backend, fset=hybrid_match_backend)
 
 
-class GlobalConfig(object):
+class GlobalConfig(object, metaclass=GlobalConfig):
     """
     Handler for default configuration present in all
     cases where no specific value is set.
@@ -486,7 +486,7 @@ class GlobalConfig(object):
     The methods of this class are shared among
     all of its instances.
     """
-    __metaclass__ = GlobalConfig
+    pass
 
 
 class LocalConfig(object):
@@ -510,7 +510,7 @@ class LocalConfig(object):
 
         A parameter can be accessed as follows (example)::
 
-            print self.params["control"]["vnc_hostname"]
+            print(self.params["control"]["vnc_hostname"])
         """
         self.categories = {}
         self.algorithms = {}

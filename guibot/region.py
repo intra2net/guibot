@@ -190,8 +190,8 @@ class Region(object):
         :returns: center of the region
         :rtype: :py:class:`location.Location`
         """
-        xpos = self._xpos + self._width / 2
-        ypos = self._ypos + self._height / 2
+        xpos = self._xpos + int(self._width / 2)
+        ypos = self._ypos + int(self._height / 2)
 
         return Location(xpos, ypos)
     center = property(fget=get_center)
@@ -393,7 +393,7 @@ class Region(object):
         This method is the main entrance to all our target finding capabilities
         and is the milestone for all target expect methods.
         """
-        if isinstance(target, basestring):
+        if isinstance(target, str):
             target = self._target_from_string(target)
         log.debug("Looking for target %s", target)
         cv_backend = self._determine_cv_backend(target)
@@ -442,7 +442,7 @@ class Region(object):
 
         This method is similar the one above but allows for more than one match.
         """
-        if isinstance(target, basestring):
+        if isinstance(target, str):
             target = self._target_from_string(target)
         log.debug("Looking for target %s", target)
         cv_backend = self._determine_cv_backend(target)
@@ -525,7 +525,7 @@ class Region(object):
             will return zero similarity (similarly to the target logging case).
         """
         log.debug("Looking for target %s", target)
-        if isinstance(target, basestring):
+        if isinstance(target, str):
             target = Image(target)
         if not target.use_own_settings:
             target.match_settings = self.cv_backend
@@ -998,7 +998,7 @@ class Region(object):
         text_list = self._parse_text(text)
         time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
-            if isinstance(modifiers, basestring):
+            if isinstance(modifiers, str):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
         self.dc_backend.keys_type(text_list, modifiers)
@@ -1018,7 +1018,7 @@ class Region(object):
             match = self.click(target_or_location)
         time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
-            if isinstance(modifiers, basestring):
+            if isinstance(modifiers, str):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
         self.dc_backend.keys_type(text_list, modifiers)
@@ -1028,12 +1028,12 @@ class Region(object):
         at_str = " at %s" % target_or_location if target_or_location else ""
 
         text_list = []
-        if isinstance(text, basestring):
+        if isinstance(text, str):
             log.info("Typing text '%s'%s", text, at_str)
             text_list = [text]
         else:
             for part in text:
-                if isinstance(part, basestring):
+                if isinstance(part, str):
                     log.info("Typing text '%s'%s", part, at_str)
                     text_list.append(part)
                 elif isinstance(part, int):
@@ -1086,7 +1086,7 @@ class Region(object):
         loc = Location(start_loc.x + dx, start_loc.y + dy)
         self.multi_click(loc, count=mark_clicks)
 
-        if isinstance(text, basestring):
+        if isinstance(text, str):
             text = [text]
         if del_flag:
             text.insert(0, self.DELETE)
@@ -1169,8 +1169,8 @@ class Region(object):
             # which is 0, implying empty space repeated in the dropdown box and the
             # list, therefore a total of 2 option heights spanning the haystack height.
             # The haystack y displacement relative to 'loc' is then 1/2*1/2*dh
-            dropdown_haystack = Region(xpos=loc.x - dw / 2,
-                                       ypos=loc.y - dh / 4,
+            dropdown_haystack = Region(xpos=int(loc.x - dw / 2),
+                                       ypos=int(loc.y - dh / 4),
                                        width=dw, height=dh,
                                        dc=self.dc_backend, cv=self.cv_backend)
             dropdown_haystack.click(image_or_index)

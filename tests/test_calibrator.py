@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -32,12 +32,10 @@ class CalibratorTest(unittest.TestCase):
     def setUpClass(self):
         self.path = Path()
         self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
-        self.old_random_value_fun = CVParameter.random_value
 
     def tearDown(self):
         if os.path.exists("pairs.list"):
             os.unlink("pairs.list")
-        CVParameter.random_value = self.old_random_value_fun
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
         # use a single finder type for these tests
@@ -147,7 +145,7 @@ class CalibratorTest(unittest.TestCase):
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
-                self.assertTrue(result[0].endswith("+mixed"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
@@ -160,7 +158,7 @@ class CalibratorTest(unittest.TestCase):
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
                 # only normed backends are supported
-                self.assertTrue(result[0].endswith("_normed"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("_normed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
@@ -174,7 +172,7 @@ class CalibratorTest(unittest.TestCase):
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
-                self.assertTrue(result[0].endswith("+mixed"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
@@ -214,7 +212,7 @@ class CalibratorTest(unittest.TestCase):
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
-                self.assertTrue(result[0].startswith("mixed+"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
@@ -230,8 +228,8 @@ class CalibratorTest(unittest.TestCase):
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
                 # mixture of template and feature backends
-                self.assertTrue("+mixed" in result[0], "Incorrect backend names for case '%s' %s %s" % result)
-                self.assertTrue("_normed" in result[0], "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("_normed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)

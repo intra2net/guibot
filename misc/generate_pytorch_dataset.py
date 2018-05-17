@@ -1,4 +1,4 @@
-#!/bin/python2.7
+#!/usr/bin/python3
 
 """
 PyTorch dataset maker script
@@ -83,13 +83,13 @@ def tensors_from_data():
 
 
 if __name__ == '__main__':
-    print "Compiling images into a dataset... (this may take a while)"
+    print("Compiling images into a dataset... (this may take a while)")
     samples, targets = tensors_from_data()
 
     samples_filename = "samples_" + args.output
-    print "Saving samples (", samples.size(), ") to ", os.path.abspath(samples_filename)
+    print("Saving samples (", samples.size(), ") to ", os.path.abspath(samples_filename))
     torch.save(samples, samples_filename)
 
     targets_filename = "targets_" + args.output
-    print "Saving targets (", targets.size(), ") to ", os.path.abspath(targets_filename)
+    print("Saving targets (", targets.size(), ") to ", os.path.abspath(targets_filename))
     torch.save(targets, targets_filename)

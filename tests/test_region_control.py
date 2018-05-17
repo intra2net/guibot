@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -78,7 +78,7 @@ class RegionTest(unittest.TestCase):
             shutil.rmtree(GlobalConfig.image_logging_destination)
 
     def show_application(self):
-        self.child_app = subprocess.Popen(['python', self.script_app])
+        self.child_app = subprocess.Popen(['python3', self.script_app])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 

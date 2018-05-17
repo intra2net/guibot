@@ -517,7 +517,7 @@ class XDoToolDesktopControl(DesktopControl):
                 process = [self.dc.params[category]["binary"]]
                 process += [command]
                 process += args
-                return subprocess.check_output(process, shell=False)
+                return subprocess.check_output(process, shell=False).decode()
         self._backend_obj = XDoTool(self)
 
         self._width, self._height = self._backend_obj.run("getdisplaygeometry").split()

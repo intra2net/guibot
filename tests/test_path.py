@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -68,7 +68,7 @@ class PathTest(unittest.TestCase):
         try:
             target = self.path.search('foobar_does_not_exist')
             self.fail('Exception not thrown')
-        except FileNotFoundError, e:
+        except FileNotFoundError as e:
             pass
 
     def test_search_type(self):
@@ -92,7 +92,7 @@ class PathTest(unittest.TestCase):
         try:
             target = self.path.search('shape_black_box.png', 'other-images')
             self.fail('Exception not thrown')
-        except FileNotFoundError, e:
+        except FileNotFoundError as e:
             pass
 
     def test_search_silent(self):

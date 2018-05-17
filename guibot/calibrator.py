@@ -97,7 +97,7 @@ class Calibrator(object):
 
         self._prepare_params(finder)
         # obtain all categories in fixed order skipping root categories
-        ordered_categories = finder.categories.keys()
+        ordered_categories = list(finder.categories.keys())
         ordered_categories.remove("type")
         ordered_categories.remove("find")
 
@@ -252,7 +252,7 @@ class Calibrator(object):
                     elif param.fixed:
                         log.log(9, "Skip fixed parameter: %s/%s", category, key)
                         continue
-                    elif isinstance(param.value, basestring):
+                    elif isinstance(param.value, str):
                         log.log(9, "Skip string parameter: %s/%s (calibration not supported)", category, key)
                         continue
                     elif param.delta < param.tolerance:
@@ -280,7 +280,7 @@ class Calibrator(object):
                     # remaining types require special handling
                     elif type(param.value) == int and param.enumerated:
                         delta_coeff = 0.9
-                        for mode in xrange(*param.range):
+                        for mode in range(*param.range):
                             if start_value == mode:
                                 continue
                             param.value = mode
@@ -471,25 +471,25 @@ class Calibrator(object):
         return error
 
     def _handle_restricted_values(self, finder):
-        if finder.params.has_key("threshold"):
+        if "threshold" in finder.params:
             params = finder.params["threshold"]
             if params["blurKernelSize"].value % 2 == 0:
                 params["blurKernelSize"].value += 1
             if params["backend"] == "adaptive" and params["blockSize"].value % 2 == 0:
                 params["blockSize"].value += 1
-        if finder.params.has_key("threshold2"):
+        if "threshold2" in finder.params:
             params = finder.params["threshold2"]
             if params["blurKernelSize"].value % 2 == 0:
                 params["blurKernelSize"].value += 1
             if params["backend"] == "adaptive" and params["blockSize"].value % 2 == 0:
                 params["blockSize"].value += 1
-        if finder.params.has_key("threshold3"):
+        if "threshold3" in finder.params:
             params = finder.params["threshold3"]
             if params["blurKernelSize"].value % 2 == 0:
                 params["blurKernelSize"].value += 1
             if params["backend"] == "adaptive" and params["blockSize"].value % 2 == 0:
                 params["blockSize"].value += 1
-        if finder.params.has_key("ocr"):
+        if "ocr" in finder.params:
             params = finder.params["ocr"]
             if params["dt_mask_size"].value not in [0, 3, 5]:
                 diffs = {m: abs(m - params["dt_mask_size"].value) for m in [0, 3, 5]}
