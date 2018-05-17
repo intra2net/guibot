@@ -23,13 +23,13 @@ apt-get -y install xdotool x11-apps imagemagick
 apt-get -y install tightvncserver
 
 # pip dependencies (not available as DEB)
-apt-get -y install gcc libx11-dev libxtst-dev python-dev libpng12-dev python-pip
+apt-get -y install gcc libx11-dev libxtst-dev python-dev libpng-dev python-pip
 pip install autopy==1.0.1
 pip install torch==0.4.0 torchvision==0.2.1
 pip install vncdotool==0.12.0
 
 # deb packaging
-apt-get -y install dh-make devscripts
+apt-get -y install dh-make dh-python devscripts
 CHANGELOG_REVS=($(sed -n -e 's/^guibot[ \t]*(\([0-9]*.[0-9]*\)-[0-9]*).*/\1/p' /guibot/packaging/debian/changelog))
 VERSION=${CHANGELOG_REVS[0]}
 cp -r /guibot /guibot-$VERSION
