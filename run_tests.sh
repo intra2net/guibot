@@ -1,4 +1,4 @@
 #!/bin/sh
 
-python-coverage run --source=guibot -m unittest discover -s tests -v
-python-coverage report -m
+python3-coverage run --source=guibot -m unittest discover -s tests -v
+python3-coverage report -m

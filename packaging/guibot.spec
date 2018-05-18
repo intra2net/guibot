@@ -1,12 +1,10 @@
-# Get python "site-lib" path by executing small python script
-%{!?python_sitelib: %define python_sitelib %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib()")}
 # Build with OpenCV support - default is 0 and needs to be activated with
 # "--with opencv" command line switch.
 %bcond_with opencv
 
-Name:           guibot
-Version:        0.21
-Release:        1
+Name:           python3-guibot
+Version:        0.30
+Release:        1%{?dist}
 Summary:        GUI automation tool
 
 Group:          Development/Tools
@@ -16,10 +14,10 @@ URL:            http://guibot.org
 # kind of stubborn way the setup macro would use the basename below so use a local tarball
 Source0:        https://github.com/intra2net/guibot/archive/%{name}-%{version}.tar.gz
 
-Requires:       python-pillow
+Requires:       python3-pillow
 %if %{with opencv}
 Requires:       opencv >= 3.1
-Requires:       opencv-python
+Requires:       python3-opencv
 %endif
 
 %description
@@ -30,7 +28,7 @@ on autopy, vncdotool, and qemu.
 #Patch1:        first_fix.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Requires:       anaconda-runtime >= 11.4.1.5, yum => 3.2.19, repoview, createrepo >= 0.4.11
-BuildRequires:  python-devel
+BuildRequires:  python3-devel
 
 BuildArch:      noarch
 
@@ -49,13 +47,13 @@ BuildArch:      noarch
 
 %install
 rm -rf %{buildroot}
-%{__install} -d %{buildroot}%{python_sitelib}/guibot/guibot
-%{__install} -d %{buildroot}%{python_sitelib}/guibot/tests/images
-%{__install} -d %{buildroot}%{python_sitelib}/guibot/misc/tessdata
-%{__cp} -a guibot/* %{buildroot}%{python_sitelib}/guibot/guibot
-%{__cp} -a tests/* %{buildroot}%{python_sitelib}/guibot/tests
-%{__cp} -a misc/* %{buildroot}%{python_sitelib}/guibot/misc
-%{__install} -t %{buildroot}%{python_sitelib}/guibot/ __init__.py run_tests.sh
+%{__install} -d %{buildroot}%{python3_sitelib}/guibot/guibot
+%{__install} -d %{buildroot}%{python3_sitelib}/guibot/tests/images
+%{__install} -d %{buildroot}%{python3_sitelib}/guibot/misc/tessdata
+%{__cp} -a guibot/* %{buildroot}%{python3_sitelib}/guibot/guibot
+%{__cp} -a tests/* %{buildroot}%{python3_sitelib}/guibot/tests
+%{__cp} -a misc/* %{buildroot}%{python3_sitelib}/guibot/misc
+%{__install} -t %{buildroot}%{python3_sitelib}/guibot/ __init__.py run_tests.sh
 
 
 %clean
@@ -68,26 +66,29 @@ rm -rf %{buildroot}
 #%config guibot.cfg
 #%ghost guibot.log
 #%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6
-#  %{python_sitelib}/%{name}-%{version}-py?.?.egg-info
+#  %{python3_sitelib}/%{name}-%{version}-py?.?.egg-info
 #%endif
-# top level dir
-%dir %{python_sitelib}/guibot
-%{python_sitelib}/guibot/__init__.py
-%exclude %{python_sitelib}/guibot/__init__.pyc
-%exclude %{python_sitelib}/guibot/__init__.pyo
-%{python_sitelib}/guibot/guibot
-%exclude %{python_sitelib}/guibot/guibot/*.pyc
-%exclude %{python_sitelib}/guibot/guibot/*.pyo
-%{python_sitelib}/guibot/tests
-%exclude %{python_sitelib}/guibot/tests/*.pyc
-%exclude %{python_sitelib}/guibot/tests/*.pyo
-%{python_sitelib}/guibot/misc
-%exclude %{python_sitelib}/guibot/misc/*.pyc
-%exclude %{python_sitelib}/guibot/misc/*.pyo
-%{python_sitelib}/guibot/run_tests.sh
+%dir %{python3_sitelib}/guibot
+%{python3_sitelib}/guibot/__init__.py
+%exclude %{python3_sitelib}/guibot/__init__.pyc
+%exclude %{python3_sitelib}/guibot/__init__.pyo
+%{python3_sitelib}/guibot/guibot
+%exclude %{python3_sitelib}/guibot/guibot/*.pyc
+%exclude %{python3_sitelib}/guibot/guibot/*.pyo
+%{python3_sitelib}/guibot/tests
+%exclude %{python3_sitelib}/guibot/tests/*.pyc
+%exclude %{python3_sitelib}/guibot/tests/*.pyo
+%{python3_sitelib}/guibot/misc
+%exclude %{python3_sitelib}/guibot/misc/*.pyc
+%exclude %{python3_sitelib}/guibot/misc/*.pyo
+%{python3_sitelib}/guibot/run_tests.sh
 
 
 %changelog
+* Sat Jun 30 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.30-1
+- Switch support to Python 3
+- API version updates for AutoPy, PyTorch, VNCDoTool
+
 * Fri Jun 29 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.21-1
 - XDoTool desktop control backend and password support for VNCDoTool
 - Improved form filling region methods

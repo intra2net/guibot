@@ -2,12 +2,11 @@
 set -e
 
 # rpm dependencies
-# python2.7
-dnf -y install python python2-coverage
+dnf -y install python3 python3-coverage
 # python-imaging
-dnf -y install python-pillow
+dnf -y install python3-pillow
 # contour, template, feature, cascade, text matching
-dnf -y install python2-numpy opencv-python
+dnf -y install python3-numpy python3-opencv
 # text matching
 dnf -y install tesseract
 # desktop control
@@ -15,30 +14,33 @@ dnf -y install xdotool xwd ImageMagick
 dnf -y install vnc-server
 
 # pip dependencies (not available as RPM)
-dnf -y install gcc libX11-devel libXtst-devel python-devel libpng-devel redhat-rpm-config
-pip install autopy==1.0.1
-pip install torch==0.4.0 torchvision==0.2.1
-pip install vncdotool==0.12.0
+dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel redhat-rpm-config
+pip3 install autopy==1.0.1
+pip3 install torch==0.4.0 torchvision==0.2.1
+pip3 install vncdotool==0.12.0
 
 # rpm packaging
 dnf -y install rpm-build
-VERSION=$(sed -n 's/^Version:[ \t]*//p' /guibot/packaging/guibot.spec)
-cp -r /guibot /guibot-$VERSION
+ROOT=""
+NAME=$(sed -n 's/^Name:[ \t]*//p' "$ROOT/guibot/packaging/guibot.spec")
+VERSION=$(sed -n 's/^Version:[ \t]*//p' "$ROOT/guibot/packaging/guibot.spec")
+cp -r "$ROOT/guibot" "$ROOT/$NAME-$VERSION"
 mkdir -p ~/rpmbuild/SOURCES
-tar czvf ~/rpmbuild/SOURCES/guibot-$VERSION.tar.gz -C / --exclude=.* --exclude=packaging --exclude=*.pyc guibot-$VERSION
-rpmbuild -ba /guibot-$VERSION/packaging/guibot.spec --with opencv
-cp ~/rpmbuild/RPMS/x86_64/guibot-* /guibot
-dnf -y install /guibot/guibot-*.rpm
+tar czvf ~/rpmbuild/SOURCES/$NAME-$VERSION.tar.gz -C "$ROOT/" --exclude=.* $NAME-$VERSION
+rpmbuild -ba "$ROOT/$NAME-$VERSION/packaging/guibot.spec" --with opencv
+cp ~/rpmbuild/RPMS/x86_64/$NAME-$VERSION*.rpm "$ROOT/guibot"
+dnf -y install "$ROOT/guibot/"$NAME-$VERSION*.rpm
+rm -fr "$ROOT/$NAME-$VERSION"
 
 # virtual display
 dnf install -y xorg-x11-server-Xvfb
 export DISPLAY=:99.0
-Xvfb :99 -screen 0 1024x768x24 &> xvfb.log  &
+Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
 sleep 3  # give xvfb some time to start
 
 # unit tests
-dnf install -y PyQt4
-cd /lib/python2.7/site-packages/guibot/
+dnf install -y python3-PyQt4
+cd /lib/python3.6/site-packages/guibot/
 sh run_tests.sh
 
 exit 0
