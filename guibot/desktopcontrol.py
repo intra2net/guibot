@@ -378,7 +378,8 @@ class AutoPyDesktopControl(DesktopControl):
             return Image(None, PIL.Image.new('RGB', (1,1)))
         autopy_bmp.save(filename)
 
-        pil_image = PIL.Image.open(filename).convert('RGB')
+        with PIL.Image.open(filename) as f:
+            pil_image = f.convert('RGB')
         os.unlink(filename)
         return Image(None, pil_image)
 
@@ -543,9 +544,10 @@ class XDoToolDesktopControl(DesktopControl):
         """
         xpos, ypos, width, height, filename = self._region_from_args(*args)
         import subprocess
-        xwd = subprocess.Popen(("xwd", "-silent", "-root"), stdout=subprocess.PIPE)
-        subprocess.call(("convert", "xwd:-", "-crop", "%sx%s+%s+%s" % (width, height, xpos, ypos), filename), stdin=xwd.stdout)
-        pil_image = PIL.Image.open(filename).convert('RGB')
+        with subprocess.Popen(("xwd", "-silent", "-root"), stdout=subprocess.PIPE) as xwd:
+            subprocess.call(("convert", "xwd:-", "-crop", "%sx%s+%s+%s" % (width, height, xpos, ypos), filename), stdin=xwd.stdout)
+        with PIL.Image.open(filename) as f:
+            pil_image = f.convert('RGB')
         os.unlink(filename)
         return Image(None, pil_image)
 

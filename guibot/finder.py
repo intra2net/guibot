@@ -2132,6 +2132,7 @@ class TextFinder(ContourFinder):
                     sys.stderr.flush()
                     os.dup2(cpout_fo.fileno(), stdout_fd)
                     os.dup2(cperr_fo.fileno(), stderr_fd)
+            null_fo.close()
             if self.params["ocr"]["component_level"].value == 1:
                 # strip of the new line character which is never useful
                 output = output.rstrip()
