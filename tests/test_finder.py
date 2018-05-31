@@ -65,19 +65,19 @@ class FinderTest(unittest.TestCase):
 
     def _verify_and_get_dumps(self, count, index=1, multistep=False):
         dumps = os.listdir(self.logpath)
-        self.assertEquals(len(dumps), count)
+        self.assertEqual(len(dumps), count)
         steps = self._get_matches_in('imglog\d\d\d\d-.+', dumps)
-        self.assertEquals(len(steps), len(dumps))
+        self.assertEqual(len(steps), len(dumps))
         first_steps = self._get_matches_in('imglog%04d-.+' % index, dumps)
         if not multistep:
-            self.assertEquals(len(first_steps), len(steps))
+            self.assertEqual(len(first_steps), len(steps))
         else:
             self.assertLessEqual(len(first_steps), len(steps))
         return dumps
 
     def _verify_dumped_images(self, needle_name, haystack_name, dumps, backend):
         needles = self._get_matches_in(".*needle.*", dumps)
-        self.assertEquals(len(needles), 2)
+        self.assertEqual(len(needles), 2)
         target, config = reversed(needles) if needles[0].endswith(".match") else needles
         self.assertIn("1needle", target)
         self.assertIn("1needle", config)
@@ -91,7 +91,7 @@ class FinderTest(unittest.TestCase):
             self.assertIn("[find]\nbackend = %s" % backend, match_settings.read())
 
         haystacks = self._get_matches_in('.*haystack.*', dumps)
-        self.assertEquals(len(haystacks), 1)
+        self.assertEqual(len(haystacks), 1)
         haystack = haystacks[0]
         self.assertIn('2haystack', haystack)
         self.assertIn(haystack_name, haystack)
@@ -99,10 +99,10 @@ class FinderTest(unittest.TestCase):
 
     def _verify_single_hotmap(self, dumps, backend):
         hotmaps = self._get_matches_in('.*hotmap.*', dumps)
-        self.assertEquals(len(hotmaps), 1)
+        self.assertEqual(len(hotmaps), 1)
         self.assertIn('3hotmap', hotmaps[0])
         # report achieved similarity in the end of the filename
-        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
 
     @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
@@ -217,10 +217,10 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(6, i)
                 self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "contour")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 3)
+                self.assertEqual(len(hotmaps), 3)
                 self.assertIn('3hotmap', hotmaps[0])
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                 self.assertIn('3hotmap-1threshold', hotmaps[1])
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
@@ -250,10 +250,10 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(6, i)
                 self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "contour")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 3)
+                self.assertEqual(len(hotmaps), 3)
                 self.assertIn('3hotmap', hotmaps[0])
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                 self.assertIn('3hotmap-1threshold', hotmaps[1])
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
@@ -286,14 +286,14 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(5, i)
             self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "template")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 2)
+            self.assertEqual(len(hotmaps), 2)
             for j, hotmap in enumerate(hotmaps):
                 if j == 0:
                     self.assertIn('3hotmap', hotmap)
                 else:
                     self.assertIn('3hotmap-1template', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -318,14 +318,14 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(5, i)
             self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "template")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 2)
+            self.assertEqual(len(hotmaps), 2)
             for j, hotmap in enumerate(hotmaps):
                 if j == 0:
                     self.assertIn('3hotmap', hotmap)
                 else:
                     self.assertIn('3hotmap-1template', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -356,15 +356,15 @@ class FinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(7)
         self._verify_dumped_images('shape_red_box', 'all_shapes', dumps, "template")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEquals(len(hotmaps), 4)
-        self.assertEquals(len(self._get_matches_in('.*3hotmap.*', hotmaps)), 4)
+        self.assertEqual(len(hotmaps), 4)
+        self.assertEqual(len(self._get_matches_in('.*3hotmap.*', hotmaps)), 4)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
             else:
                 self.assertIn('3hotmap-%stemplate' % i, hotmap)
             # report achieved similarity in the end of the filename
-            self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            self.assertRegex(hotmap, ".*-\d\.\d+.*")
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
@@ -399,10 +399,10 @@ class FinderTest(unittest.TestCase):
                         dumps = self._verify_and_get_dumps(7, i)
                         self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "feature")
                         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                        self.assertEquals(len(hotmaps), 4)
+                        self.assertEqual(len(hotmaps), 4)
                         self.assertIn('3hotmap', hotmaps[0])
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                         self.assertIn('3hotmap-1detect', hotmaps[1])
                         self.assertIn('3hotmap-2match', hotmaps[2])
@@ -439,10 +439,10 @@ class FinderTest(unittest.TestCase):
                         dumps = self._verify_and_get_dumps(7, i)
                         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "feature")
                         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                        self.assertEquals(len(hotmaps), 4)
+                        self.assertEqual(len(hotmaps), 4)
                         self.assertIn('3hotmap', hotmaps[0])
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                         self.assertIn('3hotmap-1detect', hotmaps[1])
                         self.assertIn('3hotmap-2match', hotmaps[2])
@@ -591,7 +591,7 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(7, i)
                 self._verify_dumped_images('Text', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -603,7 +603,7 @@ class FinderTest(unittest.TestCase):
                         self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
                     if j == 3 or j == 4:
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                        self.assertRegex(hotmap, ".*-\d\.\d+.*")
                     self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
                 shutil.rmtree(self.logpath)
@@ -639,7 +639,7 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(7, i)
                 self._verify_dumped_images('Nothing', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -651,7 +651,7 @@ class FinderTest(unittest.TestCase):
                         self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
                     if j == 3 or j == 4:
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                        self.assertRegex(hotmap, ".*-\d\.\d+.*")
                     self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
                 shutil.rmtree(self.logpath)
@@ -747,7 +747,7 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(6, i)
             self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "tempfeat")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 3)
+            self.assertEqual(len(hotmaps), 3)
             for i, hotmap in enumerate(hotmaps):
                 if i == 0:
                     self.assertIn('3hotmap', hotmap)
@@ -758,7 +758,7 @@ class FinderTest(unittest.TestCase):
                 else:
                     self.assertIn('%itemplate' % int((i - 1) / 2 + 1), hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -781,13 +781,13 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(4, i)
             self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "tempfeat")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 1)
+            self.assertEqual(len(hotmaps), 1)
             hotmap = hotmaps[0]
             self.assertIn('3hotmap', hotmap)
             self.assertNotIn('template', hotmap)
             self.assertNotIn('feature', hotmap)
             # report achieved similarity in the end of the filename
-            self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            self.assertRegex(hotmap, ".*-\d\.\d+.*")
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -812,12 +812,12 @@ class FinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(5)
         self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEquals(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 2)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
                 self.assertIn('%sactivity' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
@@ -834,12 +834,12 @@ class FinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(5)
         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEquals(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 2)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
                 self.assertIn('%sactivity' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))

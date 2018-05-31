@@ -247,7 +247,7 @@ class Calibrator(object):
                     if key == "backend":
                         continue
                     elif not isinstance(param, CVParameter):
-                        log.warn("The parameter %s/%s is not a CV parameter!", category, key)
+                        log.warning("The parameter %s/%s is not a CV parameter!", category, key)
                         continue
                     elif param.fixed:
                         log.log(9, "Skip fixed parameter: %s/%s", category, key)
@@ -381,7 +381,7 @@ class Calibrator(object):
                 # pick similarity of the best match as representative
                 similarity = matches[0].similarity
             except:
-                log.warn("No match was found at this step (due to internal error or other)")
+                log.warning("No match was found at this step (due to internal error or other)")
                 similarity = 0.0
             finder.imglog.clear()
             total_similarity += similarity if maximize else 1.0 - similarity
@@ -412,7 +412,7 @@ class Calibrator(object):
                 # pick similarity of the best match as representative
                 similarity = matches[0].similarity
             except:
-                log.warn("No match was found at this step (due to internal error or other)")
+                log.warning("No match was found at this step (due to internal error or other)")
                 similarity = 0.0
             total_time = time.time() - start_time
             finder.imglog.clear()
@@ -462,7 +462,7 @@ class Calibrator(object):
                 # final match case similarity is the mean for all matches
                 similarity = subtotal_similarity / len(matches)
             except:
-                log.warn("No match was found at this step (due to internal error or other)")
+                log.warning("No match was found at this step (due to internal error or other)")
                 similarity = 0.0
             finder.imglog.clear()
             total_similarity += similarity if maximize else 1.0 - similarity

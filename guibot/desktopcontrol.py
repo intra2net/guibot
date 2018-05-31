@@ -479,8 +479,8 @@ class XDoToolDesktopControl(DesktopControl):
         See base method for details.
         """
         pos = self._backend_obj.run("getmouselocation")
-        x = re.search("x:(\d+)", pos).group(1)
-        y = re.search("y:(\d+)", pos).group(1)
+        x = re.search(r"x:(\d+)", pos).group(1)
+        y = re.search(r"y:(\d+)", pos).group(1)
         return Location(int(x), int(y))
 
     def __configure_backend(self, backend=None, category="xdotool", reset=False):

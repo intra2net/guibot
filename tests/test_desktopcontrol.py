@@ -85,19 +85,19 @@ class DesktopControlTest(unittest.TestCase):
 
             # Fullscreen capture
             captured = desktop.capture_screen()
-            self.assertEquals(screen_width, captured.width)
-            self.assertEquals(screen_height, captured.height)
+            self.assertEqual(screen_width, captured.width)
+            self.assertEqual(screen_height, captured.height)
 
             # Capture with coordiantes
             captured = desktop.capture_screen(20, 10, int(screen_width/2), int(screen_height/2))
-            self.assertEquals(int(screen_width/2), captured.width)
-            self.assertEquals(int(screen_height/2), captured.height)
+            self.assertEqual(int(screen_width/2), captured.width)
+            self.assertEqual(int(screen_height/2), captured.height)
 
             # Capture with Region
             region = Region(10, 10, 320, 200)
             captured = desktop.capture_screen(region)
-            self.assertEquals(320, captured.width)
-            self.assertEquals(200, captured.height)
+            self.assertEqual(320, captured.width)
+            self.assertEqual(200, captured.height)
 
     def test_capture_clipping(self):
         for desktop in self.backends:
@@ -105,12 +105,12 @@ class DesktopControlTest(unittest.TestCase):
             screen_height = desktop.height
 
             captured = desktop.capture_screen(0, 0, 80000, 40000)
-            self.assertEquals(screen_width, captured.width)
-            self.assertEquals(screen_height, captured.height)
+            self.assertEqual(screen_width, captured.width)
+            self.assertEqual(screen_height, captured.height)
 
             captured = desktop.capture_screen(60000, 50000, 80000, 40000)
-            self.assertEquals(1, captured.width)
-            self.assertEquals(1, captured.height)
+            self.assertEqual(1, captured.width)
+            self.assertEqual(1, captured.height)
 
 
 if __name__ == '__main__':
