@@ -61,6 +61,10 @@ popd
 rm -rf %{buildroot}
 
 
+%check
+# TODO: add unit tests here
+
+
 %files
 %defattr(-,root,root,-)
 %license LICENSE
