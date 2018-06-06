@@ -19,18 +19,18 @@ import unittest
 import time
 import shutil
 import subprocess
-import common_test
 
-from config import GlobalConfig
-from path import Path
-from location import Location
-from region import Region
-from match import Match
-from target import Image, Text
-from inputmap import Key
-from finder import *
-from desktopcontrol import *
-from errors import *
+import common_test
+from guibot.config import GlobalConfig
+from guibot.path import Path
+from guibot.location import Location
+from guibot.region import Region
+from guibot.match import Match
+from guibot.target import Image, Text
+from guibot.inputmap import Key
+from guibot.finder import *
+from guibot.desktopcontrol import *
+from guibot.errors import *
 
 
 class RegionTest(unittest.TestCase):

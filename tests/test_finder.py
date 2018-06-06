@@ -20,12 +20,12 @@ import unittest
 import shutil
 
 import common_test
-from config import GlobalConfig
-from path import Path
-from imagelogger import ImageLogger
-from target import Image, Text, Pattern, Chain
-from errors import *
-from finder import *
+from guibot.config import GlobalConfig
+from guibot.path import Path
+from guibot.imagelogger import ImageLogger
+from guibot.target import Image, Text, Pattern, Chain
+from guibot.errors import *
+from guibot.finder import *
 
 
 class FinderTest(unittest.TestCase):

@@ -43,17 +43,18 @@ BuildArch:      noarch
 
 
 %build
+cd packaging
+%{__python3} setup.py build
 
 
 %install
-rm -rf %{buildroot}
-%{__install} -d %{buildroot}%{python3_sitelib}/guibot/guibot
+pushd packaging
+%{__python3} setup.py install --root %{buildroot}
+popd
 %{__install} -d %{buildroot}%{python3_sitelib}/guibot/tests/images
 %{__install} -d %{buildroot}%{python3_sitelib}/guibot/misc/tessdata
-%{__cp} -a guibot/* %{buildroot}%{python3_sitelib}/guibot/guibot
 %{__cp} -a tests/* %{buildroot}%{python3_sitelib}/guibot/tests
 %{__cp} -a misc/* %{buildroot}%{python3_sitelib}/guibot/misc
-%{__install} -t %{buildroot}%{python3_sitelib}/guibot/ __init__.py run_tests.sh
 
 
 %clean
@@ -62,26 +63,11 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE docs/api docs/tutorials docs/examples
+%license LICENSE
+%doc docs/api docs/tutorials docs/examples
 #%config guibot.cfg
 #%ghost guibot.log
-#%if 0%{?fedora} >= 9 || 0%{?rhel} >= 6
-#  %{python3_sitelib}/%{name}-%{version}-py?.?.egg-info
-#%endif
-%dir %{python3_sitelib}/guibot
-%{python3_sitelib}/guibot/__init__.py
-%exclude %{python3_sitelib}/guibot/__init__.pyc
-%exclude %{python3_sitelib}/guibot/__init__.pyo
-%{python3_sitelib}/guibot/guibot
-%exclude %{python3_sitelib}/guibot/guibot/*.pyc
-%exclude %{python3_sitelib}/guibot/guibot/*.pyo
-%{python3_sitelib}/guibot/tests
-%exclude %{python3_sitelib}/guibot/tests/*.pyc
-%exclude %{python3_sitelib}/guibot/tests/*.pyo
-%{python3_sitelib}/guibot/misc
-%exclude %{python3_sitelib}/guibot/misc/*.pyc
-%exclude %{python3_sitelib}/guibot/misc/*.pyo
-%{python3_sitelib}/guibot/run_tests.sh
+%{python3_sitelib}/*
 
 
 %changelog

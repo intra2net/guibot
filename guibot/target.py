@@ -18,11 +18,11 @@ import os
 import re
 import PIL.Image
 
-from config import GlobalConfig
-from location import Location
-from path import Path
-from finder import *
-from errors import *
+from .config import GlobalConfig
+from .location import Location
+from .path import Path
+from .finder import *
+from .errors import *
 
 
 class Target(object):

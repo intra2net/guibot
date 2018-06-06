@@ -17,13 +17,13 @@ import time
 import os
 
 # interconnected classes - carefully avoid circular reference
-from config import GlobalConfig
-from location import Location
-from imagelogger import ImageLogger
-from errors import *
-from target import *
-from finder import *
-from desktopcontrol import *
+from .config import GlobalConfig
+from .location import Location
+from .imagelogger import ImageLogger
+from .errors import *
+from .target import *
+from .finder import *
+from .desktopcontrol import *
 
 import logging
 log = logging.getLogger('guibot.region')
@@ -405,7 +405,7 @@ class Region(object):
 
             found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
-                from match import Match
+                from .match import Match
                 match = found_pics[0]
                 self._last_match = Match(match.x+self.x, match.y+self.y,
                                          match.width, match.height, match.dx, match.dy,
@@ -456,7 +456,7 @@ class Region(object):
 
             found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
-                from match import Match
+                from .match import Match
                 for match in found_pics:
                     last_matches.append(Match(match.x+self.x, match.y+self.y,
                                               match.width, match.height, match.dx, match.dy,
@@ -627,7 +627,7 @@ class Region(object):
         smooth = GlobalConfig.smooth_mouse_drag
 
         # Handle Match
-        from match import Match
+        from .match import Match
         if isinstance(target_or_location, Match):
             self.dc_backend.mouse_move(target_or_location.target, smooth)
             return None
@@ -1076,7 +1076,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not text:
             return
-        from match import Match
+        from .match import Match
         if isinstance(anchor, Match):
             start_loc = anchor.target
         elif isinstance(anchor, Location):
@@ -1135,7 +1135,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not image_or_index:
             return
-        from match import Match
+        from .match import Match
         if isinstance(anchor, Match):
             start_loc = anchor.target
         elif isinstance(anchor, Location):

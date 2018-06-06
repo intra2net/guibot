@@ -15,10 +15,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
-import common_test
 
-from region import Region
-from desktopcontrol import DesktopControl, AutoPyDesktopControl
+import common_test
+from guibot.region import Region
+from guibot.desktopcontrol import DesktopControl, AutoPyDesktopControl
 
 
 class RegionTest(unittest.TestCase):

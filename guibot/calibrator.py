@@ -17,10 +17,10 @@ import time
 import math
 import copy
 
-from finder import *
-from target import Target
-from imagelogger import ImageLogger
-from errors import *
+from .finder import *
+from .target import Target
+from .imagelogger import ImageLogger
+from .errors import *
 
 import logging
 log = logging.getLogger('guibot.calibrator')

@@ -40,7 +40,7 @@ sleep 3  # give xvfb some time to start
 
 # unit tests
 dnf install -y python3-PyQt4
-cd /lib/python3.6/site-packages/guibot/
-sh run_tests.sh
+cd /lib/python3.6/site-packages/guibot/tests
+LIBPATH=".." sh run_tests.sh
 
 exit 0

@@ -1,5 +1,2 @@
-../guibot/* usr/lib/python3*/dist-packages/guibot/guibot/
-../tests/* usr/lib/python3*/dist-packages/guibot/tests/
-../misc/* usr/lib/python3*/dist-packages/guibot/misc/
-../__init__.py usr/lib/python3*/dist-packages/guibot/
-../run_tests.sh usr/lib/python3*/dist-packages/guibot/
+../tests/* usr/lib/python3/dist-packages/guibot/tests/
+../misc/* usr/lib/python3/dist-packages/guibot/misc/

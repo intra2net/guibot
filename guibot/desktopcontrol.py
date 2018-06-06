@@ -22,11 +22,11 @@ log = logging.getLogger('guibot.desktopcontrol')
 import PIL.Image
 from tempfile import NamedTemporaryFile
 
-import inputmap
-from config import GlobalConfig, LocalConfig
-from target import Image
-from location import Location
-from errors import *
+from . import inputmap
+from .config import GlobalConfig, LocalConfig
+from .target import Image
+from .location import Location
+from .errors import *
 
 
 class DesktopControl(LocalConfig):

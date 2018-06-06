@@ -16,12 +16,12 @@
 
 import os
 import unittest
-import common_test
-
 from tempfile import NamedTemporaryFile
-from target import Image
-from finder import Finder, CVParameter
-from errors import *
+
+import common_test
+from guibot.target import Image
+from guibot.finder import Finder, CVParameter
+from guibot.errors import *
 
 
 class TargetTest(unittest.TestCase):

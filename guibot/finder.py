@@ -18,15 +18,12 @@ import sys
 import re
 import copy
 import random
-try:
-    import configparser as config
-except ImportError:
-    import ConfigParser as config
+import configparser as config
 
-from config import GlobalConfig, LocalConfig
-from imagelogger import ImageLogger
-from path import Path
-from errors import *
+from .config import GlobalConfig, LocalConfig
+from .imagelogger import ImageLogger
+from .path import Path
+from .errors import *
 
 import logging
 log = logging.getLogger('guibot.finder')
@@ -520,7 +517,7 @@ class AutoPyFinder(Finder):
             x, y = coord
             w, h = needle.width, needle.height
             dx, dy = needle.center_offset.x, needle.center_offset.y
-            from match import Match
+            from .match import Match
             matches = [Match(x, y, w, h, dx, dy, similarity)]
             from PIL import ImageDraw
             draw = ImageDraw.Draw(self.imglog.hotmaps[-1])
@@ -678,7 +675,7 @@ class ContourFinder(Finder):
                 distances[i,j] = cv2.matchShapes(hcontour, ncontour, self.params["contour"]["contoursMatch"].value, 0)
                 assert distances[i,j] >= 0.0
 
-        from match import Match
+        from .match import Match
         matches = []
         nx, ny, nw, nh = cv2.boundingRect(numpy.concatenate(needle_contours, axis=0))
         while True:
@@ -888,7 +885,7 @@ class TemplateFinder(Finder):
 
         # extract maxima once for each needle size region
         similarity = self.params["find"]["similarity"].value
-        from match import Match
+        from .match import Match
         matches = []
         while True:
 
@@ -1311,7 +1308,7 @@ class FeatureFinder(Finder):
         similarity = self.params["find"]["similarity"].value
         hpoints = self._project_features(npoints, ngray, hgray, similarity)
         if hpoints is not None and len(hpoints) > 0:
-            from match import Match
+            from .match import Match
             x, y = hpoints[0]
             w, h = tuple(numpy.abs(numpy.subtract(hpoints[3], hpoints[0])))
             # TODO: projecting offset requires more effort
@@ -1714,7 +1711,7 @@ class CascadeFinder(Finder):
         gray_haystack = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
         canvas = numpy.array(haystack.pil_image)
 
-        from match import Match
+        from .match import Match
         matches = []
         rects = needle_cascade.detectMultiScale(gray_haystack,
                                                 self.params["cascade"]["scaleFactor"].value,
@@ -1819,7 +1816,7 @@ class TextFinder(ContourFinder):
         self.params[category]["backend"] = backend
 
         if category == "text":
-            self.params[category]["datapath"] = CVParameter("misc")
+            self.params[category]["datapath"] = CVParameter("../misc")
         elif category == "tdetect":
             if backend == "erstat":
                 self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255, 50.0)
@@ -2067,7 +2064,7 @@ class TextFinder(ContourFinder):
             raise UnsupportedBackendError("Unsupported text detection backend %s" % backend)
 
         # perform optical character recognition on the final regions
-        from match import Match
+        from .match import Match
         matches = []
         def binarize_step(threshold, text_img):
             if self.params["ocr"]["binarize_text"].value:
@@ -2559,7 +2556,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
             return []
 
         matches = []
-        from match import Match
+        from .match import Match
         maxima = sorted(feature_maxima, key=lambda x:x[1], reverse=True)
         for maximum in maxima:
             similarity = maximum[1]
@@ -2804,7 +2801,7 @@ class DeepFinder(Finder):
 
         # TODO: try Faster Region-CNNs, Single Shot MultiBox Detector, and YOLO
         matches = []
-        from match import Match
+        from .match import Match
         dx = int(haystack.width / self.params["deep"]["owidth"].value)
         dy = int(haystack.height / self.params["deep"]["oheight"].value)
         ys, xs = numpy.where(hotmap > self.params["find"]["similarity"].value)

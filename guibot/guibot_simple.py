@@ -20,7 +20,7 @@ object internally). All the methods delegate their calls to this object so
 for information about the API please refer to it and :py:class:`region.Region`.
 """
 
-from guibot import GuiBot
+from .guibot import GuiBot
 
 
 # accessible attributes of this module

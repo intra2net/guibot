@@ -25,8 +25,8 @@ import re
 
 import Pyro4
 
-import errors
-from guibot import GuiBot
+from . import errors
+from .guibot import GuiBot
 
 
 def serialize_custom_error(class_obj):

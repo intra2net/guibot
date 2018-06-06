@@ -18,7 +18,7 @@ import os
 import logging
 log = logging.getLogger('guibot.config')
 
-from errors import *
+from .errors import *
 
 
 class GlobalConfig(type):

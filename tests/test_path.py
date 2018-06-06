@@ -17,10 +17,10 @@
 import os
 import sys
 import unittest
-import common_test
 
-from path import Path
-from errors import *
+import common_test
+from guibot.path import Path
+from guibot.errors import *
 
 
 class PathTest(unittest.TestCase):

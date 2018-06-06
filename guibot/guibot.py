@@ -17,8 +17,8 @@ import logging
 log = logging.getLogger('guibot')
 log.addHandler(logging.NullHandler())
 
-from path import Path
-from region import Region
+from .path import Path
+from .region import Region
 
 
 class GuiBot(Region):

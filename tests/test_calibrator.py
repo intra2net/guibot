@@ -19,11 +19,11 @@ import unittest
 import pprint
 
 import common_test
-from calibrator import Calibrator
-from path import Path
-from finder import *
-from target import *
-from errors import *
+from guibot.calibrator import Calibrator
+from guibot.path import Path
+from guibot.finder import *
+from guibot.target import *
+from guibot.errors import *
 
 
 class CalibratorTest(unittest.TestCase):

@@ -19,13 +19,13 @@ import stat
 import shutil
 import unittest
 import subprocess
-import common_test
 
+import common_test
 # TODO: these tests are done only on the simplest backend
 # since we need special setup for the rest
-from desktopcontrol import *
-from region import Region
-from config import GlobalConfig
+from guibot.desktopcontrol import *
+from guibot.region import Region
+from guibot.config import GlobalConfig
 
 
 class DesktopControlTest(unittest.TestCase):
