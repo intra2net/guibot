@@ -54,6 +54,7 @@ class FinderTest(unittest.TestCase):
     def setUp(self):
         # the image logger will recreate its logging destination
         ImageLogger.step = 1
+        ImageLogger.accumulate_logging = False
 
     def tearDown(self):
         if os.path.exists(GlobalConfig.image_logging_destination):
