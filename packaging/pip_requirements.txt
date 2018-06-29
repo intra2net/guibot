@@ -1,13 +1,13 @@
 # minimal
-python-coverage
-Pillow
+python-coverage==0.0.5
+Pillow==5.1.0
 
 # backends
-autopy
-opencv-contrib-python
+autopy==0.51
+opencv-contrib-python==3.4.1.15
 http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl
-torchvision
-vncdotool
+torchvision==0.2.1
+vncdotool==0.12.0
 
 # GUI to use for testing
 # TODO: while PyQt4 was present but based on configure.py in the past right
