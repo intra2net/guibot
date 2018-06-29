@@ -1,3 +1,10 @@
+guibot (0.21-1) unstable; urgency=medium
+
+  * XDoTool desktop control backend and password support for VNCDoTool.
+  * Improved form filling region methods.
+
+ -- Plamen Dimitrov <pdimitrov@pevogam.com>  Fri, 29 Jun 2018 21:32:35 +0700
+
 guibot (0.20-1) unstable; urgency=medium
 
   * Fallback chains functionality and multiple OCR fixes.

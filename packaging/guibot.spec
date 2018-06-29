@@ -5,7 +5,7 @@
 %bcond_with opencv
 
 Name:           guibot
-Version:        0.20
+Version:        0.21
 Release:        1
 Summary:        GUI automation tool
 
@@ -88,6 +88,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Jun 29 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.21-1
+- XDoTool desktop control backend and password support for VNCDoTool
+- Improved form filling region methods
+
 * Fri Mar 23 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.20-1
 - Fallback chains functionality
 - Multiple OCR fixes
