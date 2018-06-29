@@ -2735,7 +2735,7 @@ class DeepFinder(Finder):
                 x = F.dropout(x, training=self.training)
                 x = F.relu(self.fc2(x))
                 # softmax gives a vector of the same dimension with components sum of 1
-                x = F.log_softmax(x)
+                x = F.log_softmax(x, dim=-1)
                 return x
 
         self.net = Net()
@@ -2790,12 +2790,13 @@ class DeepFinder(Finder):
                                                          self.params["deep"]["iwidth"].value,
                                                          self.params["deep"]["iheight"].value))
         from torch.autograd import Variable
-        data = Variable(torch.from_numpy(gray/255), volatile=True)
+        with torch.no_grad():
+            data = Variable(torch.from_numpy(gray/255))
 
         # send input to the network and get probability distribution over locations
         output = self.net(data)
         import torch.nn.functional as F
-        output = F.softmax(output)
+        output = F.softmax(output, dim=-1)
         hotmap = output.data[...,:-1].numpy().reshape(self.params["deep"]["oheight"].value,
                                                       self.params["deep"]["owidth"].value)
         self.imglog.hotmaps.append(hotmap*255)
