@@ -58,6 +58,8 @@ class Region(object):
         if dc is None:
             if GlobalConfig.desktop_control_backend == "autopy":
                 dc = AutoPyDesktopControl()
+            elif GlobalConfig.desktop_control_backend == "xdotool":
+                dc = XDoToolDesktopControl()
             elif GlobalConfig.desktop_control_backend == "qemu":
                 dc = QemuDesktopControl()
             elif GlobalConfig.desktop_control_backend == "vncdotool":
@@ -751,7 +753,8 @@ class Region(object):
         Find all instances of an anchor image and click on the one with the
         desired index given that they are horizontally then vertically sorted.
 
-        :param str anchor: image to find all matches of
+        :param anchor: image to find all matches of
+        :type anchor: str or :py:class:`target.Target`
         :param int index: index of the match to click on (assuming >=1 matches),
             sorted according to their (x,y) coordinates
         :param int find_number: expected number of matches which is necessary
@@ -1039,18 +1042,19 @@ class Region(object):
     """Mixed (form) methods"""
     def fill_at(self, anchor, text, dx, dy,
                 del_flag=True, esc_flag=True,
-                mark_click="double"):
+                mark_clicks=1):
         """
         Fills a new text at a text box with variable content
         using an anchor image and a displacement from that image.
 
-        :param str anchor: image of reference for the input field
+        :param anchor: target of reference for the input field
+        :type anchor: :py:class:`Match` or :py:class:`Location` or :py:class:`Target` or str
         :param str text: text to fill in
         :param int dx: displacement from the anchor in the x direction
         :param int dy: displacement from the anchor in the y direction
         :param bool del_flag: whether to delete the highlighted text
         :param bool esc_flag: whether to escape any possible fill suggestions
-        :param str mark_click: "single", "double", or "triple" click to highlight previous text
+        :param int mark_clicks: 0, 1, 2, ... clicks to highlight previous text
         :returns: self
         :rtype: :py:class:`Region`
         :raises: :py:class:`exceptions.ValueError` if `mark_click` is not acceptable value
@@ -1071,19 +1075,12 @@ class Region(object):
         from match import Match
         if isinstance(anchor, Match):
             start_loc = anchor.target
+        elif isinstance(anchor, Location):
+            start_loc = anchor
         else:
             start_loc = self.hover(anchor).target
         loc = Location(start_loc.x + dx, start_loc.y + dy)
-
-        if mark_click == "double":
-            self.double_click(loc)
-        elif mark_click == "single":
-            self.click(loc)
-        elif mark_click == "triple":
-            self.double_click(loc)
-            self.click(loc)
-        else:
-            raise ValueError("Incorrect value '%s' for clicking behavior" % mark_click)
+        self.multi_click(loc, count=mark_clicks)
 
         if isinstance(text, basestring):
             text = [text]
@@ -1102,18 +1099,22 @@ class Region(object):
 
         return self
 
-    def select_at(self, anchor, image_or_index, dx, dy, dw=0, dh=0):
+    def select_at(self, anchor, image_or_index, dx, dy,
+                  dw=0, dh=0,
+                  mark_clicks=1):
         """
         Select an option at a dropdown list using either an integer index
         or an option image if the order cannot be easily inferred.
 
-        :param str anchor: image of reference for the input dropdown menu
+        :param anchor: target of reference for the input dropdown menu
+        :type anchor: :py:class:`Match` or :py:class:`Location` or :py:class:`Target` or str
         :param image_or_index: item image or item index
         :type image_or_index: str or int
         :param int dx: displacement from the anchor in the x direction
         :param int dy: displacement from the anchor in the y direction
         :param int dw: width to add to the displacement for an image search area
         :param int dh: height to add to the displacement for an image search area
+        :param int mark_clicks: 0, 1, 2, ... clicks to highlight previous text
         :returns: self
         :rtype: :py:class:`Region`
 
@@ -1133,10 +1134,13 @@ class Region(object):
         from match import Match
         if isinstance(anchor, Match):
             start_loc = anchor.target
+        elif isinstance(anchor, Location):
+            start_loc = anchor
         else:
             start_loc = self.hover(anchor).target
         loc = Location(start_loc.x + dx, start_loc.y + dy)
-        self.click(loc)
+        self.multi_click(loc, count=mark_clicks)
+
         # make sure the dropdown options appear
         time.sleep(1)
         if isinstance(image_or_index, int):

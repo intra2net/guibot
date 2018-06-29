@@ -7,7 +7,7 @@ apt-get update
 # in some cases another repo has to be added
 #apt-get -y install software-properties-common
 #add-apt-repository ppa:fkrull/deadsnakes-python2.7
-apt-get -y install python2.7
+apt-get -y install python2.7 python-coverage
 # python-imaging
 apt-get -y install python-pil
 # contour, template, feature, cascade, text matching
@@ -18,12 +18,16 @@ apt-get -y install python-numpy python-opencv
 export LEGACY_OPENCV=1
 # text matching
 apt-get -y install tesseract-ocr
+# desktop control
+apt-get -y install xdotool x11-apps imagemagick
+apt-get -y install tightvncserver
 
 # pip dependencies (not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python-dev libpng12-dev python-pip
 pip install autopy
 pip install http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl
 pip install torchvision
+pip install vncdotool
 
 # deb packaging
 apt-get -y install dh-make devscripts
@@ -38,7 +42,7 @@ apt-get -y install /guibot/guibot_*.deb
 # virtual display
 apt-get -y install xvfb
 export DISPLAY=:99.0
-Xvfb :99 -screen 0 1024x768x16 &> xvfb.log  &
+Xvfb :99 -screen 0 1024x768x24 &> xvfb.log  &
 sleep 3  # give xvfb some time to start
 
 # unit tests

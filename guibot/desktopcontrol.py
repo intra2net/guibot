@@ -14,8 +14,8 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import re
 import time
-import subprocess
 import logging
 log = logging.getLogger('guibot.desktopcontrol')
 
@@ -41,7 +41,7 @@ class DesktopControl(LocalConfig):
 
         # available and currently fully compatible methods
         self.categories["control"] = "control_methods"
-        self.algorithms["control_methods"] = ("autopy", "qemu", "vncdotool")
+        self.algorithms["control_methods"] = ("autopy", "xdotool", "vncdotool", "qemu")
 
         # other attributes
         self._backend_obj = None
@@ -325,8 +325,6 @@ class AutoPyDesktopControl(DesktopControl):
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
-        # autopy has diffrent problems on different OS so specify it
-        self.params[category]["os_type"] = "linux"
 
     def configure_backend(self, backend=None, category="autopy", reset=False):
         """
@@ -444,27 +442,369 @@ class AutoPyDesktopControl(DesktopControl):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
-        if self.params["autopy"]["os_type"] == "windows":
-            shift_chars = ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
-                           "_", "+", "{", "}", ":", "\"", "|", "<", ">", "?"]
-            capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-            for part in text:
-                for char in str(part):
-                    if char in shift_chars and GlobalConfig.preprocess_special_chars:
-                        self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                    elif char in capital_chars and GlobalConfig.preprocess_special_chars:
-                        self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
-                    else:
-                        self._backend_obj.key.tap(char)
-                    time.sleep(GlobalConfig.delay_between_keys)
-                # TODO: Fix AutoPy to handle international chars and other stuff so
-                # that both the Linux and Windows version are reduced to autopy.key
-                # autopy.key.type_string(text)
-        elif self.params["autopy"]["os_type"] == "linux":
-            for part in text:
-                # HACK: use xdotool to handle various character encoding
-                # TODO: remove alltogether rather than using "--delay milliseconds"
-                subprocess.call(['xdotool', 'type', part], shell=False)
+        shift_chars = ["~", "!", "@", "#", "$", "%", "^", "&", "*", "(", ")",
+                       "_", "+", "{", "}", ":", "\"", "|", "<", ">", "?"]
+        capital_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        for part in text:
+            for char in str(part):
+                if char in shift_chars and GlobalConfig.preprocess_special_chars:
+                    self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
+                elif char in capital_chars and GlobalConfig.preprocess_special_chars:
+                    self._backend_obj.key.tap(char, self._modmap.MOD_SHIFT)
+                else:
+                    self._backend_obj.key.tap(char)
+                time.sleep(GlobalConfig.delay_between_keys)
+            # alternative option:
+            # autopy.key.type_string(text)
+
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
+
+
+class XDoToolDesktopControl(DesktopControl):
+    """
+    Desktop control backend implemented through the xdotool client and
+    thus portable to Linux operating systems.
+    """
+
+    def __init__(self, configure=True, synchronize=True):
+        """Build a DC backend using XDoTool."""
+        super(XDoToolDesktopControl, self).__init__(configure=False, synchronize=False)
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
+
+    def get_mouse_location(self):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        pos = self._backend_obj.run("getmouselocation")
+        x = re.search("x:(\d+)", pos).group(1)
+        y = re.search("y:(\d+)", pos).group(1)
+        return Location(int(x), int(y))
+
+    def __configure_backend(self, backend=None, category="xdotool", reset=False):
+        if category != "xdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(XDoToolDesktopControl, self).configure_backend("xdotool", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+        self.params[category]["binary"] = "xdotool"
+
+    def configure_backend(self, backend=None, category="xdotool", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="xdotool", reset=False):
+        if category != "xdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(XDoToolDesktopControl, self).synchronize_backend("xdotool", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        import subprocess
+        class XDoTool(object):
+            def __init__(self, dc):
+                self.dc = dc
+            def run(self, command, *args):
+                process = [self.dc.params[category]["binary"]]
+                process += [command]
+                process += args
+                return subprocess.check_output(process, shell=False)
+        self._backend_obj = XDoTool(self)
+
+        self._width, self._height = self._backend_obj.run("getdisplaygeometry").split()
+        self._width, self._height = int(self._width), int(self._height)
+        self._pointer = self.get_mouse_location()
+        self._keymap = inputmap.XDoToolKey()
+        self._modmap = inputmap.XDoToolKeyModifier()
+        self._mousemap = inputmap.XDoToolMouseButton()
+
+    def synchronize_backend(self, backend=None, category="xdotool", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
+
+    def capture_screen(self, *args):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        xpos, ypos, width, height, filename = self._region_from_args(*args)
+        import subprocess
+        xwd = subprocess.Popen(("xwd", "-silent", "-root"), stdout=subprocess.PIPE)
+        subprocess.call(("convert", "xwd:-", "-crop", "%sx%s+%s+%s" % (width, height, xpos, ypos), filename), stdin=xwd.stdout)
+        pil_image = PIL.Image.open(filename).convert('RGB')
+        os.unlink(filename)
+        return Image(None, pil_image)
+
+    def mouse_move(self, location, smooth=True):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if smooth:
+            # TODO: implement smooth mouse move?
+            pass
+        self._backend_obj.run("mousemove", str(location.x), str(location.y))
+
+    def mouse_click(self, button=None, count=3, modifiers=None):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        timeout = GlobalConfig.click_delay
+        button = self._mousemap.LEFT_BUTTON if button is None else button
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+        for _ in range(count):
+            self._backend_obj.run("click", str(button))
+            time.sleep(timeout)
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
+
+    def mouse_down(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self._backend_obj.run("mousedown", str(button))
+
+    def mouse_up(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self._backend_obj.run("mouseup", str(button))
+
+    def keys_toggle(self, keys, up_down):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        for key in keys:
+            if up_down:
+                self._backend_obj.run('keydown', str(key))
+            else:
+                self._backend_obj.run('keyup', str(key))
+
+    def keys_type(self, text, modifiers):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+
+        for part in text:
+            self._backend_obj.run('type', str(part))
+
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
+
+
+class VNCDoToolDesktopControl(DesktopControl):
+    """
+    Desktop control backend implemented through the VNCDoTool client and
+    thus portable to any guest OS that is accessible through a VNC/RFB protocol.
+    """
+
+    def __init__(self, configure=True, synchronize=True):
+        """Build a DC backend using VNCDoTool."""
+        super(VNCDoToolDesktopControl, self).__init__(configure=False, synchronize=False)
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
+
+    def __configure_backend(self, backend=None, category="vncdotool", reset=False):
+        if category != "vncdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(VNCDoToolDesktopControl, self).configure_backend("vncdotool", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+        # hostname of the vnc server
+        self.params[category]["vnc_hostname"] = "localhost"
+        # port of the vnc server
+        self.params[category]["vnc_port"] = 0
+        # password for the vnc server
+        self.params[category]["vnc_password"] = None
+
+    def configure_backend(self, backend=None, category="vncdotool", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="vncdotool", reset=False):
+        if category != "vncdotool":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(VNCDoToolDesktopControl, self).synchronize_backend("vncdotool", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+
+        from vncdotool import api
+        self._backend_obj = api.connect('%s:%i' % (self.params[category]["vnc_hostname"],
+                                                   self.params[category]["vnc_port"]),
+                                        self.params[category]["vnc_password"])
+        # for special characters preprocessing for the vncdotool
+        self._backend_obj.factory.force_caps = True
+
+        # additional logging for vncdotool available so let's make use of it
+        logging.getLogger('vncdotool.client').setLevel(10)
+        logging.getLogger('vncdotool').setLevel(logging.ERROR)
+        logging.getLogger('twisted').setLevel(logging.ERROR)
+
+        # screen size
+        with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
+            filename = f.name
+        screen = self._backend_obj.captureScreen(filename)
+        os.unlink(filename)
+        self._width = screen.width
+        self._height = screen.height
+
+        # sync pointer
+        self.mouse_move(Location(self._width, self._height), smooth=False)
+        self.mouse_move(Location(0, 0), smooth=False)
+        self._pointer = Location(0, 0)
+
+        self._keymap = inputmap.VNCDoToolKey()
+        self._modmap = inputmap.VNCDoToolKeyModifier()
+        self._mousemap = inputmap.VNCDoToolMouseButton()
+
+    def synchronize_backend(self, backend=None, category="vncdotool", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
+
+    def capture_screen(self, *args):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        xpos, ypos, width, height, filename = self._region_from_args(*args)
+        self._backend_obj.captureRegion(filename, xpos, ypos, width, height)
+        pil_image = PIL.Image.open(filename).convert('RGB')
+        os.unlink(filename)
+        return Image(None, pil_image)
+
+    def mouse_move(self, location, smooth=True):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if smooth:
+            self._backend_obj.mouseDrag(location.x, location.y, step=30)
+        else:
+            self._backend_obj.mouseMove(location.x, location.y)
+        self._pointer = location
+
+    def mouse_click(self, button=None, count=3, modifiers=None):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        timeout = GlobalConfig.click_delay
+        button = self._mousemap.LEFT_BUTTON if button is None else button
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+        for _ in range(count):
+            self._backend_obj.mousePress(button)
+            # BUG: the mouse button is pressed down forever (on LEFT)
+            time.sleep(0.1)
+            self._backend_obj.mouseUp(button)
+            time.sleep(timeout)
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
+
+    def mouse_down(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # TODO: sync with autopy button
+        self._backend_obj.mouseDown(button)
+
+    def mouse_up(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        # TODO: sync with autopy button
+        self._backend_obj.mouseUp(button)
+
+    def keys_toggle(self, keys, up_down):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        for key in keys:
+            if key == "\\":
+                key = 'bslash'
+            elif key == "/":
+                key = 'fslash'
+            elif key == " ":
+                key = 'space'
+            if up_down:
+                self._backend_obj.keyDown(key)
+            else:
+                self._backend_obj.keyUp(key)
+
+    def keys_type(self, text, modifiers):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+
+        for part in text:
+            for char in str(part):
+                if char == "\\":
+                    char = 'bslash'
+                elif char == "/":
+                    char = 'fslash'
+                elif char == " ":
+                    char = 'space'
+                elif char == "\n":
+                    char = 'return'
+                time.sleep(GlobalConfig.delay_between_keys)
+                self._backend_obj.keyPress(char)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
@@ -675,190 +1015,6 @@ class QemuDesktopControl(DesktopControl):
                     char = "shift-%s" % special_chars[char]
                 self._backend_obj.sendkey(char, hold_time=1)
                 time.sleep(GlobalConfig.delay_between_keys)
-
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-
-class VNCDoToolDesktopControl(DesktopControl):
-    """
-    Desktop control backend implemented through the VNCDoTool client and
-    thus portable to any guest OS that is accessible through a VNC/RFB protocol.
-    """
-
-    def __init__(self, configure=True, synchronize=True):
-        """Build a DC backend using VNCDoTool."""
-        super(VNCDoToolDesktopControl, self).__init__(configure=False, synchronize=False)
-        if configure:
-            self.__configure_backend(reset=True)
-        if synchronize:
-            self.__synchronize_backend(reset=False)
-
-    def __configure_backend(self, backend=None, category="vncdotool", reset=False):
-        if category != "vncdotool":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
-        if reset:
-            super(VNCDoToolDesktopControl, self).configure_backend("vncdotool", reset=True)
-
-        self.params[category] = {}
-        self.params[category]["backend"] = "none"
-        # hostname of the vnc server in case vncdotool backend is used
-        self.params[category]["vnc_hostname"] = "localhost"
-        # port of the vnc server in case vncdotool backend is used
-        self.params[category]["vnc_port"] = 0
-
-    def configure_backend(self, backend=None, category="vncdotool", reset=False):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        self.__configure_backend(backend, category, reset)
-
-    def __synchronize_backend(self, backend=None, category="vncdotool", reset=False):
-        if category != "vncdotool":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
-        if reset:
-            super(VNCDoToolDesktopControl, self).synchronize_backend("vncdotool", reset=True)
-        if backend is not None and self.params[category]["backend"] != backend:
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
-
-        from vncdotool import api
-        self._backend_obj = api.connect('%s:%i' % (self.params[category]["vnc_hostname"],
-                                                   self.params[category]["vnc_port"]))
-        # for special characters preprocessing for the vncdotool
-        self._backend_obj.factory.force_caps = True
-
-        # additional logging for vncdotool available so let's make use of it
-        logging.getLogger('vncdotool.client').setLevel(10)
-        logging.getLogger('vncdotool').setLevel(logging.ERROR)
-        logging.getLogger('twisted').setLevel(logging.ERROR)
-
-        # screen size
-        with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
-            filename = f.name
-        screen = self._backend_obj.captureScreen(filename)
-        os.unlink(filename)
-        self._width = screen.width
-        self._height = screen.height
-
-        # sync pointer
-        self.mouse_move(Location(self._width, self._height), smooth=False)
-        self.mouse_move(Location(0, 0), smooth=False)
-        self._pointer = Location(0, 0)
-
-        self._keymap = inputmap.VNCDoToolKey()
-        self._modmap = inputmap.VNCDoToolKeyModifier()
-        self._mousemap = inputmap.VNCDoToolMouseButton()
-
-    def synchronize_backend(self, backend=None, category="vncdotool", reset=False):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        self.__synchronize_backend(backend, category, reset)
-
-    def capture_screen(self, *args):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        xpos, ypos, width, height, filename = self._region_from_args(*args)
-        self._backend_obj.captureRegion(filename, xpos, ypos, width, height)
-        pil_image = PIL.Image.open(filename).convert('RGB')
-        os.unlink(filename)
-        return Image(None, pil_image)
-
-    def mouse_move(self, location, smooth=True):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if smooth:
-            self._backend_obj.mouseDrag(location.x, location.y, step=30)
-        else:
-            self._backend_obj.mouseMove(location.x, location.y)
-        self._pointer = location
-
-    def mouse_click(self, button=None, count=3, modifiers=None):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        timeout = GlobalConfig.click_delay
-        button = self._mousemap.LEFT_BUTTON if button is None else button
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-        for _ in range(count):
-            self._backend_obj.mousePress(button)
-            # BUG: the mouse button is pressed down forever (on LEFT)
-            time.sleep(0.1)
-            self._backend_obj.mouseUp(button)
-            time.sleep(timeout)
-        if modifiers != None:
-            self.keys_toggle(modifiers, False)
-
-    def mouse_down(self, button):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        # TODO: sync with autopy button
-        self._backend_obj.mouseDown(button)
-
-    def mouse_up(self, button):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        # TODO: sync with autopy button
-        self._backend_obj.mouseUp(button)
-
-    def keys_toggle(self, keys, up_down):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        for key in keys:
-            if key == "\\":
-                key = 'bslash'
-            elif key == "/":
-                key = 'fslash'
-            elif key == " ":
-                key = 'space'
-            if up_down:
-                self._backend_obj.keyDown(key)
-            else:
-                self._backend_obj.keyUp(key)
-
-    def keys_type(self, text, modifiers):
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
-        if modifiers != None:
-            self.keys_toggle(modifiers, True)
-
-        for part in text:
-            for char in str(part):
-                if char == "\\":
-                    char = 'bslash'
-                elif char == "/":
-                    char = 'fslash'
-                elif char == " ":
-                    char = 'space'
-                elif char == "\n":
-                    char = 'return'
-                time.sleep(GlobalConfig.delay_between_keys)
-                self._backend_obj.keyPress(char)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)

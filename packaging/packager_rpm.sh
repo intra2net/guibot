@@ -3,19 +3,23 @@ set -e
 
 # rpm dependencies
 # python2.7
-dnf -y install python
+dnf -y install python python2-coverage
 # python-imaging
 dnf -y install python-pillow
 # contour, template, feature, cascade, text matching
 dnf -y install python2-numpy opencv-python
 # text matching
 dnf -y install tesseract
+# desktop control
+dnf -y install xdotool xwd ImageMagick
+dnf -y install vnc-server
 
 # pip dependencies (not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python-devel libpng-devel redhat-rpm-config
 pip install autopy
 pip install http://download.pytorch.org/whl/cu75/torch-0.1.11.post5-cp27-none-linux_x86_64.whl
 pip install torchvision
+pip install vncdotool
 
 # rpm packaging
 dnf -y install rpm-build
@@ -30,7 +34,7 @@ dnf -y install /guibot/guibot-*.rpm
 # virtual display
 dnf install -y xorg-x11-server-Xvfb
 export DISPLAY=:99.0
-Xvfb :99 -screen 0 1024x768x16 &> xvfb.log  &
+Xvfb :99 -screen 0 1024x768x24 &> xvfb.log  &
 sleep 3  # give xvfb some time to start
 
 # unit tests

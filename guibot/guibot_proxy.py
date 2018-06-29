@@ -164,8 +164,8 @@ class GuiBotProxy(GuiBot):
     def type_at(self, target_or_location=None, text='', modifiers=None):
         return self._proxify(super(GuiBotProxy, self).type_at(target_or_location, text, modifiers))
 
-    def fill_at(self, anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_click="double"):
-        return self._proxify(super(GuiBotProxy, self).fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_click))
+    def fill_at(self, anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_clicks=1):
+        return self._proxify(super(GuiBotProxy, self).fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_clicks))
 
-    def select_at(self, anchor, image_or_index, dx, dy, dw=0, dh=0):
-        return self._proxify(super(GuiBotProxy, self).select_at(anchor, image_or_index, dx, dy, dw, dh))
+    def select_at(self, anchor, image_or_index, dx, dy, dw=0, dh=0, mark_clicks=1):
+        return self._proxify(super(GuiBotProxy, self).select_at(anchor, image_or_index, dx, dy, dw, dh, mark_clicks))

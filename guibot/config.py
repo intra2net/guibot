@@ -62,7 +62,7 @@ class GlobalConfig(type):
     _feature_match_backend = "BruteForce-Hamming"
     _text_detect_backend = "erstat"
     _text_ocr_backend = "tesseract"
-    _hybrid_match_backend = "autopy"
+    _hybrid_match_backend = "template"
 
     def click_delay(self, value=None):
         """
@@ -314,7 +314,7 @@ class GlobalConfig(type):
         if value is None:
             return GlobalConfig._desktop_control_backend
         else:
-            if value not in ["autopy", "qemu", "vncdotool"]:
+            if value not in ["autopy", "xdotool", "vncdotool", "qemu"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
             GlobalConfig._desktop_control_backend = value
     #: name of the desktop control backend

@@ -169,11 +169,11 @@ def type_at(target_or_location=None, text='', modifiers=None):
     return guibot.type_at(target_or_location, text, modifiers)
 
 
-def fill_at(anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_click="double"):
+def fill_at(anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_clicks=1):
     check_initialized()
-    return guibot.fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_click)
+    return guibot.fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_clicks)
 
 
-def select_at(anchor, image_or_index, dx, dy, dw=0, dh=0):
+def select_at(anchor, image_or_index, dx, dy, dw=0, dh=0, mark_clicks=1):
     check_initialized()
-    return guibot.select_at(anchor, image_or_index, dx, dy, dw, dh)
+    return guibot.select_at(anchor, image_or_index, dx, dy, dw, dh, mark_clicks)

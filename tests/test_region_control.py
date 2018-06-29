@@ -40,8 +40,22 @@ class RegionTest(unittest.TestCase):
         self.path = Path()
         self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
-        self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
+        # gui test scripts
         self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')
+
+        # prefixed controls
+        # NOTE: provide and use only fixed locations to avoid CV backend dependencies
+        self.click_control = Location(75, 25)
+        self.double_click_control = Location(185, 20)
+        self.context_menu_control = Location(315, 20)
+        self.context_menu_close_control = Location(355, 35)
+        self.mouse_down_control = Location(435, 95)
+        self.mouse_up_control = Location(435, 135)
+        self.textedit_control = Location(35, 135)
+        self.textedit_quit_control = Location(65, 60)
+        self.textedit_any_control = Location(65, 95)
+        self.drag_control = Location(435, 25)
+        self.drop_control = Location(435, 65)
 
         # preserve values of static attributes
         self.prev_loglevel = GlobalConfig.image_logging_level
@@ -55,24 +69,13 @@ class RegionTest(unittest.TestCase):
         GlobalConfig.image_logging_destination = self.prev_logpath
 
     def setUp(self):
-        self.child_img = None
         self.child_app = None
-        # initialize template matching region to support some minimal robustness
-        GlobalConfig.hybrid_match_backend = "template"
         self.region = Region()
-        # reset to (0, 0) to avoid cursor on the same control (used many times)
-        self.region.hover(Location(0, 0))
 
     def tearDown(self):
         self.close_windows()
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
-
-    def show_image(self, filename):
-        filename = self.path.search(filename)
-        self.child_img = subprocess.Popen(['python', self.script_img, filename])
-        # HACK: avoid small variability in loading speed
-        time.sleep(3)
 
     def show_application(self):
         self.child_app = subprocess.Popen(['python', self.script_app])
@@ -80,14 +83,6 @@ class RegionTest(unittest.TestCase):
         time.sleep(3)
 
     def close_windows(self):
-        if self.child_img is not None:
-            self.child_img.terminate()
-            self.wait_end(self.child_img)
-            self.child_img = None
-
-            # HACK: make sure app is really closed
-            time.sleep(0.5)
-
         if self.child_app is not None:
             self.child_app.terminate()
             self.wait_end(self.child_app)
@@ -110,133 +105,94 @@ class RegionTest(unittest.TestCase):
 
             time.sleep(0.2)
 
-    @unittest.expectedFailure  # fails on some platforms
-    def test_hover(self):
-        self.show_image('all_shapes')
+    def test_get_mouse_location(self):
+        self.region.hover(Location(0, 0))
+        pos = self.region.mouse_location
+        # Exact match currently not possible, autopy is not pixel perfect.
+        self.assertAlmostEqual(pos.x, 0, delta=1)
+        self.assertAlmostEqual(pos.y, 0, delta=1)
 
-        match = self.region.find(Image('shape_blue_circle'))
+        self.region.hover(Location(30, 20))
+        pos = self.region.mouse_location
+        # Exact match currently not possible, autopy is not pixel perfect.
+        self.assertAlmostEqual(pos.x, 30, delta=1)
+        self.assertAlmostEqual(pos.y, 20, delta=1)
+
+    def test_hover(self):
+        self.show_application()
+
+        match = self.region.find('shape_green_box')
         self.region.hover(match.target)
         self.assertAlmostEqual(match.target.x, self.region.mouse_location.x, delta=1)
         self.assertAlmostEqual(match.target.y, self.region.mouse_location.y, delta=1)
 
         # hover over coordinates in a subregion
-        match = match.find(Image('shape_blue_circle'))
+        match = match.find('shape_green_box')
         self.assertAlmostEqual(match.target.x, self.region.mouse_location.x, delta=1)
         self.assertAlmostEqual(match.target.y, self.region.mouse_location.y, delta=1)
 
         self.close_windows()
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_click(self):
         self.show_application()
-        self.region.click(Text("close on click"))
+        self.region.click(self.click_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_right_click(self):
         self.show_application()
-        self.region.right_click(Text("context menu")).nearby(100).idle(3).click(Text("close"))
+        self.region.right_click(self.context_menu_control)
+        self.region.idle(3).click(self.context_menu_close_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_double_click(self):
         self.show_application()
-        self.region.double_click(Text("double click"))
+        self.region.double_click(self.double_click_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_multi_click(self):
         self.show_application()
-        self.region.multi_click(Text("close on click"), count=1)
+        self.region.multi_click(self.click_control, count=1)
         self.assertEqual(0, self.wait_end(self.child_app))
 
         self.show_application()
-        self.region.multi_click(Text("double click"), count=2)
+        self.region.multi_click(self.double_click_control, count=2)
         self.assertEqual(0, self.wait_end(self.child_app))
 
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_click_expect(self):
         self.show_application()
+        self.region.click_expect('shape_green_box')
+        self.close_windows()
 
-        # TODO: improve the application window for these tests
-        #self.region.click_expect(Text("drag to close"))
-
-        self.region.click(Text("close on click"))
-        self.assertEqual(0, self.wait_end(self.child_app))
-        self.child_app = None
-
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_click_expect_different(self):
         self.show_application()
+        self.region.click_expect('shape_green_box', 'shape_black_box')
+        self.close_windows()
 
-        # TODO: improve the application window for these tests
-        self.region.LEFT_BUTTON = self.region.RIGHT_BUTTON
-        self.region.click_expect(Text("context menu"), Text("close"))
-
-        self.region.click(Text("close"))
-        self.assertEqual(0, self.wait_end(self.child_app))
-        self.child_app = None
-
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_click_vanish(self):
         self.show_application()
-        self.region.click_vanish(Text("close on click"))
-        self.assertEqual(0, self.wait_end(self.child_app))
-        self.child_app = None
+        self.region.click_vanish('shape_red_box')
+        self.close_windows()
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_click_vanish_different(self):
         self.show_application()
-        self.region.click_vanish(Text("close on click"), Text("mouse down"))
-        self.assertEqual(0, self.wait_end(self.child_app))
-        self.child_app = None
+        self.region.click_vanish('shape_green_box', 'shape_red_box')
+        self.close_windows()
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_click_at_index(self):
         self.show_application()
-        self.region.click_at_index(Text("close on click"), 0)
+        self.region.click_at_index('shape_red_box', 0)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
     def test_mouse_down(self):
         self.show_application()
 
-        self.region.mouse_down(Text("mouse down"))
+        self.region.mouse_down(self.mouse_down_control)
 
         # toggled buttons cleanup
         self.region.dc_backend.mouse_up(self.region.LEFT_BUTTON)
@@ -244,44 +200,30 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
     def test_mouse_up(self):
         self.show_application()
 
         # TODO: the GUI only works if mouse-up event is on the previous location
         # self.region.mouse_down(Location(0,0))
-        # self.region.mouse_up(Text("mouse up"))
-        match = self.region.find(Text("mouse up"))
-        self.region.mouse_down(match.target)
+        # self.region.mouse_up(self.mouse_up_control)
+        self.region.mouse_down(self.mouse_up_control)
 
-        self.region.mouse_up(match.target)
+        self.region.mouse_up(self.mouse_up_control)
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_drag_drop(self):
         self.show_application()
-        # the textedit is easy enough so that we don't need text matching
-        self.region.drag_drop('qt4gui_textedit', Text("type quit"))
+        self.region.drag_drop(self.textedit_control, self.textedit_quit_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_drag_from(self):
         self.show_application()
 
-        # the textedit is easy enough so that we don't need text matching
-        self.region.drag_from('qt4gui_textedit')
-        self.region.hover(Text("drag to close"))
+        self.region.drag_from(self.textedit_control)
+        self.region.hover(self.drag_control)
 
         # toggled buttons cleanup
         self.region.dc_backend.mouse_up(self.region.LEFT_BUTTON)
@@ -289,34 +231,14 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
     def test_drop_at(self):
         self.show_application()
 
-        # the textedit is easy enough so that we don't need text matching
-        self.region.drag_from('qt4gui_textedit')
-
-        self.region.drop_at(Text("drop to close"))
+        self.region.drag_from(self.textedit_control)
+        self.region.drop_at(self.drop_control)
 
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
-
-    def test_get_mouse_location(self):
-        self.region.hover(Location(0, 0))
-
-        pos = self.region.mouse_location
-        # Exact match currently not possible, autopy is not pixel perfect.
-        self.assertTrue(pos.x < 5)
-        self.assertTrue(pos.y < 5)
-
-        self.region.hover(Location(30, 20))
-
-        pos = self.region.mouse_location
-        # Exact match currently not possible, autopy is not pixel perfect.
-        self.assertTrue(pos.x > 25 and pos.x < 35)
-        self.assertTrue(pos.y > 15 and pos.y < 25)
 
     @unittest.expectedFailure  # fails on some platforms
     def test_press_keys(self):
@@ -325,6 +247,7 @@ class RegionTest(unittest.TestCase):
         self.region.press_keys(self.region.ESC)
         self.assertEqual(0, self.wait_end(self.child_app))
 
+        # BUG: Qt fails to register a close event in some cases
         self.show_application()
         time.sleep(1)
         self.region.press_keys([self.region.ALT, self.region.F4])
@@ -332,54 +255,35 @@ class RegionTest(unittest.TestCase):
 
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_press_at(self):
         self.show_application()
-        self.region.press_at([self.region.ESC], Text("type anything"))
+        self.region.press_at([self.region.ESC], self.textedit_any_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_type_text(self):
         self.show_application()
-        self.region.click(Text("type quit")).idle(0.2).type_text('quit')
+        self.region.click(self.textedit_quit_control)
+        self.region.idle(0.2).type_text('quit')
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_type_at(self):
         self.show_application()
-        self.region.type_at('quit', Text("type quit"))
+        self.region.type_at('quit', self.textedit_quit_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_fill_at(self):
         self.show_application()
-        self.region.fill_at(Text("type quit"), 'quit', 0, 0)
+        self.region.fill_at(self.textedit_quit_control, 'quit', 0, 0)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-    #                 os.environ.get('DISABLE_OCR', "0") == "1",
-    #                 "Old OpenCV version or disabled OCR functionality")
     def test_select_at(self):
         self.show_application()
-        self.region.right_click(Text("context menu"))
-        self.region.select_at(Text("close"), 1, 0, 0)
+        self.region.right_click(self.context_menu_control)
+        self.region.select_at(self.context_menu_close_control, 1, 0, 0, mark_clicks=0)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 

@@ -4,14 +4,14 @@ TODO - hierarchical notes
 - guibot publishing
     - README
     - wikis
+        - sweetspot height of letters is 30-50px
+        - tesseract also prefers black text on white bg
     - more and better unit tests
-        - build automation (travic CI) and documentation - Qt4 for the region tests?
-        - travis problematic unit tests
-            - xdotool (on linux)
-        - generally problematic unit tests (varying GUI windows)
         - improved unit test coverage
-        - advanced unit tests to include all backend types (desktop control)?
-        - apply hybrid backend to simplify some of them
+        - known problems
+            - build automation (travic CI) and documentation - Qt4 for the region tests?
+            - .lan is removed by .match in match dumping
+            - mysterious kills of calibration after days
 - new methods test stage
     - various collected strange cases (special testing pairs)
     - training a button cascade requires even more experience

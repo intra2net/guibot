@@ -245,92 +245,88 @@ class AutoPyKey(Key):
         self.KP_DECIMAL = None
 
 
-class QemuKey(Key):
-    """Helper to contain all key mappings for the Qemu DC backend."""
+class XDoToolKey(Key):
+    """Helper to contain all key mappings for the xdotool DC backend."""
 
     def __init__(self):
-        """Build an instance containing the key map for the Qemu backend."""
-        self.ENTER = 'ret'
-        self.TAB = 'tab'
-        self.ESC = 'esc'
-        self.BACKSPACE = 'backspace'
-        self.DELETE = 'delete'
-        self.INSERT = 'insert'
+        """Build an instance containing the key map for the xdotool backend."""
+        self.ENTER = 'Return' # also 'enter'
+        self.TAB = 'Tab'
+        self.ESC = 'Escape'
+        self.BACKSPACE = 'BackSpace'
+        self.DELETE = 'Delete'
+        self.INSERT = 'Insert'
 
-        self.CTRL = 'ctrl'
-        self.ALT = 'alt'
-        # TODO: if needed these are also supported
-        # altgr, altgr_r (right altgr)
-        self.SHIFT = 'shift'
-        # TODO: 'meta' is not available
-        self.META = None
-        self.RCTRL = 'ctrl_r'
-        self.RALT = 'alt_r'
-        self.RSHIFT = 'shift_r'
-        # TODO: 'right meta' is not available
-        self.RMETA = None
+        self.CTRL = 'ctrl'  # special handling
+        self.ALT = 'alt'  # special handling
+        self.SHIFT = 'shift'  # special handling
+        self.META = 'meta'  # special handling
+        self.RCTRL = 'CtrlR'
+        self.RALT = 'AltR'
+        self.RSHIFT = 'ShiftR'
+        self.RMETA = 'MetaR'
 
-        self.F1 = 'f1'
-        self.F2 = 'f2'
-        self.F3 = 'f3'
-        self.F4 = 'f4'
-        self.F5 = 'f5'
-        self.F6 = 'f6'
-        self.F7 = 'f7'
-        self.F8 = 'f8'
-        self.F9 = 'f9'
-        self.F10 = 'f10'
-        self.F11 = 'f11'
-        self.F12 = 'f12'
-        # TODO: these function keys are not available
-        self.F13 = None
-        self.F14 = None
-        self.F15 = None
-        self.F16 = None
-        self.F17 = None
-        self.F18 = None
-        self.F19 = None
-        self.F20 = None
+        self.F1 = 'F1'
+        self.F2 = 'F2'
+        self.F3 = 'F3'
+        self.F4 = 'F4'
+        self.F5 = 'F5'
+        self.F6 = 'F6'
+        self.F7 = 'F7'
+        self.F8 = 'F8'
+        self.F9 = 'F9'
+        self.F10 = 'F10'
+        self.F11 = 'F11'
+        self.F12 = 'F12'
+        self.F13 = 'F13'
+        self.F14 = 'F14'
+        self.F15 = 'F15'
+        self.F16 = 'F16'
+        self.F17 = 'F17'
+        self.F18 = 'F18'
+        self.F19 = 'F19'
+        self.F20 = 'F20'
 
-        self.HOME = 'home'
-        self.END = 'end'
-        self.LEFT = 'left'
-        self.RIGHT = 'right'
-        self.UP = 'up'
-        self.DOWN = 'down'
-        self.PAGE_DOWN = 'pgdn'
-        self.PAGE_UP = 'pgup'
+        self.HOME = 'Home'
+        self.END = 'End'
+        self.LEFT = 'Left'
+        self.RIGHT = 'Right'
+        self.UP = 'Up'
+        self.DOWN = 'Down'
+        self.PAGE_DOWN = 'Page_Down'
+        self.PAGE_UP = 'Page_Up'
 
-        self.CAPS_LOCK = 'caps_lock'
-        self.PRINTSCREEN = 'print'
-        # TODO: 'pause' is not available
-        self.PAUSE = None
-        self.SCROLL_LOCK = 'scroll_lock'
-        self.NUM_LOCK = 'num_lock'
-        self.SYS_REQ = 'sysrq'
-        self.SUPER = '0xdc'
-        self.RSUPER = '0xdb'
-        # TODO: 'hyper' and 'right hyper' are not available
+        self.CAPS_LOCK = 'Caps_Lock'
+        # TODO: 'print screen' is not available
+        self.PRINTSCREEN = None
+        self.PAUSE = 'Pause'
+        self.SCROLL_LOCK = 'Scroll_Lock'
+        self.NUM_LOCK = 'Num_Lock'
+        # TODO: the following are not available
+        self.SYS_REQ = None
+        self.SUPER = None
+        self.RSUPER = None
         self.HYPER = None
         self.RHYPER = None
-        self.MENU = "menu"
+        # TODO: 'menu' is not available
+        self.MENU = None
 
-        self.KP0 = 'kp_0'
-        self.KP1 = 'kp_1'
-        self.KP2 = 'kp_2'
-        self.KP3 = 'kp_3'
-        self.KP4 = 'kp_4'
-        self.KP5 = 'kp_5'
-        self.KP6 = 'kp_6'
-        self.KP7 = 'kp_7'
-        self.KP8 = 'kp_8'
-        self.KP9 = 'kp_9'
-        self.KP_ENTER = 'kp_enter'
-        self.KP_DIVIDE = 'kp_divide'
-        self.KP_MULTIPLY = 'kp_multiply'
-        self.KP_SUBTRACT = 'kp_subtract'
-        self.KP_ADD = 'kp_add'
-        self.KP_DECIMAL = 'kp_decimal'
+        self.KP0 = 'KP_0'
+        self.KP1 = 'KP_1'
+        self.KP2 = 'KP_2'
+        self.KP3 = 'KP_3'
+        self.KP4 = 'KP_4'
+        self.KP5 = 'KP_5'
+        self.KP6 = 'KP_6'
+        self.KP7 = 'KP_7'
+        self.KP8 = 'KP_8'
+        self.KP9 = 'KP_9'
+        self.KP_ENTER = 'KP_Enter'
+        self.KP_DIVIDE = 'KP_Divide'
+        self.KP_MULTIPLY = 'KP_Multiply'
+        self.KP_SUBTRACT = 'KP_Subtract'
+        self.KP_ADD = 'KP_Add'
+        self.KP_DECIMAL = None
 
 
 class VNCDoToolKey(Key):
@@ -419,6 +415,94 @@ class VNCDoToolKey(Key):
         self.KP_DECIMAL = None
 
 
+class QemuKey(Key):
+    """Helper to contain all key mappings for the Qemu DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the key map for the Qemu backend."""
+        self.ENTER = 'ret'
+        self.TAB = 'tab'
+        self.ESC = 'esc'
+        self.BACKSPACE = 'backspace'
+        self.DELETE = 'delete'
+        self.INSERT = 'insert'
+
+        self.CTRL = 'ctrl'
+        self.ALT = 'alt'
+        # TODO: if needed these are also supported
+        # altgr, altgr_r (right altgr)
+        self.SHIFT = 'shift'
+        # TODO: 'meta' is not available
+        self.META = None
+        self.RCTRL = 'ctrl_r'
+        self.RALT = 'alt_r'
+        self.RSHIFT = 'shift_r'
+        # TODO: 'right meta' is not available
+        self.RMETA = None
+
+        self.F1 = 'f1'
+        self.F2 = 'f2'
+        self.F3 = 'f3'
+        self.F4 = 'f4'
+        self.F5 = 'f5'
+        self.F6 = 'f6'
+        self.F7 = 'f7'
+        self.F8 = 'f8'
+        self.F9 = 'f9'
+        self.F10 = 'f10'
+        self.F11 = 'f11'
+        self.F12 = 'f12'
+        # TODO: these function keys are not available
+        self.F13 = None
+        self.F14 = None
+        self.F15 = None
+        self.F16 = None
+        self.F17 = None
+        self.F18 = None
+        self.F19 = None
+        self.F20 = None
+
+        self.HOME = 'home'
+        self.END = 'end'
+        self.LEFT = 'left'
+        self.RIGHT = 'right'
+        self.UP = 'up'
+        self.DOWN = 'down'
+        self.PAGE_DOWN = 'pgdn'
+        self.PAGE_UP = 'pgup'
+
+        self.CAPS_LOCK = 'caps_lock'
+        self.PRINTSCREEN = 'print'
+        # TODO: 'pause' is not available
+        self.PAUSE = None
+        self.SCROLL_LOCK = 'scroll_lock'
+        self.NUM_LOCK = 'num_lock'
+        self.SYS_REQ = 'sysrq'
+        self.SUPER = '0xdc'
+        self.RSUPER = '0xdb'
+        # TODO: 'hyper' and 'right hyper' are not available
+        self.HYPER = None
+        self.RHYPER = None
+        self.MENU = "menu"
+
+        self.KP0 = 'kp_0'
+        self.KP1 = 'kp_1'
+        self.KP2 = 'kp_2'
+        self.KP3 = 'kp_3'
+        self.KP4 = 'kp_4'
+        self.KP5 = 'kp_5'
+        self.KP6 = 'kp_6'
+        self.KP7 = 'kp_7'
+        self.KP8 = 'kp_8'
+        self.KP9 = 'kp_9'
+        self.KP_ENTER = 'kp_enter'
+        self.KP_DIVIDE = 'kp_divide'
+        self.KP_MULTIPLY = 'kp_multiply'
+        self.KP_SUBTRACT = 'kp_subtract'
+        self.KP_ADD = 'kp_add'
+        self.KP_DECIMAL = 'kp_decimal'
+
+
 class KeyModifier(object):
     """Helper to contain all modifier key mappings for a custom desktop control backend."""
 
@@ -462,18 +546,17 @@ class AutoPyKeyModifier(KeyModifier):
         self.MOD_META = autopy.key.MOD_META
 
 
-class QemuKeyModifier(KeyModifier):
-    """Helper to contain all modifier key mappings for the Qemu DC backend."""
+class XDoToolKeyModifier(KeyModifier):
+    """Helper to contain all modifier key mappings for the xdotool DC backend."""
 
     def __init__(self):
-        """Build an instance containing the modifier key map for the Qemu backend."""
+        """Build an instance containing the modifier key map for the xdotool backend."""
         # TODO: 'none' is not available
         self.MOD_NONE = None
         self.MOD_CTRL = 'ctrl'
         self.MOD_ALT = 'alt'
         self.MOD_SHIFT = 'shift'
-        # TODO: 'meta' is not available
-        self.MOD_META = None
+        self.MOD_META = 'meta'
 
 
 class VNCDoToolKeyModifier(KeyModifier):
@@ -487,6 +570,20 @@ class VNCDoToolKeyModifier(KeyModifier):
         self.MOD_ALT = 'alt'
         self.MOD_SHIFT = 'shift'
         self.MOD_META = 'meta'
+
+
+class QemuKeyModifier(KeyModifier):
+    """Helper to contain all modifier key mappings for the Qemu DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the modifier key map for the Qemu backend."""
+        # TODO: 'none' is not available
+        self.MOD_NONE = None
+        self.MOD_CTRL = 'ctrl'
+        self.MOD_ALT = 'alt'
+        self.MOD_SHIFT = 'shift'
+        # TODO: 'meta' is not available
+        self.MOD_META = None
 
 
 class MouseButton(object):
@@ -526,13 +623,13 @@ class AutoPyMouseButton(MouseButton):
         self.CENTER_BUTTON = autopy.mouse.CENTER_BUTTON
 
 
-class QemuMouseButton(MouseButton):
-    """Helper to contain all mouse button mappings for the Qemu DC backend."""
+class XDoToolMouseButton(MouseButton):
+    """Helper to contain all mouse button mappings for the xdotool DC backend."""
 
     def __init__(self):
-        """Build an instance containing the mouse button map for the Qemu backend."""
+        """Build an instance containing the mouse button map for the xdotool backend."""
         self.LEFT_BUTTON = 1
-        self.RIGHT_BUTTON = 4
+        self.RIGHT_BUTTON = 3
         self.CENTER_BUTTON = 2
 
 
@@ -545,3 +642,12 @@ class VNCDoToolMouseButton(MouseButton):
         self.RIGHT_BUTTON = 3
         self.CENTER_BUTTON = 2
 
+
+class QemuMouseButton(MouseButton):
+    """Helper to contain all mouse button mappings for the Qemu DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the mouse button map for the Qemu backend."""
+        self.LEFT_BUTTON = 1
+        self.RIGHT_BUTTON = 4
+        self.CENTER_BUTTON = 2

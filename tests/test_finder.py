@@ -54,6 +54,7 @@ class FinderTest(unittest.TestCase):
     def setUp(self):
         # the image logger will recreate its logging destination
         ImageLogger.step = 1
+        ImageLogger.accumulate_logging = False
 
     def tearDown(self):
         if os.path.exists(GlobalConfig.image_logging_destination):
@@ -537,7 +538,7 @@ class FinderTest(unittest.TestCase):
         #self.assertAlmostEqual(matches[0].width, 270, delta=10)
         #self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
-    @unittest.expectedFailure  # fails on some platforms
+    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
     def test_cascade_viewport(self):
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_viewport'))
