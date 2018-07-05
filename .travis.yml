@@ -27,8 +27,12 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
+      # virtual screen
       - libx11-dev
       - libxtst-dev
+      # vncdotool
+      - xfonts-base
+      - tightvncserver
 
 # install any dependencies and build package
 install:

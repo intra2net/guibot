@@ -37,10 +37,12 @@ class DesktopControlTest(unittest.TestCase):
     def setUpClass(self):
         self.vncpass = "test1234"
 
-        passfile = "/root/.vnc/passwd"
+        os.environ["USER"] = os.environ.get("USER", "root")
+        os.environ["HOME"] = os.environ.get("HOME", "/root")
+
+        passfile = os.path.join(os.environ["HOME"], ".vnc/passwd")
         if not os.path.isdir(os.path.dirname(passfile)):
             os.mkdir(os.path.dirname(passfile))
-        os.environ["USER"] = "root"
         with open(passfile, "wb") as f:
             read, write = os.pipe()
             os.write(write, self.vncpass.encode())
@@ -60,8 +62,9 @@ class DesktopControlTest(unittest.TestCase):
             subprocess.check_call(("vncserver", "-kill", ":0"),
                                   stdout=devnull, stderr=devnull)
 
-        if os.path.exists("/root/.vnc"):
-            shutil.rmtree("/root/.vnc")
+        vnc_config_dir = os.path.join(os.environ["HOME"], ".vnc")
+        if os.path.exists(vnc_config_dir):
+            shutil.rmtree(vnc_config_dir)
 
     def setUp(self):
         self.backends = [AutoPyDesktopControl(), XDoToolDesktopControl()]
