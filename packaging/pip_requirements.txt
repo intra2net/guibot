@@ -3,12 +3,12 @@ coverage==4.5.1
 Pillow==5.1.0
 
 # backends
-autopy==1.0.1; python_version >= '3.5'
-opencv-contrib-python==3.4.1.15
+autopy==1.0.1; python_version >= '3.5' and platform_python_implementation != "PyPy"
+opencv-contrib-python==3.4.1.15; platform_python_implementation != "PyPy"
 # TODO: travis errors out with > 4MB log size only from torch download
-torch==0.4.0; python_version >= '3.5' and 'generic' not in platform_release
-torchvision==0.2.1; python_version >= '3.5' and 'generic' not in platform_release
-vncdotool==0.12.0; sys_platform != 'win32'
+torch==0.4.0; python_version >= '3.5' and 'generic' not in platform_release and platform_python_implementation != "PyPy"
+torchvision==0.2.1; python_version >= '3.5' and 'generic' not in platform_release and platform_python_implementation != "PyPy"
+vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
 
 # GUI to use for testing
-PyQt5==5.11.2; python_version >= '3.5'
+PyQt5==5.11.2; python_version >= '3.5' and platform_python_implementation != "PyPy"
