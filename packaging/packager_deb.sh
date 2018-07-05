@@ -47,6 +47,6 @@ sleep 3  # give xvfb some time to start
 # unit tests
 apt-get install -y python3-pyqt4
 cd /usr/lib/python3/dist-packages/guibot/tests
-LIBPATH=".." sh run_tests.sh
+LIBPATH=".." COVERAGE="python3-coverage" sh run_tests.sh
 
 exit 0

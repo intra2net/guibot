@@ -1,5 +1,5 @@
 # minimal
-python-coverage==0.0.5
+coverage==4.5.1
 Pillow==5.1.0
 
 # backends
