@@ -10,6 +10,4 @@ torchvision==0.2.1
 vncdotool==0.12.0; sys_platform != 'win32'
 
 # GUI to use for testing
-# TODO: while PyQt4 was present but based on configure.py in the past right
-# it is no longer available through PyPI until the maintainer updates the world
-# PyQt4
+PyQt5==5.11.2; python_version >= '3.5'

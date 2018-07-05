@@ -119,6 +119,7 @@ class RegionTest(unittest.TestCase):
         self.assertAlmostEqual(pos.x, 30, delta=1)
         self.assertAlmostEqual(pos.y, 20, delta=1)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_hover(self):
         self.show_application()
 
@@ -134,12 +135,14 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_click(self):
         self.show_application()
         self.region.click(self.click_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_right_click(self):
         self.show_application()
         self.region.right_click(self.context_menu_control)
@@ -147,12 +150,14 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_double_click(self):
         self.show_application()
         self.region.double_click(self.double_click_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_multi_click(self):
         self.show_application()
         self.region.multi_click(self.click_control, count=1)
@@ -164,32 +169,38 @@ class RegionTest(unittest.TestCase):
 
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_click_expect(self):
         self.show_application()
         self.region.click_expect('shape_green_box')
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_click_expect_different(self):
         self.show_application()
         self.region.click_expect('shape_green_box', 'shape_black_box')
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_click_vanish(self):
         self.show_application()
         self.region.click_vanish('shape_red_box')
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_click_vanish_different(self):
         self.show_application()
         self.region.click_vanish('shape_green_box', 'shape_red_box')
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_click_at_index(self):
         self.show_application()
         self.region.click_at_index('shape_red_box', 0)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_mouse_down(self):
         self.show_application()
 
@@ -201,6 +212,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_mouse_up(self):
         self.show_application()
 
@@ -214,12 +226,15 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_drag_drop(self):
         self.show_application()
         self.region.drag_drop(self.textedit_control, self.textedit_quit_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.expectedFailure  # hangs with PyQt5 (worked with PyQt4)
+    #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_drag_from(self):
         self.show_application()
 
@@ -232,6 +247,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_drop_at(self):
         self.show_application()
 
@@ -241,6 +257,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     @unittest.expectedFailure  # fails on some platforms
     def test_press_keys(self):
         self.show_application()
@@ -256,12 +273,14 @@ class RegionTest(unittest.TestCase):
 
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_press_at(self):
         self.show_application()
         self.region.press_at([self.region.ESC], self.textedit_any_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_type_text(self):
         self.show_application()
         self.region.click(self.textedit_quit_control)
@@ -269,12 +288,14 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_type_at(self):
         self.show_application()
         self.region.type_at('quit', self.textedit_quit_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_fill_at(self):
         self.show_application()
         self.region.fill_at(self.textedit_quit_control, 'quit', 0, 0)

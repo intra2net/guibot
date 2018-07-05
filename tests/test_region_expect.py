@@ -118,6 +118,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(300, region.width)
         self.assertEqual(200, region.height)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find(self):
         self.show_image('all_shapes')
 
@@ -141,6 +142,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(last_match.width, match.width)
         self.assertEqual(last_match.height, match.height)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find_center_offset(self):
         self.show_image('all_shapes.png')
 
@@ -170,6 +172,7 @@ class RegionTest(unittest.TestCase):
         except FindError as e:
             pass
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find_all(self):
         self.show_image('all_shapes')
 
@@ -222,6 +225,7 @@ class RegionTest(unittest.TestCase):
             self.assertAlmostEqual(70, match.width, delta=5)
             self.assertAlmostEqual(50, match.height, delta=5)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find_zero_matches(self):
         self.show_image('all_shapes')
 
@@ -293,6 +297,7 @@ class RegionTest(unittest.TestCase):
         except FindError as e:
             pass
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_sample(self):
         self.show_image('all_shapes')
 
@@ -308,6 +313,7 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_exists(self):
         self.show_image('all_shapes')
 
@@ -319,6 +325,7 @@ class RegionTest(unittest.TestCase):
         match = self.region.exists(Image('shape_blue_circle'))
         self.assertEqual(None, match)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_wait(self):
         self.show_image('all_shapes')
 
@@ -327,6 +334,7 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_wait_vanish(self):
         self.show_image('all_shapes')
 
