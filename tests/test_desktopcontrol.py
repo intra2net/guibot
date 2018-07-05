@@ -28,6 +28,9 @@ from guibot.region import Region
 from guibot.config import GlobalConfig
 
 
+@unittest.skipIf(os.environ.get('DISABLE_VNC', "0") == "1" or
+                 os.environ.get('DISABLE_AUTOPY', "0") == "1",
+                 "AutoPy or VNC disabled")
 class DesktopControlTest(unittest.TestCase):
 
     @classmethod

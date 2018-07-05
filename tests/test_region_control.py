@@ -105,6 +105,7 @@ class RegionTest(unittest.TestCase):
 
             time.sleep(0.2)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_get_mouse_location(self):
         self.region.hover(Location(0, 0))
         pos = self.region.mouse_location

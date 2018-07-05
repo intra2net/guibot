@@ -3,11 +3,11 @@ coverage==4.5.1
 Pillow==5.1.0
 
 # backends
-autopy==1.0.1
+autopy==1.0.1; python_version >= '3.5'
 opencv-contrib-python==3.4.1.15
 torch==0.4.0
 torchvision==0.2.1
-vncdotool==0.12.0
+vncdotool==0.12.0; sys_platform != 'win32'
 
 # GUI to use for testing
 # TODO: while PyQt4 was present but based on configure.py in the past right

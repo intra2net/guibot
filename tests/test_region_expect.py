@@ -102,6 +102,7 @@ class RegionTest(unittest.TestCase):
 
             time.sleep(0.2)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_initialize(self):
         screen_width = AutoPyDesktopControl().width
         screen_height = AutoPyDesktopControl().height
@@ -155,6 +156,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(match.target.x - 50, match_offset.target.x)
         self.assertEqual(match.target.y - 30, match_offset.target.y)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_find_error(self):
         try:
             self.region.find(Image('shape_blue_circle.png'), 0)

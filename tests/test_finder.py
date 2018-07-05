@@ -159,6 +159,7 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(finder.params["fextract"]["backend"], "ORB")
         self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce-Hamming")
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_autopy_same(self):
         finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -176,6 +177,7 @@ class FinderTest(unittest.TestCase):
         self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "autopy")
         self._verify_single_hotmap(dumps, "autopy")
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_autopy_nomatch(self):
         finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -844,6 +846,7 @@ class FinderTest(unittest.TestCase):
                 self.assertIn('%sactivity' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_same(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -862,8 +865,9 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "autopy")
 
     @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     os.environ.get('DISABLE_OCR', "0") == "1" or
+                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
+                     "Old OpenCV version or disabled OCR/AutoPy functionality")
     def test_hybrid_nomatch(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -877,6 +881,7 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names (4+4+7)
         dumps = self._verify_and_get_dumps(15, multistep=True)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_fallback(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -892,6 +897,7 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(8, multistep=True)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_multiconfig(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")

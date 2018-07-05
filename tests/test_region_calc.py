@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 import unittest
 
 import common_test
@@ -21,6 +22,7 @@ from guibot.region import Region
 from guibot.desktopcontrol import DesktopControl, AutoPyDesktopControl
 
 
+@unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
 class RegionTest(unittest.TestCase):
 
     def test_position_calc(self):
