@@ -237,9 +237,9 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
         self.close_windows()
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_find_guess_target(self):
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')

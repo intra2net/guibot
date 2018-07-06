@@ -48,6 +48,7 @@ before_script:
   - sleep 3  # give xvfb some time to start
   - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then export DISABLE_AUTOPY=1; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then export DISABLE_PYQT=1; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then export DISABLE_OPENCV=1; fi
 
 # run tests
 script:
