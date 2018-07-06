@@ -14,7 +14,7 @@ matrix:
       env: INSTALL_VARIANT=deb
   allow_failures:
     # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
-    - env: INSTALL_VARIANT=pip DISABLE_OCR=1 DISABLE_PYTORCH=1
+    - python: pypy3
 
 services:
   - docker
