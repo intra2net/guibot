@@ -8,6 +8,8 @@ dnf -y install python3-pillow
 # contour, template, feature, cascade, text matching
 dnf -y install python3-numpy python3-opencv
 # text matching
+# TODO: current cv2.text module is either missing of compatible with Tesseract 3 (we use 4)
+export DISABLE_OCR=1
 dnf -y install tesseract
 # desktop control
 dnf -y install xdotool xwd ImageMagick

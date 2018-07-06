@@ -1957,7 +1957,7 @@ class TextFinder(ContourFinder):
 
         elif category == "ocr":
             if backend == "tesseract":
-                self.ocr = cv2.text.OCRTesseract_create(datapath,
+                self.ocr = cv2.text.OCRTesseract_create(os.path.join(datapath, "tessdata"),
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
                                                         oem=self.params["ocr"]["oem"].value,
