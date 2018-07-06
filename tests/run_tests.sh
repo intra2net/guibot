@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 readonly libpath="${LIBPATH:-../guibot}"
 readonly coverage="${COVERAGE:-coverage3}"
 
