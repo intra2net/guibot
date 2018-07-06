@@ -5,7 +5,7 @@ python:
     - 3.6
     - pypy3
 env:
-    - INSTALL_VARIANT=pip DISABLE_OCR=1
+    - INSTALL_VARIANT=pip DISABLE_OCR=1 DISABLE_PYTORCH=1
 matrix:
   include:
     - python: 3.6
@@ -14,7 +14,7 @@ matrix:
       env: INSTALL_VARIANT=deb
   allow_failures:
     # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
-    - env: INSTALL_VARIANT=pip DISABLE_OCR=1
+    - env: INSTALL_VARIANT=pip DISABLE_OCR=1 DISABLE_PYTORCH=1
 
 services:
   - docker

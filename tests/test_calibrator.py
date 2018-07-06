@@ -234,6 +234,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_benchmark_deep(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Pattern('shape_blue_circle.pth'), Image('all_shapes'))

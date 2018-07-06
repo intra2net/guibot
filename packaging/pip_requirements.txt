@@ -5,8 +5,9 @@ Pillow==5.1.0
 # backends
 autopy==1.0.1; python_version >= '3.5'
 opencv-contrib-python==3.4.1.15
-torch==0.4.0
-torchvision==0.2.1
+# TODO: travis errors out with > 4MB log size only from torch download
+torch==0.4.0; python_version >= '3.5' and 'generic' not in platform_release
+torchvision==0.2.1; python_version >= '3.5' and 'generic' not in platform_release
 vncdotool==0.12.0; sys_platform != 'win32'
 
 # GUI to use for testing

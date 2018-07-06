@@ -795,6 +795,7 @@ class FinderTest(unittest.TestCase):
             shutil.rmtree(self.logpath)
             i += 1
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_same(self):
         finder = DeepFinder()
         # shape matching is not perfect
@@ -824,6 +825,7 @@ class FinderTest(unittest.TestCase):
                 self.assertIn('%sactivity' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_nomatch(self):
         finder = DeepFinder()
         finder.params["find"]["similarity"].value = 0.25
