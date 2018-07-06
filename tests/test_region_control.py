@@ -233,7 +233,8 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.expectedFailure  # hangs with PyQt5 (worked with PyQt4)
+    @unittest.skip("Unit test either errors out or is expected failure")
+    #@unittest.expectedFailure  # hangs with PyQt5 (worked with PyQt4)
     #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_drag_from(self):
         self.show_application()
@@ -257,8 +258,9 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skip("Unit test either errors out or is expected failure")
+    #@unittest.expectedFailure  # fails on some platforms
     #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
-    @unittest.expectedFailure  # fails on some platforms
     def test_press_keys(self):
         self.show_application()
         time.sleep(1)
