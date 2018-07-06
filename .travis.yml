@@ -30,6 +30,10 @@ addons:
       # virtual screen
       - libx11-dev
       - libxtst-dev
+      # xdotool
+      - xdotool
+      - x11-apps
+      - imagemagick
       # vncdotool
       - xfonts-base
       - tightvncserver
