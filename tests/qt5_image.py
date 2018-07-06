@@ -15,27 +15,27 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 
 
-app = QtGui.QApplication(sys.argv)
+app = QtWidgets.QApplication(sys.argv)
 
 
-class ImageWithLayout(QtGui.QWidget):
+class ImageWithLayout(QtWidgets.QWidget):
 
     def __init__(self, filename, title="show_picture", parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowTitle(title)
 
-        image = QtGui.QLabel(self)
+        image = QtWidgets.QLabel(self)
         image.setPixmap(QtGui.QPixmap(filename))
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(image)
         vbox.setAlignment(QtCore.Qt.AlignTop)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addLayout(vbox)
         hbox.setAlignment(QtCore.Qt.AlignLeft)
 

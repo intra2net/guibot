@@ -40,7 +40,7 @@ class RegionTest(unittest.TestCase):
         self.path = Path()
         self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
-        self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
+        self.script_img = os.path.join(common_test.unittest_dir, 'qt5_image.py')
 
         # preserve values of static attributes
         self.prev_loglevel = GlobalConfig.image_logging_level

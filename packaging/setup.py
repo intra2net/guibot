@@ -20,7 +20,7 @@ setup(
         'opencv-contrib-python',
     ],
     tests_require=[
-        'PyQt4',
+        'PyQt5',
     ],
 
     url='http://guibot.org',

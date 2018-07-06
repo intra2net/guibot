@@ -15,41 +15,41 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, os
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 
 
 import common_test
 
 
-app = QtGui.QApplication(sys.argv)
+app = QtWidgets.QApplication(sys.argv)
 
 
-class ControlsWithLayout(QtGui.QWidget):
+class ControlsWithLayout(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
-        QtGui.QWidget.__init__(self, parent)
+        QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowTitle('guibot test application')
 
         font_family = 'Helvetica'
         font_size = 10
 
-        button_click = QtGui.QPushButton("close on click")
+        button_click = QtWidgets.QPushButton("close on click")
         button_click.setFixedSize(120, 30)
         button_click.setStyleSheet('QPushButton { font-family: ' + font_family + '; font-size: ' + str(font_size) + 't; }')
-        self.connect(button_click, QtCore.SIGNAL('clicked()'), QtGui.qApp.quit)
+        button_click.clicked.connect(QtWidgets.qApp.quit)
 
-        line_edit = QtGui.QLineEdit()
+        line_edit = QtWidgets.QLineEdit()
         line_edit.setPlaceholderText('type quit')
         line_edit.setFixedSize(120, 30)
-        self.connect(line_edit, QtCore.SIGNAL('textEdited(const QString &)'), self.quit_on_type)
+        line_edit.textEdited.connect(self.quit_on_type)
 
-        line_edit2 = QtGui.QLineEdit()
+        line_edit2 = QtWidgets.QLineEdit()
         line_edit2.setPlaceholderText('type anything')
         line_edit2.setFixedSize(120, 30)
-        self.connect(line_edit2, QtCore.SIGNAL('editingFinished()'), QtGui.qApp.quit)
+        line_edit2.editingFinished.connect(QtWidgets.qApp.quit)
 
-        text_edit = QtGui.QTextEdit('quit')
+        text_edit = QtWidgets.QTextEdit('quit')
         cursor = text_edit.textCursor()
         cursor.setPosition(0)
         cursor.setPosition(4, QtGui.QTextCursor.KeepAnchor)
@@ -57,23 +57,23 @@ class ControlsWithLayout(QtGui.QWidget):
         text_edit.setFixedSize(120, 30)
         text_edit.setAcceptDrops(True)
 
-        list_view = QtGui.QListWidget()
+        list_view = QtWidgets.QListWidget()
         list_view.addItem('double click')
         list_view.setFixedSize(120, 130)
         list_view.setFont(QtGui.QFont(font_family, font_size))
         #list_view.setStyleSheet('QPushButton { font-family: Helvetica; font-size: 10pt; }')
-        self.connect(list_view, QtCore.SIGNAL("itemDoubleClicked (QListWidgetItem *)"), QtGui.qApp.quit)
+        list_view.itemDoubleClicked.connect(QtWidgets.qApp.quit)
 
-        right_click_view = QtGui.QListWidget()
+        right_click_view = QtWidgets.QListWidget()
         right_click_view.setFixedSize(120, 130)
         right_click_view.setFont(QtGui.QFont(font_family, font_size))
         right_click_view.addItem('contextmenu')
         right_click_view.setContextMenuPolicy(QtCore.Qt.ActionsContextMenu)
 
-        quit_action = QtGui.QAction("close", self)
+        quit_action = QtWidgets.QAction("close", self)
         quit_action.setFont(QtGui.QFont(font_family, font_size))
         right_click_view.addAction(quit_action)
-        quit_action.triggered.connect(QtGui.qApp.quit)
+        quit_action.triggered.connect(QtWidgets.qApp.quit)
 
         label1 = DragQuitLabel("drag to close", self)
         label1.setFixedSize(120, 30)
@@ -93,7 +93,7 @@ class ControlsWithLayout(QtGui.QWidget):
         image2 = ImageChangeLabel(image1, self)
         image2.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir, "images/shape_green_box.png")))
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(button_click)
         vbox.addWidget(line_edit)
         vbox.addWidget(line_edit2)
@@ -101,12 +101,12 @@ class ControlsWithLayout(QtGui.QWidget):
         vbox.addStretch(1)
         vbox.setAlignment(QtCore.Qt.AlignTop)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(list_view)
         hbox.addWidget(right_click_view)
         hbox.setAlignment(QtCore.Qt.AlignTop)
 
-        vbox2 = QtGui.QVBoxLayout()
+        vbox2 = QtWidgets.QVBoxLayout()
         vbox2.addWidget(label1)
         vbox2.addWidget(label2)
         vbox2.addWidget(label3)
@@ -114,13 +114,13 @@ class ControlsWithLayout(QtGui.QWidget):
         vbox2.addStretch(1)
         vbox2.setAlignment(QtCore.Qt.AlignTop)
 
-        vbox3 = QtGui.QVBoxLayout()
+        vbox3 = QtWidgets.QVBoxLayout()
         vbox3.addWidget(image1)
         vbox3.addWidget(image2)
         vbox3.addStretch(1)
         vbox3.setAlignment(QtCore.Qt.AlignTop)
 
-        hbox2 = QtGui.QHBoxLayout()
+        hbox2 = QtWidgets.QHBoxLayout()
         hbox2.addLayout(vbox)
         hbox2.addLayout(hbox)
         hbox2.addLayout(vbox2)
@@ -132,7 +132,7 @@ class ControlsWithLayout(QtGui.QWidget):
         #self.resize(400, 100)
         self.showFullScreen()
 
-        QtGui.QApplication.setStyle(QtGui.QStyleFactory.create('cleanlooks'))
+        QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create('cleanlooks'))
 
     def quit_on_type(self):
         sender = self.sender()
@@ -147,7 +147,7 @@ class ControlsWithLayout(QtGui.QWidget):
         self.close()
 
 
-class DragQuitLabel(QtGui.QLabel):
+class DragQuitLabel(QtWidgets.QLabel):
 
     def __init__(self, title, parent):
         super(DragQuitLabel, self).__init__(title, parent)
@@ -157,7 +157,7 @@ class DragQuitLabel(QtGui.QLabel):
         self.parent().close()
 
 
-class DropQuitLabel(QtGui.QLabel):
+class DropQuitLabel(QtWidgets.QLabel):
 
     def __init__(self, title, parent):
         super(DropQuitLabel, self).__init__(title, parent)
@@ -173,7 +173,7 @@ class DropQuitLabel(QtGui.QLabel):
         self.parent().close()
 
 
-class MouseDownQuitLabel(QtGui.QLabel):
+class MouseDownQuitLabel(QtWidgets.QLabel):
 
     def __init__(self, title, parent):
         super(MouseDownQuitLabel, self).__init__(title, parent)
@@ -182,7 +182,7 @@ class MouseDownQuitLabel(QtGui.QLabel):
         self.parent().close()
 
 
-class MouseUpQuitLabel(QtGui.QLabel):
+class MouseUpQuitLabel(QtWidgets.QLabel):
 
     def __init__(self, title, parent):
         super(MouseUpQuitLabel, self).__init__(title, parent)
@@ -192,7 +192,7 @@ class MouseUpQuitLabel(QtGui.QLabel):
         self.parent().close()
 
 
-class ImageQuitLabel(QtGui.QLabel):
+class ImageQuitLabel(QtWidgets.QLabel):
 
     def __init__(self, parent):
         super(ImageQuitLabel, self).__init__(parent)
@@ -201,7 +201,7 @@ class ImageQuitLabel(QtGui.QLabel):
         self.parent().close()
 
 
-class ImageChangeLabel(QtGui.QLabel):
+class ImageChangeLabel(QtWidgets.QLabel):
 
     def __init__(self, image, parent):
         super(ImageChangeLabel, self).__init__(parent)

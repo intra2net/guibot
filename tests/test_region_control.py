@@ -41,7 +41,7 @@ class RegionTest(unittest.TestCase):
         self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         # gui test scripts
-        self.script_app = os.path.join(common_test.unittest_dir, 'qt4_application.py')
+        self.script_app = os.path.join(common_test.unittest_dir, 'qt5_application.py')
 
         # prefixed controls
         # NOTE: provide and use only fixed locations to avoid CV backend dependencies

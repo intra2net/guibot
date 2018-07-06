@@ -45,7 +45,7 @@ Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
 sleep 3  # give xvfb some time to start
 
 # unit tests
-apt-get install -y python3-pyqt4
+apt-get install -y python3-pyqt5
 cd /usr/lib/python3/dist-packages/guibot/tests
 LIBPATH=".." COVERAGE="python3-coverage" sh run_tests.sh
 
