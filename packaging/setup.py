@@ -16,8 +16,6 @@ setup(
 
     install_requires=[
         "Pillow",
-        'numpy',
-        'opencv-contrib-python',
     ],
     tests_require=[
         'PyQt5',
