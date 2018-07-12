@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
-from setuptools import setup
+try:
+    from setuptools import setup
+except ImportError:
+    from distutils.code import setup
 from os import path
 
 p = path.abspath(path.dirname(__file__))
