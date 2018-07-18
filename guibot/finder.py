@@ -369,6 +369,12 @@ class Finder(LocalConfig):
             log.debug("Setting %s/%s to fixed=%s for calibration", category, key, value.fixed)
 
     def copy(self):
+        """
+        Deep copy the current finder and its configuration.
+
+        :returns: a copy of the current finder with identical configuration
+        :rtype: :py:class:`Finder`
+        """
         acopy = type(self)(synchronize=False)
         for category in self.params.keys():
             try:
@@ -377,9 +383,11 @@ class Finder(LocalConfig):
                 # some categories are not configurable
                 pass
 
+        for category in self.params.keys():
             for param in self.params[category].keys():
                 acopy.params[category][param] = copy.deepcopy(self.params[category][param])
 
+        for category in self.params.keys():
             try:
                 acopy.synchronize_backend(self.params[category]["backend"], category)
             except UnsupportedBackendError:
