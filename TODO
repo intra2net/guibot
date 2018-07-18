@@ -1,17 +1,20 @@
 TODO - hierarchical notes
 -------------------------
 
-- guibot publishing
-    - README
-    - wikis
-        - sweetspot height of letters is 30-50px
-        - tesseract also prefers black text on white bg
-    - more and better unit tests
-        - improved unit test coverage
-        - known problems
-            - build automation (travic CI) and documentation - Qt4 for the region tests?
-            - .lan is removed by .match in match dumping
-            - mysterious kills of calibration after days
+- more and better unit tests
+    - improve unit test coverage above 80%
+        - change test_region_control to test all dc backends
+            - switch from autopy to xdotool should be immediate
+            - for vncdotool use x11vnc and vncviewer :99 to connect to Xvfb
+        - change test_region_expect to test more cv backends
+        - tests as cartesian products of backends and methods
+    - known problems
+        - .lan is removed by .match in match dumping
+        - mysterious kills of calibration after days
+        - vncdotool needs some patches for py3.4 like byte % replacement (only supports py>3.5)
+- wikis about backends
+    - sweetspot height of letters is 30-50px
+    - tesseract also prefers black text on white bg
 - new methods test stage
     - various collected strange cases (special testing pairs)
     - training a button cascade requires even more experience
