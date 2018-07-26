@@ -25,8 +25,8 @@ import re
 
 import Pyro4
 
-import errors
-from guibot import GuiBot
+from . import errors
+from .guibot import GuiBot
 
 
 def serialize_custom_error(class_obj):
@@ -78,7 +78,7 @@ class GuiBotProxy(GuiBot):
         register_exception_serialization()
 
     def _proxify(self, obj):
-        if isinstance(obj, (int, float, bool, basestring)) or obj is None:
+        if isinstance(obj, (int, float, bool, str)) or obj is None:
             return obj
         if obj not in self._pyroDaemon.objectsById.values():
             self._pyroDaemon.register(obj)

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -19,11 +19,11 @@ import unittest
 import pprint
 
 import common_test
-from calibrator import Calibrator
-from path import Path
-from finder import *
-from target import *
-from errors import *
+from guibot.calibrator import Calibrator
+from guibot.path import Path
+from guibot.finder import *
+from guibot.target import *
+from guibot.errors import *
 
 
 class CalibratorTest(unittest.TestCase):
@@ -32,12 +32,10 @@ class CalibratorTest(unittest.TestCase):
     def setUpClass(self):
         self.path = Path()
         self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
-        self.old_random_value_fun = CVParameter.random_value
 
     def tearDown(self):
         if os.path.exists("pairs.list"):
             os.unlink("pairs.list")
-        CVParameter.random_value = self.old_random_value_fun
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
         # use a single finder type for these tests
@@ -58,7 +56,7 @@ class CalibratorTest(unittest.TestCase):
         # remove any randomness in the unit tests in the Monte Carlo search
         CVParameter.random_value = lambda self, _mu, _sigma: self.value
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_calibrate(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'n_ibs', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'n_ibs',
@@ -68,7 +66,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_calibrate_viewport(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
@@ -78,7 +76,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_calibrate_rotation(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated',
@@ -88,7 +86,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_calibrate_scaling(self):
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled',
@@ -98,7 +96,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_calibrate_list(self):
         calibrator = self.list_setUp()
         # use a single finder type for these tests
@@ -111,7 +109,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before calibration must be less"
                              " or equal to the similarity after calibration")
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_search(self):
         calibrator = self.list_setUp()
         # use a single finder type for these tests
@@ -137,7 +135,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_contour(self):
         self.benchmark_setUp()
         # matching all shapes will require a modification of the minArea parameter
@@ -147,10 +145,11 @@ class CalibratorTest(unittest.TestCase):
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
-                self.assertTrue(result[0].endswith("+mixed"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_template(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Image('shape_blue_circle'), Image('all_shapes'))
@@ -160,12 +159,12 @@ class CalibratorTest(unittest.TestCase):
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
                 # only normed backends are supported
-                self.assertTrue(result[0].endswith("_normed"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("_normed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
     @unittest.skip("Unit test takes too long")
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    #@unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_feature(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Image('n_ibs'), Image('n_ibs'))
@@ -174,11 +173,12 @@ class CalibratorTest(unittest.TestCase):
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
-                self.assertTrue(result[0].endswith("+mixed"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_cascade(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Pattern('shape_blue_circle.xml'), Image('all_shapes'))
@@ -192,9 +192,9 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_benchmark_text(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Text('Text'), Image('all_shapes'))
@@ -214,13 +214,13 @@ class CalibratorTest(unittest.TestCase):
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
-                self.assertTrue(result[0].startswith("mixed+"), "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
     @unittest.skip("Unit test takes too long")
-    #@unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    #@unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_tempfeat(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Image('shape_blue_circle'), Image('all_shapes'))
@@ -230,12 +230,13 @@ class CalibratorTest(unittest.TestCase):
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
                 # mixture of template and feature backends
-                self.assertTrue("+mixed" in result[0], "Incorrect backend names for case '%s' %s %s" % result)
-                self.assertTrue("_normed" in result[0], "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("mixed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertIn("_normed", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 self.assertGreaterEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_benchmark_deep(self):
         self.benchmark_setUp()
         calibrator = Calibrator(Pattern('shape_blue_circle.pth'), Image('all_shapes'))

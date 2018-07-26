@@ -18,15 +18,12 @@ import sys
 import re
 import copy
 import random
-try:
-    import configparser as config
-except ImportError:
-    import ConfigParser as config
+import configparser as config
 
-from config import GlobalConfig, LocalConfig
-from imagelogger import ImageLogger
-from path import Path
-from errors import *
+from .config import GlobalConfig, LocalConfig
+from .imagelogger import ImageLogger
+from .path import Path
+from .errors import *
 
 import logging
 log = logging.getLogger('guibot.finder')
@@ -74,14 +71,14 @@ class CVParameter(object):
         elif type(self.value) == float:
             min_val = -sys.float_info.max
         elif type(self.value) == int:
-            min_val = -sys.maxint
+            min_val = -sys.maxsize
         self.max_val = max_val
         if max_val is not None:
             assert value <= max_val
         elif type(self.value) == float:
             max_val = sys.float_info.max
         elif type(self.value) == int:
-            max_val = sys.maxint
+            max_val = sys.maxsize
         self.range = (min_val, max_val)
 
         # fixed or allowed to be calibrated
@@ -486,7 +483,7 @@ class AutoPyFinder(Finder):
         self.imglog.hotmaps.append(haystack.pil_image.copy())
 
         # class-specific dependencies
-        from autopy import bitmap
+        from autopy import bitmap, screen
         from tempfile import NamedTemporaryFile
 
         if needle.filename in self._bitmapcache:
@@ -513,13 +510,14 @@ class AutoPyFinder(Finder):
         log.debug("Best acceptable match starting at %s", coord)
 
         if coord is not None:
+            coord = (int(coord[0]), int(coord[1]))
             similarity = self.params["find"]["similarity"].value
             self.imglog.locations.append(coord)
             self.imglog.similarities.append(similarity)
             x, y = coord
             w, h = needle.width, needle.height
             dx, dy = needle.center_offset.x, needle.center_offset.y
-            from match import Match
+            from .match import Match
             matches = [Match(x, y, w, h, dx, dy, similarity)]
             from PIL import ImageDraw
             draw = ImageDraw.Draw(self.imglog.hotmaps[-1])
@@ -677,7 +675,7 @@ class ContourFinder(Finder):
                 distances[i,j] = cv2.matchShapes(hcontour, ncontour, self.params["contour"]["contoursMatch"].value, 0)
                 assert distances[i,j] >= 0.0
 
-        from match import Match
+        from .match import Match
         matches = []
         nx, ny, nw, nh = cv2.boundingRect(numpy.concatenate(needle_contours, axis=0))
         while True:
@@ -887,7 +885,7 @@ class TemplateFinder(Finder):
 
         # extract maxima once for each needle size region
         similarity = self.params["find"]["similarity"].value
-        from match import Match
+        from .match import Match
         matches = []
         while True:
 
@@ -1310,7 +1308,7 @@ class FeatureFinder(Finder):
         similarity = self.params["find"]["similarity"].value
         hpoints = self._project_features(npoints, ngray, hgray, similarity)
         if hpoints is not None and len(hpoints) > 0:
-            from match import Match
+            from .match import Match
             x, y = hpoints[0]
             w, h = tuple(numpy.abs(numpy.subtract(hpoints[3], hpoints[0])))
             # TODO: projecting offset requires more effort
@@ -1713,7 +1711,7 @@ class CascadeFinder(Finder):
         gray_haystack = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
         canvas = numpy.array(haystack.pil_image)
 
-        from match import Match
+        from .match import Match
         matches = []
         rects = needle_cascade.detectMultiScale(gray_haystack,
                                                 self.params["cascade"]["scaleFactor"].value,
@@ -1818,7 +1816,7 @@ class TextFinder(ContourFinder):
         self.params[category]["backend"] = backend
 
         if category == "text":
-            self.params[category]["datapath"] = CVParameter("misc")
+            self.params[category]["datapath"] = CVParameter("../misc")
         elif category == "tdetect":
             if backend == "erstat":
                 self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255, 50.0)
@@ -1959,7 +1957,7 @@ class TextFinder(ContourFinder):
 
         elif category == "ocr":
             if backend == "tesseract":
-                self.ocr = cv2.text.OCRTesseract_create(datapath,
+                self.ocr = cv2.text.OCRTesseract_create(os.path.join(datapath, "tessdata"),
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
                                                         oem=self.params["ocr"]["oem"].value,
@@ -2066,7 +2064,7 @@ class TextFinder(ContourFinder):
             raise UnsupportedBackendError("Unsupported text detection backend %s" % backend)
 
         # perform optical character recognition on the final regions
-        from match import Match
+        from .match import Match
         matches = []
         def binarize_step(threshold, text_img):
             if self.params["ocr"]["binarize_text"].value:
@@ -2131,6 +2129,7 @@ class TextFinder(ContourFinder):
                     sys.stderr.flush()
                     os.dup2(cpout_fo.fileno(), stdout_fd)
                     os.dup2(cperr_fo.fileno(), stderr_fd)
+            null_fo.close()
             if self.params["ocr"]["component_level"].value == 1:
                 # strip of the new line character which is never useful
                 output = output.rstrip()
@@ -2557,7 +2556,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
             return []
 
         matches = []
-        from match import Match
+        from .match import Match
         maxima = sorted(feature_maxima, key=lambda x:x[1], reverse=True)
         for maximum in maxima:
             similarity = maximum[1]
@@ -2595,7 +2594,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         # knowing how the tempfeat works this estimates
         # the expected number of cases starting from 1 (i+1)
         # to make sure the winner is the first alphabetically
-        candidate_num = len(self.imglog.similarities) / 2
+        candidate_num = int(len(self.imglog.similarities) / 2)
         for i in range(candidate_num):
             name = "imglog%s-3hotmap-%stemplate-%s.png" % (self.imglog.printable_step,
                                                            i + 1, self.imglog.similarities[i])
@@ -2707,8 +2706,8 @@ class DeepFinder(Finder):
                 ow, oh = f.params["deep"]["owidth"].value, f.params["deep"]["oheight"].value
 
                 # calculate the number of inputs of the first linear layer
-                rw = ((iw - c1k + 1) / c1p - c2k + 1) / c2p
-                rh = ((ih - c1k + 1) / c1p - c2k + 1) / c2p
+                rw = int((int((iw - c1k + 1) / c1p) - c2k + 1) / c2p)
+                rh = int((int((ih - c1k + 1) / c1p) - c2k + 1) / c2p)
                 n = rw * rh * c2c
 
                 self.conv1 = nn.Conv2d(1, c1c, kernel_size=c1k)
@@ -2734,7 +2733,7 @@ class DeepFinder(Finder):
                 x = F.dropout(x, training=self.training)
                 x = F.relu(self.fc2(x))
                 # softmax gives a vector of the same dimension with components sum of 1
-                x = F.log_softmax(x)
+                x = F.log_softmax(x, dim=-1)
                 return x
 
         self.net = Net()
@@ -2789,21 +2788,22 @@ class DeepFinder(Finder):
                                                          self.params["deep"]["iwidth"].value,
                                                          self.params["deep"]["iheight"].value))
         from torch.autograd import Variable
-        data = Variable(torch.from_numpy(gray/255), volatile=True)
+        with torch.no_grad():
+            data = Variable(torch.from_numpy(gray/255))
 
         # send input to the network and get probability distribution over locations
         output = self.net(data)
         import torch.nn.functional as F
-        output = F.softmax(output)
+        output = F.softmax(output, dim=-1)
         hotmap = output.data[...,:-1].numpy().reshape(self.params["deep"]["oheight"].value,
                                                       self.params["deep"]["owidth"].value)
         self.imglog.hotmaps.append(hotmap*255)
 
         # TODO: try Faster Region-CNNs, Single Shot MultiBox Detector, and YOLO
         matches = []
-        from match import Match
-        dx = haystack.width / self.params["deep"]["owidth"].value
-        dy = haystack.height / self.params["deep"]["oheight"].value
+        from .match import Match
+        dx = int(haystack.width / self.params["deep"]["owidth"].value)
+        dy = int(haystack.height / self.params["deep"]["oheight"].value)
         ys, xs = numpy.where(hotmap > self.params["find"]["similarity"].value)
         for (x, y) in zip(list(xs), list(ys)):
             similarity = hotmap[y,x]
@@ -2873,7 +2873,7 @@ class DeepFinder(Finder):
                 if batch_idx % self.params["deep"]["log_interval"].value == 0:
                     log.info('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
                             epoch, batch_idx * len(data), len(train_loader.dataset),
-                            100. * batch_idx / len(train_loader), loss.data[0]))
+                            100 * batch_idx / len(train_loader), loss.data[0]))
 
         # save the network state if required
         if data_filename is not None:
@@ -2925,7 +2925,7 @@ class DeepFinder(Finder):
         # log measurements - this is the only testing action
         log.info('Test set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)'.format(
                 test_loss, correct, len(test_loader.dataset),
-                100. * correct / len(test_loader.dataset)))
+                100 * correct / len(test_loader.dataset)))
 
     def log(self, lvl):
         """

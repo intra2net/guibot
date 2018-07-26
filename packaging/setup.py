@@ -9,18 +9,16 @@ with open(path.join(p, '../README.md')) as f:
 
 setup(
     name='guibot',
-    version='0.21.1',
+    version='0.30.1',
     description='GUI automation tool',
     long_description=README,
     long_description_content_type='text/markdown',
 
     install_requires=[
         "Pillow",
-        'numpy',
-        'opencv-contrib-python',
     ],
     tests_require=[
-        'PyQt4',
+        'PyQt5',
     ],
 
     url='http://guibot.org',

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -16,12 +16,12 @@
 
 import os
 import unittest
-import common_test
-
 from tempfile import NamedTemporaryFile
-from target import Image
-from finder import Finder, CVParameter
-from errors import *
+
+import common_test
+from guibot.target import Image
+from guibot.finder import Finder, CVParameter
+from guibot.errors import *
 
 
 class TargetTest(unittest.TestCase):
@@ -104,7 +104,6 @@ class TargetTest(unittest.TestCase):
             image.use_own_settings = True
             returned_image = image.save(f.name)
             loaded_image = Image(f.name)
-            # print "%s.match" % f.name[:-4]
             os.unlink("%s.match" % f.name[:-4])
 
             for category in returned_image.match_settings.params.keys():

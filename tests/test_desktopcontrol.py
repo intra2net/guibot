@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -19,29 +19,33 @@ import stat
 import shutil
 import unittest
 import subprocess
-import common_test
 
+import common_test
 # TODO: these tests are done only on the simplest backend
 # since we need special setup for the rest
-from desktopcontrol import *
-from region import Region
-from config import GlobalConfig
+from guibot.desktopcontrol import *
+from guibot.region import Region
+from guibot.config import GlobalConfig
 
 
+@unittest.skipIf(os.environ.get('DISABLE_VNC', "0") == "1" or
+                 os.environ.get('DISABLE_AUTOPY', "0") == "1",
+                 "AutoPy or VNC disabled")
 class DesktopControlTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
         self.vncpass = "test1234"
 
-        passfile = "/root/.vnc/passwd"
+        os.environ["USER"] = os.environ.get("USER", "root")
+        os.environ["HOME"] = os.environ.get("HOME", "/root")
+
+        passfile = os.path.join(os.environ["HOME"], ".vnc/passwd")
         if not os.path.isdir(os.path.dirname(passfile)):
             os.mkdir(os.path.dirname(passfile))
-        os.environ["USER"] = "root"
         with open(passfile, "wb") as f:
-            # NOTE: python 3 is far friendlier with this but use this for now
             read, write = os.pipe()
-            os.write(write, self.vncpass)
+            os.write(write, self.vncpass.encode())
             os.close(write)
             p = subprocess.check_output(("vncpasswd", "-f"),
                                         stdin=read)
@@ -58,8 +62,9 @@ class DesktopControlTest(unittest.TestCase):
             subprocess.check_call(("vncserver", "-kill", ":0"),
                                   stdout=devnull, stderr=devnull)
 
-        if os.path.exists("/root/.vnc"):
-            shutil.rmtree("/root/.vnc")
+        vnc_config_dir = os.path.join(os.environ["HOME"], ".vnc")
+        if os.path.exists(vnc_config_dir):
+            shutil.rmtree(vnc_config_dir)
 
     def setUp(self):
         self.backends = [AutoPyDesktopControl(), XDoToolDesktopControl()]
@@ -86,19 +91,19 @@ class DesktopControlTest(unittest.TestCase):
 
             # Fullscreen capture
             captured = desktop.capture_screen()
-            self.assertEquals(screen_width, captured.width)
-            self.assertEquals(screen_height, captured.height)
+            self.assertEqual(screen_width, captured.width)
+            self.assertEqual(screen_height, captured.height)
 
             # Capture with coordiantes
-            captured = desktop.capture_screen(20, 10, screen_width / 2, screen_height / 2)
-            self.assertEquals(screen_width / 2, captured.width)
-            self.assertEquals(screen_height / 2, captured.height)
+            captured = desktop.capture_screen(20, 10, int(screen_width/2), int(screen_height/2))
+            self.assertEqual(int(screen_width/2), captured.width)
+            self.assertEqual(int(screen_height/2), captured.height)
 
             # Capture with Region
             region = Region(10, 10, 320, 200)
             captured = desktop.capture_screen(region)
-            self.assertEquals(320, captured.width)
-            self.assertEquals(200, captured.height)
+            self.assertEqual(320, captured.width)
+            self.assertEqual(200, captured.height)
 
     def test_capture_clipping(self):
         for desktop in self.backends:
@@ -106,12 +111,12 @@ class DesktopControlTest(unittest.TestCase):
             screen_height = desktop.height
 
             captured = desktop.capture_screen(0, 0, 80000, 40000)
-            self.assertEquals(screen_width, captured.width)
-            self.assertEquals(screen_height, captured.height)
+            self.assertEqual(screen_width, captured.width)
+            self.assertEqual(screen_height, captured.height)
 
             captured = desktop.capture_screen(60000, 50000, 80000, 40000)
-            self.assertEquals(1, captured.width)
-            self.assertEquals(1, captured.height)
+            self.assertEqual(1, captured.width)
+            self.assertEqual(1, captured.height)
 
 
 if __name__ == '__main__':

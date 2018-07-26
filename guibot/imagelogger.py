@@ -17,7 +17,7 @@ import os
 import shutil
 import PIL.Image
 
-from config import GlobalConfig
+from .config import GlobalConfig
 
 
 class ImageLogger(object):

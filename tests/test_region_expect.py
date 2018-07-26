@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -19,18 +19,18 @@ import unittest
 import time
 import shutil
 import subprocess
-import common_test
 
-from config import GlobalConfig
-from path import Path
-from location import Location
-from region import Region
-from match import Match
-from target import Image, Text
-from inputmap import Key
-from finder import *
-from desktopcontrol import *
-from errors import *
+import common_test
+from guibot.config import GlobalConfig
+from guibot.path import Path
+from guibot.location import Location
+from guibot.region import Region
+from guibot.match import Match
+from guibot.target import Image, Text
+from guibot.inputmap import Key
+from guibot.finder import *
+from guibot.desktopcontrol import *
+from guibot.errors import *
 
 
 class RegionTest(unittest.TestCase):
@@ -40,7 +40,7 @@ class RegionTest(unittest.TestCase):
         self.path = Path()
         self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
-        self.script_img = os.path.join(common_test.unittest_dir, 'qt4_image.py')
+        self.script_img = os.path.join(common_test.unittest_dir, 'qt5_image.py')
 
         # preserve values of static attributes
         self.prev_loglevel = GlobalConfig.image_logging_level
@@ -75,7 +75,7 @@ class RegionTest(unittest.TestCase):
 
     def show_image(self, filename):
         filename = self.path.search(filename)
-        self.child_img = subprocess.Popen(['python', self.script_img, filename])
+        self.child_img = subprocess.Popen(['python3', self.script_img, filename])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 
@@ -102,6 +102,7 @@ class RegionTest(unittest.TestCase):
 
             time.sleep(0.2)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_initialize(self):
         screen_width = AutoPyDesktopControl().width
         screen_height = AutoPyDesktopControl().height
@@ -117,6 +118,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(300, region.width)
         self.assertEqual(200, region.height)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find(self):
         self.show_image('all_shapes')
 
@@ -140,6 +142,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(last_match.width, match.width)
         self.assertEqual(last_match.height, match.height)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find_center_offset(self):
         self.show_image('all_shapes.png')
 
@@ -155,19 +158,21 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(match.target.x - 50, match_offset.target.x)
         self.assertEqual(match.target.y - 30, match_offset.target.y)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_find_error(self):
         try:
             self.region.find(Image('shape_blue_circle.png'), 0)
             self.fail('exception was not thrown')
-        except FindError, e:
+        except FindError as e:
             pass
 
         try:
             self.region.find_all(Image('shape_blue_circle.png'), 0)
             self.fail('exception was not thrown')
-        except FindError, e:
+        except FindError as e:
             pass
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find_all(self):
         self.show_image('all_shapes')
 
@@ -220,6 +225,7 @@ class RegionTest(unittest.TestCase):
             self.assertAlmostEqual(70, match.width, delta=5)
             self.assertAlmostEqual(50, match.height, delta=5)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_find_zero_matches(self):
         self.show_image('all_shapes')
 
@@ -231,9 +237,9 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
         self.close_windows()
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_find_guess_target(self):
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -291,6 +297,7 @@ class RegionTest(unittest.TestCase):
         except FindError as e:
             pass
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_sample(self):
         self.show_image('all_shapes')
 
@@ -306,6 +313,7 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_exists(self):
         self.show_image('all_shapes')
 
@@ -317,6 +325,7 @@ class RegionTest(unittest.TestCase):
         match = self.region.exists(Image('shape_blue_circle'))
         self.assertEqual(None, match)
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_wait(self):
         self.show_image('all_shapes')
 
@@ -325,6 +334,7 @@ class RegionTest(unittest.TestCase):
 
         self.close_windows()
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_wait_vanish(self):
         self.show_image('all_shapes')
 

@@ -14,7 +14,7 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from errors import *
+from .errors import *
 
 
 import logging

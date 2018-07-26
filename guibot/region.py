@@ -17,13 +17,13 @@ import time
 import os
 
 # interconnected classes - carefully avoid circular reference
-from config import GlobalConfig
-from location import Location
-from imagelogger import ImageLogger
-from errors import *
-from target import *
-from finder import *
-from desktopcontrol import *
+from .config import GlobalConfig
+from .location import Location
+from .imagelogger import ImageLogger
+from .errors import *
+from .target import *
+from .finder import *
+from .desktopcontrol import *
 
 import logging
 log = logging.getLogger('guibot.region')
@@ -190,8 +190,8 @@ class Region(object):
         :returns: center of the region
         :rtype: :py:class:`location.Location`
         """
-        xpos = self._xpos + self._width / 2
-        ypos = self._ypos + self._height / 2
+        xpos = self._xpos + int(self._width / 2)
+        ypos = self._ypos + int(self._height / 2)
 
         return Location(xpos, ypos)
     center = property(fget=get_center)
@@ -393,7 +393,7 @@ class Region(object):
         This method is the main entrance to all our target finding capabilities
         and is the milestone for all target expect methods.
         """
-        if isinstance(target, basestring):
+        if isinstance(target, str):
             target = self._target_from_string(target)
         log.debug("Looking for target %s", target)
         cv_backend = self._determine_cv_backend(target)
@@ -405,7 +405,7 @@ class Region(object):
 
             found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
-                from match import Match
+                from .match import Match
                 match = found_pics[0]
                 self._last_match = Match(match.x+self.x, match.y+self.y,
                                          match.width, match.height, match.dx, match.dy,
@@ -442,7 +442,7 @@ class Region(object):
 
         This method is similar the one above but allows for more than one match.
         """
-        if isinstance(target, basestring):
+        if isinstance(target, str):
             target = self._target_from_string(target)
         log.debug("Looking for target %s", target)
         cv_backend = self._determine_cv_backend(target)
@@ -456,7 +456,7 @@ class Region(object):
 
             found_pics = cv_backend.find(target, screen_capture)
             if len(found_pics) > 0:
-                from match import Match
+                from .match import Match
                 for match in found_pics:
                     last_matches.append(Match(match.x+self.x, match.y+self.y,
                                               match.width, match.height, match.dx, match.dy,
@@ -525,7 +525,7 @@ class Region(object):
             will return zero similarity (similarly to the target logging case).
         """
         log.debug("Looking for target %s", target)
-        if isinstance(target, basestring):
+        if isinstance(target, str):
             target = Image(target)
         if not target.use_own_settings:
             target.match_settings = self.cv_backend
@@ -627,7 +627,7 @@ class Region(object):
         smooth = GlobalConfig.smooth_mouse_drag
 
         # Handle Match
-        from match import Match
+        from .match import Match
         if isinstance(target_or_location, Match):
             self.dc_backend.mouse_move(target_or_location.target, smooth)
             return None
@@ -943,20 +943,7 @@ class Region(object):
         at_str = " at %s" % target_or_location if target_or_location else ""
 
         keys_list = []
-        # if not a list (i.e. if a single key)
-        if isinstance(keys, int) or isinstance(keys, basestring):
-            key = keys
-            try:
-                log.info("Pressing key '%s'%s", self.dc_backend.keymap.to_string(key), at_str)
-            # if not a special key (i.e. if a character key)
-            except KeyError:
-                if isinstance(key, int):
-                    key = str(key)
-                elif len(key) > 1:
-                    raise # a key cannot be a string (text)
-                log.info("Pressing key '%s'%s", key, at_str)
-            keys_list.append(key)
-        else:
+        if isinstance(keys, list):
             key_strings = []
             for key in keys:
                 try:
@@ -971,6 +958,19 @@ class Region(object):
             log.info("Pressing together keys '%s'%s",
                      "'+'".join(keystr for keystr in key_strings),
                      at_str)
+        else:
+            # if not a list (i.e. if a single key)
+            key = keys
+            try:
+                log.info("Pressing key '%s'%s", self.dc_backend.keymap.to_string(key), at_str)
+            # if not a special key (i.e. if a character key)
+            except KeyError:
+                if isinstance(key, int):
+                    key = str(key)
+                elif len(key) > 1:
+                    raise # only left keys are chars
+                log.info("Pressing key '%s'%s", key, at_str)
+            keys_list.append(key)
         return keys_list
 
     def type_text(self, text, modifiers=None):
@@ -998,7 +998,7 @@ class Region(object):
         text_list = self._parse_text(text)
         time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
-            if isinstance(modifiers, basestring):
+            if isinstance(modifiers, str):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
         self.dc_backend.keys_type(text_list, modifiers)
@@ -1018,7 +1018,7 @@ class Region(object):
             match = self.click(target_or_location)
         time.sleep(GlobalConfig.delay_before_keys)
         if modifiers != None:
-            if isinstance(modifiers, basestring):
+            if isinstance(modifiers, str):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
         self.dc_backend.keys_type(text_list, modifiers)
@@ -1028,12 +1028,12 @@ class Region(object):
         at_str = " at %s" % target_or_location if target_or_location else ""
 
         text_list = []
-        if isinstance(text, basestring):
+        if isinstance(text, str):
             log.info("Typing text '%s'%s", text, at_str)
             text_list = [text]
         else:
             for part in text:
-                if isinstance(part, basestring):
+                if isinstance(part, str):
                     log.info("Typing text '%s'%s", part, at_str)
                     text_list.append(part)
                 elif isinstance(part, int):
@@ -1076,7 +1076,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not text:
             return
-        from match import Match
+        from .match import Match
         if isinstance(anchor, Match):
             start_loc = anchor.target
         elif isinstance(anchor, Location):
@@ -1086,7 +1086,7 @@ class Region(object):
         loc = Location(start_loc.x + dx, start_loc.y + dy)
         self.multi_click(loc, count=mark_clicks)
 
-        if isinstance(text, basestring):
+        if isinstance(text, str):
             text = [text]
         if del_flag:
             text.insert(0, self.DELETE)
@@ -1096,7 +1096,7 @@ class Region(object):
             text.append(self.ESC)
         for part in text:
             try:
-                key_str = self.dc_backend.keymap.to_string(part)
+                _key_str = self.dc_backend.keymap.to_string(part)
                 self.press_keys(part)
             except KeyError:
                 self.type_text(part)
@@ -1135,7 +1135,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not image_or_index:
             return
-        from match import Match
+        from .match import Match
         if isinstance(anchor, Match):
             start_loc = anchor.target
         elif isinstance(anchor, Location):
@@ -1169,8 +1169,8 @@ class Region(object):
             # which is 0, implying empty space repeated in the dropdown box and the
             # list, therefore a total of 2 option heights spanning the haystack height.
             # The haystack y displacement relative to 'loc' is then 1/2*1/2*dh
-            dropdown_haystack = Region(xpos=loc.x - dw / 2,
-                                       ypos=loc.y - dh / 4,
+            dropdown_haystack = Region(xpos=int(loc.x - dw / 2),
+                                       ypos=int(loc.y - dh / 4),
                                        width=dw, height=dh,
                                        dc=self.dc_backend, cv=self.cv_backend)
             dropdown_haystack.click(image_or_index)

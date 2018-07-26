@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # Copyright 2013-2018 Intranet AG and contributors
 #
 # guibot is free software: you can redistribute it and/or modify
@@ -20,12 +20,12 @@ import unittest
 import shutil
 
 import common_test
-from config import GlobalConfig
-from path import Path
-from imagelogger import ImageLogger
-from target import Image, Text, Pattern, Chain
-from errors import *
-from finder import *
+from guibot.config import GlobalConfig
+from guibot.path import Path
+from guibot.imagelogger import ImageLogger
+from guibot.target import Image, Text, Pattern, Chain
+from guibot.errors import *
+from guibot.finder import *
 
 
 class FinderTest(unittest.TestCase):
@@ -65,19 +65,19 @@ class FinderTest(unittest.TestCase):
 
     def _verify_and_get_dumps(self, count, index=1, multistep=False):
         dumps = os.listdir(self.logpath)
-        self.assertEquals(len(dumps), count)
+        self.assertEqual(len(dumps), count)
         steps = self._get_matches_in('imglog\d\d\d\d-.+', dumps)
-        self.assertEquals(len(steps), len(dumps))
+        self.assertEqual(len(steps), len(dumps))
         first_steps = self._get_matches_in('imglog%04d-.+' % index, dumps)
         if not multistep:
-            self.assertEquals(len(first_steps), len(steps))
+            self.assertEqual(len(first_steps), len(steps))
         else:
             self.assertLessEqual(len(first_steps), len(steps))
         return dumps
 
     def _verify_dumped_images(self, needle_name, haystack_name, dumps, backend):
         needles = self._get_matches_in(".*needle.*", dumps)
-        self.assertEquals(len(needles), 2)
+        self.assertEqual(len(needles), 2)
         target, config = reversed(needles) if needles[0].endswith(".match") else needles
         self.assertIn("1needle", target)
         self.assertIn("1needle", config)
@@ -91,7 +91,7 @@ class FinderTest(unittest.TestCase):
             self.assertIn("[find]\nbackend = %s" % backend, match_settings.read())
 
         haystacks = self._get_matches_in('.*haystack.*', dumps)
-        self.assertEquals(len(haystacks), 1)
+        self.assertEqual(len(haystacks), 1)
         haystack = haystacks[0]
         self.assertIn('2haystack', haystack)
         self.assertIn(haystack_name, haystack)
@@ -99,13 +99,13 @@ class FinderTest(unittest.TestCase):
 
     def _verify_single_hotmap(self, dumps, backend):
         hotmaps = self._get_matches_in('.*hotmap.*', dumps)
-        self.assertEquals(len(hotmaps), 1)
+        self.assertEqual(len(hotmaps), 1)
         self.assertIn('3hotmap', hotmaps[0])
         # report achieved similarity in the end of the filename
-        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_configure_backend(self):
         finder = Finder()
         finder.configure_backend("feature")
@@ -124,8 +124,8 @@ class FinderTest(unittest.TestCase):
         finder.configure()
         # test that a parameter of ORB (the current and default detector)
         # is present in parameters while a parameter of KAZE is not present
-        self.assertTrue(finder.params["fdetect"].has_key("MaxFeatures"))
-        self.assertFalse(finder.params["fdetect"].has_key("NOctaves"))
+        self.assertIn("MaxFeatures", finder.params["fdetect"])
+        self.assertNotIn("NOctaves", finder.params["fdetect"])
 
         finder = TemplateFeatureFinder()
         finder.configure(feature_detect="KAZE", feature_extract="ORB", feature_match="BruteForce")
@@ -138,8 +138,8 @@ class FinderTest(unittest.TestCase):
 
         # test that a parameter of KAZE (the new detector) is now present
         # while the parameter of ORB is not present anymore
-        self.assertTrue(finder.params["fdetect"].has_key("NOctaves"))
-        self.assertFalse(finder.params["fdetect"].has_key("MaxFeatures"))
+        self.assertIn("NOctaves", finder.params["fdetect"])
+        self.assertNotIn("MaxFeatures", finder.params["fdetect"])
 
         # check consistency of all unchanged options
         finder.configure_backend("ccorr_normed", "template")
@@ -159,6 +159,7 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(finder.params["fextract"]["backend"], "ORB")
         self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce-Hamming")
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_autopy_same(self):
         finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -166,9 +167,8 @@ class FinderTest(unittest.TestCase):
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        # AutoPy returns +1 pixel for both axes
-        self.assertEqual(matches[0].x, 105)
-        self.assertEqual(matches[0].y, 11)
+        self.assertEqual(matches[0].x, 104)
+        self.assertEqual(matches[0].y, 10)
         self.assertEqual(matches[0].width, 165)
         self.assertEqual(matches[0].height, 151)
 
@@ -177,6 +177,7 @@ class FinderTest(unittest.TestCase):
         self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "autopy")
         self._verify_single_hotmap(dumps, "autopy")
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_autopy_nomatch(self):
         finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -190,7 +191,7 @@ class FinderTest(unittest.TestCase):
         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "autopy")
         self._verify_single_hotmap(dumps, "autopy")
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_contour_same(self):
         finder = ContourFinder()
         # shape matching is not perfect
@@ -218,10 +219,10 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(6, i)
                 self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "contour")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 3)
+                self.assertEqual(len(hotmaps), 3)
                 self.assertIn('3hotmap', hotmaps[0])
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                 self.assertIn('3hotmap-1threshold', hotmaps[1])
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
@@ -231,7 +232,7 @@ class FinderTest(unittest.TestCase):
                 shutil.rmtree(self.logpath)
                 i += 1
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_contour_nomatch(self):
         finder = ContourFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -251,10 +252,10 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(6, i)
                 self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "contour")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 3)
+                self.assertEqual(len(hotmaps), 3)
                 self.assertIn('3hotmap', hotmaps[0])
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                 self.assertIn('3hotmap-1threshold', hotmaps[1])
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
@@ -264,6 +265,7 @@ class FinderTest(unittest.TestCase):
                 shutil.rmtree(self.logpath)
                 i += 1
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_template_same(self):
         finder = TemplateFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -287,19 +289,20 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(5, i)
             self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "template")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 2)
+            self.assertEqual(len(hotmaps), 2)
             for j, hotmap in enumerate(hotmaps):
                 if j == 0:
                     self.assertIn('3hotmap', hotmap)
                 else:
                     self.assertIn('3hotmap-1template', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
             i += 1
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_template_nomatch(self):
         finder = TemplateFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -319,19 +322,20 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(5, i)
             self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "template")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 2)
+            self.assertEqual(len(hotmaps), 2)
             for j, hotmap in enumerate(hotmaps):
                 if j == 0:
                     self.assertIn('3hotmap', hotmap)
                 else:
                     self.assertIn('3hotmap-1template', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
             i += 1
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_template_nocolor(self):
         finder = TemplateFinder()
         # template matching without color is not perfect
@@ -349,6 +353,7 @@ class FinderTest(unittest.TestCase):
             self.assertEqual(matches[0].width, 165)
             self.assertEqual(matches[0].height, 151)
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_template_multiple(self):
         finder = TemplateFinder()
         finder.find(Image('shape_red_box'), Image('all_shapes'))
@@ -357,18 +362,18 @@ class FinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(7)
         self._verify_dumped_images('shape_red_box', 'all_shapes', dumps, "template")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEquals(len(hotmaps), 4)
-        self.assertEquals(len(self._get_matches_in('.*3hotmap.*', hotmaps)), 4)
+        self.assertEqual(len(hotmaps), 4)
+        self.assertEqual(len(self._get_matches_in('.*3hotmap.*', hotmaps)), 4)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
             else:
                 self.assertIn('3hotmap-%stemplate' % i, hotmap)
             # report achieved similarity in the end of the filename
-            self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            self.assertRegex(hotmap, ".*-\d\.\d+.*")
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_feature_same(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -400,10 +405,10 @@ class FinderTest(unittest.TestCase):
                         dumps = self._verify_and_get_dumps(7, i)
                         self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "feature")
                         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                        self.assertEquals(len(hotmaps), 4)
+                        self.assertEqual(len(hotmaps), 4)
                         self.assertIn('3hotmap', hotmaps[0])
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                         self.assertIn('3hotmap-1detect', hotmaps[1])
                         self.assertIn('3hotmap-2match', hotmaps[2])
@@ -412,7 +417,7 @@ class FinderTest(unittest.TestCase):
                         shutil.rmtree(self.logpath)
                         i += 1
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_feature_nomatch(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -440,10 +445,10 @@ class FinderTest(unittest.TestCase):
                         dumps = self._verify_and_get_dumps(7, i)
                         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "feature")
                         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                        self.assertEquals(len(hotmaps), 4)
+                        self.assertEqual(len(hotmaps), 4)
                         self.assertIn('3hotmap', hotmaps[0])
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
                         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                         self.assertIn('3hotmap-1detect', hotmaps[1])
                         self.assertIn('3hotmap-2match', hotmaps[2])
@@ -452,7 +457,7 @@ class FinderTest(unittest.TestCase):
                         shutil.rmtree(self.logpath)
                         i += 1
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_feature_scaling(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -463,7 +468,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 100, delta=10)
         self.assertAlmostEqual(matches[0].height, 150, delta=10)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_feature_rotation(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.45
@@ -474,7 +479,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 270, delta=10)
         self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_feature_viewport(self):
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.4
@@ -485,6 +490,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 160, delta=10)
         self.assertAlmostEqual(matches[0].height, 235, delta=10)
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_cascade_same(self):
         finder = CascadeFinder()
         # no similarty parameter is supported - this is a binary match case
@@ -503,6 +509,7 @@ class FinderTest(unittest.TestCase):
         self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "cascade")
         self._verify_single_hotmap(dumps, "cascade")
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_cascade_nomatch(self):
         finder = CascadeFinder()
         # no similarty parameter is supported - this is a binary match case
@@ -517,6 +524,7 @@ class FinderTest(unittest.TestCase):
         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "cascade")
         self._verify_single_hotmap(dumps, "cascade")
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_cascade_scaling(self):
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_scaled'))
@@ -528,6 +536,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 165, delta=5)
         self.assertAlmostEqual(matches[0].height, 165, delta=5)
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_cascade_rotation(self):
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_rotated'))
@@ -538,7 +547,7 @@ class FinderTest(unittest.TestCase):
         #self.assertAlmostEqual(matches[0].width, 270, delta=10)
         #self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_cascade_viewport(self):
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_viewport'))
@@ -550,9 +559,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 250, delta=10)
         self.assertAlmostEqual(matches[0].height, 250, delta=10)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_text_same(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -592,7 +601,7 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(7, i)
                 self._verify_dumped_images('Text', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -604,15 +613,15 @@ class FinderTest(unittest.TestCase):
                         self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
                     if j == 3 or j == 4:
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                        self.assertRegex(hotmap, ".*-\d\.\d+.*")
                     self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
                 shutil.rmtree(self.logpath)
                 i += 1
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_text_nomatch(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -640,7 +649,7 @@ class FinderTest(unittest.TestCase):
                 dumps = self._verify_and_get_dumps(7, i)
                 self._verify_dumped_images('Nothing', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEquals(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -652,15 +661,15 @@ class FinderTest(unittest.TestCase):
                         self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
                     if j == 3 or j == 4:
                         # report achieved similarity in the end of the filename
-                        self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                        self.assertRegex(hotmap, ".*-\d\.\d+.*")
                     self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
                 shutil.rmtree(self.logpath)
                 i += 1
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_text_basic(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.7
@@ -672,9 +681,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 110, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_text_bold(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.8
@@ -685,9 +694,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 100, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_text_italic(self):
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.7
@@ -698,9 +707,9 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 120, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_text_larger(self):
         finder = TextFinder()
         # TODO: this is too low to be a match (due to text detection)
@@ -713,9 +722,9 @@ class FinderTest(unittest.TestCase):
         #self.assertAlmostEqual(matches[0].width, 100, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+                     "Disabled OpenCV or OCR")
     def test_text_font(self):
         finder = TextFinder()
         # TODO: this is too low to be a match
@@ -727,7 +736,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].width, 120, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_tempfeat_same(self):
         finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -748,24 +757,24 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(6, i)
             self._verify_dumped_images('n_ibs', 'n_ibs', dumps, "tempfeat")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 3)
+            self.assertEqual(len(hotmaps), 3)
             for i, hotmap in enumerate(hotmaps):
                 if i == 0:
                     self.assertIn('3hotmap', hotmap)
                     self.assertNotIn('template', hotmap)
                     self.assertNotIn('feature', hotmap)
                 elif i % 2 == 1:
-                    self.assertIn('%sfeature' % ((i - 1) / 2 + 1), hotmap)
+                    self.assertIn('%ifeature' % int((i - 1) / 2 + 1), hotmap)
                 else:
-                    self.assertIn('%stemplate' % ((i - 1) / 2 + 1), hotmap)
+                    self.assertIn('%itemplate' % int((i - 1) / 2 + 1), hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
             i += 1
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1", "Old OpenCV version")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_tempfeat_nomatch(self):
         finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -782,18 +791,19 @@ class FinderTest(unittest.TestCase):
             dumps = self._verify_and_get_dumps(4, i)
             self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "tempfeat")
             hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-            self.assertEquals(len(hotmaps), 1)
+            self.assertEqual(len(hotmaps), 1)
             hotmap = hotmaps[0]
             self.assertIn('3hotmap', hotmap)
             self.assertNotIn('template', hotmap)
             self.assertNotIn('feature', hotmap)
             # report achieved similarity in the end of the filename
-            self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+            self.assertRegex(hotmap, ".*-\d\.\d+.*")
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
             i += 1
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_same(self):
         finder = DeepFinder()
         # shape matching is not perfect
@@ -806,23 +816,24 @@ class FinderTest(unittest.TestCase):
         # TODO: need more precision to get y=10
         self.assertEqual(matches[0].y, 40)
         # based on a 15x15 output layer (network configuration)
-        self.assertEqual(matches[0].width, Image('all_shapes').width/15)
-        self.assertEqual(matches[0].height, Image('all_shapes').height/15)
+        self.assertEqual(matches[0].width, int(Image('all_shapes').width/15))
+        self.assertEqual(matches[0].height, int(Image('all_shapes').height/15))
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(5)
         self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEquals(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 2)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
                 self.assertIn('%sactivity' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_nomatch(self):
         finder = DeepFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -835,16 +846,17 @@ class FinderTest(unittest.TestCase):
         dumps = self._verify_and_get_dumps(5)
         self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEquals(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 2)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegexpMatches(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
                 self.assertIn('%sactivity' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_same(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -854,18 +866,18 @@ class FinderTest(unittest.TestCase):
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        # AutoPy returns +1 pixel for both axes
-        self.assertEqual(matches[0].x, 105)
-        self.assertEqual(matches[0].y, 11)
+        self.assertEqual(matches[0].x, 104)
+        self.assertEqual(matches[0].y, 10)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(4)
         self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "autopy")
         self._verify_single_hotmap(dumps, "autopy")
 
-    @unittest.skipIf(os.environ.get('LEGACY_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Old OpenCV version or disabled OCR functionality")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_OCR', "0") == "1" or
+                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
+                     "Disabled OpenCV or OCR or AutoPy")
     def test_hybrid_nomatch(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -879,6 +891,7 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names (4+4+7)
         dumps = self._verify_and_get_dumps(15, multistep=True)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_fallback(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -888,13 +901,13 @@ class FinderTest(unittest.TestCase):
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        # AutoPy returns +1 pixel for both axes
-        self.assertEqual(matches[0].x, 105)
-        self.assertEqual(matches[0].y, 11)
+        self.assertEqual(matches[0].x, 104)
+        self.assertEqual(matches[0].y, 10)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(8, multistep=True)
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_multiconfig(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")

@@ -13,10 +13,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
-from region import Region
-from location import Location
-from desktopcontrol import DesktopControl
-from finder import Finder
+from .region import Region
+from .location import Location
+from .desktopcontrol import DesktopControl
+from .finder import Finder
 
 
 class Match(Region):

@@ -18,11 +18,11 @@ import os
 import re
 import PIL.Image
 
-from config import GlobalConfig
-from location import Location
-from path import Path
-from finder import *
-from errors import *
+from .config import GlobalConfig
+from .location import Location
+from .path import Path
+from .finder import *
+from .errors import *
 
 
 class Target(object):
@@ -465,8 +465,8 @@ class Pattern(Target):
         :param str filename: name for the target file
         """
         super(Pattern, self).save(filename)
-        with open(filename, "w") as fo:
-            with open(self.data_file, "r") as fi:
+        with open(filename, "wb") as fo:
+            with open(self.data_file, "rb") as fi:
                 fo.write(fi.read())
 
 
