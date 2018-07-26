@@ -469,9 +469,13 @@ class Region(object):
                     return last_matches
                 else:
                     if GlobalConfig.save_needle_on_error:
-                        log.info("Dumping the haystack at /tmp/guibot_last_finderror.png")
-                        screen_capture.save('/tmp/guibot_last_finderror.png')
-                        target.save('/tmp/guibot_last_finderror_needle.png')
+                        if not os.path.exists(ImageLogger.logging_destination):
+                            os.mkdir(ImageLogger.logging_destination)
+                        dump_path = GlobalConfig.image_logging_destination
+                        hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
+                        ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
+                        screen_capture.save(hdump_path)
+                        target.save(ndump_path)
                     raise FindError(target)
 
             else:
