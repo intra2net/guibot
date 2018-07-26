@@ -174,6 +174,6 @@ def fill_at(anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_clicks=1):
     return guibot.fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_clicks)
 
 
-def select_at(anchor, image_or_index, dx, dy, dw=0, dh=0, mark_clicks=1):
+def select_at(anchor, image_or_index, dx, dy, dw=0, dh=0, ret_flag=True, mark_clicks=1):
     check_initialized()
-    return guibot.select_at(anchor, image_or_index, dx, dy, dw, dh, mark_clicks)
+    return guibot.select_at(anchor, image_or_index, dx, dy, dw, dh, ret_flag, mark_clicks)

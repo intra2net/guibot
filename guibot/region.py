@@ -1104,7 +1104,7 @@ class Region(object):
         return self
 
     def select_at(self, anchor, image_or_index, dx, dy,
-                  dw=0, dh=0,
+                  dw=0, dh=0, ret_flag=True,
                   mark_clicks=1):
         """
         Select an option at a dropdown list using either an integer index
@@ -1118,6 +1118,7 @@ class Region(object):
         :param int dy: displacement from the anchor in the y direction
         :param int dw: width to add to the displacement for an image search area
         :param int dh: height to add to the displacement for an image search area
+        :param bool ret_flag: whether to press Enter after selecting
         :param int mark_clicks: 0, 1, 2, ... clicks to highlight previous text
         :returns: self
         :rtype: :py:class:`Region`
@@ -1152,7 +1153,8 @@ class Region(object):
             for _ in range(abs(image_or_index)):
                 # TODO: multiple DOWN in a single press call doesn't work
                 self.press_keys([move_key])
-            self.press_keys([self.ENTER])
+            if ret_flag:
+                self.press_keys([self.ENTER])
         else:
             # NOTE: By definition, the dropdown list will be below and centered
             # at the clicking location that we obtain from the anchor image.
