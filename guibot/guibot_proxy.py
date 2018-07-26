@@ -84,9 +84,20 @@ class GuiBotProxy(GuiBot):
             self._pyroDaemon.register(obj)
         return obj
 
-    def get_mouse_location(self):
-        # override a property
-        return self._proxify(super(GuiBotProxy, self).get_mouse_location())
+    def nearby(self, rrange=50):
+        return self._proxify(super(GuiBotProxy, self).nearby(rrange))
+
+    def above(self, rrange=0):
+        return self._proxify(super(GuiBotProxy, self).above(rrange))
+
+    def below(self, rrange=0):
+        return self._proxify(super(GuiBotProxy, self).below(rrange))
+
+    def left(self, rrange=0):
+        return self._proxify(super(GuiBotProxy, self).left(rrange))
+
+    def right(self, rrange=0):
+        return self._proxify(super(GuiBotProxy, self).right(rrange))
 
     def find(self, target, timeout=10):
         return self._proxify(super(GuiBotProxy, self).find(target, timeout))
