@@ -30,8 +30,8 @@ cp -r "$ROOT/guibot" "$ROOT/$NAME-$VERSION"
 mkdir -p ~/rpmbuild/SOURCES
 tar czvf ~/rpmbuild/SOURCES/$NAME-$VERSION.tar.gz -C "$ROOT/" --exclude=.* $NAME-$VERSION
 rpmbuild -ba "$ROOT/$NAME-$VERSION/packaging/guibot.spec" --with opencv
-cp ~/rpmbuild/RPMS/x86_64/$NAME-$VERSION*.rpm "$ROOT/guibot"
-dnf -y install "$ROOT/guibot/"$NAME-$VERSION*.rpm
+cp ~/rpmbuild/RPMS/x86_64/python3-$NAME-$VERSION*.rpm "$ROOT/guibot"
+dnf -y install "$ROOT/guibot/python3-"$NAME-$VERSION*.rpm
 rm -fr "$ROOT/$NAME-$VERSION"
 
 # virtual display

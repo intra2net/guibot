@@ -2,7 +2,7 @@
 # "--with opencv" command line switch.
 %bcond_with opencv
 
-Name:           python3-guibot
+Name:           guibot
 Version:        0.30
 Release:        1%{?dist}
 Summary:        GUI automation tool
@@ -21,6 +21,14 @@ Requires:       python3-opencv
 %endif
 
 %description
+A tool for GUI automation using a variety of computer vision and desktop control backends.
+Supported CV backends are based on OpenCV, PyTorch, and autopy, and supported DC backends
+on autopy, vncdotool, and qemu.
+
+%package -n python3-guibot
+Summary:        GUI automation tool
+Group:          Development/Tools
+%description -n python3-guibot
 A tool for GUI automation using a variety of computer vision and desktop control backends.
 Supported CV backends are based on OpenCV, PyTorch, and autopy, and supported DC backends
 on autopy, vncdotool, and qemu.
@@ -65,7 +73,7 @@ rm -rf %{buildroot}
 # TODO: add unit tests here
 
 
-%files
+%files -n python3-guibot
 %defattr(-,root,root,-)
 %license LICENSE
 %doc docs/api docs/tutorials docs/examples
