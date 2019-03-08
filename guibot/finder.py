@@ -955,7 +955,7 @@ class TemplateFinder(Finder):
         """
         # sanity check: needle size must be smaller than haystack
         if haystack.width < needle.width or haystack.height < needle.height:
-            log.warning("The size of the searched image (%sx%s) is smaller than its region (%sx%s)",
+            log.warning("The size of the searched image (%sx%s) does not fit the search region (%sx%s)",
                         needle.width, needle.height, haystack.width, haystack.height)
             return None
 
