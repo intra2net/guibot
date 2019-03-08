@@ -353,6 +353,9 @@ texinfo_documents = [
 #
 # texinfo_no_detailmenu = False
 
+
+# -- Customization on methods to display ----------------------------------
+
 # Show doc of class AND of constructor
 autoclass_content = 'class'  # 'both' not needed if special-members is used
                              # as default flag
