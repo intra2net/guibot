@@ -907,7 +907,9 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(8, multistep=True)
 
-    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
+                     "Disabled OpenCV or AutoPy")
     def test_hybrid_multiconfig(self):
         finder = HybridFinder()
         finder.configure_backend("autopy")
