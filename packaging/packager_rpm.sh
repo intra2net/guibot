@@ -11,7 +11,7 @@ dnf -y install python3-pillow
 # contour, template, feature, cascade, text matching
 dnf -y install python3-numpy python3-opencv
 # text matching
-# TODO: current cv2.text module is either missing of compatible with Tesseract 3 (we use 4)
+# TODO: current cv2.text module is either missing or compatible with Tesseract 3 (we use 4)
 export DISABLE_OCR=1
 dnf -y install tesseract
 # desktop control
@@ -22,6 +22,10 @@ dnf -y install tigervnc-server
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel redhat-rpm-config
 pip3 install autopy==1.1.1
 pip3 install torch==0.4.1 torchvision==0.2.1
+if [[ $version == "29" ]]; then
+    # TODO: on F29 with 0.4.1 we get RuntimeError: PyTorch was compiled without NumPy support
+    export DISABLE_PYTORCH=1
+fi
 pip3 install vncdotool==0.12.0
 
 # rpm packaging
