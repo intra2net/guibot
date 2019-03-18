@@ -17,7 +17,7 @@ dnf -y install vnc-server
 
 # pip dependencies (not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel redhat-rpm-config
-pip3 install autopy==1.0.1
+pip3 install autopy==1.1.1
 pip3 install torch==0.4.0 torchvision==0.2.1
 pip3 install vncdotool==0.12.0
 

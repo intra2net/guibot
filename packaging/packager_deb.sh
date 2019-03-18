@@ -17,7 +17,7 @@ apt-get -y install tightvncserver
 
 # pip dependencies (not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
-pip3 install autopy==1.0.1
+pip3 install autopy==1.1.1
 pip3 install torch==0.4.0 torchvision==0.2.1
 pip3 install vncdotool==0.12.0
 
