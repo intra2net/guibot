@@ -119,7 +119,9 @@ class RegionTest(unittest.TestCase):
         self.assertAlmostEqual(pos.x, 30, delta=1)
         self.assertAlmostEqual(pos.y, 20, delta=1)
 
-    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
     def test_hover(self):
         self.show_application()
 
@@ -169,31 +171,41 @@ class RegionTest(unittest.TestCase):
 
         self.child_app = None
 
-    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
     def test_click_expect(self):
         self.show_application()
         self.region.click_expect('shape_green_box')
         self.close_windows()
 
-    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
     def test_click_expect_different(self):
         self.show_application()
         self.region.click_expect('shape_green_box', 'shape_black_box')
         self.close_windows()
 
-    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
     def test_click_vanish(self):
         self.show_application()
         self.region.click_vanish('shape_red_box')
         self.close_windows()
 
-    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
     def test_click_vanish_different(self):
         self.show_application()
         self.region.click_vanish('shape_green_box', 'shape_red_box')
         self.close_windows()
 
-    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
     def test_click_at_index(self):
         self.show_application()
         self.region.click_at_index('shape_red_box', 0)

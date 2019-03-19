@@ -1,3 +1,10 @@
+guibot (0.31-1) unstable; urgency=medium
+
+  * Add support for Python 3.7.
+  * Update all backends to ones supporting Python 3.7.
+
+ -- Plamen Dimitrov <pdimitrov@pevogam.com>  Mon, 18 Mar 2019 23:00:00 +0800
+
 guibot (0.30-1) unstable; urgency=medium
 
   * Switch support to Python 3.

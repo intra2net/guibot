@@ -3,7 +3,7 @@
 %bcond_with opencv
 
 Name:           guibot
-Version:        0.30
+Version:        0.31
 Release:        1%{?dist}
 Summary:        GUI automation tool
 
@@ -83,6 +83,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Mar 18 2019 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.31-1
+- Add support for Python 3.7
+- Update all backends to ones supporting Python 3.7
+
 * Sat Jun 30 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.30-1
 - Switch support to Python 3
 - API version updates for AutoPy, PyTorch, VNCDoTool

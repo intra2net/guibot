@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+readonly distro="${DISTRO:-ubuntu}"
+readonly version="${VERSION:-xenial}"
+
 # dep dependencies
 apt-get update
 # python3
@@ -8,7 +11,11 @@ apt-get -y install python3 python3-coverage
 # python-imaging
 apt-get -y install python3-pil
 # contour, template, feature, cascade, text matching
-apt-get -y install python3-numpy python3-opencv
+if [[ $version == "xenial" ]]; then
+    export DISABLE_OPENCV=1
+else
+    apt-get -y install python3-numpy python3-opencv
+fi
 # text matching
 apt-get -y install tesseract-ocr
 # desktop control
@@ -17,8 +24,8 @@ apt-get -y install tightvncserver
 
 # pip dependencies (not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
-pip3 install autopy==1.0.1
-pip3 install torch==0.4.0 torchvision==0.2.1
+pip3 install autopy==1.1.1
+pip3 install torch==0.4.1 torchvision==0.2.1
 pip3 install vncdotool==0.12.0
 
 # deb packaging
