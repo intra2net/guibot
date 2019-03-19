@@ -1,9 +1,11 @@
+dist: xenial
 language: python
 python:
     - 3.4
     - 3.5
     - 3.6
-    - pypy3
+    - 3.7
+    - pypy3.5
 env:
     - INSTALL_VARIANT=pip DISABLE_OCR=1 DISABLE_PYTORCH=1
 matrix:
@@ -14,7 +16,7 @@ matrix:
       env: INSTALL_VARIANT=deb
   allow_failures:
     # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
-    - python: pypy3
+    - python: pypy3.5
 
 services:
   - docker
@@ -46,9 +48,9 @@ before_script:
   - export DISPLAY=:99.0
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1024x768x24"
   - sleep 3  # give xvfb some time to start
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then export DISABLE_AUTOPY=1; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then export DISABLE_PYQT=1; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 'pypy3' ]]; then export DISABLE_OPENCV=1; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_AUTOPY=1; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_PYQT=1; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_OPENCV=1; fi
 
 # run tests
 script:
