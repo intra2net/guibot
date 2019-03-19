@@ -11,9 +11,13 @@ env:
 matrix:
   include:
     - python: 3.6
-      env: INSTALL_VARIANT=rpm
+      env: INSTALL_VARIANT=rpm.fedora.28
+    - python: 3.7
+      env: INSTALL_VARIANT=rpm.fedora.29
     - python: 3.6
-      env: INSTALL_VARIANT=deb
+      env: INSTALL_VARIANT=deb.ubuntu.xenial
+    - python: 3.6
+      env: INSTALL_VARIANT=deb.ubuntu.bionic
   allow_failures:
     # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
     - python: pypy3.5

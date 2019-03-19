@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+readonly distro="${DISTRO:-ubuntu}"
+readonly version="${VERSION:-xenial}"
+
 # dep dependencies
 apt-get update
 # python3

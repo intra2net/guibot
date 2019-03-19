@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+readonly distro="${DISTRO:-fedora}"
+readonly version="${VERSION:-28}"
+
 # rpm dependencies
 dnf -y install python3 python3-coverage
 # python-imaging
@@ -13,7 +16,7 @@ export DISABLE_OCR=1
 dnf -y install tesseract
 # desktop control
 dnf -y install xdotool xwd ImageMagick
-dnf -y install vnc-server
+dnf -y install tigervnc-server
 
 # pip dependencies (not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel redhat-rpm-config
@@ -42,7 +45,7 @@ sleep 3  # give xvfb some time to start
 
 # unit tests
 dnf install -y python3-PyQt5
-cd /lib/python3.6/site-packages/guibot/tests
+cd /lib/python3*/site-packages/guibot/tests
 LIBPATH=".." COVERAGE="python3-coverage" sh run_tests.sh
 
 exit 0
