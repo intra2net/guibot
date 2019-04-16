@@ -35,7 +35,7 @@ NAME=$(sed -n 's/^Name:[ \t]*//p' "$ROOT/guibot/packaging/guibot.spec")
 VERSION=$(sed -n 's/^Version:[ \t]*//p' "$ROOT/guibot/packaging/guibot.spec")
 cp -r "$ROOT/guibot" "$ROOT/$NAME-$VERSION"
 mkdir -p ~/rpmbuild/SOURCES
-tar czvf ~/rpmbuild/SOURCES/$NAME-$VERSION.tar.gz -C "$ROOT/" --exclude=.* $NAME-$VERSION
+tar czvf ~/rpmbuild/SOURCES/$NAME-$VERSION.tar.gz -C "$ROOT/" --exclude=.* --exclude=*.pyc $NAME-$VERSION
 rpmbuild -ba "$ROOT/$NAME-$VERSION/packaging/guibot.spec" --with opencv
 cp ~/rpmbuild/RPMS/x86_64/python3-$NAME-$VERSION*.rpm "$ROOT/guibot"
 dnf -y install "$ROOT/guibot/python3-"$NAME-$VERSION*.rpm
