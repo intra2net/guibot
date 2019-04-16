@@ -2077,7 +2077,7 @@ class TextFinder(ContourFinder):
                     return text_img
             else:
                 return cv2.cvtColor(text_img, cv2.COLOR_RGB2GRAY)
-        for text_box in text_regions:
+        for i, text_box in enumerate(text_regions):
 
             # main OCR preprocessing stage
             border = self.params["ocr"]["border_size"].value
@@ -2133,7 +2133,7 @@ class TextFinder(ContourFinder):
             if self.params["ocr"]["component_level"].value == 1:
                 # strip of the new line character which is never useful
                 output = output.rstrip()
-            log.debug("OCR output = '%s'", output)
+            log.debug("OCR output %s = '%s'", i+1, output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
             log.debug("Similarity = '%s'", similarity)
