@@ -407,9 +407,9 @@ class AutoPyDesktopControl(DesktopControl):
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mouse.click(button)
-            # BUG: the mouse button is pressed down forever (on LEFT)
+            # BUG: the mouse button of autopy is pressed down forever (on LEFT)
             time.sleep(0.1)
-            self._backend_obj.mouse.toggle(button, False)
+            self.mouse_up(button)
             time.sleep(timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
@@ -573,7 +573,11 @@ class XDoToolDesktopControl(DesktopControl):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
-            self._backend_obj.run("click", str(button))
+            # BUG: the xdotool click is too fast and non-configurable with timeout
+            # self._backend_obj.run("click", str(button))
+            self.mouse_down(button)
+            time.sleep(0.1)
+            self.mouse_up(button)
             time.sleep(timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
@@ -742,7 +746,7 @@ class VNCDoToolDesktopControl(DesktopControl):
             self._backend_obj.mousePress(button)
             # BUG: the mouse button is pressed down forever (on LEFT)
             time.sleep(0.1)
-            self._backend_obj.mouseUp(button)
+            self.mouse_up(button)
             time.sleep(timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
@@ -753,7 +757,6 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        # TODO: sync with autopy button
         self._backend_obj.mouseDown(button)
 
     def mouse_up(self, button):
@@ -762,7 +765,6 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        # TODO: sync with autopy button
         self._backend_obj.mouseUp(button)
 
     def keys_toggle(self, keys, up_down):
@@ -931,7 +933,6 @@ class QemuDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        # TODO: sync with autopy button
         self._backend_obj.mouse_button(button)
 
     def mouse_up(self, button):
@@ -940,7 +941,7 @@ class QemuDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        # TODO: sync with autopy button
+        # TODO: need mouse up handling
         self._backend_obj.mouse_button(button)
 
     def keys_toggle(self, keys, up_down):
