@@ -401,16 +401,17 @@ class AutoPyDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = GlobalConfig.click_delay
+        toggle_timeout = GlobalConfig.toggle_delay
+        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mouse.click(button)
             # BUG: the mouse button of autopy is pressed down forever (on LEFT)
-            time.sleep(0.1)
+            time.sleep(toggle_timeout)
             self.mouse_up(button)
-            time.sleep(timeout)
+            time.sleep(click_timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -568,7 +569,8 @@ class XDoToolDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = GlobalConfig.click_delay
+        toggle_timeout = GlobalConfig.toggle_delay
+        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
@@ -576,9 +578,9 @@ class XDoToolDesktopControl(DesktopControl):
             # BUG: the xdotool click is too fast and non-configurable with timeout
             # self._backend_obj.run("click", str(button))
             self.mouse_down(button)
-            time.sleep(0.1)
+            time.sleep(toggle_timeout)
             self.mouse_up(button)
-            time.sleep(timeout)
+            time.sleep(click_timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -738,16 +740,17 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = GlobalConfig.click_delay
+        toggle_timeout = GlobalConfig.toggle_delay
+        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mousePress(button)
             # BUG: the mouse button is pressed down forever (on LEFT)
-            time.sleep(0.1)
+            time.sleep(toggle_timeout)
             self.mouse_up(button)
-            time.sleep(timeout)
+            time.sleep(click_timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -917,13 +920,16 @@ class QemuDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        timeout = GlobalConfig.click_delay
+        toggle_timeout = GlobalConfig.toggle_delay
+        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mouse_button(button)
-            time.sleep(timeout)
+            time.sleep(toggle_timeout)
+            self._backend_obj.mouse_button(button)
+            time.sleep(click_timeout)
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 

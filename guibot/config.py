@@ -37,6 +37,7 @@ class GlobalConfig(type):
     """
 
     # operational parameters shared between all instances
+    _toggle_delay = 0.1
     _click_delay = 0.1
     _drag_delay = 0.5
     _drop_delay = 0.5
@@ -64,25 +65,38 @@ class GlobalConfig(type):
     _text_ocr_backend = "tesseract"
     _hybrid_match_backend = "template"
 
-    def click_delay(self, value=None):
+    def toggle_delay(self, value=None):
         """
         Getter/setter for property attribute.
 
-        :param value: time interval between two clicks in a double click
+        :param value: time interval between mouse down and up in a click
         :type value: float or None
         :returns: current value if no argument was passed otherwise only sets it
         :rtype: float or None
         """
         if value is None:
+            return GlobalConfig._toggle_delay
+        else:
+            GlobalConfig._toggle_delay = value
+    #: time interval between mouse down and up in a click
+    toggle_delay = property(fget=toggle_delay, fset=toggle_delay)
+
+    def click_delay(self, value=None):
+        """
+        Same as :py:func:`GlobalConfig.toggle_delay` but with
+
+        :param value: time interval after a click (in a double or n-click)
+        """
+        if value is None:
             return GlobalConfig._click_delay
         else:
             GlobalConfig._click_delay = value
-    #: time interval between two clicks in a double click
+    #: time interval after a click (in a double or n-click)
     click_delay = property(fget=click_delay, fset=click_delay)
 
     def delay_after_drag(self, value=None):
         """
-        Same as :py:func:`GlobalConfig.click_delay` but with
+        Same as :py:func:`GlobalConfig.toggle_delay` but with
 
         :param value: timeout before drag operation
         """
@@ -95,7 +109,7 @@ class GlobalConfig(type):
 
     def delay_before_drop(self, value=None):
         """
-        Same as :py:func:`GlobalConfig.click_delay` but with
+        Same as :py:func:`GlobalConfig.toggle_delay` but with
 
         :param value: timeout before drop operation
         """
@@ -108,7 +122,7 @@ class GlobalConfig(type):
 
     def delay_before_keys(self, value=None):
         """
-        Same as :py:func:`GlobalConfig.click_delay` but with
+        Same as :py:func:`GlobalConfig.toggle_delay` but with
 
         :param value: timeout before key press operation
         """
@@ -121,7 +135,7 @@ class GlobalConfig(type):
 
     def delay_between_keys(self, value=None):
         """
-        Same as :py:func:`GlobalConfig.click_delay` but with
+        Same as :py:func:`GlobalConfig.toggle_delay` but with
 
         :param value: time interval between two consecutively typed keys
         """
@@ -134,7 +148,7 @@ class GlobalConfig(type):
 
     def rescan_speed_on_find(self, value=None):
         """
-        Same as :py:func:`GlobalConfig.click_delay` but with
+        Same as :py:func:`GlobalConfig.toggle_delay` but with
 
         :param value: time interval between two image matching attempts
                       (used to reduce overhead on the CPU)
