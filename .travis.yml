@@ -52,6 +52,7 @@ before_script:
   - export DISPLAY=:99.0
   - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1024x768x24"
   - sleep 3  # give xvfb some time to start
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.4' ]]; then export DISABLE_VNC=1; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_AUTOPY=1; fi
   - if [[ $TRAVIS_PYTHON_VERSION == '3.4' || $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_PYQT=1; fi
   - if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_OPENCV=1; fi
