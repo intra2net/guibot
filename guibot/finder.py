@@ -2970,7 +2970,7 @@ class CustomFinder(Finder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using custom matching."""
-        super(CustomFinder, self).__init__(self, configure=False, synchronize=False)
+        super(CustomFinder, self).__init__(configure=False, synchronize=False)
 
         # additional preparation (no synchronization available)
         if configure:
