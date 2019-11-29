@@ -567,7 +567,7 @@ class LocalConfig(object):
         """
         self.__configure_backend(backend, category, reset)
 
-    def configure(self, reset=True):
+    def configure(self, reset=True, **kwargs):
         """
         Generate configuration dictionary for all backends.
 
@@ -604,7 +604,7 @@ class LocalConfig(object):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def synchronize(self, reset=True):
+    def synchronize(self, *args, reset=True, **kwargs):
         """
         Synchronize all backends with the current configuration dictionary.
 

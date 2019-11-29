@@ -615,11 +615,11 @@ class ContourFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __configure(self, threshold_filter=None, reset=True):
+    def __configure(self, threshold_filter=None, reset=True, **kwargs):
         self.__configure_backend(category="contour", reset=reset)
         self.__configure_backend(threshold_filter, "threshold")
 
-    def configure(self, threshold_filter=None, reset=True):
+    def configure(self, threshold_filter=None, reset=True, **kwargs):
         """
         Custom implementation of the base method.
 
@@ -1166,14 +1166,14 @@ class FeatureFinder(Finder):
         self.__configure_backend(backend, category, reset)
 
     def __configure(self, feature_detect=None, feature_extract=None,
-                    feature_match=None, reset=True):
+                    feature_match=None, reset=True, **kwargs):
         self.__configure_backend(category="feature", reset=reset)
         self.__configure_backend(feature_detect, "fdetect")
         self.__configure_backend(feature_extract, "fextract")
         self.__configure_backend(feature_match, "fmatch")
 
     def configure(self, feature_detect=None, feature_extract=None,
-                  feature_match=None, reset=True):
+                  feature_match=None, reset=True, **kwargs):
         """
         Custom implementation of the base method.
 
@@ -1906,7 +1906,7 @@ class TextFinder(ContourFinder):
 
     def configure(self, text_detector=None, text_recognizer=None,
                   threshold_filter=None, threshold_filter2=None,
-                  threshold_filter3=None, reset=True):
+                  threshold_filter3=None, reset=True, **kwargs):
         """
         Custom implementation of the base method.
 
@@ -2423,7 +2423,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         self.__configure_backend(feature_match, "fmatch")
 
     def configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None, reset=True):
+                  feature_extract=None, feature_match=None,
+                  reset=True, **kwargs):
         """
         Custom implementation of the base methods.
 
