@@ -1,6 +1,6 @@
 # minimal
 coverage==4.5.1
-Pillow==5.1.0
+Pillow==6.2.0
 
 # backends
 autopy==1.1.1; python_version >= '3.5' and platform_python_implementation != "PyPy"
