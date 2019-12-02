@@ -29,6 +29,11 @@ import logging
 log = logging.getLogger('guibot.finder')
 
 
+__all__ = ['CVParameter', 'Finder', 'AutoPyFinder', 'ContourFinder', 'TemplateFinder',
+           'FeatureFinder', 'CascadeFinder', 'TextFinder', 'TemplateFeatureFinder',
+           'DeepFinder', 'CustomFinder', 'HybridFinder']
+
+
 class CVParameter(object):
     """A class for a single parameter used for CV backend configuration."""
 

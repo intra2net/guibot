@@ -25,6 +25,9 @@ from .finder import *
 from .errors import *
 
 
+__all__ = ['Target', 'Image', 'Text', 'Pattern', 'Chain']
+
+
 class Target(object):
     """
     Target used to obtain screen location for clicking, typing,

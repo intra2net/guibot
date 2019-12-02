@@ -13,6 +13,14 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+
+__all__ = ['GuiBotError', 'FileNotFoundError',
+           'IncompatibleTargetError', 'IncompatibleTargetFileError',
+           'FindError', 'NotFindError',
+           'UnsupportedBackendError', 'MissingHotmapError',
+           'UninitializedBackendError']
+
+
 class GuiBotError(Exception):
     """GuiBot exception base class"""
 

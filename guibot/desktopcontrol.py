@@ -29,6 +29,10 @@ from .location import Location
 from .errors import *
 
 
+__all__ = ['DesktopControl', 'AutoPyDesktopControl', 'XDoToolDesktopControl',
+           'VNCDoToolDesktopControl', 'QemuDesktopControl']
+
+
 class DesktopControl(LocalConfig):
     """
     Desktop control backend, responsible for performing desktop operations
