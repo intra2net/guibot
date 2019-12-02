@@ -1,0 +1,5 @@
+queries:
+  # we are doing a lot of name mangling which requires us to disable this
+  - exclude: py/init-calls-subclass
+  # the signature containing *args and **kwargs is not correctly recognized by LGTM
+  - exclude: py/inheritance/incorrect-overridden-signature
