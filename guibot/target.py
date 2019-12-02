@@ -25,6 +25,9 @@ from .finder import *
 from .errors import *
 
 
+__all__ = ['Target', 'Image', 'Text', 'Pattern', 'Chain']
+
+
 class Target(object):
     """
     Target used to obtain screen location for clicking, typing,
@@ -145,7 +148,7 @@ class Target(object):
         return self._center_offset
     center_offset = property(fget=get_center_offset)
 
-    def load(self, filename):
+    def load(self, filename, **kwargs):
         """
         Load target from a file.
 
@@ -302,7 +305,7 @@ class Image(Target):
         return self._pil_image
     pil_image = property(fget=get_pil_image)
 
-    def load(self, filename, use_cache=True):
+    def load(self, filename, use_cache=True, **kwargs):
         """
         Load image from a file.
 
@@ -374,7 +377,7 @@ class Text(Target):
         """Provide a part of the text value."""
         return self.value[:30]
 
-    def load(self, filename):
+    def load(self, filename, **kwargs):
         """
         Load text from a file.
 
@@ -447,7 +450,7 @@ class Pattern(Target):
         """Provide the data filename."""
         return os.path.splitext(os.path.basename(self.data_file))[0]
 
-    def load(self, filename):
+    def load(self, filename, **kwargs):
         """
         Load pattern from a file.
 
@@ -501,7 +504,7 @@ class Chain(Target):
         """Provide an interator over the steps."""
         return self._steps.__iter__()
 
-    def load(self, steps_filename):
+    def load(self, steps_filename, **kwargs):
         """
         Load steps from a sequence definition file.
 
@@ -548,7 +551,6 @@ class Chain(Target):
         save_lines = []
         for data_and_config in self._steps:
             config = data_and_config.match_settings
-            data = data_and_config.match_settings
 
             step_backend = config.params["find"]["backend"]
             if step_backend in ["autopy", "contour", "template", "feature", "tempfeat"]:

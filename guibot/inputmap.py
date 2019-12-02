@@ -166,7 +166,10 @@ class AutoPyKey(Key):
 
     def __init__(self):
         """Build an instance containing the key map for the AutoPy backend."""
+        super().__init__()
+
         import autopy
+
         # commented out keys are not supported by autopy
         # TODO: this needs to be patched
         self.ENTER = autopy.key.Code.RETURN
@@ -250,6 +253,8 @@ class XDoToolKey(Key):
 
     def __init__(self):
         """Build an instance containing the key map for the xdotool backend."""
+        super().__init__()
+
         self.ENTER = 'Return' # also 'enter'
         self.TAB = 'Tab'
         self.ESC = 'Escape'
@@ -334,6 +339,8 @@ class VNCDoToolKey(Key):
 
     def __init__(self):
         """Build an instance containing the key map for the VNCDoTool backend."""
+        super().__init__()
+
         # TODO: it would be preferable to translate directly to RBF like
         # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
         self.ENTER = 'return' # also 'enter'
@@ -420,6 +427,8 @@ class QemuKey(Key):
 
     def __init__(self):
         """Build an instance containing the key map for the Qemu backend."""
+        super().__init__()
+
         self.ENTER = 'ret'
         self.TAB = 'tab'
         self.ESC = 'esc'
@@ -538,7 +547,10 @@ class AutoPyKeyModifier(KeyModifier):
 
     def __init__(self):
         """Build an instance containing the modifier key map for the AutoPy backend."""
+        super().__init__()
+
         import autopy
+
         # TODO: 'none' is not available
         self.MOD_NONE = None
         self.MOD_CTRL = autopy.key.Modifier.CONTROL
@@ -552,6 +564,8 @@ class XDoToolKeyModifier(KeyModifier):
 
     def __init__(self):
         """Build an instance containing the modifier key map for the xdotool backend."""
+        super().__init__()
+
         # TODO: 'none' is not available
         self.MOD_NONE = None
         self.MOD_CTRL = 'ctrl'
@@ -565,6 +579,8 @@ class VNCDoToolKeyModifier(KeyModifier):
 
     def __init__(self):
         """Build an instance containing the modifier key map for the VNCDoTool backend."""
+        super().__init__()
+
         # TODO: 'none' is not available
         self.MOD_NONE = None
         self.MOD_CTRL = 'ctrl'
@@ -578,6 +594,8 @@ class QemuKeyModifier(KeyModifier):
 
     def __init__(self):
         """Build an instance containing the modifier key map for the Qemu backend."""
+        super().__init__()
+
         # TODO: 'none' is not available
         self.MOD_NONE = None
         self.MOD_CTRL = 'ctrl'
@@ -618,7 +636,10 @@ class AutoPyMouseButton(MouseButton):
 
     def __init__(self):
         """Build an instance containing the mouse button map for the AutoPy backend."""
+        super().__init__()
+
         import autopy
+
         self.LEFT_BUTTON = autopy.mouse.Button.LEFT
         self.RIGHT_BUTTON = autopy.mouse.Button.RIGHT
         self.CENTER_BUTTON = autopy.mouse.Button.MIDDLE
@@ -629,6 +650,8 @@ class XDoToolMouseButton(MouseButton):
 
     def __init__(self):
         """Build an instance containing the mouse button map for the xdotool backend."""
+        super().__init__()
+
         self.LEFT_BUTTON = 1
         self.RIGHT_BUTTON = 3
         self.CENTER_BUTTON = 2
@@ -639,6 +662,8 @@ class VNCDoToolMouseButton(MouseButton):
 
     def __init__(self):
         """Build an instance containing the mouse button map for the VNCDoTool backend."""
+        super().__init__()
+
         self.LEFT_BUTTON = 1
         self.RIGHT_BUTTON = 3
         self.CENTER_BUTTON = 2
@@ -649,6 +674,8 @@ class QemuMouseButton(MouseButton):
 
     def __init__(self):
         """Build an instance containing the mouse button map for the Qemu backend."""
+        super().__init__()
+
         self.LEFT_BUTTON = 1
         self.RIGHT_BUTTON = 4
         self.CENTER_BUTTON = 2

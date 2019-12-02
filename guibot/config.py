@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
-import re
-import os
 import logging
 log = logging.getLogger('guibot.config')
 
@@ -567,7 +565,7 @@ class LocalConfig(object):
         """
         self.__configure_backend(backend, category, reset)
 
-    def configure(self, reset=True):
+    def configure(self, reset=True, **kwargs):
         """
         Generate configuration dictionary for all backends.
 
@@ -604,7 +602,7 @@ class LocalConfig(object):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def synchronize(self, reset=True):
+    def synchronize(self, *args, reset=True, **kwargs):
         """
         Synchronize all backends with the current configuration dictionary.
 

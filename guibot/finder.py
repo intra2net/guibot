@@ -29,6 +29,11 @@ import logging
 log = logging.getLogger('guibot.finder')
 
 
+__all__ = ['CVParameter', 'Finder', 'AutoPyFinder', 'ContourFinder', 'TemplateFinder',
+           'FeatureFinder', 'CascadeFinder', 'TextFinder', 'TemplateFeatureFinder',
+           'DeepFinder', 'CustomFinder', 'HybridFinder']
+
+
 class CVParameter(object):
     """A class for a single parameter used for CV backend configuration."""
 
@@ -615,11 +620,11 @@ class ContourFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __configure(self, threshold_filter=None, reset=True):
+    def __configure(self, threshold_filter=None, reset=True, **kwargs):
         self.__configure_backend(category="contour", reset=reset)
         self.__configure_backend(threshold_filter, "threshold")
 
-    def configure(self, threshold_filter=None, reset=True):
+    def configure(self, threshold_filter=None, reset=True, **kwargs):
         """
         Custom implementation of the base method.
 
@@ -1166,14 +1171,14 @@ class FeatureFinder(Finder):
         self.__configure_backend(backend, category, reset)
 
     def __configure(self, feature_detect=None, feature_extract=None,
-                    feature_match=None, reset=True):
+                    feature_match=None, reset=True, **kwargs):
         self.__configure_backend(category="feature", reset=reset)
         self.__configure_backend(feature_detect, "fdetect")
         self.__configure_backend(feature_extract, "fextract")
         self.__configure_backend(feature_match, "fmatch")
 
     def configure(self, feature_detect=None, feature_extract=None,
-                  feature_match=None, reset=True):
+                  feature_match=None, reset=True, **kwargs):
         """
         Custom implementation of the base method.
 
@@ -1372,7 +1377,6 @@ class FeatureFinder(Finder):
 
         Detect all keypoints and calculate their respective decriptors.
         """
-        nkeypoints, hkeypoints = [], []
         nfactor = self.params["fdetect"]["nzoom"].value
         hfactor = self.params["fdetect"]["hzoom"].value
 
@@ -1906,7 +1910,7 @@ class TextFinder(ContourFinder):
 
     def configure(self, text_detector=None, text_recognizer=None,
                   threshold_filter=None, threshold_filter2=None,
-                  threshold_filter3=None, reset=True):
+                  threshold_filter3=None, reset=True, **kwargs):
         """
         Custom implementation of the base method.
 
@@ -2317,9 +2321,9 @@ class TextFinder(ContourFinder):
         raise NotImplementedError("The connected components method for text detection needs more labels")
 
         # TODO: alternatively use cvBlobsLib
-        myblobs = CBlobResult(binary_image, mask, 0, True)
-        myblobs.filter_blobs(325, 2000)
-        blob_count = myblobs.GetNumBlobs()
+        # myblobs = CBlobResult(binary_image, mask, 0, True)
+        # myblobs.filter_blobs(325, 2000)
+        # blob_count = myblobs.GetNumBlobs()
 
     def log(self, lvl):
         """
@@ -2423,7 +2427,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         self.__configure_backend(feature_match, "fmatch")
 
     def configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None, reset=True):
+                  feature_extract=None, feature_match=None,
+                  reset=True, **kwargs):
         """
         Custom implementation of the base methods.
 
@@ -2810,8 +2815,7 @@ class DeepFinder(Finder):
             ox, oy = dx * x, dy * y
             ndx, ndy = needle.center_offset.x, needle.center_offset.y
 
-            from PIL import ImageDraw
-            draw = ImageDraw.Draw(canvas)
+            draw = PIL.ImageDraw.Draw(canvas)
             draw.rectangle((ox, oy, ox+dx, oy+dy), outline=(0,0,255))
 
             self.imglog.locations.append((ox, oy))
@@ -2970,7 +2974,7 @@ class CustomFinder(Finder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using custom matching."""
-        super(CustomFinder, self).__init__(self, configure=False, synchronize=False)
+        super(CustomFinder, self).__init__(configure=False, synchronize=False)
 
         # additional preparation (no synchronization available)
         if configure:
@@ -3220,7 +3224,6 @@ class CustomFinder(Finder):
             descriptor = numpy.array(descriptor, dtype=numpy.float32).reshape((1, desc_size))
             log.log(9, "%s %s %s", i, descriptor.shape, samples[0].shape)
             kmatches = []
-            ratio = 1.0
 
             for ki in range(k):
                 _, res, _, dists = knn.find_nearest(descriptor, ki + 1)
