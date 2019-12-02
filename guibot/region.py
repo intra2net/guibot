@@ -444,7 +444,7 @@ class Region(object):
         """
         if isinstance(target, str):
             target = self._target_from_string(target)
-        log.debug("Looking for target %s", target)
+        log.debug("Looking for targets %s", target)
         cv_backend = self._determine_cv_backend(target)
         dc_backend = self.dc_backend
 
