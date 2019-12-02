@@ -551,7 +551,6 @@ class Chain(Target):
         save_lines = []
         for data_and_config in self._steps:
             config = data_and_config.match_settings
-            data = data_and_config.match_settings
 
             step_backend = config.params["find"]["backend"]
             if step_backend in ["autopy", "contour", "template", "feature", "tempfeat"]:

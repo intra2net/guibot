@@ -1377,7 +1377,6 @@ class FeatureFinder(Finder):
 
         Detect all keypoints and calculate their respective decriptors.
         """
-        nkeypoints, hkeypoints = [], []
         nfactor = self.params["fdetect"]["nzoom"].value
         hfactor = self.params["fdetect"]["hzoom"].value
 
@@ -2322,9 +2321,9 @@ class TextFinder(ContourFinder):
         raise NotImplementedError("The connected components method for text detection needs more labels")
 
         # TODO: alternatively use cvBlobsLib
-        myblobs = CBlobResult(binary_image, mask, 0, True)
-        myblobs.filter_blobs(325, 2000)
-        blob_count = myblobs.GetNumBlobs()
+        # myblobs = CBlobResult(binary_image, mask, 0, True)
+        # myblobs.filter_blobs(325, 2000)
+        # blob_count = myblobs.GetNumBlobs()
 
     def log(self, lvl):
         """
@@ -2816,8 +2815,7 @@ class DeepFinder(Finder):
             ox, oy = dx * x, dy * y
             ndx, ndy = needle.center_offset.x, needle.center_offset.y
 
-            from PIL import ImageDraw
-            draw = ImageDraw.Draw(canvas)
+            draw = PIL.ImageDraw.Draw(canvas)
             draw.rectangle((ox, oy, ox+dx, oy+dy), outline=(0,0,255))
 
             self.imglog.locations.append((ox, oy))
@@ -3226,7 +3224,6 @@ class CustomFinder(Finder):
             descriptor = numpy.array(descriptor, dtype=numpy.float32).reshape((1, desc_size))
             log.log(9, "%s %s %s", i, descriptor.shape, samples[0].shape)
             kmatches = []
-            ratio = 1.0
 
             for ki in range(k):
                 _, res, _, dists = knn.find_nearest(descriptor, ki + 1)

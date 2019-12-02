@@ -976,11 +976,11 @@ class QemuDesktopControl(DesktopControl):
                            "(" : '0x1a',
                            ")" : '0x1b'
                            }
+        espaced_keys = []
         for key in keys:
-            if qemu_escape_map.has_key(key):
-                key = qemu_escape_map[key]
+            espaced_keys += [qemu_escape_map[key] if qemu_escape_map.has_key(key) else key]
         # TODO: test and handle longer hold
-        self._backend_obj.sendkey("-".join(keys), hold_time=1)
+        self._backend_obj.sendkey("-".join(espaced_keys), hold_time=1)
 
     def keys_type(self, text, modifiers):
         """

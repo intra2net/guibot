@@ -33,7 +33,7 @@ args = parser.parse_args()
 
 def tensors_from_data():
     """
-    Get a samples and targets tensors from a folder of images and an
+    Get a samples and targets tensor from a folder of images and an
     annotated list with their filenames and regions where the object
     is detected.
     """
@@ -63,6 +63,7 @@ def tensors_from_data():
             region_w, region_h = 0, 0
         else:
             raise ValueError("Corrupted line %i in text file - must be space separated with image path" % i)
+        print("Extracted region number", region_num, "for line", i)
 
         # image path is relative to the list file
         sample = Image.open(os.path.join(os.path.dirname(args.imglist), image_path))
