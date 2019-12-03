@@ -2,7 +2,7 @@
 set -e
 
 readonly distro="${DISTRO:-fedora}"
-readonly version="${VERSION:-28}"
+readonly version="${VERSION:-30}"
 
 # rpm dependencies
 dnf -y install python3 python3-coverage
@@ -21,11 +21,7 @@ dnf -y install tigervnc-server
 # pip dependencies (not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel redhat-rpm-config
 pip3 install autopy==1.1.1
-pip3 install torch==0.4.1 torchvision==0.2.1
-if [[ $version == "29" ]]; then
-    # TODO: on F29 with 0.4.1 we get RuntimeError: PyTorch was compiled without NumPy support
-    export DISABLE_PYTORCH=1
-fi
+pip3 install torch==0.4.1.post2 torchvision==0.2.1
 pip3 install vncdotool==0.12.0
 
 # rpm packaging
@@ -50,6 +46,11 @@ sleep 3  # give xvfb some time to start
 # unit tests
 dnf install -y python3-PyQt5
 cd /lib/python3*/site-packages/guibot/tests
-LIBPATH=".." COVERAGE="python3-coverage" sh run_tests.sh
+if (( $version <= 30 )); then
+    COVERAGE="python3-coverage"
+else
+    COVERAGE="coverage"
+fi
+LIBPATH=".." COVERAGE="$COVERAGE" sh run_tests.sh
 
 exit 0
