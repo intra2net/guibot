@@ -1,4 +1,4 @@
-# guibot ![CI status](https://travis-ci.org/intra2net/guibot.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/guibot/badge/?version=latest)](http://guibot.readthedocs.io/en/latest/?badge=latest)
+# guibot ![CI status](https://travis-ci.org/intra2net/guibot.svg?branch=master) [![Documentation Status](https://readthedocs.org/projects/guibot/badge/?version=latest)](http://guibot.readthedocs.io/en/latest/?badge=latest) [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/intra2net/guibot.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/intra2net/guibot/context:python) [![codecov](https://codecov.io/gh/intra2net/guibot/branch/master/graph/badge.svg)](https://codecov.io/gh/intra2net/guibot)
 
 A tool for GUI automation using a variety of computer vision and desktop control backends.
 
