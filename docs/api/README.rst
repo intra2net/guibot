@@ -1,5 +1,5 @@
-guibot |CI status| |Documentation Status|
-=========================================
+guibot
+======
 
 A tool for GUI automation using a variety of computer vision and desktop
 control backends.
@@ -46,6 +46,3 @@ Installation: https://github.com/intra2net/guibot/wiki/Packaging
 
 Issue tracking: https://github.com/intra2net/guibot/issues
 
-.. |CI status| image:: https://travis-ci.org/intra2net/guibot.svg?branch=master
-.. |Documentation Status| image:: https://readthedocs.org/projects/guibot/badge/?version=latest
-   :target: http://guibot.readthedocs.io/en/latest/?badge=latest
