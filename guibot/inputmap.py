@@ -158,7 +158,23 @@ class Key(object):
                 self.RSUPER: "RightSuper",
                 self.HYPER: "Hyper",
                 self.RHYPER: "RightHyper",
-                self.MENU: "Menu"}[key]
+                self.MENU: "Menu",
+                self.KP0: "KeyPad Number 0",
+                self.KP1: "KeyPad Number 1",
+                self.KP2: "KeyPad Number 2",
+                self.KP3: "KeyPad Number 3",
+                self.KP4: "KeyPad Number 4",
+                self.KP5: "KeyPad Number 5",
+                self.KP6: "KeyPad Number 6",
+                self.KP7: "KeyPad Number 7",
+                self.KP8: "KeyPad Number 8",
+                self.KP9: "KeyPad Number 9",
+                self.KP_ADD: "KeyPad Add",
+                self.KP_DECIMAL: "KeyPad Decimal",
+                self.KP_DIVIDE: "KeyPad Divide",
+                self.KP_ENTER: "KeyPad Enter",
+                self.KP_MULTIPLY: "KeyPad Multiply",
+                self.KP_SUBTRACT: "KeyPad Subtract"}[key]
 
 
 class AutoPyKey(Key):
