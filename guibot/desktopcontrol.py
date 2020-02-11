@@ -678,6 +678,10 @@ class VNCDoToolDesktopControl(DesktopControl):
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
         from vncdotool import api
+        if self._backend_obj:
+            # api.connect() gives us a threaded client, so we need to clean up resources
+            # to avoid dangling connections and deadlocks if synchronizing more than once
+            self._backend_obj.disconnect()
         self._backend_obj = api.connect('%s:%i' % (self.params[category]["vnc_hostname"],
                                                    self.params[category]["vnc_port"]),
                                         self.params[category]["vnc_password"])
