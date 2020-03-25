@@ -501,6 +501,57 @@ class GlobalConfig(object, metaclass=GlobalConfig):
     pass
 
 
+class TemporaryConfig(object):
+    """
+    Proxies a GlobalConfig instance extending it to add context
+    support, such that once this context ends the changes to the
+    wrapped config object are restored.
+
+    This is useful when we have a global config instance and need to
+    change it only for a few operations.
+
+    ::
+
+        >>> print(GlobalConfig.delay_before_drop)
+        0.5
+        >>> with TemporaryConfig() as cfg:
+        ...     cfg.delay_before_drop = 1.3
+        ...     print(cfg.delay_before_drop)
+        ...     print(GlobalConfig.delay_before_drop)
+        ...
+        1.3
+        1.3
+        >>> print(GlobalConfig.delay_before_drop)
+        0.5
+    """
+    def __init__(self):
+        object.__setattr__(self, "_original_values", {})
+
+    def __getattribute__(self, name):
+        # fallback to GlobalConfig
+        return getattr(GlobalConfig, name)
+
+    def __setattr__(self, name, value):
+        original_values = object.__getattribute__(self, "_original_values")
+        # store the original value only at the first set operation,
+        # so further changes won't overwrite the history
+        if name not in original_values:
+            original_values[name] = getattr(GlobalConfig, name)
+        setattr(GlobalConfig, name, value)
+
+    def __enter__(self):
+        # our temporary config object
+        return self
+
+    def __exit__(self, *_):
+        original_values = object.__getattribute__(self, "_original_values")
+        # restore original configuration values
+        for name, value in original_values.items():
+            setattr(GlobalConfig, name, value)
+        # no need to keep the backup once everything has been restored
+        original_values.clear()
+
+
 class LocalConfig(object):
     """
     Container for the configuration of all desktop control and
