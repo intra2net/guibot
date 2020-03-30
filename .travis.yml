@@ -1,65 +1,61 @@
 dist: xenial
 language: python
 python:
-    - 3.5
-    - 3.6
-    - 3.7
-    - pypy3.5
+- 3.5
+- 3.6
+- 3.7
+- pypy3.5
 env:
-    - INSTALL_VARIANT=pip DISABLE_OCR=1 DISABLE_PYTORCH=1
+- INSTALL_VARIANT=pip DISABLE_OCR=1 DISABLE_PYTORCH=1
 matrix:
   include:
-    - python: 3.7
-      env: INSTALL_VARIANT=rpm.fedora.30
-    - python: 3.7
-      env: INSTALL_VARIANT=rpm.fedora.31
-    - python: 3.6
-      env: INSTALL_VARIANT=deb.ubuntu.xenial
-    - python: 3.6
-      env: INSTALL_VARIANT=deb.ubuntu.bionic
+  - python: 3.7
+    env: INSTALL_VARIANT=rpm.fedora.30
+  - python: 3.7
+    env: INSTALL_VARIANT=rpm.fedora.31
+  - python: 3.6
+    env: INSTALL_VARIANT=deb.ubuntu.xenial
+  - python: 3.6
+    env: INSTALL_VARIANT=deb.ubuntu.bionic
   allow_failures:
-    # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
-    - python: pypy3.5
-
+  # the pypi setup is limited in terms of Qt4 and Tesseract dependencies
+  - python: pypy3.5
 services:
-  - docker
 # docker images are not cached by travis due to vm recreation for each build
+- docker
 cache:
-  - pip
-
+- pip
 addons:
   apt:
     sources:
-      - ubuntu-toolchain-r-test
+    - ubuntu-toolchain-r-test
     packages:
-      # virtual screen
-      - libx11-dev
-      - libxtst-dev
-      # xdotool
-      - xdotool
-      - x11-apps
-      - imagemagick
-      # vncdotool
-      - xfonts-base
-      - tightvncserver
-
+    # virtual screen
+    - libx11-dev
+    - libxtst-dev
+    # xdotool
+    - xdotool
+    - x11-apps
+    - imagemagick
+    # vncdotool
+    - xfonts-base
+    - tightvncserver
 # install any dependencies and build package
 install:
-  - if [[ $INSTALL_VARIANT == "pip" ]]; then travis_retry pip install -r packaging/pip_requirements.txt; fi
-
+- if [[ $INSTALL_VARIANT == "pip" ]]; then travis_retry pip install -r packaging/pip_requirements.txt; fi
 before_script:
-  - export DISPLAY=:99.0
-  - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1024x768x24"
-  - sleep 3  # give xvfb some time to start
-  - if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_AUTOPY=1; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_PYQT=1; fi
-  - if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_OPENCV=1; fi
-
+- export DISPLAY=:99.0
+- "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile
+  --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1024x768x24"
+- sleep 3  # give xvfb some time to start
+- if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_AUTOPY=1; fi
+- if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_PYQT=1; fi
+- if [[ $TRAVIS_PYTHON_VERSION == 'pypy3.5' ]]; then export DISABLE_OPENCV=1; fi
 # run tests
 script:
-  - if [[ $INSTALL_VARIANT != "pip" ]]; then cd packaging && bash packager_docker.sh; else cd tests && bash run_tests.sh; fi
-  - if [[ $INSTALL_VARIANT == "pip" ]]; then codecov; fi
-
+- if [[ $INSTALL_VARIANT != "pip" ]]; then cd packaging && bash packager_docker.sh;
+  else cd tests && bash run_tests.sh; fi
+- if [[ $INSTALL_VARIANT == "pip" ]]; then codecov; fi
 # use this to disable email notifications (e.g. while testing configuration)
 #notifications:
 #email: false
