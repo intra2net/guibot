@@ -43,7 +43,6 @@ setup(
           'Operating System :: Microsoft :: Windows',
           'Operating System :: POSIX',
           'Programming Language :: Python',
-          'Programming Language :: Python :: 2.7',
           'Topic :: Desktop Environment',
           'Topic :: Multimedia :: Graphics',
           'Topic :: Scientific/Engineering :: Artificial Intelligence',
