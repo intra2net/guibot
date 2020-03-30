@@ -3,7 +3,7 @@
 %bcond_with opencv
 
 Name:           guibot
-Version:        0.31
+Version:        0.40
 Release:        1%{?dist}
 Summary:        GUI automation tool
 
@@ -83,6 +83,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Mar 30 2020 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.40-1
+- Update to more recent versions for all backends
+- Overall bug fixes and code linting
+
 * Mon Mar 18 2019 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.31-1
 - Add support for Python 3.7
 - Update all backends to ones supporting Python 3.7
