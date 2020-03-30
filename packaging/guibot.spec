@@ -51,8 +51,9 @@ BuildArch:      noarch
 
 
 %build
-cd packaging
+pushd packaging
 %{__python3} setup.py build
+popd
 
 
 %install
