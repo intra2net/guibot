@@ -33,7 +33,7 @@ setup(
     package_dir={'guibot': '../guibot'},
 
     classifiers=[
-          'Development Status :: 3 - Alpha',
+          'Development Status :: 3 - Beta',
           'Environment :: Console',
           'Intended Audience :: End Users/Desktop',
           'Intended Audience :: Developers',
