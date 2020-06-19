@@ -764,9 +764,13 @@ class ContourFinder(Finder):
 
     def _extract_contours(self, countours_image, log=False):
         import cv2
-        _, contours, hierarchy = cv2.findContours(countours_image,
-                                                  self.params["contour"]["retrievalMode"].value,
-                                                  self.params["contour"]["approxMethod"].value)
+        rargs = cv2.findContours(countours_image,
+                                 self.params["contour"]["retrievalMode"].value,
+                                 self.params["contour"]["approxMethod"].value)
+        if len(rargs) == 3:
+            _, contours, hierarchy = rargs
+        else:
+            contours, hierarchy = rargs
         image_contours = [cv2.approxPolyDP(cnt, 3, True) for cnt in contours]
         if log:
             cv2.drawContours(countours_image, image_contours, -1, (255,255,255))
