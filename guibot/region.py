@@ -769,14 +769,14 @@ class Region(object):
         :rtype: :py:class:`match.Match`
 
         .. note:: This method is a good replacement of a number of coincident
-            limitations regarding the Windows version of autopy and Pyro and
+            limitations regarding the Windows version of autopy and PyRO and
             therefore the (Windows) virtual user:
 
             * autopy has an old BUG regarding capturing the screen at a region
               with boundaries, different than the entire screen -> subregioning which
               is the main way to deal with any kind of highly repeating and homogeneous
               interface, is totally unavailable here.
-            * Pyro4 cannot serialize generators, so this is an implementation of a
+            * PyRO cannot serialize generators, so this is an implementation of a
               "generator step" involving clicking on consecutive matches.
             * The serialized virtual user now returns a list of proxified matches
               when calling find_all, but they are all essentially useless as they

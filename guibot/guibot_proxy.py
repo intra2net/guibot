@@ -14,7 +14,7 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Frontend with serialization compatible API allowing the use of Pyro4 modified
+Frontend with serialization compatible API allowing the use of PyRO modified
 :py:class:`guibot.GuiBot` object (creating and running the same object
 remotely and manipulating it locally). All the methods delegate their calls to
 this object with some additional postprocessing to make the execution remote so
@@ -23,7 +23,10 @@ for information about the API please refer to it and :py:class:`region.Region`.
 
 import re
 
-import Pyro4
+try:
+    import Pyro5 as pyro
+except ImportError:
+    import Pyro4 as pyro
 
 from . import errors
 from .guibot import GuiBot
@@ -56,13 +59,13 @@ def register_exception_serialization():
         for it with some extra setup steps and functions below.
     """
     for exception in [errors.UnsupportedBackendError]:
-        Pyro4.util.SerializerBase.register_class_to_dict(exception, serialize_custom_error)
+        pyro.util.SerializerBase.register_class_to_dict(exception, serialize_custom_error)
 
 
 class GuiBotProxy(GuiBot):
     """
     The proxy guibot object is just a wrapper around the actual guibot
-    object that takes care of returning easily serializable Pyro4 proxy objects
+    object that takes care of returning easily serializable PyRO proxy objects
     instead of the real ones or their serialized copies.
 
     It allows you to move the mouse, type text and do any other GuiBot action
@@ -71,7 +74,7 @@ class GuiBotProxy(GuiBot):
 
     def __init__(self, dc=None, cv=None):
         super(GuiBotProxy, self).__init__(dc=dc, cv=cv)
-        # NOTE: the following attribute is set by Pyro when registering
+        # NOTE: the following attribute is set by PyRO when registering
         # this as a remote object
         self._pyroDaemon = None
         # register exceptions as an extra step
