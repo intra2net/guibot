@@ -35,7 +35,7 @@ class TargetTest(unittest.TestCase):
         self.assertEqual(400, image.width)
         self.assertEqual(300, image.height)
 
-        self.assertTrue(image.filename.find('all_shapes.png') is not -1)
+        self.assertTrue(image.filename.find('all_shapes.png') != -1)
         self.assertIsInstance(image.match_settings, Finder)
         self.assertFalse(image.use_own_settings)
 
