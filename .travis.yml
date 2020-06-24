@@ -11,12 +11,10 @@ env:
 matrix:
   include:
   - python: 3.7
-    env: INSTALL_VARIANT=rpm.fedora.30
-  - python: 3.7
     env: INSTALL_VARIANT=rpm.fedora.31
   - python: 3.8
     env: INSTALL_VARIANT=rpm.fedora.32
-  - python: 3.6
+  - python: 3.5
     env: INSTALL_VARIANT=deb.ubuntu.xenial
   - python: 3.6
     env: INSTALL_VARIANT=deb.ubuntu.bionic

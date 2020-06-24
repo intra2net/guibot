@@ -12,10 +12,11 @@ apt-get -y install python3 python3-coverage
 # python-imaging
 apt-get -y install python3-pil
 # contour, template, feature, cascade, text matching
+apt-get -y install python3-numpy
 if [[ $version == "xenial" ]]; then
     export DISABLE_OPENCV=1
 else
-    apt-get -y install python3-numpy python3-opencv
+    apt-get -y install python3-opencv
 fi
 # text matching
 apt-get -y install tesseract-ocr
