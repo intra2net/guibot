@@ -464,7 +464,7 @@ class FinderTest(unittest.TestCase):
         matches = finder.find(Image('n_ibs'), Image('h_ibs_scaled'))
         self.assertEqual(len(matches), 1)
         self.assertAlmostEqual(matches[0].x, 39, delta=5)
-        self.assertAlmostEqual(matches[0].y, 222, delta=5)
+        self.assertAlmostEqual(matches[0].y, 220, delta=5)
         self.assertAlmostEqual(matches[0].width, 100, delta=10)
         self.assertAlmostEqual(matches[0].height, 150, delta=10)
 
