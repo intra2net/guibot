@@ -5,6 +5,7 @@ readonly distro="${DISTRO:-fedora}"
 readonly version="${VERSION:-30}"
 
 # rpm dependencies
+# python3
 dnf -y install python3 python3-coverage
 # python-imaging
 dnf -y install python3-pillow

@@ -4,7 +4,8 @@ set -e
 readonly distro="${DISTRO:-ubuntu}"
 readonly version="${VERSION:-xenial}"
 
-# dep dependencies
+# deb dependencies
+export DEBIAN_FRONTEND=noninteractive
 apt-get update
 # python3
 apt-get -y install python3 python3-coverage
