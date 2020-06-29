@@ -20,7 +20,7 @@ dnf -y install tigervnc-server
 
 # pip dependencies (not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
-pip3 install autopy==3.0.0
+pip3 install autopy==4.0.0
 pip3 install torch==1.4.0 torchvision==0.5.0
 pip3 install vncdotool==0.12.0
 
