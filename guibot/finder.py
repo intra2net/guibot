@@ -1829,7 +1829,12 @@ class TextFinder(ContourFinder):
         if category == "text":
             self.params[category]["datapath"] = CVParameter("../misc")
         elif category == "tdetect":
-            if backend == "erstat":
+            if backend == "east":
+                # network input dimensions - must be divisible by 32
+                self.params[category]["input_res_x"] = CVParameter(320, 32, None, 32.0)
+                self.params[category]["input_res_y"] = CVParameter(320, 32, None, 32.0)
+                self.params[category]["min_box_confidence"] = CVParameter(0.8, 0.0, 1.0, 0.1)
+            elif backend == "erstat":
                 self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255, 50.0)
                 self.params[category]["minArea"] = CVParameter(0.00025, 0.0, 1.0, 0.25, 0.001)
                 self.params[category]["maxArea"] = CVParameter(0.13, 0.0, 1.0, 0.25, 0.001)
@@ -2204,15 +2209,92 @@ class TextFinder(ContourFinder):
         return matches
 
     def _detect_text_east(self, haystack):
+        #:.. note:: source implementation by Adrian Rosebrock from his post:
+        #:   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
         import cv2
         import numpy
         img = numpy.array(haystack.pil_image)
-        char_canvas = numpy.array(haystack.pil_image)
+        char_canvas = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
         text_canvas = numpy.array(haystack.pil_image)
         self.imglog.hotmaps.append(char_canvas)
         self.imglog.hotmaps.append(text_canvas)
 
-        raise NotImplementedError("The EAST text detector is about to be implemented")
+        # resize the image to resolution compatible with the model
+        inp_width, inp_height = (self.params["tdetect"]["input_res_x"].value,
+                                 self.params["tdetect"]["input_res_y"].value)
+        width_ratio = img.shape[1] / float(inp_width)
+        height_ratio = img.shape[0] / float(inp_height)
+        img = cv2.resize(img, (inp_width, inp_height))
+
+        # convert to a model-compatible input using the mean from the training
+        inp = cv2.dnn.blobFromImage(img, mean=(123.68, 116.78, 103.94), swapRB=True, crop=False)
+        self.east_net.setInput(inp)
+
+        # select two output layers for the EAST detector model respectivelly for
+        # the output probabilities and the text bounding box coordinates
+        output_layers = ["feature_fusion/Conv_7/Sigmoid", "feature_fusion/concat_3"]
+        probability, geometry = self.east_net.forward(output_layers)
+        char_canvas[:] = cv2.resize(probability[0,0]*255.0, (char_canvas.shape[1], char_canvas.shape[0]))
+
+        rects = []
+        for row in range(0, probability.shape[2]):
+            row_scores = probability[0, 0, row]
+            row_data = geometry[0, :, row]
+            for col in range(0, probability.shape[3]):
+                # prune out subthreshold probability of being a text
+                if row_scores[col] < self.params["tdetect"]["min_box_confidence"].value:
+                    continue
+                # use geometry data to get input size and rescale for final bounding box width and height
+                h = min(row_data[0][col] + row_data[2][col], inp_height) * height_ratio
+                w = min(row_data[1][col] + row_data[3][col], inp_width) * width_ratio
+                # output layer dimensions are 4x smaller than the input layer dimentions
+                (dx, dy) = (col + 1) * 4.0, (row + 1) * 4.0
+                # calculate the rotation angle from the prediction ouput
+                sin, cos = numpy.sin(row_data[4][col]), numpy.cos(row_data[4][col])
+                # compute the starting (from ending) coordinates for the text bounding box
+                x2 = min(dx + cos * row_data[1][col] + sin * row_data[2][col], inp_width) * width_ratio
+                y2 = min(dy - sin * row_data[1][col] + cos * row_data[2][col], inp_height) * height_ratio
+                # the network might give unlimited region boundaries so limit by input width/height (above)
+                x1, y1 = x2 - w, y2 - h
+
+                rect = (int(x1), int(y1), int(w), int(h))
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (255, 255, 255), 1)
+                rects.append(rect)
+                # TODO: needed for outsourced nonmaxima supression
+                # confidences.append(row_scores[x])
+
+        logging.debug("A total of %s possible text regions found", len(rects))
+
+        # produce a final set of nonintersecting text regions
+        text_regions = []
+        # TODO: apply outsourced nonmaxima suppression as the current OpenCV
+        # implementation is broken in the number of python2C++ called arguments
+        # indices = cv2.dnn.NMSBoxesRotated(rects, confidences, 0.5, 0.5, 1., 0)
+        region_queue = [[region, True] for region in rects]
+        while True:
+            # nothing to do for just one region
+            if len(region_queue) < 2:
+                break
+            r1, flag1 = region_queue.pop(0)
+            if not flag1:
+                continue
+            for r2pair in region_queue:
+                r2, _ = r2pair
+                # if the two regions intersect
+                if (r1[0] < r2[0] + r2[2] and r1[0] + r1[2] > r2[0] and
+                        r1[1] < r2[1] + r2[3] and r1[1] + r1[3] > r2[1]):
+                    r1 = [min(r1[0], r2[0]), min(r1[1], r2[1]), max(r1[2], r2[2]), max(r1[3], r2[3])]
+                    # second region will no longer be considered
+                    r2pair[1] = False
+            # first region is now merged with all intersecting regions
+            text_regions.append(r1)
+        for rect in text_regions:
+            cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 255), 1)
+
+        logging.debug("A total of %s final text regions found", len(text_regions))
+        return text_regions
 
     def _detect_text_erstat(self, haystack):
         import cv2
