@@ -348,8 +348,8 @@ class GlobalConfig(type):
             * feature - matching using a mixture of feature detection,
                         extraction and matching algorithms
             * cascade - matching using OpenCV pretrained Haar cascades
-            * text - text matching using ERStat or custom text detection,
-                     followed by tesseract or Hidden Markov Model OCR
+            * text - text matching using EAST, ERStat, or custom text detection,
+                     followed by Tesseract or Hidden Markov Model OCR
             * tempfeat - a mixture of template and feature matching where the
                        first is used as necessary and the second as sufficient stage
             * deep - deep learning matching using convolutional neural network but
@@ -450,7 +450,7 @@ class GlobalConfig(type):
 
         :param value: name of the text detection backend
 
-        Supported backends: erstat, contours, components.
+        Supported backends: east, erstat, contours, components.
         """
         if value is None:
             return GlobalConfig._text_detect_backend

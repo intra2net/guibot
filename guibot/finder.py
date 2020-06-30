@@ -1770,7 +1770,7 @@ class TextFinder(ContourFinder):
         self.categories["threshold2"] = "threshold_filters2"
         self.categories["threshold3"] = "threshold_filters3"
         self.algorithms["text_matchers"] = ("mixed",)
-        self.algorithms["text_detectors"] = ("erstat", "contours", "components")
+        self.algorithms["text_detectors"] = ("east", "erstat", "contours", "components")
         self.algorithms["text_recognizers"] = ("pytesseract", "tesserocr", "tesseract", "hmm", "beamSearch")
         self.algorithms["threshold_filters2"] = tuple(self.algorithms["threshold_filters"])
         self.algorithms["threshold_filters3"] = tuple(self.algorithms["threshold_filters"])
@@ -1957,6 +1957,8 @@ class TextFinder(ContourFinder):
             # nothing to sync
             return
 
+        elif category == "tdetect" and backend == "east":
+            self.east_net = cv2.dnn.readNet(os.path.join(datapath, 'frozen_east_text_detection.pb'))
         elif category == "tdetect" and backend == "erstat":
             self.erc1 = cv2.text.loadClassifierNM1(os.path.join(datapath, 'trained_classifierNM1.xml'))
             self.erf1 = cv2.text.createERFilterNM1(self.erc1,
@@ -2088,7 +2090,9 @@ class TextFinder(ContourFinder):
 
         # detect characters and group them into detected text
         backend = self.params["tdetect"]["backend"]
-        if backend == "erstat":
+        if backend == "east":
+            text_regions = self._detect_text_east(haystack)
+        elif backend == "erstat":
             text_regions = self._detect_text_erstat(haystack)
         elif backend == "contours":
             text_regions = self._detect_text_contours(haystack)
@@ -2198,6 +2202,17 @@ class TextFinder(ContourFinder):
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
         return matches
+
+    def _detect_text_east(self, haystack):
+        import cv2
+        import numpy
+        img = numpy.array(haystack.pil_image)
+        char_canvas = numpy.array(haystack.pil_image)
+        text_canvas = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(char_canvas)
+        self.imglog.hotmaps.append(text_canvas)
+
+        raise NotImplementedError("The EAST text detector is about to be implemented")
 
     def _detect_text_erstat(self, haystack):
         import cv2
