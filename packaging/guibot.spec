@@ -80,7 +80,7 @@ rm -rf %{buildroot}
 %doc docs/api docs/tutorials docs/examples
 #%config guibot.cfg
 #%ghost guibot.log
-%{python3_sitelib}/*
+%{python3_sitelib}/guibot*
 
 
 %changelog
