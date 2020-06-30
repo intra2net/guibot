@@ -19,10 +19,6 @@ else
     apt-get -y install python3-opencv
 fi
 # text matching
-if [[ $distro_version == "focal" ]]; then
-    # TODO: OpenCV's OCR API for Tesseract 4.1+ is broken
-    export DISABLE_OCR=1
-fi
 apt-get -y install tesseract-ocr
 # desktop control
 apt-get -y install xdotool x11-apps imagemagick

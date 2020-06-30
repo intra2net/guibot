@@ -7,7 +7,7 @@ python:
 - 3.8
 - pypy3.5
 env:
-- INSTALL_VARIANT=pip DISABLE_OCR=1 DISABLE_PYTORCH=1
+- INSTALL_VARIANT=pip DISABLE_PYTORCH=1
 matrix:
   include:
   - python: 3.7
