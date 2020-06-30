@@ -19,14 +19,15 @@ else
     apt-get -y install python3-opencv
 fi
 # text matching
-apt-get -y install tesseract-ocr
+apt-get -y install tesseract-ocr libtesseract-dev
 # desktop control
 apt-get -y install xdotool x11-apps imagemagick
 apt-get -y install x11vnc
 
 # pip dependencies (not available as DEB)
-apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
+apt-get -y install gcc g++ pkg-config libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
 pip3 install autopy==4.0.0
+pip3 install pytesseract==0.3.4 tesserocr==2.5.1
 pip3 install torch==1.4.0 torchvision==0.5.0
 pip3 install vncdotool==0.12.0
 
