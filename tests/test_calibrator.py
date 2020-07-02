@@ -214,6 +214,9 @@ class CalibratorTest(unittest.TestCase):
                 finder.algorithms["text_detectors"].remove("east")
             finder.algorithms["text_recognizers"] = list(finder.algorithms["text_recognizers"])
             finder.algorithms["text_recognizers"].remove("beamSearch")
+            # one tesseract backend is enough for the unit test
+            finder.algorithms["text_recognizers"].remove("tesseract")
+            finder.algorithms["text_recognizers"].remove("pytesseract")
             results = calibrator.benchmark(finder, calibration=calibration, random_starts=random_starts)
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")

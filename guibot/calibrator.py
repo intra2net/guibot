@@ -26,6 +26,12 @@ import logging
 log = logging.getLogger('guibot.calibrator')
 
 
+#: explicit blacklist of backend combinations to skip for benchmarking
+benchmark_blacklist = [("mixed", "normal", "mixed", "east", "hmm", "adaptive", "adaptive"),
+                       ("mixed", "adaptive", "mixed", "east", "hmm", "adaptive", "adaptive"),
+                       ("mixed", "canny", "mixed", "east", "hmm", "adaptive", "adaptive")]
+
+
 class Calibrator(object):
     """
     Provides with a group of methods to facilitate and automate the selection
@@ -112,12 +118,19 @@ class Calibrator(object):
                     for z in backend_tuples(category_list[1:], finder):
                         yield (backend,) + z
         for backend_tuple in backend_tuples(ordered_categories, finder):
+            if backend_tuple in benchmark_blacklist:
+                log.warning("Skipping blacklisted benchmarked backend combination")
+                continue
             method = "+".join(backend_tuple)
             log.info("Benchmark testing with %s", method)
 
             for backend, category in zip(backend_tuple, ordered_categories):
                 finder.configure_backend(backend=backend, category=category, reset=False)
                 finder.can_calibrate(category, calibration)
+                try:
+                    finder.synchronize_backend(backend=backend, category=category, reset=False)
+                except UnsupportedBackendError as error:
+                    log.debug("Skipping synchronization for %s/backend=%s", category, backend)
 
             if random_starts > 0:
                 self.search(finder, random_starts=random_starts, uniform=uniform,
