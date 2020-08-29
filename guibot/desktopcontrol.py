@@ -728,10 +728,10 @@ class VNCDoToolDesktopControl(DesktopControl):
 
         See base method for details.
         """
-        xpos, ypos, width, height, filename = self._region_from_args(*args)
-        self._backend_obj.captureRegion(filename, xpos, ypos, width, height)
-        pil_image = PIL.Image.open(filename).convert('RGB')
-        os.unlink(filename)
+        xpos, ypos, width, height, _ = self._region_from_args(*args)
+        self._backend_obj.refreshScreen()
+        cropped = self._backend_obj.screen.crop((xpos, ypos, xpos + width, ypos + height))
+        pil_image = cropped.convert('RGB')
         return Image(None, pil_image)
 
     def mouse_move(self, location, smooth=True):
