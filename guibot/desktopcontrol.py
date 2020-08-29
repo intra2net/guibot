@@ -758,8 +758,10 @@ class VNCDoToolDesktopControl(DesktopControl):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
-            self._backend_obj.mousePress(button)
-            # BUG: the mouse button is pressed down forever (on LEFT)
+            # BUG: some VNC servers (as the QEMU built-in) don't handle click events
+            # sent too fast, so we sleep between mouse up and down and avoid mousePress
+            # self._backend_obj.mousePress(button)
+            self.mouse_down(button)
             time.sleep(toggle_timeout)
             self.mouse_up(button)
             time.sleep(click_timeout)
@@ -939,6 +941,8 @@ class QemuDesktopControl(DesktopControl):
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mouse_button(button)
+            # BUG: QEMU's monitor doesn't handle click events sent too fast,
+            # so we sleep a bit between mouse up and mouse down
             time.sleep(toggle_timeout)
             self._backend_obj.mouse_button(button)
             time.sleep(click_timeout)
