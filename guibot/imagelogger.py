@@ -127,6 +127,8 @@ class ImageLogger(object):
         :param hotmap: image (with matching results) to write
         :type hotmap: :py:class:`PIL.Image` or :py:class:`numpy.ndarray`
         """
+        if ImageLogger.logging_level > 30:
+            return
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
         path = os.path.join(ImageLogger.logging_destination, name)
