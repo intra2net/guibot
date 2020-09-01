@@ -431,5 +431,51 @@ class ChainTest(unittest.TestCase):
         chain._steps.append(Text("", finder))
         self.assertRaises(UnsupportedBackendError, chain.save, "foobar")
 
+    def test_nested_stepsfiles(self):
+        """Test that stepsfiles within stepsfiles are correctly handled."""
+        # phisically create the files -- mocking os.open() would be too cumbersome
+        stepsfile1 = self._create_temp_file(extension=".steps",
+            contents="item_for_text.txt	some_text_matchfile.match")
+
+        # second step file contains a reference to the first
+        stepsfile2 = self._create_temp_file(extension=".steps",
+            contents=stepsfile1)
+
+        stepsfile3_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "item_for_cascade.xml	some_cascade_matchfile.match",
+            # third step file contains a reference to the second
+            stepsfile2
+        ]
+
+        stepsfile3 = self._create_temp_file(prefix=self.stepsfile_name,
+            extension=".steps", contents=os.linesep.join(stepsfile3_contents))
+
+        chain = Chain(stepsfile3)
+        expected_types = [Image, Pattern, Text]
+        self.assertEqual([type(s) for s in chain._steps], expected_types)
+
+    def test_nested_stepsfiles_order(self):
+        """Test that stepsfiles within stepsfiles are loaded in order."""
+        # phisically create the files -- mocking os.open() would be too cumbersome
+        stepsfile1 = self._create_temp_file(extension=".steps",
+            contents="item_for_text.txt	some_text_matchfile.match")
+        stepsfile2 = self._create_temp_file(extension=".steps",
+            contents="item_for_contour.png	some_contour_matchfile.match")
+
+        stepsfile3_contents = [
+            stepsfile1,
+            "item_for_cascade.xml	some_cascade_matchfile.match",
+            stepsfile2
+        ]
+
+        # second step file contains a reference to the third
+        stepsfile3 = self._create_temp_file(prefix=self.stepsfile_name,
+            extension=".steps", contents=os.linesep.join(stepsfile3_contents))
+
+        chain = Chain(stepsfile3)
+        expected_types = [Text, Pattern, Image]
+        self.assertEqual([type(s) for s in chain._steps], expected_types)
+
 if __name__ == '__main__':
     unittest.main()
