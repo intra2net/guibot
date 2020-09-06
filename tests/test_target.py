@@ -160,6 +160,12 @@ class ChainTest(unittest.TestCase):
     non_existing_files = [
         "{}.match".format(stepsfile_name),
         "{}.steps".format(stepsfile_missing),
+        "/tmp/some_text_content.txt",
+        "/tmp/some_text_content.txt.png",
+        "/tmp/some_text_content.txt.xml",
+        "/tmp/some_text_content.txt.txt",
+        "/tmp/some_text_content.txt.pth",
+        "/tmp/some_text_content.txt.steps"
     ]
 
     def setUp(self):
@@ -178,10 +184,12 @@ class ChainTest(unittest.TestCase):
             "path_exists": patch("os.path.exists", lambda f: f not in self.non_existing_files),
             # The Target class will build a match file for each item in the stepsfile
             "Finder_from_match_file": patch("guibot.finder.Finder.from_match_file", wraps=self._get_match_file),
+            "Finder_to_match_file": patch("guibot.finder.Finder.to_match_file"),
             "PIL_Image_open": patch("PIL.Image.open")
         }
         self.mock_exists = self._patches["path_exists"].start()
         self.mock_match_read = self._patches["Finder_from_match_file"].start()
+        self.mock_match_write = self._patches["Finder_to_match_file"].start()
         # this one is not that important -- no need to store
         self._patches["PIL_Image_open"].start()
         return super().setUp()
@@ -314,6 +322,79 @@ class ChainTest(unittest.TestCase):
         chain = self._build_chain(os.linesep.join(stepsfile_contents))
         expected_types = [Image, Image, Image, Pattern, Pattern, Image, Image, Text]
         self.assertEqual([type(s) for s in chain], expected_types)
+
+    def test_step_save(self):
+        """
+        Test that dumping a chain to a file works and that the content is preserved.
+        """
+        # The Text target accepts either a file or a text string and we test
+        # with both modes. For the first mode we need a real file.
+        text_file = self._create_temp_file(prefix="some_text_file", extension=".txt")
+        with open(text_file, "w") as fp:
+            fp.write("ocr_string")
+
+        # create real temp files for these -- they are saved using open() and we are not
+        # mocking those calls. Also, the temp files will automatically removed on tear down
+        deep_pth = self._create_temp_file(prefix="item_for_deep", extension=".pth")
+        cascade_xml = self._create_temp_file(prefix="item_for_cascade", extension=".xml")
+        # no need to mock png files -- the Image target uses PIL.Image.save(), which we mocked
+
+        # destination stepfile
+        target_filename = self._create_temp_file(extension=".steps")
+
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "item_for_tempfeat.png	some_tempfeat_matchfile.match",
+            "item_for_feature.png	some_feature_matchfile.match",
+            "{}	some_deep_matchfile.match".format(deep_pth),
+            "{}	some_cascade_matchfile.match".format(cascade_xml),
+            "item_for_template.png	some_template_matchfile.match",
+            "item_for_autopy.png	some_autopy_matchfile.match",
+            "{}	some_text_matchfile.match".format(os.path.splitext(text_file)[0]),
+            "some_text_content	some_text_matchfile.match"
+        ]
+
+        expected_content = [
+            "item_for_contour.png	item_for_contour.match",
+            "item_for_tempfeat.png	item_for_tempfeat.match",
+            "item_for_feature.png	item_for_feature.match",
+            "{0}.pth	{0}.match".format(os.path.splitext(deep_pth)[0]),
+            "{0}.xml	{0}.match".format(os.path.splitext(cascade_xml)[0]),
+            "item_for_template.png	item_for_template.match",
+            "item_for_autopy.png	item_for_autopy.match",
+            "{0}.txt	{0}.match".format(os.path.splitext(text_file)[0]),
+            "some_text_content	some_text_content.match"
+        ]
+
+        source_stepsfile = self._create_temp_file(prefix=self.stepsfile_name,
+            extension=".steps", contents=os.linesep.join(stepsfile_contents))
+
+        Path().add_path(os.path.dirname(text_file))
+        try:
+            chain = Chain(os.path.splitext(source_stepsfile)[0])
+            chain.save(target_filename)
+
+            with open(target_filename, "r") as f:
+                generated_content = f.read().splitlines()
+
+            # assert that the generated steps file has the expected content
+            self.assertEqual(generated_content, expected_content)
+
+            # build a list of the match filenames generated from
+            # the calls to `Finder.to_match_file()`
+            generated_match_names = []
+            for c in self.mock_match_write.call_args_list:
+               generated_match_names.append(c[0][1])
+
+            # get a list
+            expected_match_names = [x.split("\t")[1] for x in expected_content]
+            expected_match_names.insert(0, os.path.splitext(source_stepsfile)[0] + ".match")
+
+            # and assert that a match file was generated for each line
+            # and for the steps file itself
+            self.assertEqual(generated_match_names, expected_match_names)
+        finally:
+            Path().remove_path(os.path.dirname(text_file))
 
 if __name__ == '__main__':
     unittest.main()
