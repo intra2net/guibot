@@ -114,9 +114,10 @@ class CVParameter(object):
         :raises: :py:class:`ValueError` if unsupported type is encountered
         """
         args = []
-        string_args = re.match(r"<value='(.+)' min='([\d.None]+)' max='([\d.None]+)'"
+        string_args = re.match(r"<value='(.+)' min='(-?[\d.None]+)' max='([\d.None]+)'"
                                r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)' enumerated='(\w+)'>",
                                raw).group(1, 2, 3, 4, 5, 6)
+
         for arg in string_args:
             if arg == "None":
                 arg = None
@@ -124,9 +125,9 @@ class CVParameter(object):
                 arg = True
             elif arg == "False":
                 arg = False
-            elif re.match(r"\d+$", arg):
+            elif re.match(r"-?\d+$", arg):
                 arg = int(arg)
-            elif re.match(r"[\d.]+", arg):
+            elif re.match(r"[\d.]+$", arg):
                 arg = float(arg)
             else:
                 arg = str(arg)
