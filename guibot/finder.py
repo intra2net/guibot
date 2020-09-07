@@ -220,23 +220,23 @@ class Finder(LocalConfig):
             backend_name = GlobalConfig.find_backend
 
         if backend_name == "autopy":
-            finder = AutoPyFinder()
+            finder = AutoPyFinder(synchronize=False)
         elif backend_name == "contour":
-            finder = ContourFinder()
+            finder = ContourFinder(synchronize=False)
         elif backend_name == "template":
-            finder = TemplateFinder()
+            finder = TemplateFinder(synchronize=False)
         elif backend_name == "feature":
-            finder = FeatureFinder()
+            finder = FeatureFinder(synchronize=False)
         elif backend_name == "cascade":
-            finder = CascadeFinder()
+            finder = CascadeFinder(synchronize=False)
         elif backend_name == "text":
-            finder = TextFinder()
+            finder = TextFinder(synchronize=False)
         elif backend_name == "tempfeat":
-            finder = TemplateFeatureFinder()
+            finder = TemplateFeatureFinder(synchronize=False)
         elif backend_name == "deep":
-            finder = DeepFinder()
+            finder = DeepFinder(synchronize=False)
         elif backend_name == "hybrid":
-            finder = HybridFinder()
+            finder = HybridFinder(synchronize=False)
         else:
             raise UnsupportedBackendError("No '%s' backend is supported" % backend_name)
 
@@ -256,6 +256,7 @@ class Finder(LocalConfig):
                         param = param_string
                     finder.params[category][option] = param
 
+        finder.synchronize()
         return finder
 
     @staticmethod
