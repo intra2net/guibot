@@ -42,10 +42,10 @@ addons:
     - imagemagick
     # vncdotool
     - xfonts-base
-    - tightvncserver
+    - x11vnc
 # install any dependencies and build package
 install:
-- if [[ $INSTALL_VARIANT == "pip" ]]; then travis_retry pip install -r packaging/pip_requirements.txt; fi
+- if [[ $INSTALL_VARIANT == "pip" ]]; then travis_retry pip --default-timeout=60 install -r packaging/pip_requirements.txt; fi
 before_script:
 - export DISPLAY=:99.0
 - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile

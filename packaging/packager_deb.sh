@@ -2,7 +2,7 @@
 set -e
 
 readonly distro="${DISTRO:-ubuntu}"
-readonly version="${VERSION:-xenial}"
+readonly distro_version="${VERSION:-xenial}"
 
 # deb dependencies
 export DEBIAN_FRONTEND=noninteractive
@@ -13,20 +13,20 @@ apt-get -y install python3 python3-coverage
 apt-get -y install python3-pil
 # contour, template, feature, cascade, text matching
 apt-get -y install python3-numpy
-if [[ $version == "xenial" ]]; then
+if [[ $distro_version == "xenial" ]]; then
     export DISABLE_OPENCV=1
 else
     apt-get -y install python3-opencv
 fi
 # text matching
-if [[ $version == "focal" ]]; then
+if [[ $distro_version == "focal" ]]; then
     # TODO: OpenCV's OCR API for Tesseract 4.1+ is broken
     export DISABLE_OCR=1
 fi
 apt-get -y install tesseract-ocr
 # desktop control
 apt-get -y install xdotool x11-apps imagemagick
-apt-get -y install tightvncserver
+apt-get -y install x11vnc
 
 # pip dependencies (not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip

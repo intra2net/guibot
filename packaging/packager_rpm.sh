@@ -2,7 +2,7 @@
 set -e
 
 readonly distro="${DISTRO:-fedora}"
-readonly version="${VERSION:-30}"
+readonly distro_version="${VERSION:-30}"
 
 # rpm dependencies
 # python3
@@ -17,7 +17,7 @@ export DISABLE_OCR=1
 dnf -y install tesseract
 # desktop control
 dnf -y install xdotool xwd ImageMagick
-dnf -y install tigervnc-server
+dnf -y install x11vnc
 
 # pip dependencies (not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
@@ -47,7 +47,7 @@ sleep 3  # give xvfb some time to start
 # unit tests
 dnf install -y python3-PyQt5
 cd /lib/python3*/site-packages/guibot/tests
-if (( $version <= 30 )); then
+if (( distro_version <= 30 )); then
     COVERAGE="python3-coverage"
 else
     COVERAGE="coverage"
