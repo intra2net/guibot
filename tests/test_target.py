@@ -16,15 +16,17 @@
 
 import os
 import unittest
-from tempfile import NamedTemporaryFile
+from unittest.mock import Mock, patch, call
+from tempfile import NamedTemporaryFile, mkdtemp, mkstemp
 
 import common_test
-from guibot.target import Image
+from guibot.target import Chain, Image, Pattern, Text
 from guibot.finder import Finder, CVParameter
-from guibot.errors import *
+from guibot.errors import FileNotFoundError, UnsupportedBackendError
+from guibot.path import Path
 
 
-class TargetTest(unittest.TestCase):
+class ImageTest(unittest.TestCase):
 
     def setUp(self):
         self.file_all_shapes = os.path.join(common_test.unittest_dir, 'images', 'all_shapes.png')
@@ -129,7 +131,7 @@ class TargetTest(unittest.TestCase):
 
     def test_nonexisting_image(self):
         try:
-            image = Image('foobar_does_not_exist')
+            Image('foobar_does_not_exist')
             self.fail('Exception not thrown')
         except FileNotFoundError:
             pass
@@ -145,6 +147,289 @@ class TargetTest(unittest.TestCase):
 
         third_image = Image(self.file_all_shapes)
         self.assertIsNot(image.pil_image, third_image.pil_image)
+
+
+class ChainTest(unittest.TestCase):
+    """Tests for the chain target (series of steps)."""
+
+    stepsfile_name = "some_stepsfile"
+    stepsfile_fullname = "{}.steps".format(stepsfile_name)
+    # special file that we will report as non-existing for some tests
+    stepsfile_missing = "missing_stefile"
+    # files that the mock should report as missing
+    non_existing_files = [
+        "{}.match".format(stepsfile_name),
+        "{}.steps".format(stepsfile_missing),
+        "/tmp/some_text_content.txt",
+        "/tmp/some_text_content.txt.png",
+        "/tmp/some_text_content.txt.xml",
+        "/tmp/some_text_content.txt.txt",
+        "/tmp/some_text_content.txt.pth",
+        "/tmp/some_text_content.txt.steps"
+    ]
+
+    def setUp(self):
+        """
+        Create mocks and enable patches.
+        """
+        # start with a clean environment
+        self._old_paths = list(Path._target_paths)
+        Path().clear()
+
+        self._tmpfiles = []
+        self.stepsfile_content = ""
+        self._patches = {
+            # Chain class and it's parent checks the existence of some files, so let's
+            # report that they are all there -- except for one that we need to be missing
+            "path_exists": patch("os.path.exists", lambda f: f not in self.non_existing_files),
+            # The Target class will build a match file for each item in the stepsfile
+            "Finder_from_match_file": patch("guibot.finder.Finder.from_match_file", wraps=self._get_match_file),
+            "Finder_to_match_file": patch("guibot.finder.Finder.to_match_file"),
+            "PIL_Image_open": patch("PIL.Image.open")
+        }
+        self.mock_exists = self._patches["path_exists"].start()
+        self.mock_match_read = self._patches["Finder_from_match_file"].start()
+        self.mock_match_write = self._patches["Finder_to_match_file"].start()
+        # this one is not that important -- no need to store
+        self._patches["PIL_Image_open"].start()
+        return super().setUp()
+
+    def tearDown(self):
+        """
+        Cleanup removing any patches and files created.
+        """
+        # start with a clean environment
+        for p in self._old_paths:
+            Path().add_path(p)
+
+        # stop patches
+        for p in self._patches.values():
+            p.stop()
+        for fn in self._tmpfiles:
+            os.unlink(fn)
+        return super().tearDown()
+
+    def _build_chain(self, stepsfile_contents, stepsfile=None):
+        """
+        Create an instance of :py:class:`guibot.target.Chain` to be used by the tests.
+
+        :param str stepsfile_contents: contents for the stepsfile to be passed when creating the finder
+        :param str stepsfile: name of the stepsfile to load or None to use the default
+        :returns: an instance of the finder
+        :rtype: :py:class:`finder.Finder`
+        """
+        filename = self._create_temp_file(prefix=self.stepsfile_name,
+            extension=".steps", contents=stepsfile_contents)
+        return Chain(os.path.splitext(filename)[0])
+
+    def _get_match_file(self, filename):
+        """
+        Mock function to replace py:func:`Finder.from_match_file`.
+
+        It will generated a finder based on the filename provided.
+
+        :param str filename: match filename for the configuration
+        :returns: target finder with the parsed (and generated) settings
+        :rtype: :py:class:`finder.Finder`
+        """
+        # guess the backend from the filename
+        backend = filename.split("_")[1]
+        finder_mock = Mock()
+        finder_mock.params = {
+            "find": {
+                "backend": backend
+            }
+        }
+        return finder_mock
+
+    def _create_temp_file(self, prefix=None, extension=None, contents=None):
+        """
+        Create a temporary file, keeping track of it for auto-removal.
+
+        :param str prefix: string to prepend to the file name
+        :param str extension: extension of the generated file
+        :param str contents: contents to write on the file
+        :returns: name of the temporary file generated
+        :rtype: str
+        """
+        fd, filename = mkstemp(prefix=prefix, suffix=extension)
+        if contents:
+            os.write(fd, contents.encode("utf8"))
+        os.close(fd)
+        self._tmpfiles.append(filename)
+        return filename
+
+    def test_stepsfile_lookup(self):
+        """
+        Test that the stepsfile will be searched using :py:class:`guibot.path.Path`
+        if it is not initially found.
+        """
+        tmp_dir = mkdtemp()
+        tmp_steps_file = "{}/{}.steps".format(tmp_dir, self.stepsfile_missing)
+        with open(tmp_steps_file, "w") as fp:
+            fp.write("image_for_autopy.png	some_autopy_matchfile.match")
+        filename = os.path.basename(os.path.splitext(tmp_steps_file)[0])
+
+        try:
+            with patch("guibot.path.Path.search", wraps=lambda _: tmp_steps_file) as mock_search:
+                Chain(self.stepsfile_missing)
+                # but make sure we did search for the "missing" stepsfile
+                mock_search.assert_any_call("{}.steps".format(filename))
+        finally:
+            os.unlink(tmp_steps_file)
+            os.rmdir(tmp_dir)
+
+    def test_finder_creation(self):
+        """
+        Test that all finders are correctly created from a stepsfile.
+        """
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "item_for_tempfeat.png	some_tempfeat_matchfile.match",
+            "item_for_feature.png	some_feature_matchfile.match",
+            "item_for_deep.pth	some_deep_matchfile.match",
+            "item_for_cascade.xml	some_cascade_matchfile.match",
+            "item_for_template.png	some_template_matchfile.match",
+            "item_for_autopy.png	some_autopy_matchfile.match",
+            "item_for_text.txt	some_text_matchfile.match"
+        ]
+        self._build_chain(os.linesep.join(stepsfile_contents))
+
+        calls = []
+        for l in stepsfile_contents:
+            item, match = l.split("\t")
+            # we need to have a finder created for each .match file (inside Chain itself)
+            calls.append(call(match))
+            # and a finder for each image file (except for text items)
+            if not item.endswith(".txt"):
+                calls.append(call(os.path.splitext(item)[0] + ".match"))
+        self.mock_match_read.assert_has_calls(calls)
+
+    def test_steps_list(self):
+        """
+        Test that the resulting step chain contains all the items from the stepsfile.
+        """
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "item_for_tempfeat.png	some_tempfeat_matchfile.match",
+            "item_for_feature.png	some_feature_matchfile.match",
+            "item_for_deep.pth	some_deep_matchfile.match",
+            "item_for_cascade.xml	some_cascade_matchfile.match",
+            "item_for_template.png	some_template_matchfile.match",
+            "item_for_autopy.png	some_autopy_matchfile.match",
+            "item_for_text.txt	some_text_matchfile.match"
+        ]
+        chain = self._build_chain(os.linesep.join(stepsfile_contents))
+        expected_types = [Image, Image, Image, Pattern, Pattern, Image, Image, Text]
+        self.assertEqual([type(s) for s in chain], expected_types)
+
+    def test_step_save(self):
+        """
+        Test that dumping a chain to a file works and that the content is preserved.
+        """
+        # The Text target accepts either a file or a text string and we test
+        # with both modes. For the first mode we need a real file.
+        text_file = self._create_temp_file(prefix="some_text_file", extension=".txt")
+        with open(text_file, "w") as fp:
+            fp.write("ocr_string")
+
+        # create real temp files for these -- they are saved using open() and we are not
+        # mocking those calls. Also, the temp files will automatically removed on tear down
+        deep_pth = self._create_temp_file(prefix="item_for_deep", extension=".pth")
+        cascade_xml = self._create_temp_file(prefix="item_for_cascade", extension=".xml")
+        # no need to mock png files -- the Image target uses PIL.Image.save(), which we mocked
+
+        # destination stepfile
+        target_filename = self._create_temp_file(extension=".steps")
+
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "item_for_tempfeat.png	some_tempfeat_matchfile.match",
+            "item_for_feature.png	some_feature_matchfile.match",
+            "{}	some_deep_matchfile.match".format(deep_pth),
+            "{}	some_cascade_matchfile.match".format(cascade_xml),
+            "item_for_template.png	some_template_matchfile.match",
+            "item_for_autopy.png	some_autopy_matchfile.match",
+            "{}	some_text_matchfile.match".format(os.path.splitext(text_file)[0]),
+            "some_text_content	some_text_matchfile.match"
+        ]
+
+        expected_content = [
+            "item_for_contour.png	item_for_contour.match",
+            "item_for_tempfeat.png	item_for_tempfeat.match",
+            "item_for_feature.png	item_for_feature.match",
+            "{0}.pth	{0}.match".format(os.path.splitext(deep_pth)[0]),
+            "{0}.xml	{0}.match".format(os.path.splitext(cascade_xml)[0]),
+            "item_for_template.png	item_for_template.match",
+            "item_for_autopy.png	item_for_autopy.match",
+            "{0}.txt	{0}.match".format(os.path.splitext(text_file)[0]),
+            "some_text_content	some_text_content.match"
+        ]
+
+        source_stepsfile = self._create_temp_file(prefix=self.stepsfile_name,
+            extension=".steps", contents=os.linesep.join(stepsfile_contents))
+
+        Path().add_path(os.path.dirname(text_file))
+        try:
+            chain = Chain(os.path.splitext(source_stepsfile)[0])
+            chain.save(target_filename)
+
+            with open(target_filename, "r") as f:
+                generated_content = f.read().splitlines()
+
+            # assert that the generated steps file has the expected content
+            self.assertEqual(generated_content, expected_content)
+
+            # build a list of the match filenames generated from
+            # the calls to `Finder.to_match_file()`
+            generated_match_names = []
+            for c in self.mock_match_write.call_args_list:
+               generated_match_names.append(c[0][1])
+
+            # get a list
+            expected_match_names = [x.split("\t")[1] for x in expected_content]
+            expected_match_names.insert(0, os.path.splitext(source_stepsfile)[0] + ".match")
+
+            # and assert that a match file was generated for each line
+            # and for the steps file itself
+            self.assertEqual(generated_match_names, expected_match_names)
+        finally:
+            Path().remove_path(os.path.dirname(text_file))
+
+    def test_malformed_stepsfile(self):
+        """
+        Test that the malformed stepsfiles are correctly handled.
+        """
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "some_text_content	with	tabs	some_text_content.match"
+        ]
+        self.assertRaises(IOError, self._build_chain, os.linesep.join(stepsfile_contents))
+
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "some_text_content",
+            "spanning multiple lines 	some_text_content.match"
+        ]
+        self.assertRaises(IOError, self._build_chain, os.linesep.join(stepsfile_contents))
+
+    def test_invalid_backends(self):
+        """
+        Test that unsupported backends are detected when loading and saving.
+        """
+        # test on load
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "some_text_content	some_unknown_content.match"
+        ]
+        self.assertRaises(UnsupportedBackendError, self._build_chain, os.linesep.join(stepsfile_contents))
+
+        # test on save
+        finder = Finder(False, False)
+        finder.params["find"] = { "backend": "unknown" }
+        chain = self._build_chain("")
+        chain._steps.append(Text("", finder))
+        self.assertRaises(UnsupportedBackendError, chain.save, "foobar")
 
 if __name__ == '__main__':
     unittest.main()

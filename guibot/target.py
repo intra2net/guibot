@@ -558,17 +558,20 @@ class Chain(Target):
             elif step_backend in ["cascade", "deep"]:
                 data = data_and_config.data_file
             elif step_backend == "text":
+                # special case - dynamic text without a filename
+                # save only the matchfile and add the corresponding line
+                if not data_and_config.text_file:
+                    matchfile = str(data_and_config) + ".match"
+                    Target.save(data_and_config, matchfile)
+                    save_lines.append(data_and_config.value + "\t" + matchfile + "\n")
+                    continue
                 data = data_and_config.text_file
-                if data is None:
-                    raise ValueError("Target step text %s does not have a corresponding file"
-                                     " - cannot save chain %s" % (data_and_config, self.target_name))
-                data = Text(data, match_settings=self.match_settings)
             else:
                 # in particular, we cannot have a chain within the chain since it is not useful
                 raise UnsupportedBackendError("No target step type for '%s' backend" % step_backend)
 
             data_and_config.save(data)
-            save_lines.append(data + " " + os.path.splitext(data)[0] + ".match")
+            save_lines.append(data + "\t" + os.path.splitext(data)[0] + ".match\n")
 
         with open(steps_filename, "w") as f:
             f.writelines(save_lines)
