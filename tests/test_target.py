@@ -22,7 +22,7 @@ from tempfile import NamedTemporaryFile, mkdtemp, mkstemp
 import common_test
 from guibot.target import Chain, Image, Pattern, Text
 from guibot.finder import Finder, CVParameter
-from guibot.errors import FileNotFoundError
+from guibot.errors import FileNotFoundError, UnsupportedBackendError
 from guibot.path import Path
 
 
@@ -395,6 +395,41 @@ class ChainTest(unittest.TestCase):
             self.assertEqual(generated_match_names, expected_match_names)
         finally:
             Path().remove_path(os.path.dirname(text_file))
+
+    def test_malformed_stepsfile(self):
+        """
+        Test that the malformed stepsfiles are correctly handled.
+        """
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "some_text_content	with	tabs	some_text_content.match"
+        ]
+        self.assertRaises(IOError, self._build_chain, os.linesep.join(stepsfile_contents))
+
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "some_text_content",
+            "spanning multiple lines 	some_text_content.match"
+        ]
+        self.assertRaises(IOError, self._build_chain, os.linesep.join(stepsfile_contents))
+
+    def test_invalid_backends(self):
+        """
+        Test that unsupported backends are detected when loading and saving.
+        """
+        # test on load
+        stepsfile_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "some_text_content	some_unknown_content.match"
+        ]
+        self.assertRaises(UnsupportedBackendError, self._build_chain, os.linesep.join(stepsfile_contents))
+
+        # test on save
+        finder = Finder(False, False)
+        finder.params["find"] = { "backend": "unknown" }
+        chain = self._build_chain("")
+        chain._steps.append(Text("", finder))
+        self.assertRaises(UnsupportedBackendError, chain.save, "foobar")
 
 if __name__ == '__main__':
     unittest.main()
