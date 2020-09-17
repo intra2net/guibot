@@ -34,34 +34,26 @@ from guibot.config import GlobalConfig
 class DesktopControlTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.vncpass = "test1234"
+    def setUpClass(cls):
+        cls.vncpass = "test1234"
 
         os.environ["USER"] = os.environ.get("USER", "root")
         os.environ["HOME"] = os.environ.get("HOME", "/root")
 
+        # create the password file for the VNC server
         passfile = os.path.join(os.environ["HOME"], ".vnc/passwd")
-        if not os.path.isdir(os.path.dirname(passfile)):
-            os.mkdir(os.path.dirname(passfile))
-        with open(passfile, "wb") as f:
-            read, write = os.pipe()
-            os.write(write, self.vncpass.encode())
-            os.close(write)
-            p = subprocess.check_output(("vncpasswd", "-f"),
-                                        stdin=read)
-            f.write(p)
-        os.chmod(passfile, stat.S_IREAD | stat.S_IWRITE)
+        os.makedirs(os.path.dirname(passfile), exist_ok=True)
+        if not os.path.isfile(passfile):
+            subprocess.check_call(["x11vnc", "-q", "-storepasswd", cls.vncpass, passfile])
 
-        with open(os.devnull, 'wb') as devnull:
-            subprocess.check_call(("vncserver", ":0"),
-                                  stdout=devnull, stderr=devnull)
+        # run the server in the background
+        cls._server = subprocess.Popen([
+            "x11vnc", "-q", "-forever", "-display", ":99", "-rfbauth", passfile])
 
     @classmethod
-    def tearDownClass(self):
-        with open(os.devnull, 'wb') as devnull:
-            subprocess.check_call(("vncserver", "-kill", ":0"),
-                                  stdout=devnull, stderr=devnull)
-
+    def tearDownClass(cls):
+        # kill the current server
+        cls._server.terminate()
         vnc_config_dir = os.path.join(os.environ["HOME"], ".vnc")
         if os.path.exists(vnc_config_dir):
             shutil.rmtree(vnc_config_dir)
@@ -78,6 +70,10 @@ class DesktopControlTest(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
+        for desktop in self.backends:
+            # disconnect any vncdotool backend
+            if isinstance(desktop, VNCDoToolDesktopControl):
+                desktop._backend_obj.disconnect()
 
     def test_basic(self):
         for desktop in self.backends:
@@ -94,7 +90,7 @@ class DesktopControlTest(unittest.TestCase):
             self.assertEqual(screen_width, captured.width)
             self.assertEqual(screen_height, captured.height)
 
-            # Capture with coordiantes
+            # Capture with coordinates
             captured = desktop.capture_screen(20, 10, int(screen_width/2), int(screen_height/2))
             self.assertEqual(int(screen_width/2), captured.width)
             self.assertEqual(int(screen_height/2), captured.height)

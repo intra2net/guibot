@@ -5,7 +5,6 @@ TODO - hierarchical notes
     - improve unit test coverage above 80%
         - change test_region_control to test all dc backends
             - switch from autopy to xdotool should be immediate
-            - for vncdotool use x11vnc and vncviewer :99 to connect to Xvfb
         - change test_region_expect to test more cv backends
         - tests as cartesian products of backends and methods
     - known problems
