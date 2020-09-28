@@ -23,7 +23,7 @@ import common_test
 from guibot.target import Chain, Image, Pattern, Text
 from guibot.finder import Finder, CVParameter
 from guibot.errors import FileNotFoundError, UnsupportedBackendError
-from guibot.path import Path
+from guibot.fileresolver import FileResolver
 
 
 class ImageTest(unittest.TestCase):
@@ -173,8 +173,8 @@ class ChainTest(unittest.TestCase):
         Create mocks and enable patches.
         """
         # start with a clean environment
-        self._old_paths = list(Path._target_paths)
-        Path().clear()
+        self._old_paths = list(FileResolver._target_paths)
+        FileResolver().clear()
 
         self._tmpfiles = []
         self.stepsfile_content = ""
@@ -200,7 +200,7 @@ class ChainTest(unittest.TestCase):
         """
         # start with a clean environment
         for p in self._old_paths:
-            Path().add_path(p)
+            FileResolver().add_path(p)
 
         # stop patches
         for p in self._patches.values():
@@ -261,7 +261,7 @@ class ChainTest(unittest.TestCase):
 
     def test_stepsfile_lookup(self):
         """
-        Test that the stepsfile will be searched using :py:class:`guibot.path.Path`
+        Test that the stepsfile will be searched using :py:class:`guibot.fileresolver.FileResolver`
         if it is not initially found.
         """
         tmp_dir = mkdtemp()
@@ -271,7 +271,7 @@ class ChainTest(unittest.TestCase):
         filename = os.path.basename(os.path.splitext(tmp_steps_file)[0])
 
         try:
-            with patch("guibot.path.Path.search", wraps=lambda _: tmp_steps_file) as mock_search:
+            with patch("guibot.fileresolver.FileResolver.search", wraps=lambda _: tmp_steps_file) as mock_search:
                 Chain(self.stepsfile_missing)
                 # but make sure we did search for the "missing" stepsfile
                 mock_search.assert_any_call("{}.steps".format(filename))
@@ -369,7 +369,7 @@ class ChainTest(unittest.TestCase):
         source_stepsfile = self._create_temp_file(prefix=self.stepsfile_name,
             extension=".steps", contents=os.linesep.join(stepsfile_contents))
 
-        Path().add_path(os.path.dirname(text_file))
+        FileResolver().add_path(os.path.dirname(text_file))
         try:
             chain = Chain(os.path.splitext(source_stepsfile)[0])
             chain.save(target_filename)
@@ -394,7 +394,7 @@ class ChainTest(unittest.TestCase):
             # and for the steps file itself
             self.assertEqual(generated_match_names, expected_match_names)
         finally:
-            Path().remove_path(os.path.dirname(text_file))
+            FileResolver().remove_path(os.path.dirname(text_file))
 
     def test_malformed_stepsfile(self):
         """

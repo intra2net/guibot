@@ -17,7 +17,7 @@ import logging
 log = logging.getLogger('guibot')
 log.addHandler(logging.NullHandler())
 
-from .path import Path
+from .fileresolver import FileResolver
 from .region import Region
 
 
@@ -43,7 +43,7 @@ class GuiBot(Region):
         """
         super(GuiBot, self).__init__(dc=dc, cv=cv)
 
-        self.path = Path()
+        self.file_resolver = FileResolver()
 
     def add_path(self, directory):
         """
@@ -52,7 +52,7 @@ class GuiBot(Region):
 
         :param str directory: path to add
         """
-        self.path.add_path(directory)
+        self.file_resolver.add_path(directory)
 
     def remove_path(self, directory):
         """
@@ -60,4 +60,4 @@ class GuiBot(Region):
 
         :param str directory: path to add
         """
-        self.path.remove_path(directory)
+        self.file_resolver.remove_path(directory)

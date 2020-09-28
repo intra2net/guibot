@@ -20,7 +20,7 @@ import PIL.Image
 
 from .config import GlobalConfig
 from .location import Location
-from .path import Path
+from .fileresolver import FileResolver
 from .finder import *
 from .errors import *
 
@@ -45,7 +45,7 @@ class Target(object):
         :raises: :py:class:`errors.IncompatibleTargetFileError` if the data file if of unknown type
         """
         if not os.path.exists(filename):
-            filename = Path().search(filename)
+            filename = FileResolver().search(filename)
         basename = os.path.basename(filename)
         name, extension = os.path.splitext(basename)
 
@@ -72,7 +72,7 @@ class Target(object):
         :rtype: :py:class:`target.Target`
         """
         if not os.path.exists(filename):
-            filename = Path().search(filename)
+            filename = FileResolver().search(filename)
         name = os.path.splitext(os.path.basename(filename))[0]
         match_filename = os.path.splitext(filename)[0] + ".match"
         finder = Finder.from_match_file(match_filename)
@@ -158,7 +158,7 @@ class Target(object):
         previously added paths.
         """
         if not os.path.exists(filename):
-            filename = Path().search(filename)
+            filename = FileResolver().search(filename)
         match_filename = os.path.splitext(filename)[0] + ".match"
         if os.path.exists(match_filename):
             self.match_settings = Finder.from_match_file(match_filename)
@@ -314,7 +314,7 @@ class Image(Target):
         """
         super(Image, self).load(filename)
         if not os.path.exists(filename):
-            filename = Path().search(filename)
+            filename = FileResolver().search(filename)
 
         # TODO: check if mtime of the file changed -> cache dirty?
         if use_cache and filename in self._cache:
@@ -366,7 +366,7 @@ class Text(Target):
         self.text_file = None
 
         try:
-            filename = Path().search(str(self) + ".txt")
+            filename = FileResolver().search(str(self) + ".txt")
             self.load(filename)
             self.text_file = filename
         except FileNotFoundError:
@@ -385,7 +385,7 @@ class Text(Target):
         """
         super(Text, self).load(filename)
         if not os.path.exists(filename):
-            filename = Path().search(filename)
+            filename = FileResolver().search(filename)
         with open(filename) as f:
             self.value = f.read()
 
@@ -458,7 +458,7 @@ class Pattern(Target):
         """
         super(Pattern, self).load(filename)
         if not os.path.exists(filename):
-            filename = Path().search(filename)
+            filename = FileResolver().search(filename)
         self.data_file = filename
 
     def save(self, filename):
@@ -513,7 +513,7 @@ class Chain(Target):
         :raises: :py:class:`IOError` if an chain step line cannot be parsed
         """
         if not os.path.exists(steps_filename):
-            steps_filename = Path().search(steps_filename)
+            steps_filename = FileResolver().search(steps_filename)
 
         with open(steps_filename) as f:
             for step in f:

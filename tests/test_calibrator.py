@@ -20,7 +20,7 @@ import pprint
 
 import common_test
 from guibot.calibrator import Calibrator
-from guibot.path import Path
+from guibot.fileresolver import FileResolver
 from guibot.finder import *
 from guibot.target import *
 from guibot.errors import *
@@ -30,8 +30,8 @@ class CalibratorTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.path = Path()
-        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.patfile_resolver = FileResolver()
+        self.patfile_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
     def tearDown(self):
         if os.path.exists("pairs.list"):

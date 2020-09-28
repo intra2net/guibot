@@ -21,7 +21,7 @@ import shutil
 
 import common_test
 from guibot.config import GlobalConfig
-from guibot.path import Path
+from guibot.fileresolver import FileResolver
 from guibot.imagelogger import ImageLogger
 from guibot.target import Image, Text, Pattern, Chain
 from guibot.errors import *
@@ -32,8 +32,8 @@ class FinderTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.path = Path()
-        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.file_resolver = FileResolver()
+        self.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         # preserve values of static attributes
         self.prev_loglevel = GlobalConfig.image_logging_level

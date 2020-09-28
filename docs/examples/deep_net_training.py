@@ -25,15 +25,15 @@ import shutil
 
 from guibot.config import GlobalConfig
 from guibot.imagelogger import ImageLogger
-from guibot.path import Path
+from guibot.fileresolver import FileResolver
 from guibot.target import Pattern, Image
 from guibot.finder import DeepFinder
 from guibot.errors import *
 
 
 # Parameters to toy with
-path = Path()
-path.add_path('images/')
+file_resolver = FileResolver()
+file_resolver.add_path('images/')
 NEEDLE = Pattern('shape_blue_circle.pth')
 HAYSTACK = Image('all_shapes')
 LOGPATH = './tmp/'
