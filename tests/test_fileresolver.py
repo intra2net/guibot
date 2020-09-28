@@ -17,10 +17,12 @@
 import os
 import unittest
 import logging
+import shutil
 from unittest import mock
+from tempfile import mkdtemp, mkstemp
 
 import common_test
-from guibot.fileresolver import FileResolver
+from guibot.fileresolver import FileResolver, CustomFileResolver
 from guibot.errors import FileNotFoundError
 
 
@@ -117,6 +119,45 @@ class FileResolverTest(unittest.TestCase):
     def test_paths_iterator(self):
         """Test that the FileResolver iterator yields the correct list."""
         self.assertListEqual(self.resolver._target_paths, [x for x in self.resolver])
+
+class CustomFileResolverTest(unittest.TestCase):
+    """Tests for the CustomFileResolver class."""
+
+    def test_custom_paths(self):
+        """Test if custom paths work correctly."""
+        # temporary directory 1
+        tmp_dir1 = mkdtemp()
+        fd_tmp_file1, tmp_file1 = mkstemp(prefix=tmp_dir1 + "/", suffix=".txt")
+        os.close(fd_tmp_file1)
+
+        # temporary directory 2
+        tmp_dir2 = mkdtemp()
+        fd_tmp_file2, tmp_file2 = mkstemp(prefix=tmp_dir2 + "/", suffix=".txt")
+        os.close(fd_tmp_file2)
+
+        filename1 = os.path.basename(tmp_file1)
+        filename2 = os.path.basename(tmp_file2)
+        try:
+            file_resolver = FileResolver()
+            file_resolver.add_path(tmp_dir1)
+            file_resolver.add_path(tmp_dir2)
+            # sanity check - assert that normal path resolution works
+            self.assertEqual(file_resolver.search(filename1), tmp_file1)
+            self.assertEqual(file_resolver.search(filename2), tmp_file2)
+
+            # now check that only one of these are found in our scope
+            with CustomFileResolver(tmp_dir2) as p:
+                self.assertEqual(p.search(filename2), tmp_file2)
+                self.assertRaises(FileNotFoundError, p.search, filename1)
+
+            # finally check that we've correctly restored everything on exit
+            self.assertEqual(file_resolver.search(filename1), tmp_file1)
+            self.assertEqual(file_resolver.search(filename2), tmp_file2)
+        finally:
+            # clean up
+            FileResolver().remove_path(os.path.dirname(tmp_dir1))
+            shutil.rmtree(tmp_dir1)
+            shutil.rmtree(tmp_dir2)
 
 if __name__ == '__main__':
     unittest.main()

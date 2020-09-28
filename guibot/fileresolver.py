@@ -118,3 +118,49 @@ class FileResolver(object):
 
     def __len__(self):
         return len(self._target_paths)
+
+class CustomFileResolver(object):
+    """
+    Class to be used to search for files inside certain paths.
+
+    Inside the context of an instance of this class, the paths
+    in the shared list in :py:class:`FileResolver` will be temporarily
+    replaced by the paths passed to the constructor of this class.
+    This means that any call to :py:func:`FileResolver.search` will
+    take only these paths into account.
+    """
+    def __init__(self, *paths):
+        """
+        Create the class with the paths that the search will be
+        restricted to.
+
+        :param paths: list of paths that the search will use
+        """
+        self._paths = paths
+
+    def __enter__(self):
+        """
+        Start this context.
+
+        :returns: instance of the file resolver that can be used to search files
+        :rtype: py:class:`FileResolver`
+
+        The paths used by the py:class:`FileResolver` class will be replaced by
+        the paths used to initialize this class during the duration of this context.
+        """
+        file_resolver = FileResolver()
+        self._old_paths = list(file_resolver)
+        file_resolver.clear()
+        for p in self._paths:
+            file_resolver.add_path(p)
+        return file_resolver
+
+    def __exit__(self, *args):
+        """
+        Exit this context and restore the original paths.
+
+        :param args: default args passed when exiting context
+        """
+        file_resolver = FileResolver()
+        for p in self._old_paths:
+            file_resolver.add_path(p)
