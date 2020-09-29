@@ -22,7 +22,7 @@ import subprocess
 
 import common_test
 from guibot.config import GlobalConfig
-from guibot.path import Path
+from guibot.fileresolver import FileResolver
 from guibot.location import Location
 from guibot.region import Region
 from guibot.match import Match
@@ -37,8 +37,8 @@ class RegionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.path = Path()
-        self.path.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        self.file_resolver = FileResolver()
+        self.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         self.script_img = os.path.join(common_test.unittest_dir, 'qt5_image.py')
 
@@ -74,7 +74,7 @@ class RegionTest(unittest.TestCase):
         raise AssertionError("%s not near any of %s" % (match, matches))
 
     def show_image(self, filename):
-        filename = self.path.search(filename)
+        filename = self.file_resolver.search(filename)
         self.child_img = subprocess.Popen(['python3', self.script_img, filename])
         # HACK: avoid small variability in loading speed
         time.sleep(3)

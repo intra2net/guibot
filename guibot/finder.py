@@ -22,7 +22,7 @@ import configparser as config
 
 from .config import GlobalConfig, LocalConfig
 from .imagelogger import ImageLogger
-from .path import Path
+from .fileresolver import FileResolver
 from .errors import *
 
 import logging
@@ -207,7 +207,7 @@ class Finder(LocalConfig):
         if not filename.endswith(".match"):
             filename += ".match"
         if not os.path.exists(filename):
-            filename = Path().search(filename)
+            filename = FileResolver().search(filename)
         success = parser.read(filename)
         # if no file is found throw an exception
         if len(success) == 0:

@@ -21,15 +21,15 @@ import shutil
 
 from guibot.config import GlobalConfig
 from guibot.imagelogger import ImageLogger
-from guibot.path import Path
+from guibot.fileresolver import FileResolver
 from guibot.errors import *
 from guibot.target import *
 from guibot.finder import *
 
 
 # Parameters to toy with
-path = Path()
-path.add_path('images/')
+file_resolver = FileResolver()
+file_resolver.add_path('images/')
 BACKEND = "template"
 # could be Text('Text') or any other target type
 NEEDLE = Image('shape_blue_circle')
