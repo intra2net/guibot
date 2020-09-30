@@ -2098,6 +2098,7 @@ class TextFinder(ContourFinder):
 
         # detect characters and group them into detected text
         backend = self.params["tdetect"]["backend"]
+        log.debug("Detecting text with %s", backend)
         if backend == "east":
             text_regions = self._detect_text_east(haystack)
         elif backend == "erstat":
@@ -2111,6 +2112,7 @@ class TextFinder(ContourFinder):
 
         # perform optical character recognition on the final regions
         backend = self.params["ocr"]["backend"]
+        log.debug("Recognizing text with %s", backend)
         from .match import Match
         matches = []
         def binarize_step(threshold, text_img):
