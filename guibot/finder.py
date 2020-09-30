@@ -1867,7 +1867,8 @@ class TextFinder(ContourFinder):
                 if backend == "pytesseract":
                     self.params[category]["extra_configs"] = CVParameter("")
                 elif backend == "tesserocr":
-                    pass
+                    # TODO: there could be a decent way to change component modes
+                    self.params[category]["component_level"] = CVParameter(1, 1, 1, enumerated=True)
                 else:
                     # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
                     self.params[category]["component_level"] = CVParameter(1, 0, 1, enumerated=True)
@@ -1984,10 +1985,11 @@ class TextFinder(ContourFinder):
                 self.ocr_config %= (self.params["ocr"]["char_whitelist"].value,
                                     self.params["ocr"]["extra_configs"].value)
             elif backend == "tesserocr":
-                # TODO: this simple method does not offer whitelist which could be
-                # set with `SetVariable("tessedit_char_whitelist", "xyz")`
-                import tesserocr
-                self.ocr = tesserocr
+                from tesserocr import PyTessBaseAPI
+                self.ocr = PyTessBaseAPI(lang=self.params["ocr"]["language"].value,
+                                         oem=self.params["ocr"]["oem"].value,
+                                         psm=self.params["ocr"]["psmode"].value)
+                self.ocr.SetVariable("tessedit_char_whitelist", self.params["ocr"]["char_whitelist"].value)
             elif backend == "tesseract":
                 self.ocr = cv2.text.OCRTesseract_create(os.path.join(datapath, "tessdata"),
                                                         language=self.params["ocr"]["language"].value,
@@ -2152,11 +2154,11 @@ class TextFinder(ContourFinder):
                                                   config=self.ocr_config)
                 logging.debug("Running pytesseract with extra command line %s", self.ocr_config)
             elif backend == "tesserocr":
-                output = self.ocr.image_to_text(PIL.Image.fromarray(text_img),
-                                                lang=self.params["ocr"]["language"].value,
-                                                psm=self.params["ocr"]["psmode"].value,
-                                                oem=self.params["ocr"]["oem"].value)
-                logging.debug("Running tesserocr with extra command line %s", self.ocr_config)
+                self.ocr.SetImage(PIL.Image.fromarray(text_img))
+                output = self.ocr.GetUTF8Text()
+                if self.params["ocr"]["component_level"].value == 1:
+                    # strip of the new line character which is never useful
+                    output = output.rstrip()
             else:
                 stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
                 stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
