@@ -369,6 +369,8 @@ class Finder(LocalConfig):
                 value.fixed = True
             elif category == "fdetect" and key == "Extended":
                 value.fixed = True
+            elif category == "tdetect" and key in ["input_res_x", "input_res_y"]:
+                value.fixed = True
             else:
                 value.fixed = not mark
             log.debug("Setting %s/%s to fixed=%s for calibration", category, key, value.fixed)
@@ -1830,7 +1832,8 @@ class TextFinder(ContourFinder):
             self.params[category]["datapath"] = CVParameter("../misc")
         elif category == "tdetect":
             if backend == "east":
-                # network input dimensions - must be divisible by 32
+                # network input dimensions - must be divisible by 32, however currently only
+                # 320x320 doesn't error out from the OpenCV implementation
                 self.params[category]["input_res_x"] = CVParameter(320, 32, None, 32.0)
                 self.params[category]["input_res_y"] = CVParameter(320, 32, None, 32.0)
                 self.params[category]["min_box_confidence"] = CVParameter(0.8, 0.0, 1.0, 0.1)
