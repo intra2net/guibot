@@ -59,7 +59,7 @@ class GlobalConfig(type):
     _feature_detect_backend = "ORB"
     _feature_extract_backend = "ORB"
     _feature_match_backend = "BruteForce-Hamming"
-    _text_detect_backend = "erstat"
+    _text_detect_backend = "contours"
     _text_ocr_backend = "pytesseract"
     _hybrid_match_backend = "template"
 

@@ -682,7 +682,7 @@ class FinderTest(unittest.TestCase):
         # TODO: location too far due to poor text detection
         #self.assertEqual(matches[0].x, 11)
         self.assertEqual(matches[0].y, 12)
-        self.assertAlmostEqual(matches[0].width, 110, delta=5)
+        self.assertAlmostEqual(matches[0].width, 115, delta=5)
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or

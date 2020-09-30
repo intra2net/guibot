@@ -1852,7 +1852,7 @@ class TextFinder(ContourFinder):
                 self.params[category]["minHeight"] = CVParameter(1, 0, None, 100.0)
                 self.params[category]["maxHeight"] = CVParameter(100, 0, None, 100.0)
                 self.params[category]["minAspectRatio"] = CVParameter(0.1, 0.0, None, 10.0)
-                self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None, 10.0)
+                self.params[category]["maxAspectRatio"] = CVParameter(2.5, 0.0, None, 10.0)
                 self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None, 10.0)
                 self.params[category]["verticalVariance"] = CVParameter(10, 0, None, 10.0)
                 # 0 horizontal, 1 vertical
