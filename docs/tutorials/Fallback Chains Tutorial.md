@@ -84,6 +84,20 @@ would be
     circle.png template-for-circle.match
     circle.png feature-for-circle.match
 
+It is also possible to have a fallback chain defined in multiple
+**steps** files, e.g.:
+
+    # file chain1.steps
+    circle.png template-for-circle.match
+    chain2.steps
+
+    # file chain2.steps
+    circle.png template-for-circle.match
+
+In this case, the resulting chain would be the same as above: the
+contents of the second file is appended to the contents of the first.
+This is useful when you want to group or categorize chains.
+
 Notice that we use the same data file but nothing stops us from using
 different ones for each model. We can change configurations, data, or
 both and add as many lines as we like but it is advisable that we

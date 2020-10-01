@@ -169,9 +169,7 @@ class ChainTest(unittest.TestCase):
     ]
 
     def setUp(self):
-        """
-        Create mocks and enable patches.
-        """
+        """Create mocks and enable patches."""
         # start with a clean environment
         self._old_paths = list(FileResolver._target_paths)
         FileResolver().clear()
@@ -195,9 +193,7 @@ class ChainTest(unittest.TestCase):
         return super().setUp()
 
     def tearDown(self):
-        """
-        Cleanup removing any patches and files created.
-        """
+        """Cleanup removing any patches and files created."""
         # start with a clean environment
         for p in self._old_paths:
             FileResolver().add_path(p)
@@ -260,10 +256,7 @@ class ChainTest(unittest.TestCase):
         return filename
 
     def test_stepsfile_lookup(self):
-        """
-        Test that the stepsfile will be searched using :py:class:`guibot.fileresolver.FileResolver`
-        if it is not initially found.
-        """
+        """Test that the stepsfile will be searched using :py:class:`guibot.fileresolver.FileResolver`."""
         tmp_dir = mkdtemp()
         tmp_steps_file = "{}/{}.steps".format(tmp_dir, self.stepsfile_missing)
         with open(tmp_steps_file, "w") as fp:
@@ -280,9 +273,7 @@ class ChainTest(unittest.TestCase):
             os.rmdir(tmp_dir)
 
     def test_finder_creation(self):
-        """
-        Test that all finders are correctly created from a stepsfile.
-        """
+        """Test that all finders are correctly created from a stepsfile."""
         stepsfile_contents = [
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
@@ -306,9 +297,7 @@ class ChainTest(unittest.TestCase):
         self.mock_match_read.assert_has_calls(calls)
 
     def test_steps_list(self):
-        """
-        Test that the resulting step chain contains all the items from the stepsfile.
-        """
+        """Test that the resulting step chain contains all the items from the stepsfile."""
         stepsfile_contents = [
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
@@ -324,9 +313,7 @@ class ChainTest(unittest.TestCase):
         self.assertEqual([type(s) for s in chain], expected_types)
 
     def test_step_save(self):
-        """
-        Test that dumping a chain to a file works and that the content is preserved.
-        """
+        """Test that dumping a chain to a file works and that the content is preserved."""
         # The Text target accepts either a file or a text string and we test
         # with both modes. For the first mode we need a real file.
         text_file = self._create_temp_file(prefix="some_text_file", extension=".txt")
@@ -397,9 +384,7 @@ class ChainTest(unittest.TestCase):
             FileResolver().remove_path(os.path.dirname(text_file))
 
     def test_malformed_stepsfile(self):
-        """
-        Test that the malformed stepsfiles are correctly handled.
-        """
+        """Test that the malformed stepsfiles are correctly handled."""
         stepsfile_contents = [
             "item_for_contour.png	some_contour_matchfile.match",
             "some_text_content	with	tabs	some_text_content.match"
@@ -414,9 +399,7 @@ class ChainTest(unittest.TestCase):
         self.assertRaises(IOError, self._build_chain, os.linesep.join(stepsfile_contents))
 
     def test_invalid_backends(self):
-        """
-        Test that unsupported backends are detected when loading and saving.
-        """
+        """Test that unsupported backends are detected when loading and saving."""
         # test on load
         stepsfile_contents = [
             "item_for_contour.png	some_contour_matchfile.match",
@@ -430,6 +413,52 @@ class ChainTest(unittest.TestCase):
         chain = self._build_chain("")
         chain._steps.append(Text("", finder))
         self.assertRaises(UnsupportedBackendError, chain.save, "foobar")
+
+    def test_nested_stepsfiles(self):
+        """Test that stepsfiles within stepsfiles are correctly handled."""
+        # phisically create the files -- mocking os.open() would be too cumbersome
+        stepsfile1 = self._create_temp_file(extension=".steps",
+            contents="item_for_text.txt	some_text_matchfile.match")
+
+        # second step file contains a reference to the first
+        stepsfile2 = self._create_temp_file(extension=".steps",
+            contents=stepsfile1)
+
+        stepsfile3_contents = [
+            "item_for_contour.png	some_contour_matchfile.match",
+            "item_for_cascade.xml	some_cascade_matchfile.match",
+            # third step file contains a reference to the second
+            stepsfile2
+        ]
+
+        stepsfile3 = self._create_temp_file(prefix=self.stepsfile_name,
+            extension=".steps", contents=os.linesep.join(stepsfile3_contents))
+
+        chain = Chain(stepsfile3)
+        expected_types = [Image, Pattern, Text]
+        self.assertEqual([type(s) for s in chain._steps], expected_types)
+
+    def test_nested_stepsfiles_order(self):
+        """Test that stepsfiles within stepsfiles are loaded in order."""
+        # phisically create the files -- mocking os.open() would be too cumbersome
+        stepsfile1 = self._create_temp_file(extension=".steps",
+            contents="item_for_text.txt	some_text_matchfile.match")
+        stepsfile2 = self._create_temp_file(extension=".steps",
+            contents="item_for_contour.png	some_contour_matchfile.match")
+
+        stepsfile3_contents = [
+            stepsfile1,
+            "item_for_cascade.xml	some_cascade_matchfile.match",
+            stepsfile2
+        ]
+
+        # second step file contains a reference to the third
+        stepsfile3 = self._create_temp_file(prefix=self.stepsfile_name,
+            extension=".steps", contents=os.linesep.join(stepsfile3_contents))
+
+        chain = Chain(stepsfile3)
+        expected_types = [Text, Pattern, Image]
+        self.assertEqual([type(s) for s in chain._steps], expected_types)
 
 if __name__ == '__main__':
     unittest.main()
