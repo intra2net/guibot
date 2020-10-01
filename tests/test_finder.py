@@ -575,6 +575,14 @@ class FinderTest(unittest.TestCase):
                 # TODO: this is still not implemented
                 if ocr == "beamSearch":
                     continue
+                # TODO: handle newer OpenCV bugs with some backends
+                import cv2
+                # TODO: OpenCV 4.2.0 Tesseract bindings output nothing
+                if cv2.__version__ == "4.2.0" and ocr == "tesseract":
+                    continue
+                # TODO: deprecate OpenCV 3.X versions after time
+                elif cv2.__version__.startswith("3.") and tdetect == "east":
+                    continue
 
                 # HMM misinterprets one char leading to 3/4 recognized chars
                 # Tesseract still has similarity 1.0 though
@@ -640,6 +648,12 @@ class FinderTest(unittest.TestCase):
                 # TODO: this is still not implemented
                 if ocr == "beamSearch":
                     continue
+                # TODO: handle newer OpenCV bugs with some backends
+                import cv2
+                # TODO: deprecate OpenCV 3.X versions after time
+                if cv2.__version__.startswith("3.") and tdetect == "east":
+                    continue
+
                 finder.configure_backend(tdetect, "tdetect")
                 finder.configure_backend(ocr, "ocr")
                 # also with customized synchronization to the configuration
