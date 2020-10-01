@@ -21,9 +21,13 @@ else
     apt-get -y install python3-opencv
 fi
 # text matching
-apt-get -y install tesseract-ocr libtesseract-dev
-apt-get -y install g++ pkg-config
-pip3 install pytesseract==0.3.4 tesserocr==2.5.1
+if [[ $distro_version == "xenial" ]]; then
+    export DISABLE_OCR=1
+else
+    apt-get -y install tesseract-ocr libtesseract-dev
+    apt-get -y install g++ pkg-config
+    pip3 install pytesseract==0.3.4 tesserocr==2.5.1
+fi
 # deep learning
 pip3 install torch==1.4.0 torchvision==0.5.0
 # screen controlling
