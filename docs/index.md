@@ -1,9 +1,9 @@
 ---
-title: GUI automation tool
+title: GUI automation bot
 layout: default
 ---
 
-## [](#about)About guibot
+## [](#about)About Guibot
 
 There are a lot of mundane tasks related to GUI operations that could greatly benefit from automation. These could range from overnight web monitoring for good bike rentals to testing a software product's GUI on each release cycle. This is where a bot becomes a useful assistant and the guibot library offers a way to quickly build python scripts for this.
 
