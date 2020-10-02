@@ -489,6 +489,10 @@ class Calibrator(object):
                 params["blurKernelSize"].value += 1
             if params["backend"] == "adaptive" and params["blockSize"].value % 2 == 0:
                 params["blockSize"].value += 1
+        if "tdetect" in finder.params:
+            params = finder.params["tdetect"]
+            if params["backend"] == "east" and params["input_res_x"].value != params["input_res_y"].value:
+                params["input_res_x"].value = params["input_res_y"].value
         if "ocr" in finder.params:
             params = finder.params["ocr"]
             if params["dt_mask_size"].value not in [0, 3, 5]:
