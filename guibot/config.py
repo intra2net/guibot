@@ -60,7 +60,7 @@ class GlobalConfig(type):
     _feature_extract_backend = "ORB"
     _feature_match_backend = "BruteForce-Hamming"
     _text_detect_backend = "erstat"
-    _text_ocr_backend = "tesseract"
+    _text_ocr_backend = "pytesseract"
     _hybrid_match_backend = "template"
 
     def toggle_delay(self, value=None):
@@ -465,7 +465,7 @@ class GlobalConfig(type):
 
         :param value: name of the optical character recognition backend
 
-        Supported backends: tesseract, hmm, beamSearch.
+        Supported backends: pytesseract, tesserocr, tesseract (OpenCV), hmm, beamSearch.
         """
         if value is None:
             return GlobalConfig._text_ocr_backend

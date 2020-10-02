@@ -33,6 +33,10 @@ addons:
     sources:
     - ubuntu-toolchain-r-test
     packages:
+    # ocr
+    - pkg-config
+    - tesseract-ocr
+    - libtesseract-dev
     # virtual screen
     - libx11-dev
     - libxtst-dev

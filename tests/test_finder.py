@@ -672,7 +672,6 @@ class FinderTest(unittest.TestCase):
                      "Disabled OpenCV or OCR")
     def test_text_basic(self):
         finder = TextFinder()
-        finder.params["find"]["similarity"].value = 0.7
         matches = finder.find(Text('Find the word here'), Image('sentence_sans'))
         self.assertEqual(len(matches), 1)
         # TODO: location too far due to poor text detection
@@ -686,7 +685,6 @@ class FinderTest(unittest.TestCase):
                      "Disabled OpenCV or OCR")
     def test_text_bold(self):
         finder = TextFinder()
-        finder.params["find"]["similarity"].value = 0.8
         matches = finder.find(Text('Find the word'), Image('sentence_bold'))
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 12)
@@ -699,7 +697,6 @@ class FinderTest(unittest.TestCase):
                      "Disabled OpenCV or OCR")
     def test_text_italic(self):
         finder = TextFinder()
-        finder.params["find"]["similarity"].value = 0.7
         matches = finder.find(Text('Find the word here'), Image('sentence_italic'))
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 11)
@@ -712,8 +709,6 @@ class FinderTest(unittest.TestCase):
                      "Disabled OpenCV or OCR")
     def test_text_larger(self):
         finder = TextFinder()
-        # TODO: this is too low to be a match (due to text detection)
-        finder.params["find"]["similarity"].value = 0.4
         matches = finder.find(Text('Find the word'), Image('sentence_larger'))
         self.assertEqual(len(matches), 1)
         # TODO: location too far due to poor text detection
@@ -727,8 +722,6 @@ class FinderTest(unittest.TestCase):
                      "Disabled OpenCV or OCR")
     def test_text_font(self):
         finder = TextFinder()
-        # TODO: this is too low to be a match
-        finder.params["find"]["similarity"].value = 0.3
         matches = finder.find(Text('Find the word here'), Image('sentence_font'))
         self.assertEqual(len(matches), 1)
         self.assertEqual(matches[0].x, 7)

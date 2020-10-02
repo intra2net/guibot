@@ -19,6 +19,7 @@ import re
 import copy
 import random
 import configparser as config
+import PIL.Image
 
 from .config import GlobalConfig, LocalConfig
 from .imagelogger import ImageLogger
@@ -1770,7 +1771,7 @@ class TextFinder(ContourFinder):
         self.categories["threshold3"] = "threshold_filters3"
         self.algorithms["text_matchers"] = ("mixed",)
         self.algorithms["text_detectors"] = ("erstat", "contours", "components")
-        self.algorithms["text_recognizers"] = ("tesseract", "hmm", "beamSearch")
+        self.algorithms["text_recognizers"] = ("pytesseract", "tesserocr", "tesseract", "hmm", "beamSearch")
         self.algorithms["threshold_filters2"] = tuple(self.algorithms["threshold_filters"])
         self.algorithms["threshold_filters3"] = tuple(self.algorithms["threshold_filters"])
 
@@ -1854,17 +1855,23 @@ class TextFinder(ContourFinder):
                 # allowed and no intermediary values between 4 and 8 will be selected
                 self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4.0, 4.0)
         elif category == "ocr":
-            if backend == "tesseract":
+            if backend in ["tesseract", "tesserocr", "pytesseract"]:
                 # eng, deu, etc. (ISO 639-3)
                 self.params[category]["language"] = CVParameter("eng")
-                self.params[category]["char_whitelist"] = CVParameter("0123456789abcdefghijklmnopqrst"
+                self.params[category]["char_whitelist"] = CVParameter(" 0123456789abcdefghijklmnopqrst"
                                                                       "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
                 # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
                 self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
                 # 13 different page segmentation modes - see Tesseract API
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
-                # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
-                self.params[category]["component_level"] = CVParameter(1, 0, 1, enumerated=True)
+                if backend == "pytesseract":
+                    self.params[category]["extra_configs"] = CVParameter("")
+                elif backend == "tesserocr":
+                    # TODO: there could be a decent way to change component modes
+                    self.params[category]["component_level"] = CVParameter(1, 1, 1, enumerated=True)
+                else:
+                    # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
+                    self.params[category]["component_level"] = CVParameter(1, 0, 1, enumerated=True)
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(False)
             elif backend == "hmm":
@@ -1966,7 +1973,24 @@ class TextFinder(ContourFinder):
             return
 
         elif category == "ocr":
-            if backend == "tesseract":
+
+            if backend == "pytesseract":
+                import pytesseract
+                self.ocr = pytesseract
+                self.ocr_config = r"--tessdata-dir %s --oem %s --psm %s "
+                self.ocr_config %= (os.path.join(datapath, "tessdata"),
+                                    self.params["ocr"]["oem"].value,
+                                    self.params["ocr"]["psmode"].value)
+                self.ocr_config += r"-c tessedit_char_whitelist='%s' %s"
+                self.ocr_config %= (self.params["ocr"]["char_whitelist"].value,
+                                    self.params["ocr"]["extra_configs"].value)
+            elif backend == "tesserocr":
+                from tesserocr import PyTessBaseAPI
+                self.ocr = PyTessBaseAPI(lang=self.params["ocr"]["language"].value,
+                                         oem=self.params["ocr"]["oem"].value,
+                                         psm=self.params["ocr"]["psmode"].value)
+                self.ocr.SetVariable("tessedit_char_whitelist", self.params["ocr"]["char_whitelist"].value)
+            elif backend == "tesseract":
                 self.ocr = cv2.text.OCRTesseract_create(os.path.join(datapath, "tessdata"),
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
@@ -2074,6 +2098,7 @@ class TextFinder(ContourFinder):
             raise UnsupportedBackendError("Unsupported text detection backend %s" % backend)
 
         # perform optical character recognition on the final regions
+        backend = self.params["ocr"]["backend"]
         from .match import Match
         matches = []
         def binarize_step(threshold, text_img):
@@ -2114,35 +2139,47 @@ class TextFinder(ContourFinder):
             self.imglog.hotmaps.append(text_img)
 
             # BUG: we hit segfault when using the BeamSearch OCR backend so disallow it
-            if self.params["ocr"]["backend"] == "beamSearch":
+            if backend == "beamSearch":
                 raise NotImplementedError("Current version of BeamSearch segfaults so it's not yet available")
-            # TODO: can't do this in python - available ony in C++
+            # TODO: we can do this now with pytesseract/tesserocr but have to evaluate its usefulness
             #vector<Rect> boxes;
             #vector<string> words;
             #vector<float> confidences;
             #output = ocr.run(group_img, &boxes, &words, &confidences, cv2.text.OCR_LEVEL_WORD)
             # redirection of tesseract's streams can only be done on the file descriptor level
             # sys.stdout = open(os.devnull, 'w')
-            stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
-            stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
-            null_fo = open(os.devnull, 'wb')
-            with os.fdopen(os.dup(stdout_fd), 'wb') as cpout_fo:
-                with os.fdopen(os.dup(stderr_fd), 'wb') as cperr_fo:
-                    sys.stdout.flush()
-                    sys.stderr.flush()
-                    os.dup2(null_fo.fileno(), stdout_fd)
-                    os.dup2(null_fo.fileno(), stderr_fd)
-                    output = self.ocr.run(text_img, text_img,
-                                          self.params["ocr"]["min_confidence"].value,
-                                          self.params["ocr"]["component_level"].value)
-                    sys.stdout.flush()
-                    sys.stderr.flush()
-                    os.dup2(cpout_fo.fileno(), stdout_fd)
-                    os.dup2(cperr_fo.fileno(), stderr_fd)
-            null_fo.close()
-            if self.params["ocr"]["component_level"].value == 1:
-                # strip of the new line character which is never useful
-                output = output.rstrip()
+            if backend == "pytesseract":
+                output = self.ocr.image_to_string(text_img,
+                                                  lang=self.params["ocr"]["language"].value,
+                                                  config=self.ocr_config)
+                logging.debug("Running pytesseract with extra command line %s", self.ocr_config)
+            elif backend == "tesserocr":
+                self.ocr.SetImage(PIL.Image.fromarray(text_img))
+                output = self.ocr.GetUTF8Text()
+                if self.params["ocr"]["component_level"].value == 1:
+                    # strip of the new line character which is never useful
+                    output = output.rstrip()
+            else:
+                stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
+                stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
+                null_fo = open(os.devnull, 'wb')
+                with os.fdopen(os.dup(stdout_fd), 'wb') as cpout_fo:
+                    with os.fdopen(os.dup(stderr_fd), 'wb') as cperr_fo:
+                        sys.stdout.flush()
+                        sys.stderr.flush()
+                        os.dup2(null_fo.fileno(), stdout_fd)
+                        os.dup2(null_fo.fileno(), stderr_fd)
+                        output = self.ocr.run(text_img, text_img,
+                                              self.params["ocr"]["min_confidence"].value,
+                                              self.params["ocr"]["component_level"].value)
+                        sys.stdout.flush()
+                        sys.stderr.flush()
+                        os.dup2(cpout_fo.fileno(), stdout_fd)
+                        os.dup2(cperr_fo.fileno(), stderr_fd)
+                null_fo.close()
+                if self.params["ocr"]["component_level"].value == 1:
+                    # strip of the new line character which is never useful
+                    output = output.rstrip()
             log.debug("OCR output %s = '%s'", i+1, output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
