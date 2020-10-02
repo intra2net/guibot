@@ -23,7 +23,7 @@ import subprocess
 import common_test
 # TODO: these tests are done only on the simplest backend
 # since we need special setup for the rest
-from guibot.desktopcontrol import *
+from guibot.controller import *
 from guibot.region import Region
 from guibot.config import GlobalConfig
 

@@ -23,7 +23,7 @@ from .imagelogger import ImageLogger
 from .errors import *
 from .target import *
 from .finder import *
-from .desktopcontrol import *
+from .controller import *
 
 import logging
 log = logging.getLogger('guibot.region')
@@ -45,7 +45,7 @@ class Region(object):
         :param int width: width of the region (xpos+width for downright vertex x)
         :param int height: height of the region (ypos+height for downright vertex y)
         :param dc: DC backend used for any desktop control
-        :type dc: :py:class:`desktopcontrol.DesktopControl` or None
+        :type dc: :py:class:`controller.DesktopControl` or None
         :param cv: CV backend used for any target finding
         :type cv: :py:class:`finder.Finder` or None
         :raises: :py:class:`UninitializedBackendError` if the region is empty
@@ -56,14 +56,15 @@ class Region(object):
         available within the screen space.
         """
         if dc is None:
-            if GlobalConfig.desktop_control_backend == "autopy":
+            # TODO: rename classes next
+            if GlobalConfig.display_control_backend == "autopy":
                 dc = AutoPyDesktopControl()
-            elif GlobalConfig.desktop_control_backend == "xdotool":
+            elif GlobalConfig.display_control_backend == "xdotool":
                 dc = XDoToolDesktopControl()
-            elif GlobalConfig.desktop_control_backend == "qemu":
-                dc = QemuDesktopControl()
-            elif GlobalConfig.desktop_control_backend == "vncdotool":
+            elif GlobalConfig.display_control_backend == "vncdotool":
                 dc = VNCDoToolDesktopControl()
+            elif GlobalConfig.display_control_backend == "qemu":
+                dc = QemuDesktopControl()
         if cv is None:
             if GlobalConfig.find_backend == "autopy":
                 cv = AutoPyFinder()

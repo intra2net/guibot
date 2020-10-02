@@ -29,7 +29,7 @@ from guibot.match import Match
 from guibot.target import Image, Text
 from guibot.inputmap import Key
 from guibot.finder import *
-from guibot.desktopcontrol import *
+from guibot.controller import *
 from guibot.errors import *
 
 

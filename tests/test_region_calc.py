@@ -19,7 +19,7 @@ import unittest
 
 import common_test
 from guibot.region import Region
-from guibot.desktopcontrol import DesktopControl, AutoPyDesktopControl
+from guibot.controller import DesktopControl, AutoPyDesktopControl
 
 
 @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")

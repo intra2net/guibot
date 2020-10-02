@@ -15,7 +15,7 @@
 
 from .region import Region
 from .location import Location
-from .desktopcontrol import DesktopControl
+from .controller import DesktopControl
 from .finder import Finder
 
 
