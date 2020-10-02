@@ -23,7 +23,7 @@ Supported Computer Vision (CV) backends are based on
     - Haar cascade matching
     - Template-feature and mixed matching
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)
-    - Text matching
+    - Text matching through pytesseract, tesserocr, or OpenCV's bindings
 - [PyTorch](https://github.com/pytorch/pytorch)
     - CNN matching
 - [autopy](https://github.com/msanders/autopy)
