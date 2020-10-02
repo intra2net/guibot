@@ -64,6 +64,8 @@ class Region(object):
                 dc = VNCDoToolController()
             elif GlobalConfig.display_control_backend == "qemu":
                 dc = QemuController()
+            elif GlobalConfig.display_control_backend == "pyautogui":
+                dc = PyAutoGUIController()
         if cv is None:
             if GlobalConfig.find_backend == "autopy":
                 cv = AutoPyFinder()

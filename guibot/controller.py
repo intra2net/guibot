@@ -30,7 +30,7 @@ from .errors import *
 
 
 __all__ = ['Controller', 'AutoPyController', 'XDoToolController',
-           'VNCDoToolController', 'QemuController']
+           'VNCDoToolController', 'QemuController', 'PyAutoGUIController']
 
 
 class Controller(LocalConfig):
@@ -1040,3 +1040,18 @@ class QemuController(Controller):
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
+
+
+class PyAutoGUIController(Controller):
+    """
+    Screen control backend implemented through PyAutoGUI which is a python
+    library portable to MacOS, Windows, and Linux operating systems.
+    """
+
+    def __init__(self, configure=True, synchronize=True):
+        """Build a DC backend using PyAutoGUI."""
+        super(PyAutoGUIController, self).__init__(configure=False, synchronize=False)
+        if configure:
+            self.__configure_backend(reset=True)
+        if synchronize:
+            self.__synchronize_backend(reset=False)
