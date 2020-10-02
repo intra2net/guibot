@@ -11,6 +11,8 @@ apt-get update
 apt-get -y install python3 python3-coverage
 # python-imaging
 apt-get -y install python3-pil
+# pip dependencies (for dependencies not available as DEB)
+apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
 # contour, template, feature, cascade, text matching
 apt-get -y install python3-numpy
 if [[ $distro_version == "xenial" ]]; then
@@ -19,22 +21,22 @@ else
     apt-get -y install python3-opencv
 fi
 # text matching
-if [[ $distro_version == "focal" ]]; then
-    # TODO: OpenCV's OCR API for Tesseract 4.1+ is broken
+if [[ $distro_version == "xenial" ]]; then
     export DISABLE_OCR=1
+else
+    apt-get -y install tesseract-ocr libtesseract-dev
+    apt-get -y install g++ pkg-config
+    pip3 install pytesseract==0.3.4 tesserocr==2.5.1
 fi
-apt-get -y install tesseract-ocr
-# desktop control
+# deep learning
+pip3 install torch==1.4.0 torchvision==0.5.0
+# screen controlling
+pip3 install autopy==4.0.0
+pip3 install vncdotool==0.12.0
 apt-get -y install xdotool x11-apps imagemagick
 apt-get -y install x11vnc
 
-# pip dependencies (not available as DEB)
-apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
-pip3 install autopy==4.0.0
-pip3 install torch==1.4.0 torchvision==0.5.0
-pip3 install vncdotool==0.12.0
-
-# deb packaging
+# deb packaging and installing of current guibot source
 apt-get -y install dh-make dh-python debhelper python3-all devscripts
 ROOT=""
 NAME=$(sed -n 's/^Package:[ \t]*//p' "$ROOT/guibot/packaging/debian/control")

@@ -19,6 +19,7 @@ import re
 import copy
 import random
 import configparser as config
+import PIL.Image
 
 from .config import GlobalConfig, LocalConfig
 from .imagelogger import ImageLogger
@@ -367,6 +368,8 @@ class Finder(LocalConfig):
             if category == "fextract" and key == "bytes":
                 value.fixed = True
             elif category == "fdetect" and key == "Extended":
+                value.fixed = True
+            elif category == "tdetect" and key in ["input_res_x", "input_res_y"]:
                 value.fixed = True
             else:
                 value.fixed = not mark
@@ -1769,8 +1772,8 @@ class TextFinder(ContourFinder):
         self.categories["threshold2"] = "threshold_filters2"
         self.categories["threshold3"] = "threshold_filters3"
         self.algorithms["text_matchers"] = ("mixed",)
-        self.algorithms["text_detectors"] = ("erstat", "contours", "components")
-        self.algorithms["text_recognizers"] = ("tesseract", "hmm", "beamSearch")
+        self.algorithms["text_detectors"] = ("east", "erstat", "contours", "components")
+        self.algorithms["text_recognizers"] = ("pytesseract", "tesserocr", "tesseract", "hmm", "beamSearch")
         self.algorithms["threshold_filters2"] = tuple(self.algorithms["threshold_filters"])
         self.algorithms["threshold_filters3"] = tuple(self.algorithms["threshold_filters"])
 
@@ -1828,7 +1831,13 @@ class TextFinder(ContourFinder):
         if category == "text":
             self.params[category]["datapath"] = CVParameter("../misc")
         elif category == "tdetect":
-            if backend == "erstat":
+            if backend == "east":
+                # network input dimensions - must be divisible by 32, however currently only
+                # 320x320 doesn't error out from the OpenCV implementation
+                self.params[category]["input_res_x"] = CVParameter(320, 32, None, 32.0)
+                self.params[category]["input_res_y"] = CVParameter(320, 32, None, 32.0)
+                self.params[category]["min_box_confidence"] = CVParameter(0.8, 0.0, 1.0, 0.1)
+            elif backend == "erstat":
                 self.params[category]["thresholdDelta"] = CVParameter(1, 1, 255, 50.0)
                 self.params[category]["minArea"] = CVParameter(0.00025, 0.0, 1.0, 0.25, 0.001)
                 self.params[category]["maxArea"] = CVParameter(0.13, 0.0, 1.0, 0.25, 0.001)
@@ -1843,7 +1852,7 @@ class TextFinder(ContourFinder):
                 self.params[category]["minHeight"] = CVParameter(1, 0, None, 100.0)
                 self.params[category]["maxHeight"] = CVParameter(100, 0, None, 100.0)
                 self.params[category]["minAspectRatio"] = CVParameter(0.1, 0.0, None, 10.0)
-                self.params[category]["maxAspectRatio"] = CVParameter(1.5, 0.0, None, 10.0)
+                self.params[category]["maxAspectRatio"] = CVParameter(2.5, 0.0, None, 10.0)
                 self.params[category]["horizontalSpacing"] = CVParameter(10, 0, None, 10.0)
                 self.params[category]["verticalVariance"] = CVParameter(10, 0, None, 10.0)
                 # 0 horizontal, 1 vertical
@@ -1854,17 +1863,23 @@ class TextFinder(ContourFinder):
                 # allowed and no intermediary values between 4 and 8 will be selected
                 self.params[category]["connectivity"] = CVParameter(4, 4, 8, 4.0, 4.0)
         elif category == "ocr":
-            if backend == "tesseract":
+            if backend in ["tesseract", "tesserocr", "pytesseract"]:
                 # eng, deu, etc. (ISO 639-3)
                 self.params[category]["language"] = CVParameter("eng")
-                self.params[category]["char_whitelist"] = CVParameter("0123456789abcdefghijklmnopqrst"
+                self.params[category]["char_whitelist"] = CVParameter(" 0123456789abcdefghijklmnopqrst"
                                                                       "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
                 # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
                 self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
                 # 13 different page segmentation modes - see Tesseract API
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
-                # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
-                self.params[category]["component_level"] = CVParameter(1, 0, 1, enumerated=True)
+                if backend == "pytesseract":
+                    self.params[category]["extra_configs"] = CVParameter("")
+                elif backend == "tesserocr":
+                    # TODO: there could be a decent way to change component modes
+                    self.params[category]["component_level"] = CVParameter(1, 1, 1, enumerated=True)
+                else:
+                    # 0 OCR_LEVEL_WORD, 1 OCR_LEVEL_TEXT_LINE
+                    self.params[category]["component_level"] = CVParameter(1, 0, 1, enumerated=True)
                 # perform custom image thresholding if set to true or leave it to the OCR
                 self.params[category]["binarize_text"] = CVParameter(False)
             elif backend == "hmm":
@@ -1950,6 +1965,8 @@ class TextFinder(ContourFinder):
             # nothing to sync
             return
 
+        elif category == "tdetect" and backend == "east":
+            self.east_net = cv2.dnn.readNet(os.path.join(datapath, 'frozen_east_text_detection.pb'))
         elif category == "tdetect" and backend == "erstat":
             self.erc1 = cv2.text.loadClassifierNM1(os.path.join(datapath, 'trained_classifierNM1.xml'))
             self.erf1 = cv2.text.createERFilterNM1(self.erc1,
@@ -1966,7 +1983,24 @@ class TextFinder(ContourFinder):
             return
 
         elif category == "ocr":
-            if backend == "tesseract":
+
+            if backend == "pytesseract":
+                import pytesseract
+                self.ocr = pytesseract
+                self.ocr_config = r"--tessdata-dir %s --oem %s --psm %s "
+                self.ocr_config %= (os.path.join(datapath, "tessdata"),
+                                    self.params["ocr"]["oem"].value,
+                                    self.params["ocr"]["psmode"].value)
+                self.ocr_config += r"-c tessedit_char_whitelist='%s' %s"
+                self.ocr_config %= (self.params["ocr"]["char_whitelist"].value,
+                                    self.params["ocr"]["extra_configs"].value)
+            elif backend == "tesserocr":
+                from tesserocr import PyTessBaseAPI
+                self.ocr = PyTessBaseAPI(lang=self.params["ocr"]["language"].value,
+                                         oem=self.params["ocr"]["oem"].value,
+                                         psm=self.params["ocr"]["psmode"].value)
+                self.ocr.SetVariable("tessedit_char_whitelist", self.params["ocr"]["char_whitelist"].value)
+            elif backend == "tesseract":
                 self.ocr = cv2.text.OCRTesseract_create(os.path.join(datapath, "tessdata"),
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
@@ -2064,7 +2098,10 @@ class TextFinder(ContourFinder):
 
         # detect characters and group them into detected text
         backend = self.params["tdetect"]["backend"]
-        if backend == "erstat":
+        log.debug("Detecting text with %s", backend)
+        if backend == "east":
+            text_regions = self._detect_text_east(haystack)
+        elif backend == "erstat":
             text_regions = self._detect_text_erstat(haystack)
         elif backend == "contours":
             text_regions = self._detect_text_contours(haystack)
@@ -2074,6 +2111,8 @@ class TextFinder(ContourFinder):
             raise UnsupportedBackendError("Unsupported text detection backend %s" % backend)
 
         # perform optical character recognition on the final regions
+        backend = self.params["ocr"]["backend"]
+        log.debug("Recognizing text with %s", backend)
         from .match import Match
         matches = []
         def binarize_step(threshold, text_img):
@@ -2114,35 +2153,47 @@ class TextFinder(ContourFinder):
             self.imglog.hotmaps.append(text_img)
 
             # BUG: we hit segfault when using the BeamSearch OCR backend so disallow it
-            if self.params["ocr"]["backend"] == "beamSearch":
+            if backend == "beamSearch":
                 raise NotImplementedError("Current version of BeamSearch segfaults so it's not yet available")
-            # TODO: can't do this in python - available ony in C++
+            # TODO: we can do this now with pytesseract/tesserocr but have to evaluate its usefulness
             #vector<Rect> boxes;
             #vector<string> words;
             #vector<float> confidences;
             #output = ocr.run(group_img, &boxes, &words, &confidences, cv2.text.OCR_LEVEL_WORD)
             # redirection of tesseract's streams can only be done on the file descriptor level
             # sys.stdout = open(os.devnull, 'w')
-            stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
-            stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
-            null_fo = open(os.devnull, 'wb')
-            with os.fdopen(os.dup(stdout_fd), 'wb') as cpout_fo:
-                with os.fdopen(os.dup(stderr_fd), 'wb') as cperr_fo:
-                    sys.stdout.flush()
-                    sys.stderr.flush()
-                    os.dup2(null_fo.fileno(), stdout_fd)
-                    os.dup2(null_fo.fileno(), stderr_fd)
-                    output = self.ocr.run(text_img, text_img,
-                                          self.params["ocr"]["min_confidence"].value,
-                                          self.params["ocr"]["component_level"].value)
-                    sys.stdout.flush()
-                    sys.stderr.flush()
-                    os.dup2(cpout_fo.fileno(), stdout_fd)
-                    os.dup2(cperr_fo.fileno(), stderr_fd)
-            null_fo.close()
-            if self.params["ocr"]["component_level"].value == 1:
-                # strip of the new line character which is never useful
-                output = output.rstrip()
+            if backend == "pytesseract":
+                output = self.ocr.image_to_string(text_img,
+                                                  lang=self.params["ocr"]["language"].value,
+                                                  config=self.ocr_config)
+                logging.debug("Running pytesseract with extra command line %s", self.ocr_config)
+            elif backend == "tesserocr":
+                self.ocr.SetImage(PIL.Image.fromarray(text_img))
+                output = self.ocr.GetUTF8Text()
+                if self.params["ocr"]["component_level"].value == 1:
+                    # strip of the new line character which is never useful
+                    output = output.rstrip()
+            else:
+                stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
+                stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
+                null_fo = open(os.devnull, 'wb')
+                with os.fdopen(os.dup(stdout_fd), 'wb') as cpout_fo:
+                    with os.fdopen(os.dup(stderr_fd), 'wb') as cperr_fo:
+                        sys.stdout.flush()
+                        sys.stderr.flush()
+                        os.dup2(null_fo.fileno(), stdout_fd)
+                        os.dup2(null_fo.fileno(), stderr_fd)
+                        output = self.ocr.run(text_img, text_img,
+                                              self.params["ocr"]["min_confidence"].value,
+                                              self.params["ocr"]["component_level"].value)
+                        sys.stdout.flush()
+                        sys.stderr.flush()
+                        os.dup2(cpout_fo.fileno(), stdout_fd)
+                        os.dup2(cperr_fo.fileno(), stderr_fd)
+                null_fo.close()
+                if self.params["ocr"]["component_level"].value == 1:
+                    # strip of the new line character which is never useful
+                    output = output.rstrip()
             log.debug("OCR output %s = '%s'", i+1, output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
@@ -2161,6 +2212,94 @@ class TextFinder(ContourFinder):
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
         return matches
+
+    def _detect_text_east(self, haystack):
+        #:.. note:: source implementation by Adrian Rosebrock from his post:
+        #:   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
+        import cv2
+        import numpy
+        img = numpy.array(haystack.pil_image)
+        char_canvas = cv2.cvtColor(numpy.array(haystack.pil_image), cv2.COLOR_RGB2GRAY)
+        text_canvas = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(char_canvas)
+        self.imglog.hotmaps.append(text_canvas)
+
+        # resize the image to resolution compatible with the model
+        inp_width, inp_height = (self.params["tdetect"]["input_res_x"].value,
+                                 self.params["tdetect"]["input_res_y"].value)
+        width_ratio = img.shape[1] / float(inp_width)
+        height_ratio = img.shape[0] / float(inp_height)
+        img = cv2.resize(img, (inp_width, inp_height))
+
+        # convert to a model-compatible input using the mean from the training
+        inp = cv2.dnn.blobFromImage(img, mean=(123.68, 116.78, 103.94), swapRB=True, crop=False)
+        self.east_net.setInput(inp)
+
+        # select two output layers for the EAST detector model respectivelly for
+        # the output probabilities and the text bounding box coordinates
+        output_layers = ["feature_fusion/Conv_7/Sigmoid", "feature_fusion/concat_3"]
+        probability, geometry = self.east_net.forward(output_layers)
+        char_canvas[:] = cv2.resize(probability[0,0]*255.0, (char_canvas.shape[1], char_canvas.shape[0]))
+
+        rects = []
+        for row in range(0, probability.shape[2]):
+            row_scores = probability[0, 0, row]
+            row_data = geometry[0, :, row]
+            for col in range(0, probability.shape[3]):
+                # prune out subthreshold probability of being a text
+                if row_scores[col] < self.params["tdetect"]["min_box_confidence"].value:
+                    continue
+                # use geometry data to get input size and rescale for final bounding box width and height
+                h = min(row_data[0][col] + row_data[2][col], inp_height) * height_ratio
+                w = min(row_data[1][col] + row_data[3][col], inp_width) * width_ratio
+                # output layer dimensions are 4x smaller than the input layer dimentions
+                (dx, dy) = (col + 1) * 4.0, (row + 1) * 4.0
+                # calculate the rotation angle from the prediction ouput
+                sin, cos = numpy.sin(row_data[4][col]), numpy.cos(row_data[4][col])
+                # compute the starting (from ending) coordinates for the text bounding box
+                x2 = min(dx + cos * row_data[1][col] + sin * row_data[2][col], inp_width) * width_ratio
+                y2 = min(dy - sin * row_data[1][col] + cos * row_data[2][col], inp_height) * height_ratio
+                # the network might give unlimited region boundaries so limit by input width/height (above)
+                x1, y1 = x2 - w, y2 - h
+
+                rect = (int(x1), int(y1), int(w), int(h))
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (255, 255, 255), 1)
+                rects.append(rect)
+                # TODO: needed for outsourced nonmaxima supression
+                # confidences.append(row_scores[x])
+
+        logging.debug("A total of %s possible text regions found", len(rects))
+
+        # produce a final set of nonintersecting text regions
+        text_regions = []
+        # TODO: apply outsourced nonmaxima suppression as the current OpenCV
+        # implementation is broken in the number of python2C++ called arguments
+        # indices = cv2.dnn.NMSBoxesRotated(rects, confidences, 0.5, 0.5, 1., 0)
+        region_queue = [[region, True] for region in rects]
+        while True:
+            # nothing to do for just one region
+            if len(region_queue) < 2:
+                break
+            r1, flag1 = region_queue.pop(0)
+            if not flag1:
+                continue
+            for r2pair in region_queue:
+                r2, _ = r2pair
+                # if the two regions intersect
+                if (r1[0] < r2[0] + r2[2] and r1[0] + r1[2] > r2[0] and
+                        r1[1] < r2[1] + r2[3] and r1[1] + r1[3] > r2[1]):
+                    r1 = [min(r1[0], r2[0]), min(r1[1], r2[1]), max(r1[2], r2[2]), max(r1[3], r2[3])]
+                    # second region will no longer be considered
+                    r2pair[1] = False
+            # first region is now merged with all intersecting regions
+            text_regions.append(r1)
+        for rect in text_regions:
+            cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 255), 1)
+
+        logging.debug("A total of %s final text regions found", len(text_regions))
+        return text_regions
 
     def _detect_text_erstat(self, haystack):
         import cv2

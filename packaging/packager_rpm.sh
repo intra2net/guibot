@@ -9,23 +9,23 @@ readonly distro_version="${VERSION:-30}"
 dnf -y install python3 python3-coverage
 # python-imaging
 dnf -y install python3-pillow
+# pip dependencies (for dependencies not available as RPM)
+dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
 # contour, template, feature, cascade, text matching
 dnf -y install python3-numpy python3-opencv
 # text matching
-# TODO: current cv2.text module is either missing or compatible with Tesseract 3 (we use 4)
-export DISABLE_OCR=1
-dnf -y install tesseract
-# desktop control
+dnf -y install tesseract tesseract-devel
+dnf -y install gcc-c++
+pip3 install pytesseract==0.3.4 tesserocr==2.5.1
+# deep learning
+pip3 install torch==1.4.0 torchvision==0.5.0
+# screen controlling
+pip3 install autopy==4.0.0
+pip3 install vncdotool==0.12.0
 dnf -y install xdotool xwd ImageMagick
 dnf -y install x11vnc
 
-# pip dependencies (not available as RPM)
-dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
-pip3 install autopy==4.0.0
-pip3 install torch==1.4.0 torchvision==0.5.0
-pip3 install vncdotool==0.12.0
-
-# rpm packaging
+# rpm packaging and installing of current guibot source
 dnf -y install rpm-build
 ROOT=""
 NAME=$(sed -n 's/^Name:[ \t]*//p' "$ROOT/guibot/packaging/guibot.spec")

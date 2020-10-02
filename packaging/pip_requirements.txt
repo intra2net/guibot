@@ -5,6 +5,8 @@ Pillow==7.2.0
 
 # backends
 autopy==4.0.0; platform_python_implementation != "PyPy"
+pytesseract==0.3.4
+tesserocr==2.5.1
 opencv-contrib-python==4.2.0.34; platform_python_implementation != "PyPy"
 # TODO: travis errors out with > 4MB log size only from torch download
 torch==1.4.0; 'generic' not in platform_release and platform_python_implementation != "PyPy"
