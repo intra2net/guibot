@@ -27,7 +27,7 @@ from guibot.config import GlobalConfig
 from guibot.imagelogger import ImageLogger
 from guibot.fileresolver import FileResolver
 from guibot.target import Pattern, Image
-from guibot.finder import DeepFinder
+from . import CustomFinder
 from guibot.errors import *
 
 
@@ -55,7 +55,7 @@ ImageLogger.step = 1
 
 
 # Main configuration and training steps
-finder = DeepFinder()
+finder = CustomFinder()
 # use this to load pretrained model and train futher
 #import torch
 #weights = torch.load(NEEDLE)
