@@ -2939,11 +2939,10 @@ class DeepFinder(Finder):
                                                          self.params["deep"]["iheight"].value))
         with torch.no_grad():
             data = torch.from_numpy(gray/255)
-
-        # send input to the network and get probability distribution over locations
-        output = self.net(data)
-        import torch.nn.functional as F
-        output = F.softmax(output, dim=-1)
+            # send input to the network and get probability distribution over locations
+            output = self.net(data)
+            import torch.nn.functional as F
+            output = F.softmax(output, dim=-1)
         hotmap = output.data[...,:-1].numpy().reshape(self.params["deep"]["oheight"].value,
                                                       self.params["deep"]["owidth"].value)
         self.imglog.hotmaps.append(hotmap*255)
@@ -3049,19 +3048,20 @@ class DeepFinder(Finder):
         test_loss = 0
         correct = 0
         import torch.nn.functional as F
-        # loader iterator returns batches of samples
-        for data, target in test_loader:
-            if self.params["deep"]["use_cuda"].value:
-                data, target = data.cuda(), target.cuda()
+        with torch.no_grad():
+            # loader iterator returns batches of samples
+            for data, target in test_loader:
+                if self.params["deep"]["use_cuda"].value:
+                    data, target = data.cuda(), target.cuda()
 
-            # main testing step
-            output = self.net(data)
-            # accumulate negative log likelihood loss
-            test_loss += F.nll_loss(output, target).data[0]
-            # get the index of the max log-probability
-            pred = output.data.max(1)[1]
-            # calculate accuracy as well
-            correct += pred.eq(target.data).cpu().sum()
+                # main testing step
+                output = self.net(data)
+                # accumulate negative log likelihood loss
+                test_loss += F.nll_loss(output, target).data[0]
+                # get the index of the max log-probability
+                pred = output.data.max(1)[1]
+                # calculate accuracy as well
+                correct += pred.eq(target.data).cpu().sum()
 
         # loss function already averages over batch size
         test_loss /= len(test_loader)
