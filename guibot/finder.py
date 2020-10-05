@@ -2937,9 +2937,8 @@ class DeepFinder(Finder):
                            dtype=numpy.float32).reshape((1, 1, # batch size and channel number
                                                          self.params["deep"]["iwidth"].value,
                                                          self.params["deep"]["iheight"].value))
-        from torch.autograd import Variable
         with torch.no_grad():
-            data = Variable(torch.from_numpy(gray/255))
+            data = torch.from_numpy(gray/255)
 
         # send input to the network and get probability distribution over locations
         output = self.net(data)
@@ -2999,14 +2998,12 @@ class DeepFinder(Finder):
         # set the module in training mode
         self.net.train()
 
-        from torch.autograd import Variable
         import torch.nn.functional as F
         for epoch in range(1, epochs + 1):
             # loader iterator returns batches of samples
             for batch_idx, (data, target) in enumerate(train_loader):
                 if self.params["deep"]["use_cuda"].value:
                     data, target = data.cuda(), target.cuda()
-                data, target = Variable(data), Variable(target)
 
                 # main training step
                 optimizer.zero_grad()
@@ -3051,14 +3048,11 @@ class DeepFinder(Finder):
 
         test_loss = 0
         correct = 0
-        from torch.autograd import Variable
         import torch.nn.functional as F
         # loader iterator returns batches of samples
         for data, target in test_loader:
             if self.params["deep"]["use_cuda"].value:
                 data, target = data.cuda(), target.cuda()
-            # volatile implies to use the variable in inference mode
-            data, target = Variable(data, volatile=True), Variable(target)
 
             # main testing step
             output = self.net(data)
