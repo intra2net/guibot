@@ -2923,7 +2923,6 @@ class DeepFinder(Finder):
         self.net.eval()
 
         # convert haystack data to tensor variable
-        import PIL
         gray = haystack.pil_image.convert('L')
         size = (self.params["deep"]["iwidth"].value, self.params["deep"]["iheight"].value)
         gray.thumbnail(size, PIL.Image.ANTIALIAS)
@@ -2958,7 +2957,8 @@ class DeepFinder(Finder):
             ox, oy = dx * x, dy * y
             ndx, ndy = needle.center_offset.x, needle.center_offset.y
 
-            draw = PIL.ImageDraw.Draw(canvas)
+            from PIL import ImageDraw
+            draw = ImageDraw.Draw(canvas)
             draw.rectangle((ox, oy, ox+dx, oy+dy), outline=(0,0,255))
 
             self.imglog.locations.append((ox, oy))
