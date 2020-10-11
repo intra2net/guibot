@@ -824,10 +824,10 @@ class FinderTest(unittest.TestCase):
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0].x, 87)
-        self.assertEqual(matches[0].y, 344)
-        self.assertEqual(matches[0].width, 511)
-        self.assertEqual(matches[0].height, 803)
+        self.assertAlmostEqual(matches[0].x, 90, delta=5)
+        self.assertAlmostEqual(matches[0].y, 345, delta=5)
+        self.assertAlmostEqual(matches[0].width, 515, delta=5)
+        self.assertAlmostEqual(matches[0].height, 805, delta=5)
 
         # verify dumped files count and names
         dumps = self._verify_and_get_dumps(6)

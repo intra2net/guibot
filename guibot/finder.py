@@ -2803,6 +2803,8 @@ class DeepFinder(Finder):
 
         # "cpu", "cuda", or "auto"
         self.params[category]["device"] = CVParameter("auto")
+        # "fasterrcnn_resnet50_fpn" or "maskrcnn_resnet50_fpn"
+        self.params[category]["model"] = CVParameter("fasterrcnn_resnet50_fpn")
         # class ID (default range is the COCO dataset classes)
         # TODO: this is a temporary list and not a CV parameter in need of a better format
         self.params[category]["class_id_map"] = [
@@ -2841,11 +2843,13 @@ class DeepFinder(Finder):
         import torch
         import torchvision
 
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
-        if self.params[category]["device"].value == "auto":
+        model_arch = self.params[category]["model"].value
+        model = torchvision.models.detection.__dict__[model_arch](pretrained=True)
+        device_opt = self.params[category]["device"].value
+        if device_opt == "auto":
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
-            device = torch.device(self.params[category]["device"].value)
+            device = torch.device(device_opt)
         model.to(device)
         model.eval()
 
