@@ -2774,6 +2774,8 @@ class DeepFinder(Finder):
     from a haystack image.
     """
 
+    _cache = {}
+
     def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
         """Build a CV backend using OpenCV's text matching options."""
         super(DeepFinder, self).__init__(configure=False, synchronize=False)
@@ -2803,8 +2805,6 @@ class DeepFinder(Finder):
 
         # "cpu", "cuda", or "auto"
         self.params[category]["device"] = CVParameter("auto")
-        # "fasterrcnn_resnet50_fpn" or "maskrcnn_resnet50_fpn"
-        self.params[category]["model"] = CVParameter("fasterrcnn_resnet50_fpn")
         # class ID (default range is the COCO dataset classes)
         # TODO: this is a temporary list and not a CV parameter in need of a better format
         self.params[category]["class_id_map"] = [
@@ -2821,6 +2821,10 @@ class DeepFinder(Finder):
             'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
             'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
         ]
+        # "fasterrcnn_resnet50_fpn" or "maskrcnn_resnet50_fpn"
+        self.params[category]["arch"] = CVParameter("fasterrcnn_resnet50_fpn")
+        # file to load pre-trained model weights from
+        self.params[category]["model"] = CVParameter("")
 
     def configure_backend(self, backend=None, category="deep", reset=False):
         """
@@ -2843,16 +2847,28 @@ class DeepFinder(Finder):
         import torch
         import torchvision
 
-        model_arch = self.params[category]["model"].value
-        model = torchvision.models.detection.__dict__[model_arch](pretrained=True)
+        # reuse or cache a unique model depending on arch and checkpoint
+        model_arch = self.params[category]["arch"].value
+        model_checkpoint = self.params[category]["model"].value
+        model_id = model_arch if not model_checkpoint else model_checkpoint
+        # reuse weights from already loaded models to avoid one model per sync
+        if model_id in self._cache:
+            model = self._cache[model_id]
+        else:
+            model = torchvision.models.detection.__dict__[model_arch](pretrained=True)
+            # load .pth or .pkl data file if pretrained model is available
+            if model_checkpoint:
+                model.load_state_dict(torch.load(model_checkpoint))
+            self._cache[model_id] = model
+
         device_opt = self.params[category]["device"].value
         if device_opt == "auto":
             device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         else:
             device = torch.device(device_opt)
+
         model.to(device)
         model.eval()
-
         self.net = model
 
     def synchronize_backend(self, backend=None, category="deep", reset=False):

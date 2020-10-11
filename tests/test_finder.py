@@ -866,6 +866,32 @@ class FinderTest(unittest.TestCase):
                 self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
+    def test_deep_cache(self):
+        finder = DeepFinder(synchronize=False)
+
+        finder.params["deep"]["arch"].value = "fasterrcnn_resnet50_fpn"
+        finder.synchronize_backend()
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(len(finder._cache.keys()), 1)
+        self.assertEqual(finder._cache[finder.params["deep"]["arch"].value],
+                         finder.net)
+
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(len(finder._cache.keys()), 1)
+        self.assertEqual(finder._cache[finder.params["deep"]["arch"].value],
+                         finder.net)
+
+        finder.params["deep"]["arch"].value = "maskrcnn_resnet50_fpn"
+        finder.synchronize_backend()
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(len(finder._cache.keys()), 2)
+        self.assertEqual(finder._cache[finder.params["deep"]["arch"].value],
+                         finder.net)
+
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_same(self):
         finder = HybridFinder()
