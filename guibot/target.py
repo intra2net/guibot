@@ -53,7 +53,7 @@ class Target(object):
             target = Image(filename)
         elif extension == ".txt":
             target = Text(name)
-        elif extension in (".xml", ".pth"):
+        elif extension in (".xml", ".csv"):
             target = Pattern(filename)
         elif extension == ".steps":
             target = Chain(name)
@@ -443,7 +443,10 @@ class Pattern(Target):
         self.data_file = None
 
         try:
-            self.load(str(self))
+            # base file name can be used as an ID for some finders like cascade
+            base_name = self.id if "." in self.id else self.id + ".csv"
+            filename = FileResolver().search(base_name)
+            self.load(filename)
         except FileNotFoundError:
             # pattern as a label from a reusable model is also acceptable
             pass
@@ -596,6 +599,13 @@ class Chain(Target):
             if step_backend in ["autopy", "contour", "template", "feature", "tempfeat"]:
                 data = data_and_config.filename
             elif step_backend in ["cascade", "deep"]:
+                # special case - dynamic pattern without a filename
+                # save only the matchfile and add the corresponding line
+                if not data_and_config.data_file:
+                    matchfile = str(data_and_config) + ".match"
+                    Target.save(data_and_config, matchfile)
+                    save_lines.append(data_and_config.id + "\t" + matchfile + "\n")
+                    continue
                 data = data_and_config.data_file
             elif step_backend == "text":
                 # special case - dynamic text without a filename

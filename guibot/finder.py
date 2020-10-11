@@ -2805,22 +2805,6 @@ class DeepFinder(Finder):
 
         # "cpu", "cuda", or "auto"
         self.params[category]["device"] = CVParameter("auto")
-        # class ID (default range is the COCO dataset classes)
-        # TODO: this is a temporary list and not a CV parameter in need of a better format
-        self.params[category]["class_id_map"] = [
-            '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
-            'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-            'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-            'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-            'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-            'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-            'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-            'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
-            'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-            'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-            'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-        ]
         # "fasterrcnn_resnet50_fpn" or "maskrcnn_resnet50_fpn"
         self.params[category]["arch"] = CVParameter("fasterrcnn_resnet50_fpn")
         # file to load pre-trained model weights from
@@ -2900,11 +2884,14 @@ class DeepFinder(Finder):
         needle_class = needle.id
         similarity = self.params["find"]["similarity"].value
 
-        # load .pth or .pkl data file if pretrained model is available
         import torch
         if needle.data_file is not None:
-            weights = torch.load(needle.data_file)
-            self.net.load_state_dict(weights)
+            with open(needle.data_file, "rt") as f:
+                classes_list = [l.rstrip() for l in f.readlines()]
+                classes = lambda x: classes_list[x]
+        else:
+            # an infinite list as a string identity map
+            classes = lambda x: str(x)
 
         # set the module in evaluation mode
         self.net.eval()
@@ -2924,7 +2911,7 @@ class DeepFinder(Finder):
         matches = []
         from .match import Match
         for i in range(len(pred[0]['labels'])):
-            label = self.params["deep"]["class_id_map"][pred[0]['labels'][i].cpu().item()]
+            label = classes(pred[0]['labels'][i].cpu().item())
             score = pred[0]['scores'][i].cpu().item()
             x, y, w, h =  list(pred[0]['boxes'][i].cpu().numpy())
             rect = (int(x), int(y), int(x+w), int(y+h))
