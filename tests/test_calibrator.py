@@ -246,7 +246,7 @@ class CalibratorTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_benchmark_deep(self):
         self.benchmark_setUp()
-        calibrator = Calibrator(Pattern('shape_blue_circle.pth'), Image('all_shapes'))
+        calibrator = Calibrator(Pattern('cat'), Image('coco_cat'))
         for calibration, random_starts in [(False, 0), (False, 1), (True, 0), (True, 1)]:
             results = calibrator.benchmark(DeepFinder(), calibration=calibration, random_starts=random_starts)
             # pprint.pprint(results)

@@ -2801,24 +2801,24 @@ class DeepFinder(Finder):
         self.params[category] = {}
         self.params[category]["backend"] = "none"
 
-        self.params[category]["use_cuda"] = CVParameter(False)
-        self.params[category]["batch_size"] = CVParameter(1000, 0, None)
-        self.params[category]["log_interval"] = CVParameter(10, 1, None)
-        self.params[category]["learning_rate"] = CVParameter(0.01, 0.0, 1.0)
-        self.params[category]["sgd_momentum"] = CVParameter(0.5, 0.0, 1.0)
-
-        self.params[category]["iwidth"] = CVParameter(150, 0, None)
-        self.params[category]["iheight"] = CVParameter(150, 0, None)
-        self.params[category]["owidth"] = CVParameter(15, 0, None)
-        self.params[category]["oheight"] = CVParameter(15, 0, None)
-
-        self.params[category]["channels_conv1"] = CVParameter(10, 1, None)
-        self.params[category]["kernel_conv1"] = CVParameter(5, 0, None)
-        self.params[category]["kernel_pool1"] = CVParameter(2, 0, None)
-        self.params[category]["channels_conv2"] = CVParameter(20, 1, None)
-        self.params[category]["kernel_conv2"] = CVParameter(5, 0, None)
-        self.params[category]["kernel_pool2"] = CVParameter(2, 0, None)
-        self.params[category]["outputs_linear1"] = CVParameter(50, 0, None)
+        # "cpu", "cuda", or "auto"
+        self.params[category]["device"] = CVParameter("auto")
+        # class ID (default range is the COCO dataset classes)
+        # TODO: this is a temporary list and not a CV parameter in need of a better format
+        self.params[category]["class_id_map"] = [
+            '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
+            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
+            'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+            'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
+            'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
+            'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
+            'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
+            'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
+            'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
+            'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
+            'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
+            'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
+        ]
 
     def configure_backend(self, backend=None, category="deep", reset=False):
         """
@@ -2838,55 +2838,18 @@ class DeepFinder(Finder):
         backend = self.params[category]["backend"]
 
         # class-specific dependencies
-        import torch.nn as nn
-        import torch.nn.functional as F
-        f = self
+        import torch
+        import torchvision
 
-        class Net(nn.Module):
-            """Nested class for convolutional neural network."""
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+        if self.params[category]["device"].value == "auto":
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            device = torch.device(self.params[category]["device"].value)
+        model.to(device)
+        model.eval()
 
-            def __init__(self):
-                super(Net, self).__init__()
-
-                # short names for network parameters
-                iw, ih = f.params["deep"]["iwidth"].value, f.params["deep"]["iheight"].value
-                c1k, c1c = f.params["deep"]["kernel_conv1"].value, f.params["deep"]["channels_conv1"].value
-                c2k, c2c = f.params["deep"]["kernel_conv2"].value, f.params["deep"]["channels_conv2"].value
-                c1p, c2p = f.params["deep"]["kernel_pool1"].value, f.params["deep"]["kernel_pool2"].value
-                ow, oh = f.params["deep"]["owidth"].value, f.params["deep"]["oheight"].value
-
-                # calculate the number of inputs of the first linear layer
-                rw = int((int((iw - c1k + 1) / c1p) - c2k + 1) / c2p)
-                rh = int((int((ih - c1k + 1) / c1p) - c2k + 1) / c2p)
-                n = rw * rh * c2c
-
-                self.conv1 = nn.Conv2d(1, c1c, kernel_size=c1k)
-                self.conv2 = nn.Conv2d(c1c, c2c, kernel_size=c2k)
-                self.conv2_drop = nn.Dropout2d()
-                self.fc1 = nn.Linear(n, f.params["deep"]["outputs_linear1"].value)
-                # one extra class for no location
-                self.fc2 = nn.Linear(f.params["deep"]["outputs_linear1"].value, ow * oh + 1)
-
-            def forward(self, x):
-                x = self.conv1(x)
-                # max pooling with some kernel and stride downsamples using max
-                x = F.max_pool2d(x, f.params["deep"]["kernel_pool1"].value)
-                # rectifier linear unit (ReLu) is simply max(x,0)
-                x = F.relu(x)
-                # second convolutional layer
-                x = self.conv2_drop(self.conv2(x))
-                x = F.relu(F.max_pool2d(x, f.params["deep"]["kernel_pool2"].value))
-                # rearrange to flat layer (size = inputs of first linear layer)
-                x = x.view(-1, self.fc1.in_features)
-                x = F.relu(self.fc1(x))
-                # use dropout to avoid overfitting
-                x = F.dropout(x, training=self.training)
-                x = F.relu(self.fc2(x))
-                # softmax gives a vector of the same dimension with components sum of 1
-                x = F.log_softmax(x, dim=-1)
-                return x
-
-        self.net = Net()
+        self.net = model
 
     def synchronize_backend(self, backend=None, category="deep", reset=False):
         """
@@ -2911,7 +2874,11 @@ class DeepFinder(Finder):
         self.imglog.haystack = haystack
         self.imglog.dump_matched_images()
         # prepare a canvas solely for image logging
-        canvas = haystack.pil_image.copy()
+        full_hotmap = haystack.pil_image.copy()
+        filtered_hotmap = haystack.pil_image.copy()
+        final_hotmap = haystack.pil_image.copy()
+        needle_class = needle.id
+        similarity = self.params["find"]["similarity"].value
 
         # load .pth or .pkl data file if pretrained model is available
         import torch
@@ -2923,49 +2890,52 @@ class DeepFinder(Finder):
         self.net.eval()
 
         # convert haystack data to tensor variable
-        gray = haystack.pil_image.convert('L')
-        size = (self.params["deep"]["iwidth"].value, self.params["deep"]["iheight"].value)
-        gray.thumbnail(size, PIL.Image.ANTIALIAS)
-        gray_bg = PIL.Image.new('L', size, (255))
-        gray_bg.paste(gray,
-                      (int((size[0] - gray.size[0]) / 2),
-                       int((size[1] - gray.size[1]) / 2)))
-        gray = gray_bg
-        import numpy
-        gray = numpy.array(gray,
-                           dtype=numpy.float32).reshape((1, 1, # batch size and channel number
-                                                         self.params["deep"]["iwidth"].value,
-                                                         self.params["deep"]["iheight"].value))
+        from torchvision import transforms
+        img = haystack.pil_image
+        transform = transforms.Compose([transforms.ToTensor()])
+        img = transform(img)
+        # a bit awkward but the only current way to get the model's device
+        device = next(self.net.parameters()).device
+        img.to(device)
+        # forward pass the image to obtain predictions
         with torch.no_grad():
-            data = torch.from_numpy(gray/255)
-            # send input to the network and get probability distribution over locations
-            output = self.net(data)
-            import torch.nn.functional as F
-            output = F.softmax(output, dim=-1)
-        hotmap = output.data[...,:-1].numpy().reshape(self.params["deep"]["oheight"].value,
-                                                      self.params["deep"]["owidth"].value)
-        self.imglog.hotmaps.append(hotmap*255)
+            pred = self.net([img])
 
-        # TODO: try Faster Region-CNNs, Single Shot MultiBox Detector, and YOLO
         matches = []
         from .match import Match
-        dx = int(haystack.width / self.params["deep"]["owidth"].value)
-        dy = int(haystack.height / self.params["deep"]["oheight"].value)
-        ys, xs = numpy.where(hotmap > self.params["find"]["similarity"].value)
-        for (x, y) in zip(list(xs), list(ys)):
-            similarity = hotmap[y,x]
-            ox, oy = dx * x, dy * y
-            ndx, ndy = needle.center_offset.x, needle.center_offset.y
+        for i in range(len(pred[0]['labels'])):
+            label = self.params["deep"]["class_id_map"][pred[0]['labels'][i].cpu().item()]
+            score = pred[0]['scores'][i].cpu().item()
+            x, y, w, h =  list(pred[0]['boxes'][i].cpu().numpy())
+            rect = (int(x), int(y), int(x+w), int(y+h))
 
             from PIL import ImageDraw
-            draw = ImageDraw.Draw(canvas)
-            draw.rectangle((ox, oy, ox+dx, oy+dy), outline=(0,0,255))
+            draw = ImageDraw.Draw(full_hotmap)
+            draw.rectangle(rect, outline=(255,0,0))
+            draw.text((rect[0], rect[1]), label, fill=(255,0,0,0))
+            if score < similarity:
+                logging.debug("Found %s has a low confidence score %s<%s, skipping",
+                              label, score, similarity)
+                continue
+            draw = ImageDraw.Draw(filtered_hotmap)
+            draw.rectangle(rect, outline=(0,255,0))
+            draw.text((rect[0], rect[1]), label, fill=(0,255,0,0))
+            if label != needle_class:
+                logging.debug("Found %s is not %s, skipping", label, needle_class)
+                continue
+            logging.debug("Found %s with sufficient confidence %s at (%s, %s)",
+                          label, score, x, y)
+            draw = ImageDraw.Draw(final_hotmap)
+            draw.rectangle(rect, outline=(0,0,255))
 
-            self.imglog.locations.append((ox, oy))
-            self.imglog.similarities.append(hotmap[y,x])
-            matches.append(Match(ox, oy, dx, dy, ndx, ndy, similarity))
+            self.imglog.locations.append((x, y))
+            self.imglog.similarities.append(score)
+            dx, dy = needle.center_offset.x, needle.center_offset.y
+            matches.append(Match(*rect, dx, dy, score))
 
-        self.imglog.hotmaps.append(canvas)
+        self.imglog.hotmaps.append(full_hotmap)
+        self.imglog.hotmaps.append(filtered_hotmap)
+        self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
         return matches
 
@@ -2985,8 +2955,10 @@ class DeepFinder(Finder):
         elif len(self.imglog.hotmaps) == 0:
             raise MissingHotmapError("No matching was performed in order to be image logged")
 
-        self.imglog.dump_hotmap("imglog%s-3hotmap-1activity.png" % self.imglog.printable_step,
+        self.imglog.dump_hotmap("imglog%s-3hotmap-1full.png" % self.imglog.printable_step,
                                 self.imglog.hotmaps[0])
+        self.imglog.dump_hotmap("imglog%s-3hotmap-2filtered.png" % self.imglog.printable_step,
+                                self.imglog.hotmaps[1])
 
         similarity = self.imglog.similarities[-1] if len(self.imglog.similarities) > 0 else 0.0
         name = "imglog%s-3hotmap-%s.png" % (self.imglog.printable_step, similarity)

@@ -35,6 +35,13 @@ class CustomFinder(DeepFinder):
         self.params[category] = {}
         self.params[category]["backend"] = "none"
 
+        # TODO: these hyperparameters need to find their right place
+        category = "deep"
+        self.params[category]["batch_size"] = CVParameter(1000, 0, None)
+        self.params[category]["log_interval"] = CVParameter(10, 1, None)
+        self.params[category]["learning_rate"] = CVParameter(0.01, 0.0, 1.0)
+        self.params[category]["sgd_momentum"] = CVParameter(0.5, 0.0, 1.0)
+
     def configure_backend(self, backend=None, category="custom", reset=False):
         """
         Custom implementation of the base method.

@@ -34,7 +34,7 @@ from guibot.errors import *
 # Parameters to toy with
 file_resolver = FileResolver()
 file_resolver.add_path('images/')
-NEEDLE = Pattern('shape_blue_circle.pth')
+NEEDLE = Pattern(0)
 HAYSTACK = Image('all_shapes')
 LOGPATH = './tmp/'
 REMOVE_LOGPATH = False
@@ -67,17 +67,6 @@ finder = CustomFinder()
 #finder.params["deep"]["log_interval"].value = 10
 #finder.params["deep"]["learning_rate"].value = 0.01
 #finder.params["deep"]["sgd_momentum"].value = 0.5
-#finder.params["deep"]["iwidth"].value = 150
-#finder.params["deep"]["iheight"].value = 150
-#finder.params["deep"]["owidth"].value = 15
-#finder.params["deep"]["oheight"].value = 15
-#finder.params["deep"]["channels_conv1"].value = 10
-#finder.params["deep"]["kernel_conv1"].value = 5
-#finder.params["deep"]["kernel_pool1"].value = 2
-#finder.params["deep"]["channels_conv2"].value = 20
-#finder.params["deep"]["kernel_conv2"].value = 5
-#finder.params["deep"]["kernel_pool2"].value = 2
-#finder.params["deep"]["outputs_linear1"].value = 50
 for i in range(EPOCHS_PER_STAGE):
     # train for N epochs saving the obtained needle pattern at each stage
     # (which could also be helpful in case the training is interrupted)

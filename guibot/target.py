@@ -430,17 +430,24 @@ class Pattern(Target):
     training of a classifier in order to recognize a target.
     """
 
-    def __init__(self, data_filename, match_settings=None):
+    def __init__(self, id, match_settings=None):
         """
         Build a pattern object.
 
-        :param str data_filename: name of the text file if any
+        :param str id: alphanumeric id of logit or label for the given pattern
         :param match_settings: predefined configuration for the CV backend if any
         :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Pattern, self).__init__(match_settings)
+        self.id = id
         self.data_file = None
-        self.load(data_filename)
+
+        try:
+            self.load(str(self))
+        except FileNotFoundError:
+            # pattern as a label from a reusable model is also acceptable
+            pass
+
         # per instance match settings have the final word
         if match_settings is not None:
             self.match_settings = match_settings
@@ -448,7 +455,7 @@ class Pattern(Target):
 
     def __str__(self):
         """Provide the data filename."""
-        return os.path.splitext(os.path.basename(self.data_file))[0]
+        return self.id
 
     def load(self, filename, **kwargs):
         """
@@ -459,6 +466,7 @@ class Pattern(Target):
         super(Pattern, self).load(filename)
         if not os.path.exists(filename):
             filename = FileResolver().search(filename)
+        # loading the actual data is backend specific so only register its path
         self.data_file = filename
 
     def save(self, filename):
@@ -469,8 +477,9 @@ class Pattern(Target):
         """
         super(Pattern, self).save(filename)
         with open(filename, "wb") as fo:
-            with open(self.data_file, "rb") as fi:
-                fo.write(fi.read())
+            if self.data_file is not None:
+                with open(self.data_file, "rb") as fi:
+                    fo.write(fi.read())
 
 
 class Chain(Target):

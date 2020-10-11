@@ -818,54 +818,52 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_same(self):
         finder = DeepFinder()
-        # shape matching is not perfect
-        finder.params["find"]["similarity"].value = 0.99
-        matches = finder.find(Pattern('shape_blue_circle.pth'), Image('all_shapes'))
+        # pattern matching is not perfect
+        finder.params["find"]["similarity"].value = 0.95
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0].x, 104)
-        # TODO: need more precision to get y=10
-        self.assertEqual(matches[0].y, 40)
-        # based on a 15x15 output layer (network configuration)
-        self.assertEqual(matches[0].width, int(Image('all_shapes').width/15))
-        self.assertEqual(matches[0].height, int(Image('all_shapes').height/15))
+        self.assertEqual(matches[0].x, 87)
+        self.assertEqual(matches[0].y, 344)
+        self.assertEqual(matches[0].width, 511)
+        self.assertEqual(matches[0].height, 803)
 
         # verify dumped files count and names
-        dumps = self._verify_and_get_dumps(5)
-        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "deep")
+        dumps = self._verify_and_get_dumps(6)
+        self._verify_dumped_images('cat', 'coco_cat', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEqual(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 3)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
                 self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
-                self.assertIn('%sactivity' % i, hotmap)
+                self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_nomatch(self):
         finder = DeepFinder()
         finder.params["find"]["similarity"].value = 0.25
-        matches = finder.find(Pattern('n_ibs.pth'), Image('all_shapes'))
+        matches = finder.find(Pattern('cat'), Image('all_shapes'))
 
         # verify match accuracy
         self.assertEqual(len(matches), 0)
 
         # verify dumped files count and names
-        dumps = self._verify_and_get_dumps(5)
-        self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "deep")
+        dumps = self._verify_and_get_dumps(6)
+        self._verify_dumped_images('cat', 'all_shapes', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEqual(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 3)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
                 self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
-                self.assertIn('%sactivity' % i, hotmap)
+                self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
