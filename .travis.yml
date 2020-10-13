@@ -27,7 +27,10 @@ services:
 # docker images are not cached by travis due to vm recreation for each build
 - docker
 cache:
-- pip
+  pip: true
+  directories:
+  # cache large DL models
+  - $HOME/.cache/torch/checkpoints
 addons:
   apt:
     sources:
