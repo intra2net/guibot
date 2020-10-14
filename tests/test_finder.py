@@ -82,6 +82,14 @@ class FinderTest(unittest.TestCase):
         self.assertIn("1needle", target)
         self.assertIn("1needle", config)
         self.assertIn(needle_name, target)
+        if backend == "cascade":
+            self.assertTrue(target.endswith(".xml"))
+        elif backend == "text":
+            self.assertTrue(target.endswith(".txt"))
+        elif backend == "deep":
+            self.assertTrue(target.endswith(".csv"))
+        else:
+            self.assertTrue(target.endswith(".png"))
         self.assertIn(needle_name, config)
         self.assertTrue(config.endswith(".match"))
         self.assertEqual(os.path.splitext(target)[0], os.path.splitext(config)[0])

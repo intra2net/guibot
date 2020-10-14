@@ -338,7 +338,7 @@ class Image(Target):
         specified by :py:func:`config.GlobalConfig.image_quality`.
         """
         super(Image, self).save(filename)
-        filename += ".png" if os.path.splitext(filename)[1] != ".png" else ""
+        filename += ".png" if os.path.splitext(filename)[-1] != ".png" else ""
         self.pil_image.save(filename, compress_level=GlobalConfig.image_quality)
 
         new_image = self.copy()
@@ -396,6 +396,7 @@ class Text(Target):
         :param str filename: name for the target file
         """
         super(Text, self).save(filename)
+        filename += ".txt" if os.path.splitext(filename)[-1] != ".txt" else ""
         with open(filename, "w") as f:
             f.write(self.value)
 
@@ -444,7 +445,7 @@ class Pattern(Target):
 
         try:
             # base file name can be used as an ID for some finders like cascade
-            base_name = self.id if "." in self.id else self.id + ".csv"
+            base_name = str(self.id) if "." in str(self.id) else str(self.id) + ".csv"
             filename = FileResolver().search(base_name)
             self.load(filename)
         except FileNotFoundError:
@@ -479,6 +480,7 @@ class Pattern(Target):
         :param str filename: name for the target file
         """
         super(Pattern, self).save(filename)
+        filename += ".csv" if "." not in str(self.id) else ""
         with open(filename, "wb") as fo:
             if self.data_file is not None:
                 with open(self.data_file, "rb") as fi:
