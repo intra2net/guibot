@@ -11,6 +11,7 @@ dnf -y install python3 python3-coverage
 dnf -y install python3-pillow
 # pip dependencies (for dependencies not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
+pip3 install --upgrade pip
 # contour, template, feature, cascade, text matching
 dnf -y install python3-numpy python3-opencv
 # text matching

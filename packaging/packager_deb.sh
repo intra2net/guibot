@@ -13,6 +13,7 @@ apt-get -y install python3 python3-coverage
 apt-get -y install python3-pil
 # pip dependencies (for dependencies not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
+pip3 install --upgrade pip
 # contour, template, feature, cascade, text matching
 apt-get -y install python3-numpy
 if [[ $distro_version == "xenial" ]]; then
