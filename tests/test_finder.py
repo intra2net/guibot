@@ -82,6 +82,14 @@ class FinderTest(unittest.TestCase):
         self.assertIn("1needle", target)
         self.assertIn("1needle", config)
         self.assertIn(needle_name, target)
+        if backend == "cascade":
+            self.assertTrue(target.endswith(".xml"))
+        elif backend == "text":
+            self.assertTrue(target.endswith(".txt"))
+        elif backend == "deep":
+            self.assertTrue(target.endswith(".csv"))
+        else:
+            self.assertTrue(target.endswith(".png"))
         self.assertIn(needle_name, config)
         self.assertTrue(config.endswith(".match"))
         self.assertEqual(os.path.splitext(target)[0], os.path.splitext(config)[0])
@@ -818,55 +826,85 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_same(self):
         finder = DeepFinder()
-        # shape matching is not perfect
-        finder.params["find"]["similarity"].value = 0.99
-        matches = finder.find(Pattern('shape_blue_circle.pth'), Image('all_shapes'))
+        # pattern matching is not perfect
+        finder.params["find"]["similarity"].value = 0.95
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
 
         # verify match accuracy
         self.assertEqual(len(matches), 1)
-        self.assertEqual(matches[0].x, 104)
-        # TODO: need more precision to get y=10
-        self.assertEqual(matches[0].y, 40)
-        # based on a 15x15 output layer (network configuration)
-        self.assertEqual(matches[0].width, int(Image('all_shapes').width/15))
-        self.assertEqual(matches[0].height, int(Image('all_shapes').height/15))
+        self.assertAlmostEqual(matches[0].x, 90, delta=5)
+        self.assertAlmostEqual(matches[0].y, 345, delta=5)
+        self.assertAlmostEqual(matches[0].width, 515, delta=5)
+        self.assertAlmostEqual(matches[0].height, 805, delta=5)
 
         # verify dumped files count and names
-        dumps = self._verify_and_get_dumps(5)
-        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "deep")
+        dumps = self._verify_and_get_dumps(6)
+        self._verify_dumped_images('cat', 'coco_cat', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEqual(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 3)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
                 self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
-                self.assertIn('%sactivity' % i, hotmap)
+                self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+        finder.configure_backend("tensorflow", "deep")
+        with self.assertRaises(ImportError):
+            finder.synchronize_backend()
+        with self.assertRaises(NotImplementedError):
+            finder.find(Pattern('cat'), Image('coco_cat'))
 
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_nomatch(self):
         finder = DeepFinder()
         finder.params["find"]["similarity"].value = 0.25
-        matches = finder.find(Pattern('n_ibs.pth'), Image('all_shapes'))
+        matches = finder.find(Pattern('cat'), Image('all_shapes'))
 
         # verify match accuracy
         self.assertEqual(len(matches), 0)
 
         # verify dumped files count and names
-        dumps = self._verify_and_get_dumps(5)
-        self._verify_dumped_images('n_ibs', 'all_shapes', dumps, "deep")
+        dumps = self._verify_and_get_dumps(6)
+        self._verify_dumped_images('cat', 'all_shapes', dumps, "deep")
         hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-        self.assertEqual(len(hotmaps), 2)
+        self.assertEqual(len(hotmaps), 3)
         for i, hotmap in enumerate(hotmaps):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
                 self.assertRegex(hotmap, ".*-\d\.\d+.*")
             else:
-                self.assertIn('%sactivity' % i, hotmap)
+                self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
+    def test_deep_cache(self):
+        finder = DeepFinder(synchronize=False)
+
+        finder.params["deep"]["arch"].value = "fasterrcnn_resnet50_fpn"
+        finder.synchronize_backend()
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(len(finder._cache.keys()), 1)
+        self.assertEqual(finder._cache[finder.params["deep"]["arch"].value],
+                         finder.net)
+
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(len(finder._cache.keys()), 1)
+        self.assertEqual(finder._cache[finder.params["deep"]["arch"].value],
+                         finder.net)
+
+        finder.params["deep"]["arch"].value = "maskrcnn_resnet50_fpn"
+        finder.synchronize_backend()
+        matches = finder.find(Pattern('cat'), Image('coco_cat'))
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(len(finder._cache.keys()), 2)
+        self.assertEqual(finder._cache[finder.params["deep"]["arch"].value],
+                         finder.net)
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_same(self):

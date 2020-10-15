@@ -97,8 +97,8 @@ class FileResolver(object):
             if os.path.exists(fullname):
                 return fullname
 
-            # Check with .pth extension for patterns
-            fullname = os.path.join(directory, filename + '.pth')
+            # Check with .csv extension for patterns
+            fullname = os.path.join(directory, filename + '.csv')
             if os.path.exists(fullname):
                 return fullname
 
