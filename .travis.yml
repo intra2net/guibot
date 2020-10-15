@@ -1,3 +1,4 @@
+os: linux
 dist: bionic
 language: python
 python:
@@ -8,7 +9,7 @@ python:
 - pypy3.5
 env:
 - INSTALL_VARIANT=pip
-matrix:
+jobs:
   include:
   - python: 3.7
     env: INSTALL_VARIANT=rpm.fedora.31
@@ -73,7 +74,7 @@ script:
 before_deploy: "cd .. && cd packaging"
 deploy:
   provider: pypi
-  user: "__token__"
+  username: "__token__"
   password:
     secure: xIlFxzEDn+Wnl6EsYbTvR2wiuU0AJbqoc+qtrvY8lpvuE5WDB+b6YNOIyWQ6WBjyMhQrget5/zl36AyB44H6WbJO/9n9RcfpeTpqm/UzSqbLxFrZGqW1k7iQVRNhb+DBi3KfsWGteczFRUQDycExp5qiBjMC3nSq7vhawmFFESPFRVRHoAp0naa6l/dsICPTDHFwcVR1adzJMarFByJ4AkenHPzYi5gFDSPtk0JAHFBNy1l2WlSYNtBX2Umo0GJgEAu5SPem9fnp1CZ+4pOHxqoEuszQvDE7ICZRLYDmOAe29qi+FUgJkUabOF0yPRzeXmFyLeomf2iqpn95O2HKx/+B/2P7QVpleNhyVI490KMASkISWgbd0EYb8vZQ9gdH+k1DtYd/Gi9Tn+1gbLORq3gHnXYQ9t9LEKS5kGEEkWQjG6L4eqINrawLxfTvzihTXzPRWyur0pTV/qPKtZfJeCyNMC1/2mDeitaWO17CeU/Y/qbYc6qlbW/hOnGSH6ODVVQP1Gh87/JHzzK3iIx2QmyubHfFVeixoVm/zf5F5u/DNxsAZm0Cuu1BzSGpEwjgVbjoMQxTsD8HINvEqcG9dRw+L7R6ym9E0cPp+PGXf4NNc8f0GK0yUHSIoUCylIvfe8JbGLKYKQ3UhLFN76lLdSInCV+z9lDCTLwO1zsAka0=
   distributions: "sdist bdist_wheel"
