@@ -248,11 +248,15 @@ class CalibratorTest(unittest.TestCase):
         self.benchmark_setUp()
         calibrator = Calibrator(Pattern('cat'), Image('coco_cat'))
         for calibration, random_starts in [(False, 0), (False, 1), (True, 0), (True, 1)]:
-            results = calibrator.benchmark(DeepFinder(), calibration=calibration, random_starts=random_starts)
+            finder = DeepFinder()
+            # get rid of backends that are not implemented anyway
+            finder.algorithms["deep_learners"] = list(finder.algorithms["deep_learners"])
+            finder.algorithms["deep_learners"].remove("tensorflow")
+            results = calibrator.benchmark(finder, calibration=calibration, random_starts=random_starts)
             # pprint.pprint(results)
             self.assertGreater(len(results), 0, "There should be at least one benchmarked method")
             for result in results:
-                self.assertEqual(result[0], "", "Incorrect backend names for case '%s' %s %s" % result)
+                self.assertEqual("pytorch", result[0], "Incorrect backend names for case '%s' %s %s" % result)
                 # TODO: the needle is found but with very low similarity - possibly due to different haystack size
                 #self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)

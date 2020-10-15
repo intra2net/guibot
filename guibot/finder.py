@@ -2780,6 +2780,10 @@ class DeepFinder(Finder):
         """Build a CV backend using OpenCV's text matching options."""
         super(DeepFinder, self).__init__(configure=False, synchronize=False)
 
+        # available and currently fully compatible methods
+        self.categories["deep"] = "deep_learners"
+        self.algorithms["deep_learners"] = ("pytorch", "tensorflow")
+
         # other attributes
         self.net = None
 
@@ -2799,9 +2803,14 @@ class DeepFinder(Finder):
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             super(DeepFinder, self).configure_backend("deep", reset=True)
+        if backend is None:
+            backend = GlobalConfig.deep_learn_backend
+        if backend not in self.algorithms[self.categories[category]]:
+            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
+                                          "%s" % (backend, self.algorithms[self.categories[category]]))
 
         self.params[category] = {}
-        self.params[category]["backend"] = "none"
+        self.params[category]["backend"] = backend
 
         # "cpu", "cuda", or "auto"
         self.params[category]["device"] = CVParameter("auto")
@@ -2827,33 +2836,60 @@ class DeepFinder(Finder):
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
         backend = self.params[category]["backend"]
 
-        # class-specific dependencies
-        import torch
-        import torchvision
-
         # reuse or cache a unique model depending on arch and checkpoint
         model_arch = self.params[category]["arch"].value
         model_checkpoint = self.params[category]["model"].value
         model_id = model_arch if not model_checkpoint else model_checkpoint
-        # reuse weights from already loaded models to avoid one model per sync
-        if model_id in self._cache:
-            model = self._cache[model_id]
-        else:
-            model = torchvision.models.detection.__dict__[model_arch](pretrained=True)
-            # load .pth or .pkl data file if pretrained model is available
-            if model_checkpoint:
-                model.load_state_dict(torch.load(model_checkpoint))
-            self._cache[model_id] = model
 
-        device_opt = self.params[category]["device"].value
-        if device_opt == "auto":
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        else:
-            device = torch.device(device_opt)
+        # TODO: eventually think about using Catalyst and Keras
+        if backend == "pytorch":
+            # class-specific dependencies
+            import torch
+            import torchvision
 
-        model.to(device)
-        model.eval()
-        self.net = model
+            # reuse weights from already loaded models to avoid one model per sync
+            if model_id in self._cache:
+                model = self._cache[model_id]
+            else:
+                model = torchvision.models.detection.__dict__[model_arch](pretrained=True)
+                # load .pth or .pkl data file if pretrained model is available
+                if model_checkpoint:
+                    model.load_state_dict(torch.load(model_checkpoint))
+                self._cache[model_id] = model
+
+            device_opt = self.params[category]["device"].value
+            if device_opt == "auto":
+                device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            else:
+                device = torch.device(device_opt)
+
+            model.to(device)
+            model.eval()
+            self.net = model
+
+        elif backend == "tensorflow":
+            # class-specific dependencies
+            import tensorflow as tf
+            tf.keras.backend.clear_session()
+            # TODO: current TensorFlow model zoo/garden API is too unstable
+            from research.object_detection.utils import config_util
+            from research.object_detection.builders import model_builder
+
+            # TODO: the model ARCH and CHECKPOINT need extra path flexibility
+            #tf_models_dir = 'models/research/object_detection'
+            #model_arch = os.path.join(tf_models_dir, 'configs/tf2/ssd_resnet50_v1_fpn_640x640_coco17_tpu-8.config')
+            #model_checkpoint = os.path.join(tf_models_dir, 'test_data/checkpoint/ckpt-0')
+
+            # load pipeline config and build a detection model
+            configs = config_util.get_configs_from_pipeline_file(model_arch)
+            model_config = configs['model']
+
+            self.net = model_builder.build(model_config=model_config, is_training=False)
+            ckpt = tf.compat.v2.train.Checkpoint(model=self.net)
+            ckpt.restore(model_checkpoint)
+
+        else:
+            raise ValueError("Invalid DL backend '%s'" % backend)
 
     def synchronize_backend(self, backend=None, category="deep", reset=False):
         """
@@ -2883,7 +2919,12 @@ class DeepFinder(Finder):
         final_hotmap = haystack.pil_image.copy()
         needle_class = needle.id
         similarity = self.params["find"]["similarity"].value
+        backend = self.params["deep"]["backend"]
 
+        if backend == "tensorflow":
+            raise NotImplementedError("The TensorFlow model zoo/garden libary "
+                                      "is too unstable at present")
+        assert backend == "pytorch", "Only PyTorch model zoo/garden is supported"
         import torch
         if needle.data_file is not None:
             with open(needle.data_file, "rt") as f:

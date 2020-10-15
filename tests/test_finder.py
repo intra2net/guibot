@@ -851,6 +851,12 @@ class FinderTest(unittest.TestCase):
                 self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
+        finder.configure_backend("tensorflow", "deep")
+        with self.assertRaises(ImportError):
+            finder.synchronize_backend()
+        with self.assertRaises(NotImplementedError):
+            finder.find(Pattern('cat'), Image('coco_cat'))
+
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
     def test_deep_nomatch(self):
         finder = DeepFinder()
