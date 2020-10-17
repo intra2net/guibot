@@ -364,21 +364,23 @@ finder.synchronize()
 device = next(finder.net.parameters()).device
 # Define custom class, backbone, or model parameters
 if finder.params["deep"]["model"].value == "":
-    # get number of input features for the classifier
-    in_features = finder.net.roi_heads.box_predictor.cls_score.in_features
-    # replace the possibly pre-trained head with a new one
+    # manually reinstantiate the model with a fully trainable backbone
+    from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
+    # can change the backbone and its retained pre-training here
+    backbone = resnet_fpn_backbone('resnet50', True, trainable_layers=3)
     if "faster" in finder.params["deep"]["arch"].value:
-        from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
-        finder.net.roi_heads.box_predictor = FastRCNNPredictor(in_features, len(dataset.classes))
+        from torchvision.models.detection.faster_rcnn import FasterRCNN
+        finder.net = FasterRCNN(backbone, num_classes=len(dataset.classes))
     elif "mask" in finder.params["deep"]["arch"].value:
-        from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
-        finder.net.roi_heads.box_predictor = MaskRCNNPredictor(in_features, len(dataset.classes))
-    else:
-        raise ValueError(f'Invalid choice of architecture: {finder.params["deep"]["arch"].value}')
+        from torchvision.models.detection.mask_rcnn import MaskRCNN
+        finder.net = MaskRCNN(backbone, num_classes=len(dataset.classes))
     # TODO: eventually support keypoint R-CNN if it shows to be promising
     #elif "keypoint" in finder.params["deep"]["arch"].value:
-    #    from torchvision.models.detection.keypoint_rcnn import KeypointRCNNPredictor
-    #    finder.net.roi_heads.box_predictor = KeypointRCNNPredictor(in_features, len(dataset.classes))
+    #    from torchvision.models.detection.keypoint_rcnn import KeypointRCNN
+    #    finder.net = KeypointRCNN(backbone, num_classes=len(dataset.classes))
+    else:
+        raise ValueError(f'Invalid choice of architecture: {finder.params["deep"]["arch"].value}')
+    finder.net.to(device)
 
 
 # Train and test the network

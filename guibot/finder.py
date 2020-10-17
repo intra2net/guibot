@@ -2814,7 +2814,9 @@ class DeepFinder(Finder):
 
         # "cpu", "cuda", or "auto"
         self.params[category]["device"] = CVParameter("auto")
-        # "fasterrcnn_resnet50_fpn" or "maskrcnn_resnet50_fpn"
+        # number of anticipated classes (target patterns)
+        self.params[category]["classes"] = CVParameter(91, 1, None, 1)
+        # "fasterrcnn_resnet50_fpn", "maskrcnn_resnet50_fpn" or other detection models
         self.params[category]["arch"] = CVParameter("fasterrcnn_resnet50_fpn")
         # file to load pre-trained model weights from
         self.params[category]["model"] = CVParameter("")
@@ -2837,6 +2839,7 @@ class DeepFinder(Finder):
         backend = self.params[category]["backend"]
 
         # reuse or cache a unique model depending on arch and checkpoint
+        model_classes = self.params[category]["classes"].value
         model_arch = self.params[category]["arch"].value
         model_checkpoint = self.params[category]["model"].value
         model_id = model_arch if not model_checkpoint else model_checkpoint
@@ -2845,16 +2848,20 @@ class DeepFinder(Finder):
         if backend == "pytorch":
             # class-specific dependencies
             import torch
-            import torchvision
+            import torchvision.models.detection as models
 
             # reuse weights from already loaded models to avoid one model per sync
             if model_id in self._cache:
                 model = self._cache[model_id]
             else:
-                model = torchvision.models.detection.__dict__[model_arch](pretrained=True)
+                # only models pretrained on the COCO dataset are available
+                is_pretrained = model_checkpoint == "" and model_classes == 91
+                model = models.__dict__[model_arch](pretrained=is_pretrained,
+                                                    num_classes=model_classes)
                 # load .pth or .pkl data file if pretrained model is available
                 if model_checkpoint:
-                    model.load_state_dict(torch.load(model_checkpoint))
+                    model.load_state_dict(torch.load(model_checkpoint,
+                                                     map_location="cpu"))
                 self._cache[model_id] = model
 
             device_opt = self.params[category]["device"].value
