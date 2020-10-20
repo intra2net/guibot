@@ -156,6 +156,9 @@ class GuiBotProxy(GuiBot):
     def mouse_up(self, target_or_location, button=None):
         return self._proxify(super(GuiBotProxy, self).mouse_up(target_or_location, button))
 
+    def mouse_scroll(self, target_or_location, clicks=10, horizontal=False):
+        return self._proxify(super(GuiBotProxy, self).mouse_scroll(target_or_location, clicks, horizontal))
+
     def drag_drop(self, src_target_or_location, dst_target_or_location, modifiers=None):
         return self._proxify(super(GuiBotProxy, self).drag_drop(src_target_or_location,
                                                                    dst_target_or_location, modifiers))

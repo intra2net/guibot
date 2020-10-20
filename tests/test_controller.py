@@ -289,6 +289,25 @@ class ControllerTest(unittest.TestCase):
                 self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_mouse_scroll(self):
+        for display in self.backends:
+            for horizontal in [False, True]:
+                # TODO: method not available for other backends
+                if not isinstance(display, PyAutoGUIController):
+                    continue
+                self.show_application()
+
+                # TODO: currently we don't have any GUI components for this
+                move_to = self.double_click_control
+                display.mouse_move(move_to)
+                display.mouse_scroll(horizontal=horizontal)
+                # cleanup since no control can close the window on scroll
+                display.mouse_click(display.mousemap.LEFT_BUTTON, count=2)
+
+                self.assertEqual(0, self.wait_end(self.child_app))
+                self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_keys_press(self):
         for display in self.backends:
             key = display.keymap

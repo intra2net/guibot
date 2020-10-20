@@ -240,6 +240,20 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYAUTOGUI', "0") == "1", "PyAutoGUI disabled")
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_mouse_scroll(self):
+        # TODO: method not available for other backends
+        self.region.dc_backend = PyAutoGUIController()
+        self.show_application()
+
+        # TODO: currently we don't have any GUI components for this
+        self.region.mouse_scroll(self.double_click_control)
+        # cleanup since no control can close the window on scroll
+        self.region.dc_backend.mouse_click(count=2)
+
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_drag_drop(self):
         self.show_application()
         self.region.drag_drop(self.textedit_control, self.textedit_quit_control)

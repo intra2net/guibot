@@ -844,6 +844,26 @@ class Region(object):
         self.dc_backend.mouse_up(button)
         return match
 
+    def mouse_scroll(self, target_or_location, clicks=10, horizontal=False):
+        """
+        Scroll the mouse for a number of clicks.
+
+        :param target_or_location: target or location to scroll on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`target.Target`
+        :param int clicks: number of clicks to scroll up (positive) or down (negative)
+        :param bool horizontal: whether to perform a horizontal scroll instead
+                                (only available on some platforms)
+        :returns: match from finding the target or nothing if scrolling on a known location
+        :rtype: :py:class:`match.Match` or None
+        """
+        match = self.hover(target_or_location)
+        log.debug("Scrolling the mouse %s for %s clicks at %s",
+                  "horizontally" if horizontal else "vertically",
+                  clicks, target_or_location)
+        self.dc_backend.mouse_scroll(clicks, horizontal)
+        return match
+
     def drag_drop(self, src_target_or_location, dst_target_or_location, modifiers=None):
         """
         Drag from and drop at a target or location optionally holding special keys.

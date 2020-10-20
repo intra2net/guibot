@@ -214,7 +214,7 @@ class Controller(LocalConfig):
         :rtype: :py:class:`image.Image`
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
+        raise NotImplementedError("Method is not available for this controller implementation")
 
     def mouse_move(self, location, smooth=True):
         """
@@ -225,7 +225,7 @@ class Controller(LocalConfig):
         :param bool smooth: whether to sue smooth transition or just teleport the mouse
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
+        raise NotImplementedError("Method is not available for this controller implementation")
 
     def mouse_click(self, button=None, count=1, modifiers=None):
         """
@@ -239,7 +239,7 @@ class Controller(LocalConfig):
         :type modifiers: [str]
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
+        raise NotImplementedError("Method is not available for this controller implementation")
 
     def mouse_down(self, button):
         """
@@ -249,7 +249,7 @@ class Controller(LocalConfig):
                            (see :py:class:`inputmap.MouseButton` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
+        raise NotImplementedError("Method is not available for this controller implementation")
 
     def mouse_up(self, button):
         """
@@ -259,7 +259,18 @@ class Controller(LocalConfig):
                            (see :py:class:`inputmap.MouseButton` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
+        raise NotImplementedError("Method is not available for this controller implementation")
+
+    def mouse_scroll(self, clicks=10, horizontal=False):
+        """
+        Scroll the mouse for a number of clicks.
+
+        :param int clicks: number of clicks to scroll up (positive) or down (negative)
+        :param bool horizontal: whether to perform a horizontal scroll instead
+                                (only available on some platforms)
+        :raises: :py:class:`NotImplementedError` if the base class method is called
+        """
+        raise NotImplementedError("Method is not available for this controller implementation")
 
     def keys_toggle(self, keys, up_down):
         """
@@ -271,7 +282,7 @@ class Controller(LocalConfig):
         :param bool up_down: hold down if true else release
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
+        raise NotImplementedError("Method is not available for this controller implementation")
 
     def keys_press(self, keys):
         """
@@ -296,7 +307,7 @@ class Controller(LocalConfig):
         :type modifiers: [str]
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Abstract method call - call implementation of this class")
+        raise NotImplementedError("Method is not available for this controller implementation")
 
 
 class AutoPyController(Controller):
@@ -1181,6 +1192,17 @@ class PyAutoGUIController(Controller):
         See base method for details.
         """
         self._backend_obj.mouseUp(button=button)
+
+    def mouse_scroll(self, clicks=10, horizontal=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if horizontal:
+            self._backend_obj.hscroll(clicks)
+        else:
+            self._backend_obj.scroll(clicks)
 
     def keys_toggle(self, keys, up_down):
         """
