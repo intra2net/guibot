@@ -528,6 +528,95 @@ class QemuKey(Key):
         self.KP_DECIMAL = 'kp_decimal'
 
 
+class PyAutoGUIKey(Key):
+    """Helper to contain all key mappings for the PyAutoGUI DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the key map for the PyAutoGUI backend."""
+        super().__init__()
+
+        # TODO: it would be preferable to translate directly to RBF like
+        # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
+        self.ENTER = 'return' # also 'enter'
+        self.TAB = 'tab'
+        self.ESC = 'escape' # also 'esc'
+        self.BACKSPACE = 'backspace'
+        self.DELETE = 'delete' # also 'del'
+        self.INSERT = 'insert'
+
+        self.CTRL = 'ctrl' # also 'lctrl'
+        self.ALT = 'alt' # also 'lalt'
+        self.SHIFT = 'shift' # also 'lshift'
+        # TODO: 'meta key' is not available
+        self.META = None
+        self.RCTRL = 'ctrlright'
+        self.RALT = 'altright'
+        self.RSHIFT = 'shiftright'
+        # TODO: 'meta key' is not available
+        self.RMETA = None
+
+        self.F1 = 'f1'
+        self.F2 = 'f2'
+        self.F3 = 'f3'
+        self.F4 = 'f4'
+        self.F5 = 'f5'
+        self.F6 = 'f6'
+        self.F7 = 'f7'
+        self.F8 = 'f8'
+        self.F9 = 'f9'
+        self.F10 = 'f10'
+        self.F11 = 'f11'
+        self.F12 = 'f12'
+        self.F13 = 'f13'
+        self.F14 = 'f14'
+        self.F15 = 'f15'
+        self.F16 = 'f16'
+        self.F17 = 'f17'
+        self.F18 = 'f18'
+        self.F19 = 'f19'
+        self.F20 = 'f20'
+
+        self.HOME = 'home'
+        self.END = 'end'
+        self.LEFT = 'left'
+        self.RIGHT = 'right'
+        self.UP = 'up'
+        self.DOWN = 'down'
+        self.PAGE_DOWN = 'pgdn'
+        self.PAGE_UP = 'pgup'
+
+        self.CAPS_LOCK = 'capslock'
+        self.PRINTSCREEN = 'printscreen'
+        self.PAUSE = 'pause'
+        self.SCROLL_LOCK = 'scrolllock'
+        self.NUM_LOCK = 'numlock'
+        # TODO: these are not available
+        self.SYS_REQ = None
+        self.SUPER = None
+        self.RSUPER = None
+        self.HYPER = None
+        self.RHYPER = None
+        self.MENU = None
+
+        # TODO: these are not available
+        self.KP0 = None
+        self.KP1 = None
+        self.KP2 = None
+        self.KP3 = None
+        self.KP4 = None
+        self.KP5 = None
+        self.KP6 = None
+        self.KP7 = None
+        self.KP8 = None
+        self.KP9 = None
+        self.KP_ENTER = None
+        self.KP_DIVIDE = None
+        self.KP_MULTIPLY = None
+        self.KP_SUBTRACT = None
+        self.KP_ADD = None
+        self.KP_DECIMAL = None
+
+
 class KeyModifier(object):
     """Helper to contain all modifier key mappings for a custom desktop control backend."""
 
@@ -621,6 +710,22 @@ class QemuKeyModifier(KeyModifier):
         self.MOD_META = None
 
 
+class PyAutoGUIKeyModifier(KeyModifier):
+    """Helper to contain all modifier key mappings for the PyAutoGUI DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the modifier key map for the PyAutoGUI backend."""
+        super().__init__()
+
+        # TODO: 'none' is not available
+        self.MOD_NONE = None
+        self.MOD_CTRL = 'ctrl'
+        self.MOD_ALT = 'alt'
+        self.MOD_SHIFT = 'shift'
+        # TODO: 'meta' is not available
+        self.MOD_META = None
+
+
 class MouseButton(object):
     """Helper to contain all mouse button mappings for a custom desktop control backend."""
 
@@ -695,3 +800,15 @@ class QemuMouseButton(MouseButton):
         self.LEFT_BUTTON = 1
         self.RIGHT_BUTTON = 4
         self.CENTER_BUTTON = 2
+
+
+class PyAutoGUIMouseButton(MouseButton):
+    """Helper to contain all mouse button mappings for the PyAutoGUI DC backend."""
+
+    def __init__(self):
+        """Build an instance containing the mouse button map for the PyAutoGUI backend."""
+        super().__init__()
+
+        self.LEFT_BUTTON = 'left'
+        self.RIGHT_BUTTON = 'right'
+        self.CENTER_BUTTON = 'middle'

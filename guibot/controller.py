@@ -1055,3 +1055,139 @@ class PyAutoGUIController(Controller):
             self.__configure_backend(reset=True)
         if synchronize:
             self.__synchronize_backend(reset=False)
+
+    def get_mouse_location(self):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        x, y = self._backend_obj.position()
+        return Location(x, y)
+
+    def __configure_backend(self, backend=None, category="pyautogui", reset=False):
+        if category != "pyautogui":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(PyAutoGUIController, self).configure_backend("pyautogui", reset=True)
+
+        self.params[category] = {}
+        self.params[category]["backend"] = "none"
+
+    def configure_backend(self, backend=None, category="pyautogui", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__configure_backend(backend, category, reset)
+
+    def __synchronize_backend(self, backend=None, category="pyautogui", reset=False):
+        if category != "pyautogui":
+            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+        if reset:
+            super(PyAutoGUIController, self).synchronize_backend("pyautogui", reset=True)
+
+        import pyautogui
+        self._backend_obj = pyautogui
+
+        self._width, self._height = self._backend_obj.size()
+        self._pointer = self._backend_obj.position()
+        self._keymap = inputmap.PyAutoGUIKey()
+        self._modmap = inputmap.PyAutoGUIKeyModifier()
+        self._mousemap = inputmap.PyAutoGUIMouseButton()
+
+    def synchronize_backend(self, backend=None, category="pyautogui", reset=False):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self.__synchronize_backend(backend, category, reset)
+
+    def capture_screen(self, *args):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        xpos, ypos, width, height, _ = self._region_from_args(*args)
+
+        pil_image = self._backend_obj.screenshot(region=(xpos, ypos, width, height))
+        return Image(None, pil_image)
+
+    def mouse_move(self, location, smooth=True):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if smooth:
+            self._backend_obj.moveTo(location.x, location.y, duration=1)
+        else:
+            self._backend_obj.moveTo(location.x, location.y)
+        self._pointer = location
+
+    def mouse_click(self, button=None, count=3, modifiers=None):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        toggle_timeout = GlobalConfig.toggle_delay
+        click_timeout = GlobalConfig.click_delay
+        button = self._mousemap.LEFT_BUTTON if button is None else button
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+        for _ in range(count):
+            # NOTE: we don't use higher level API calls since we want to also
+            # control the toggle speed
+            # self._backend_obj.click(clicks=count, interval=click_timeout, button=button)
+            self._backend_obj.mouseDown(button=button)
+            time.sleep(toggle_timeout)
+            self._backend_obj.mouseUp(button=button)
+            time.sleep(click_timeout)
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
+
+    def mouse_down(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self._backend_obj.mouseDown(button=button)
+
+    def mouse_up(self, button):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        self._backend_obj.mouseUp(button=button)
+
+    def keys_toggle(self, keys, up_down):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        for key in keys:
+            if up_down:
+                self._backend_obj.keyDown(key)
+            else:
+                self._backend_obj.keyUp(key)
+
+    def keys_type(self, text, modifiers):
+        """
+        Custom implementation of the base method.
+
+        See base method for details.
+        """
+        if modifiers != None:
+            self.keys_toggle(modifiers, True)
+
+        self._backend_obj.typewrite(text, interval=GlobalConfig.delay_between_keys)
+
+        if modifiers != None:
+            self.keys_toggle(modifiers, False)
