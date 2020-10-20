@@ -156,7 +156,7 @@ class Controller(LocalConfig):
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
-    def synchronize_backend(self, backend=None, category="type", reset=False):
+    def synchronize_backend(self, backend=None, category="control", reset=False):
         """
         Custom implementation of the base method.
 
