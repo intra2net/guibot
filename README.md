@@ -25,7 +25,7 @@ Supported Computer Vision (CV) backends are based on
 - [Tesseract OCR](https://github.com/tesseract-ocr/tesseract)
     - Text matching through pytesseract, tesserocr, or OpenCV's bindings
 - [PyTorch](https://github.com/pytorch/pytorch)
-    - CNN matching
+    - R-CNN matching through Faster R-CNN or Mask R-CNN
 - [autopy](https://github.com/msanders/autopy)
     - AutoPy matching
 
