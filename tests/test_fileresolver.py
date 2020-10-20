@@ -97,7 +97,6 @@ class FileResolverTest(unittest.TestCase):
         self.resolver.add_path("images")
 
         # Test correct precedence of the checks
-        self.assertEqual("images/shape_blue_circle.pth", self.resolver.search("shape_blue_circle.pth"))
         self.assertEqual("images/shape_blue_circle.xml", self.resolver.search("shape_blue_circle.xml"))
         self.assertEqual("images/shape_blue_circle.png", self.resolver.search("shape_blue_circle"))
 

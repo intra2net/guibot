@@ -164,8 +164,14 @@ class ChainTest(unittest.TestCase):
         "/tmp/some_text_content.txt.png",
         "/tmp/some_text_content.txt.xml",
         "/tmp/some_text_content.txt.txt",
-        "/tmp/some_text_content.txt.pth",
-        "/tmp/some_text_content.txt.steps"
+        "/tmp/some_text_content.txt.csv",
+        "/tmp/some_text_content.txt.steps",
+        "/tmp/17.csv",
+        "/tmp/17.csv.png",
+        "/tmp/17.csv.xml",
+        "/tmp/17.csv.txt",
+        "/tmp/17.csv.csv",
+        "/tmp/17.csv.steps",
     ]
 
     def setUp(self):
@@ -229,7 +235,8 @@ class ChainTest(unittest.TestCase):
         :rtype: :py:class:`finder.Finder`
         """
         # guess the backend from the filename
-        backend = filename.split("_")[1]
+        parts = filename.split("_")
+        backend = parts[1] if len(parts) > 1 else parts[0]
         finder_mock = Mock()
         finder_mock.params = {
             "find": {
@@ -278,7 +285,7 @@ class ChainTest(unittest.TestCase):
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
             "item_for_feature.png	some_feature_matchfile.match",
-            "item_for_deep.pth	some_deep_matchfile.match",
+            "item_for_deep.csv	some_deep_matchfile.match",
             "item_for_cascade.xml	some_cascade_matchfile.match",
             "item_for_template.png	some_template_matchfile.match",
             "item_for_autopy.png	some_autopy_matchfile.match",
@@ -291,8 +298,8 @@ class ChainTest(unittest.TestCase):
             item, match = l.split("\t")
             # we need to have a finder created for each .match file (inside Chain itself)
             calls.append(call(match))
-            # and a finder for each image file (except for text items)
-            if not item.endswith(".txt"):
+            # and a finder for each target file (except for text and pattern items)
+            if os.path.splitext(item)[1] not in [".txt", ".xml", ".csv"]:
                 calls.append(call(os.path.splitext(item)[0] + ".match"))
         self.mock_match_read.assert_has_calls(calls)
 
@@ -302,7 +309,7 @@ class ChainTest(unittest.TestCase):
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
             "item_for_feature.png	some_feature_matchfile.match",
-            "item_for_deep.pth	some_deep_matchfile.match",
+            "item_for_deep.csv	some_deep_matchfile.match",
             "item_for_cascade.xml	some_cascade_matchfile.match",
             "item_for_template.png	some_template_matchfile.match",
             "item_for_autopy.png	some_autopy_matchfile.match",
@@ -321,8 +328,8 @@ class ChainTest(unittest.TestCase):
             fp.write("ocr_string")
 
         # create real temp files for these -- they are saved using open() and we are not
-        # mocking those calls. Also, the temp files will automatically removed on tear down
-        deep_pth = self._create_temp_file(prefix="item_for_deep", extension=".pth")
+        # mocking those calls. Also, the temp files will automatically be removed on tear down
+        deep_csv = self._create_temp_file(prefix="item_for_deep", extension=".csv")
         cascade_xml = self._create_temp_file(prefix="item_for_cascade", extension=".xml")
         # no need to mock png files -- the Image target uses PIL.Image.save(), which we mocked
 
@@ -333,7 +340,8 @@ class ChainTest(unittest.TestCase):
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
             "item_for_feature.png	some_feature_matchfile.match",
-            "{}	some_deep_matchfile.match".format(deep_pth),
+            "{}	some_deep_matchfile.match".format(deep_csv),
+            "17	some_deep_matchfile.match",
             "{}	some_cascade_matchfile.match".format(cascade_xml),
             "item_for_template.png	some_template_matchfile.match",
             "item_for_autopy.png	some_autopy_matchfile.match",
@@ -345,7 +353,8 @@ class ChainTest(unittest.TestCase):
             "item_for_contour.png	item_for_contour.match",
             "item_for_tempfeat.png	item_for_tempfeat.match",
             "item_for_feature.png	item_for_feature.match",
-            "{0}.pth	{0}.match".format(os.path.splitext(deep_pth)[0]),
+            "{0}.csv	{0}.match".format(os.path.splitext(deep_csv)[0]),
+            "17	17.match",
             "{0}.xml	{0}.match".format(os.path.splitext(cascade_xml)[0]),
             "item_for_template.png	item_for_template.match",
             "item_for_autopy.png	item_for_autopy.match",

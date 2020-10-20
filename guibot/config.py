@@ -61,6 +61,7 @@ class GlobalConfig(type):
     _feature_match_backend = "BruteForce-Hamming"
     _text_detect_backend = "contours"
     _text_ocr_backend = "pytesseract"
+    _deep_learn_backend = "pytorch"
     _hybrid_match_backend = "template"
 
     def toggle_delay(self, value=None):
@@ -473,6 +474,21 @@ class GlobalConfig(type):
             GlobalConfig._text_ocr_backend = value
     #: name of the optical character recognition backend
     text_ocr_backend = property(fget=text_ocr_backend, fset=text_ocr_backend)
+
+    def deep_learn_backend(self, value=None):
+        """
+        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+
+        :param value: name of the deep learning backend
+
+        Supported backends: pytorch, tensorflow (partial).
+        """
+        if value is None:
+            return GlobalConfig._deep_learn_backend
+        else:
+            GlobalConfig._deep_learn_backend = value
+    #: name of the deep learning backend
+    deep_learn_backend = property(fget=deep_learn_backend, fset=deep_learn_backend)
 
     def hybrid_match_backend(self, value=None):
         """

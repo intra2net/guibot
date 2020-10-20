@@ -53,7 +53,7 @@ class Target(object):
             target = Image(filename)
         elif extension == ".txt":
             target = Text(name)
-        elif extension in (".xml", ".pth"):
+        elif extension in (".xml", ".csv"):
             target = Pattern(filename)
         elif extension == ".steps":
             target = Chain(name)
@@ -338,7 +338,7 @@ class Image(Target):
         specified by :py:func:`config.GlobalConfig.image_quality`.
         """
         super(Image, self).save(filename)
-        filename += ".png" if os.path.splitext(filename)[1] != ".png" else ""
+        filename += ".png" if os.path.splitext(filename)[-1] != ".png" else ""
         self.pil_image.save(filename, compress_level=GlobalConfig.image_quality)
 
         new_image = self.copy()
@@ -396,6 +396,7 @@ class Text(Target):
         :param str filename: name for the target file
         """
         super(Text, self).save(filename)
+        filename += ".txt" if os.path.splitext(filename)[-1] != ".txt" else ""
         with open(filename, "w") as f:
             f.write(self.value)
 
@@ -430,17 +431,27 @@ class Pattern(Target):
     training of a classifier in order to recognize a target.
     """
 
-    def __init__(self, data_filename, match_settings=None):
+    def __init__(self, id, match_settings=None):
         """
         Build a pattern object.
 
-        :param str data_filename: name of the text file if any
+        :param str id: alphanumeric id of logit or label for the given pattern
         :param match_settings: predefined configuration for the CV backend if any
         :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Pattern, self).__init__(match_settings)
+        self.id = id
         self.data_file = None
-        self.load(data_filename)
+
+        try:
+            # base file name can be used as an ID for some finders like cascade
+            base_name = str(self.id) if "." in str(self.id) else str(self.id) + ".csv"
+            filename = FileResolver().search(base_name)
+            self.load(filename)
+        except FileNotFoundError:
+            # pattern as a label from a reusable model is also acceptable
+            pass
+
         # per instance match settings have the final word
         if match_settings is not None:
             self.match_settings = match_settings
@@ -448,7 +459,7 @@ class Pattern(Target):
 
     def __str__(self):
         """Provide the data filename."""
-        return os.path.splitext(os.path.basename(self.data_file))[0]
+        return self.id
 
     def load(self, filename, **kwargs):
         """
@@ -459,6 +470,7 @@ class Pattern(Target):
         super(Pattern, self).load(filename)
         if not os.path.exists(filename):
             filename = FileResolver().search(filename)
+        # loading the actual data is backend specific so only register its path
         self.data_file = filename
 
     def save(self, filename):
@@ -468,9 +480,11 @@ class Pattern(Target):
         :param str filename: name for the target file
         """
         super(Pattern, self).save(filename)
+        filename += ".csv" if "." not in str(self.id) else ""
         with open(filename, "wb") as fo:
-            with open(self.data_file, "rb") as fi:
-                fo.write(fi.read())
+            if self.data_file is not None:
+                with open(self.data_file, "rb") as fi:
+                    fo.write(fi.read())
 
 
 class Chain(Target):
@@ -587,6 +601,13 @@ class Chain(Target):
             if step_backend in ["autopy", "contour", "template", "feature", "tempfeat"]:
                 data = data_and_config.filename
             elif step_backend in ["cascade", "deep"]:
+                # special case - dynamic pattern without a filename
+                # save only the matchfile and add the corresponding line
+                if not data_and_config.data_file:
+                    matchfile = str(data_and_config) + ".match"
+                    Target.save(data_and_config, matchfile)
+                    save_lines.append(data_and_config.id + "\t" + matchfile + "\n")
+                    continue
                 data = data_and_config.data_file
             elif step_backend == "text":
                 # special case - dynamic text without a filename
