@@ -45,7 +45,8 @@ class Controller(LocalConfig):
 
         # available and currently fully compatible methods
         self.categories["control"] = "control_methods"
-        self.algorithms["control_methods"] = ("autopy", "xdotool", "vncdotool", "qemu")
+        self.algorithms["control_methods"] = ("autopy", "xdotool", "pyautogui",
+                                              "vncdotool", "qemu")
 
         # other attributes
         self._backend_obj = None

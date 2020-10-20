@@ -35,6 +35,8 @@ pip3 install torch==1.4.0 torchvision==0.5.0
 pip3 install autopy==4.0.0
 pip3 install vncdotool==0.12.0
 apt-get -y install xdotool x11-apps imagemagick
+apt-get -y install python3-tk scrot
+pip3 install pyautogui==0.9.52
 apt-get -y install x11vnc
 
 # deb packaging and installing of current guibot source
