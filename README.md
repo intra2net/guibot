@@ -31,10 +31,10 @@ Supported Computer Vision (CV) backends are based on
 
 Supported Display Controller (DC) backends are based on
 
-- [autopy](https://github.com/msanders/autopy)
-- [vncdotool](https://github.com/sibson/vncdotool)
-- [qemu](https://github.com/qemu/qemu)
-- [xdotool](https://www.semicomplete.com/projects/xdotool)
+- [AutoPy](https://github.com/msanders/autopy)
+- [PyAutoGUI](https://github.com/asweigart/pyautogui)
+- [VNCDoTool](https://github.com/sibson/vncdotool)
+- [XDoTool](https://www.semicomplete.com/projects/xdotool)
 
 ## Resources
 
