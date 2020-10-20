@@ -18,3 +18,9 @@ logging.getLogger("guibot.desktopcontrol")\
     .warn("The `desktopcontrol` module is deprecated, use `controller` instead.")
 
 from .controller import *
+
+DesktopControl = Controller
+AutoPyDesktopControl = AutoPyController
+XDoToolDesktopControl = XDoToolController
+VNCDoToolDesktopControl = VNCDoToolController
+QemuDesktopControl = QemuController

@@ -104,8 +104,8 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_initialize(self):
-        screen_width = AutoPyDesktopControl().width
-        screen_height = AutoPyDesktopControl().height
+        screen_width = AutoPyController().width
+        screen_height = AutoPyController().height
 
         self.assertEqual(0, self.region.x)
         self.assertEqual(0, self.region.y)

@@ -29,19 +29,19 @@ from .location import Location
 from .errors import *
 
 
-__all__ = ['DesktopControl', 'AutoPyDesktopControl', 'XDoToolDesktopControl',
-           'VNCDoToolDesktopControl', 'QemuDesktopControl']
+__all__ = ['Controller', 'AutoPyController', 'XDoToolController',
+           'VNCDoToolController', 'QemuController']
 
 
-class DesktopControl(LocalConfig):
+class Controller(LocalConfig):
     """
-    Desktop control backend, responsible for performing desktop operations
+    Screen control backend, responsible for performing desktop operations
     like mouse clicking, key pressing, text typing, etc.
     """
 
     def __init__(self, configure=True, synchronize=True):
-        """Build a desktop control backend."""
-        super(DesktopControl, self).__init__(configure=False, synchronize=False)
+        """Build a screen controller backend."""
+        super(Controller, self).__init__(configure=False, synchronize=False)
 
         # available and currently fully compatible methods
         self.categories["control"] = "control_methods"
@@ -127,7 +127,7 @@ class DesktopControl(LocalConfig):
         if category != "control":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(DesktopControl, self).configure_backend("dc", reset=True)
+            super(Controller, self).configure_backend("dc", reset=True)
         if backend is None:
             backend = GlobalConfig.display_control_backend
         if backend not in self.algorithms[self.categories[category]]:
@@ -151,7 +151,7 @@ class DesktopControl(LocalConfig):
         if category != "control":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(DesktopControl, self).synchronize_backend("dc", reset=True)
+            super(Controller, self).synchronize_backend("dc", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
@@ -298,15 +298,15 @@ class DesktopControl(LocalConfig):
         raise NotImplementedError("Abstract method call - call implementation of this class")
 
 
-class AutoPyDesktopControl(DesktopControl):
+class AutoPyController(Controller):
     """
-    Desktop control backend implemented through AutoPy which is a small
+    Screen control backend implemented through AutoPy which is a small
     python library portable to Windows and Linux operating systems.
     """
 
     def __init__(self, configure=True, synchronize=True):
         """Build a DC backend using AutoPy."""
-        super(AutoPyDesktopControl, self).__init__(configure=False, synchronize=False)
+        super(AutoPyController, self).__init__(configure=False, synchronize=False)
         if configure:
             self.__configure_backend(reset=True)
         if synchronize:
@@ -329,7 +329,7 @@ class AutoPyDesktopControl(DesktopControl):
         if category != "autopy":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(AutoPyDesktopControl, self).configure_backend("autopy", reset=True)
+            super(AutoPyController, self).configure_backend("autopy", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -346,7 +346,7 @@ class AutoPyDesktopControl(DesktopControl):
         if category != "autopy":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(AutoPyDesktopControl, self).synchronize_backend("autopy", reset=True)
+            super(AutoPyController, self).synchronize_backend("autopy", reset=True)
 
         import autopy
         self._backend_obj = autopy
@@ -468,15 +468,15 @@ class AutoPyDesktopControl(DesktopControl):
             self.keys_toggle(modifiers, False)
 
 
-class XDoToolDesktopControl(DesktopControl):
+class XDoToolController(Controller):
     """
-    Desktop control backend implemented through the xdotool client and
+    Screen control backend implemented through the xdotool client and
     thus portable to Linux operating systems.
     """
 
     def __init__(self, configure=True, synchronize=True):
         """Build a DC backend using XDoTool."""
-        super(XDoToolDesktopControl, self).__init__(configure=False, synchronize=False)
+        super(XDoToolController, self).__init__(configure=False, synchronize=False)
         if configure:
             self.__configure_backend(reset=True)
         if synchronize:
@@ -497,7 +497,7 @@ class XDoToolDesktopControl(DesktopControl):
         if category != "xdotool":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(XDoToolDesktopControl, self).configure_backend("xdotool", reset=True)
+            super(XDoToolController, self).configure_backend("xdotool", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -515,7 +515,7 @@ class XDoToolDesktopControl(DesktopControl):
         if category != "xdotool":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(XDoToolDesktopControl, self).synchronize_backend("xdotool", reset=True)
+            super(XDoToolController, self).synchronize_backend("xdotool", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
@@ -636,15 +636,15 @@ class XDoToolDesktopControl(DesktopControl):
             self.keys_toggle(modifiers, False)
 
 
-class VNCDoToolDesktopControl(DesktopControl):
+class VNCDoToolController(Controller):
     """
-    Desktop control backend implemented through the VNCDoTool client and
+    Screen control backend implemented through the VNCDoTool client and
     thus portable to any guest OS that is accessible through a VNC/RFB protocol.
     """
 
     def __init__(self, configure=True, synchronize=True):
         """Build a DC backend using VNCDoTool."""
-        super(VNCDoToolDesktopControl, self).__init__(configure=False, synchronize=False)
+        super(VNCDoToolController, self).__init__(configure=False, synchronize=False)
         if configure:
             self.__configure_backend(reset=True)
         if synchronize:
@@ -654,7 +654,7 @@ class VNCDoToolDesktopControl(DesktopControl):
         if category != "vncdotool":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(VNCDoToolDesktopControl, self).configure_backend("vncdotool", reset=True)
+            super(VNCDoToolController, self).configure_backend("vncdotool", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -677,7 +677,7 @@ class VNCDoToolDesktopControl(DesktopControl):
         if category != "vncdotool":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(VNCDoToolDesktopControl, self).synchronize_backend("vncdotool", reset=True)
+            super(VNCDoToolController, self).synchronize_backend("vncdotool", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
@@ -828,9 +828,9 @@ class VNCDoToolDesktopControl(DesktopControl):
             self.keys_toggle(modifiers, False)
 
 
-class QemuDesktopControl(DesktopControl):
+class QemuController(Controller):
     """
-    Desktop control backend implemented through the Qemu emulator and
+    Screen control backend implemented through the Qemu emulator and
     thus portable to any guest OS that runs on virtual machine.
 
     .. note:: This backend can be used in accord with a qemu monitor
@@ -839,7 +839,7 @@ class QemuDesktopControl(DesktopControl):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a DC backend using Qemu."""
-        super(QemuDesktopControl, self).__init__(configure=False, synchronize=False)
+        super(QemuController, self).__init__(configure=False, synchronize=False)
         if configure:
             self.__configure_backend(reset=True)
         if synchronize:
@@ -849,7 +849,7 @@ class QemuDesktopControl(DesktopControl):
         if category != "qemu":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(QemuDesktopControl, self).configure_backend("qemu", reset=True)
+            super(QemuController, self).configure_backend("qemu", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
@@ -868,7 +868,7 @@ class QemuDesktopControl(DesktopControl):
         if category != "qemu":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(QemuDesktopControl, self).synchronize_backend("qemu", reset=True)
+            super(QemuController, self).synchronize_backend("qemu", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 

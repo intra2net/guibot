@@ -45,7 +45,7 @@ class Region(object):
         :param int width: width of the region (xpos+width for downright vertex x)
         :param int height: height of the region (ypos+height for downright vertex y)
         :param dc: DC backend used for any desktop control
-        :type dc: :py:class:`controller.DesktopControl` or None
+        :type dc: :py:class:`controller.Controller` or None
         :param cv: CV backend used for any target finding
         :type cv: :py:class:`finder.Finder` or None
         :raises: :py:class:`UninitializedBackendError` if the region is empty
@@ -56,15 +56,14 @@ class Region(object):
         available within the screen space.
         """
         if dc is None:
-            # TODO: rename classes next
             if GlobalConfig.display_control_backend == "autopy":
-                dc = AutoPyDesktopControl()
+                dc = AutoPyController()
             elif GlobalConfig.display_control_backend == "xdotool":
-                dc = XDoToolDesktopControl()
+                dc = XDoToolController()
             elif GlobalConfig.display_control_backend == "vncdotool":
-                dc = VNCDoToolDesktopControl()
+                dc = VNCDoToolController()
             elif GlobalConfig.display_control_backend == "qemu":
-                dc = QemuDesktopControl()
+                dc = QemuController()
         if cv is None:
             if GlobalConfig.find_backend == "autopy":
                 cv = AutoPyFinder()

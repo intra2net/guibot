@@ -31,7 +31,7 @@ from guibot.config import GlobalConfig
 @unittest.skipIf(os.environ.get('DISABLE_VNC', "0") == "1" or
                  os.environ.get('DISABLE_AUTOPY', "0") == "1",
                  "AutoPy or VNC disabled")
-class DesktopControlTest(unittest.TestCase):
+class ControllerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -59,20 +59,20 @@ class DesktopControlTest(unittest.TestCase):
             shutil.rmtree(vnc_config_dir)
 
     def setUp(self):
-        self.backends = [AutoPyDesktopControl(), XDoToolDesktopControl()]
-        vncdotool = VNCDoToolDesktopControl(synchronize=False)
+        self.backends = [AutoPyController(), XDoToolController()]
+        vncdotool = VNCDoToolController(synchronize=False)
         vncdotool.params["vncdotool"]["vnc_password"] = self.vncpass
         vncdotool.synchronize_backend()
         self.backends += [vncdotool]
         # TODO: the Qemu DC backend is not fully developed
-        # QemuDesktopControl()
+        # QemuController()
 
     def tearDown(self):
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
         for desktop in self.backends:
             # disconnect any vncdotool backend
-            if isinstance(desktop, VNCDoToolDesktopControl):
+            if isinstance(desktop, VNCDoToolController):
                 desktop._backend_obj.disconnect()
 
     def test_basic(self):
