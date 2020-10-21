@@ -31,25 +31,25 @@ from guibot.finder import *
 class FinderTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.file_resolver = FileResolver()
-        self.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
+    def setUpClass(cls):
+        cls.file_resolver = FileResolver()
+        cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
         # preserve values of static attributes
-        self.prev_loglevel = GlobalConfig.image_logging_level
-        self.prev_logpath = GlobalConfig.image_logging_destination
-        self.prev_logwidth = GlobalConfig.image_logging_step_width
+        cls.prev_loglevel = GlobalConfig.image_logging_level
+        cls.prev_logpath = GlobalConfig.image_logging_destination
+        cls.prev_logwidth = GlobalConfig.image_logging_step_width
 
-        self.logpath = os.path.join(common_test.unittest_dir, 'tmp')
+        cls.logpath = os.path.join(common_test.unittest_dir, 'tmp')
         GlobalConfig.image_logging_level = 0
-        GlobalConfig.image_logging_destination = self.logpath
+        GlobalConfig.image_logging_destination = cls.logpath
         GlobalConfig.image_logging_step_width = 4
 
     @classmethod
-    def tearDownClass(self):
-        GlobalConfig.image_logging_level = self.prev_loglevel
-        GlobalConfig.image_logging_destination = self.prev_logpath
-        GlobalConfig.image_logging_step_width = self.prev_logwidth
+    def tearDownClass(cls):
+        GlobalConfig.image_logging_level = cls.prev_loglevel
+        GlobalConfig.image_logging_destination = cls.prev_logpath
+        GlobalConfig.image_logging_step_width = cls.prev_logwidth
 
     def setUp(self):
         # the image logger will recreate its logging destination

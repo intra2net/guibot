@@ -29,9 +29,9 @@ from guibot.errors import *
 class CalibratorTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.patfile_resolver = FileResolver()
-        self.patfile_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
+    def setUpClass(cls):
+        cls.patfile_resolver = FileResolver()
+        cls.patfile_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
     def tearDown(self):
         if os.path.exists("pairs.list"):
