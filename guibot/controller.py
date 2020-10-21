@@ -1103,6 +1103,8 @@ class PyAutoGUIController(Controller):
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
         import pyautogui
+        # allow for (0,0) and edge coordinates
+        pyautogui.FAILSAFE = False
         self._backend_obj = pyautogui
 
         self._width, self._height = self._backend_obj.size()
