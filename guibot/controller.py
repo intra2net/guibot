@@ -572,7 +572,7 @@ class XDoToolController(Controller):
             pass
         self._backend_obj.run("mousemove", str(location.x), str(location.y))
 
-    def mouse_click(self, button=None, count=3, modifiers=None):
+    def mouse_click(self, button=None, count=1, modifiers=None):
         """
         Custom implementation of the base method.
 
@@ -747,7 +747,7 @@ class VNCDoToolController(Controller):
             self._backend_obj.mouseMove(location.x, location.y)
         self._pointer = location
 
-    def mouse_click(self, button=None, count=3, modifiers=None):
+    def mouse_click(self, button=None, count=1, modifiers=None):
         """
         Custom implementation of the base method.
 
@@ -929,7 +929,7 @@ class QemuController(Controller):
         self._backend_obj.mouse_move(location.x, location.y)
         self._pointer = location
 
-    def mouse_click(self, button=None, count=3, modifiers=None):
+    def mouse_click(self, button=None, count=1, modifiers=None):
         """
         Custom implementation of the base method.
 
@@ -1129,7 +1129,7 @@ class PyAutoGUIController(Controller):
             self._backend_obj.moveTo(location.x, location.y)
         self._pointer = location
 
-    def mouse_click(self, button=None, count=3, modifiers=None):
+    def mouse_click(self, button=None, count=1, modifiers=None):
         """
         Custom implementation of the base method.
 
