@@ -349,6 +349,8 @@ class AutoPyController(Controller):
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             super(AutoPyController, self).synchronize_backend("autopy", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
         import autopy
         self._backend_obj = autopy
@@ -1097,6 +1099,8 @@ class PyAutoGUIController(Controller):
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
             super(PyAutoGUIController, self).synchronize_backend("pyautogui", reset=True)
+        if backend is not None and self.params[category]["backend"] != backend:
+            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
         import pyautogui
         self._backend_obj = pyautogui
