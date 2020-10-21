@@ -86,7 +86,10 @@ class ControllerTest(unittest.TestCase):
         self.backends = []
         if os.environ.get('DISABLE_AUTOPY', "0") == "0":
             self.backends += [AutoPyController()]
-        self.backends += [XDoToolController(), PyAutoGUIController()]
+        if os.environ.get('DISABLE_XDOTOOL', "0") == "0":
+            self.backends += [XDoToolController()]
+        if os.environ.get('DISABLE_PYAUTOGUI', "0") == "0":
+            self.backends += [PyAutoGUIController()]
         if os.environ.get('DISABLE_VNC', "0") == "0":
             vncdotool = VNCDoToolController(synchronize=False)
             vncdotool.params["vncdotool"]["vnc_password"] = self.vncpass
