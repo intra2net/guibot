@@ -16,6 +16,7 @@
 
 import os
 import stat
+import time
 import shutil
 import unittest
 import subprocess
@@ -24,6 +25,7 @@ import common_test
 from guibot.errors import *
 from guibot.controller import *
 from guibot.region import Region
+from guibot.location import Location
 from guibot.config import GlobalConfig
 
 
@@ -66,6 +68,21 @@ class ControllerTest(unittest.TestCase):
             os.unlink(xauthfile)
 
     def setUp(self):
+        # gui test scripts
+        self.script_app = os.path.join(common_test.unittest_dir, 'qt5_application.py')
+        self.child_app = None
+
+        # prefixed controls
+        # NOTE: provide and use only fixed locations to avoid CV backend dependencies
+        self.click_control = Location(75, 25)
+        self.double_click_control = Location(185, 20)
+        self.context_menu_control = Location(315, 20)
+        self.context_menu_close_control = Location(355, 35)
+        self.mouse_down_control = Location(435, 95)
+        self.mouse_up_control = Location(435, 135)
+        self.textedit_quit_control = Location(65, 60)
+        self.textedit_any_control = Location(65, 95)
+
         self.backends = []
         if os.environ.get('DISABLE_AUTOPY', "0") == "0":
             self.backends += [AutoPyController()]
@@ -79,12 +96,42 @@ class ControllerTest(unittest.TestCase):
         # QemuController()
 
     def tearDown(self):
+        self.close_windows()
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
+
         for display in self.backends:
             # disconnect any vncdotool backend
             if isinstance(display, VNCDoToolController):
                 display._backend_obj.disconnect()
+
+    def show_application(self):
+        self.child_app = subprocess.Popen(['python3', self.script_app])
+        # HACK: avoid small variability in loading speed
+        time.sleep(3)
+
+    def close_windows(self):
+        if self.child_app is not None:
+            self.child_app.terminate()
+            self.wait_end(self.child_app)
+            self.child_app = None
+
+            # HACK: make sure app is really closed
+            time.sleep(0.5)
+
+    def wait_end(self, subprocess_pipe, timeout=30):
+        expires = time.time() + timeout
+
+        while True:
+            exit_code = subprocess_pipe.poll()
+            if exit_code is not None:
+                return exit_code
+
+            if time.time() > expires:
+                self.fail('Program did not close on time. Ignoring')
+                break
+
+            time.sleep(0.2)
 
     def test_basic(self):
         for display in self.backends:
@@ -184,6 +231,93 @@ class ControllerTest(unittest.TestCase):
                 # some backends are not pixel perfect
                 self.assertAlmostEqual(location.x, 30, delta=1)
                 self.assertAlmostEqual(location.y, 20, delta=1)
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_mouse_click(self):
+        for display in self.backends:
+            mouse = display.mousemap
+            for button in [mouse.LEFT_BUTTON, mouse.CENTER_BUTTON, mouse.RIGHT_BUTTON]:
+                for count in range(1, 4):
+                    # include some modifiers without direct effect in this case
+                    for modifiers in [None, [display.keymap.CTRL]]:
+
+                        if button == mouse.LEFT_BUTTON and count == 1:
+                            move_to = self.click_control
+                        elif button == mouse.RIGHT_BUTTON and count == 1:
+                            move_to = self.context_menu_control
+                        elif button == mouse.LEFT_BUTTON and count == 2:
+                            move_to = self.double_click_control
+                        else:
+                            # need to implement more GUI components for other cases
+                            continue
+
+                        self.show_application()
+
+                        display.mouse_move(move_to, smooth=False)
+                        display.mouse_click(button, count=count, modifiers=modifiers)
+
+                        # single right button has context menu requiring extra care
+                        if button == mouse.RIGHT_BUTTON and count == 1:
+                            time.sleep(3)
+                            display.mouse_move(self.context_menu_close_control, smooth=False)
+                            display.mouse_click(mouse.LEFT_BUTTON)
+
+                        self.assertEqual(0, self.wait_end(self.child_app))
+                        self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_mouse_updown(self):
+        for display in self.backends:
+            mouse = display.mousemap
+            for switch in ["up", "down"]:
+                self.show_application()
+
+                move_to = self.mouse_up_control if switch == "up" else self.mouse_down_control
+                display.mouse_move(move_to)
+                # TODO: currently we only have GUI components for the left mouse button
+                button = mouse.LEFT_BUTTON
+
+                # either as tested or as toggled buttons setup
+                display.mouse_down(button)
+                # either as tested or as toggled buttons cleanup
+                display.mouse_up(button)
+
+                self.assertEqual(0, self.wait_end(self.child_app))
+                self.child_app = None
+
+    @unittest.skip("Unit test either errors out or is expected failure")
+    #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_keys_press(self):
+        for display in self.backends:
+            key = display.keymap
+
+            self.show_application()
+            time.sleep(1)
+            display.keys_press([key.ESC])
+            self.assertEqual(0, self.wait_end(self.child_app))
+
+            # BUG: Qt fails to register a close event in some cases
+            self.show_application()
+            time.sleep(1)
+            display.keys_press([key.ALT, key.F4])
+            self.assertEqual(0, self.wait_end(self.child_app))
+
+            self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_keys_type(self):
+        for display in self.backends:
+            # include some modifiers without direct effect in this case
+            for modifiers in [None, [display.keymap.ALT]]:
+                self.show_application()
+
+                display.mouse_move(self.textedit_quit_control)
+                display.mouse_click(display.mousemap.LEFT_BUTTON)
+                time.sleep(0.2)
+                display.keys_type('quit', modifiers)
+
+                self.assertEqual(0, self.wait_end(self.child_app))
+                self.child_app = None
 
 
 if __name__ == '__main__':
