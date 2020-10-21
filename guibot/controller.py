@@ -285,7 +285,7 @@ class Controller(LocalConfig):
         self.keys_toggle(keys, True)
         self.keys_toggle(keys, False)
 
-    def keys_type(self, text, modifiers):
+    def keys_type(self, text, modifiers=None):
         """
         Type (press consecutively) all provided keys.
 
@@ -451,7 +451,7 @@ class AutoPyController(Controller):
         for key in keys:
             self._backend_obj.key.toggle(key, up_down, [])
 
-    def keys_type(self, text, modifiers):
+    def keys_type(self, text, modifiers=None):
         """
         Custom implementation of the base method.
 
@@ -629,7 +629,7 @@ class XDoToolController(Controller):
             else:
                 self._backend_obj.run('keyup', str(key))
 
-    def keys_type(self, text, modifiers):
+    def keys_type(self, text, modifiers=None):
         """
         Custom implementation of the base method.
 
@@ -811,7 +811,7 @@ class VNCDoToolController(Controller):
             else:
                 self._backend_obj.keyUp(key)
 
-    def keys_type(self, text, modifiers):
+    def keys_type(self, text, modifiers=None):
         """
         Custom implementation of the base method.
 
@@ -1003,7 +1003,7 @@ class QemuController(Controller):
         # TODO: test and handle longer hold
         self._backend_obj.sendkey("-".join(espaced_keys), hold_time=1)
 
-    def keys_type(self, text, modifiers):
+    def keys_type(self, text, modifiers=None):
         """
         Custom implementation of the base method.
 
@@ -1188,7 +1188,7 @@ class PyAutoGUIController(Controller):
             else:
                 self._backend_obj.keyUp(key)
 
-    def keys_type(self, text, modifiers):
+    def keys_type(self, text, modifiers=None):
         """
         Custom implementation of the base method.
 
