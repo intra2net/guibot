@@ -325,6 +325,7 @@ class AutoPyController(Controller):
         if int(version[0]) > 3 or int(version[0]) == 3 and (int(version[1]) > 0 or int(version[2]) > 0):
             return Location(int(loc[0] * self._scale), int(loc[1] * self._scale))
         return Location(int(loc[0] / self._scale), int(loc[1] / self._scale))
+    mouse_location = property(fget=get_mouse_location)
 
     def __configure_backend(self, backend=None, category="autopy", reset=False):
         if category != "autopy":
@@ -356,7 +357,7 @@ class AutoPyController(Controller):
         self._width, self._height = self._backend_obj.screen.size()
         self._width = int(self._width * self._scale)
         self._height = int(self._height * self._scale)
-        self._pointer = self.get_mouse_location()
+        self._pointer = self.mouse_location
         self._keymap = inputmap.AutoPyKey()
         self._modmap = inputmap.AutoPyKeyModifier()
         self._mousemap = inputmap.AutoPyMouseButton()
@@ -403,6 +404,7 @@ class AutoPyController(Controller):
             self._backend_obj.mouse.smooth_move(x, y)
         else:
             self._backend_obj.mouse.move(x, y)
+        self._pointer = location
 
     def mouse_click(self, button=None, count=1, modifiers=None):
         """
@@ -493,6 +495,7 @@ class XDoToolController(Controller):
         x = re.search(r"x:(\d+)", pos).group(1)
         y = re.search(r"y:(\d+)", pos).group(1)
         return Location(int(x), int(y))
+    mouse_location = property(fget=get_mouse_location)
 
     def __configure_backend(self, backend=None, category="xdotool", reset=False):
         if category != "xdotool":
@@ -533,7 +536,7 @@ class XDoToolController(Controller):
 
         self._width, self._height = self._backend_obj.run("getdisplaygeometry").split()
         self._width, self._height = int(self._width), int(self._height)
-        self._pointer = self.get_mouse_location()
+        self._pointer = self.mouse_location
         self._keymap = inputmap.XDoToolKey()
         self._modmap = inputmap.XDoToolKeyModifier()
         self._mousemap = inputmap.XDoToolMouseButton()
@@ -569,8 +572,13 @@ class XDoToolController(Controller):
         """
         if smooth:
             # TODO: implement smooth mouse move?
-            pass
+            log.warning("Smooth mouse move is not supported for the XDO controller,"
+                        " defaulting to instant mouse move")
         self._backend_obj.run("mousemove", str(location.x), str(location.y))
+        # handle race conditions where the backend coordinates are updated too
+        # slowly by giving some time for the new location to take effect there
+        time.sleep(0.3)
+        self._pointer = location
 
     def mouse_click(self, button=None, count=1, modifiers=None):
         """
@@ -1065,6 +1073,7 @@ class PyAutoGUIController(Controller):
         """
         x, y = self._backend_obj.position()
         return Location(x, y)
+    mouse_location = property(fget=get_mouse_location)
 
     def __configure_backend(self, backend=None, category="pyautogui", reset=False):
         if category != "pyautogui":
@@ -1093,7 +1102,7 @@ class PyAutoGUIController(Controller):
         self._backend_obj = pyautogui
 
         self._width, self._height = self._backend_obj.size()
-        self._pointer = self._backend_obj.position()
+        self._pointer = self.mouse_location
         self._keymap = inputmap.PyAutoGUIKey()
         self._modmap = inputmap.PyAutoGUIKeyModifier()
         self._mousemap = inputmap.PyAutoGUIMouseButton()
