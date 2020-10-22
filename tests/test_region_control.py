@@ -36,12 +36,25 @@ from guibot.errors import *
 class RegionTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.file_resolver = FileResolver()
-        self.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
+    def setUpClass(cls):
+        cls.file_resolver = FileResolver()
+        cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
+        # preserve values of static attributes
+        cls.prev_loglevel = GlobalConfig.image_logging_level
+        cls.prev_logpath = GlobalConfig.image_logging_destination
+        GlobalConfig.image_logging_level = 0
+        GlobalConfig.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
+
+    @classmethod
+    def tearDownClass(cls):
+        GlobalConfig.image_logging_level = cls.prev_loglevel
+        GlobalConfig.image_logging_destination = cls.prev_logpath
+
+    def setUp(self):
         # gui test scripts
         self.script_app = os.path.join(common_test.unittest_dir, 'qt5_application.py')
+        self.child_app = None
 
         # prefixed controls
         # NOTE: provide and use only fixed locations to avoid CV backend dependencies
@@ -57,19 +70,6 @@ class RegionTest(unittest.TestCase):
         self.drag_control = Location(435, 25)
         self.drop_control = Location(435, 65)
 
-        # preserve values of static attributes
-        self.prev_loglevel = GlobalConfig.image_logging_level
-        self.prev_logpath = GlobalConfig.image_logging_destination
-        GlobalConfig.image_logging_level = 0
-        GlobalConfig.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
-
-    @classmethod
-    def tearDownClass(self):
-        GlobalConfig.image_logging_level = self.prev_loglevel
-        GlobalConfig.image_logging_destination = self.prev_logpath
-
-    def setUp(self):
-        self.child_app = None
         self.region = Region()
 
     def tearDown(self):
@@ -270,9 +270,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.skip("Unit test either errors out or is expected failure")
-    #@unittest.expectedFailure  # fails on some platforms
-    #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_press_keys(self):
         self.show_application()
         time.sleep(1)
@@ -280,10 +278,10 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
 
         # BUG: Qt fails to register a close event in some cases
-        self.show_application()
-        time.sleep(1)
-        self.region.press_keys([self.region.ALT, self.region.F4])
-        self.assertEqual(0, self.wait_end(self.child_app))
+        #self.show_application()
+        #time.sleep(1)
+        #self.region.press_keys([self.region.ALT, self.region.F4])
+        #self.assertEqual(0, self.wait_end(self.child_app))
 
         self.child_app = None
 

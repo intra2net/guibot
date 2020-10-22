@@ -265,7 +265,7 @@ class Region(object):
         :returns: mouse location
         :rtype: :py:class:`location.Location`
         """
-        return self.dc_backend.get_mouse_location()
+        return self.dc_backend.mouse_location
     mouse_location = property(fget=get_mouse_location)
 
     """Main region methods"""
