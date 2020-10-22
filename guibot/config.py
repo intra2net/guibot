@@ -35,7 +35,7 @@ class GlobalConfig(type):
     """
 
     # operational parameters shared between all instances
-    _toggle_delay = 0.1
+    _toggle_delay = 0.05
     _click_delay = 0.1
     _drag_delay = 0.5
     _drop_delay = 0.5
