@@ -62,8 +62,6 @@ class Region(object):
                 dc = XDoToolController()
             elif GlobalConfig.display_control_backend == "vncdotool":
                 dc = VNCDoToolController()
-            elif GlobalConfig.display_control_backend == "qemu":
-                dc = QemuController()
             elif GlobalConfig.display_control_backend == "pyautogui":
                 dc = PyAutoGUIController()
         if cv is None:

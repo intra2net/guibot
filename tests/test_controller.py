@@ -95,8 +95,6 @@ class ControllerTest(unittest.TestCase):
             vncdotool.params["vncdotool"]["vnc_password"] = self.vncpass
             vncdotool.synchronize_backend()
             self.backends += [vncdotool]
-        # TODO: the Qemu DC backend is not fully developed
-        # QemuController()
 
     def tearDown(self):
         self.close_windows()

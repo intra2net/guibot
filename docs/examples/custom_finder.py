@@ -8,7 +8,7 @@ sys.path.insert(0, '../..')
 # Program start here
 #
 # Experimental custom finder to inherit from one of the official finder classes
-# and implement some custom feature detection. This is a very partial illustration
+# and implement some custom feature detection. This is a partial illustration
 # of how to create custom finders.
 #
 # TODO: This example is still unfinished, we have to restore the full usability
@@ -20,7 +20,7 @@ from guibot.finder import FeatureFinder
 from guibot.errors import *
 
 
-class CustomFinder(FeatureFinder):
+class KNNFinder(FeatureFinder):
     """
     Custom matching backend with some experimental CV algorithms.
 
@@ -36,22 +36,23 @@ class CustomFinder(FeatureFinder):
 
     def __init__(self, configure=True, synchronize=True):
         """Build a CV backend using custom matching."""
-        super(CustomFinder, self).__init__(configure=False, synchronize=False)
+        super(KNNFinder, self).__init__(configure=False, synchronize=False)
+        self.algorithms["find_methods"] += ["knn"]
 
         # additional preparation (no synchronization available)
         if configure:
             self.__configure_backend(reset=True)
 
-    def __configure_backend(self, backend=None, category="custom", reset=False):
-        if category != "custom":
+    def __configure_backend(self, backend=None, category="knn", reset=False):
+        if category != "knn":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
-            super(CustomFinder, self).configure_backend("custom", reset=True)
+            super(KNNFinder, self).configure_backend("knn", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
 
-    def configure_backend(self, backend=None, category="custom", reset=False):
+    def configure_backend(self, backend=None, category="knn", reset=False):
         """
         Custom implementation of the base method.
 

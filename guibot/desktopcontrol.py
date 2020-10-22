@@ -23,4 +23,3 @@ DesktopControl = Controller
 AutoPyDesktopControl = AutoPyController
 XDoToolDesktopControl = XDoToolController
 VNCDoToolDesktopControl = VNCDoToolController
-QemuDesktopControl = QemuController

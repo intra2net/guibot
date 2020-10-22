@@ -294,8 +294,8 @@ class Finder(LocalConfig):
 
         # available and currently fully compatible methods
         self.categories["find"] = "find_methods"
-        self.algorithms["find_methods"] = ("autopy", "contour", "template", "feature",
-                                           "cascade", "text", "tempfeat", "deep", "hybrid")
+        self.algorithms["find_methods"] = ["autopy", "contour", "template", "feature",
+                                           "cascade", "text", "tempfeat", "deep", "hybrid"]
 
         # other attributes
         self.imglog = ImageLogger()
