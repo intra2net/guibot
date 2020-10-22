@@ -285,8 +285,7 @@ class ControllerTest(unittest.TestCase):
                 self.assertEqual(0, self.wait_end(self.child_app))
                 self.child_app = None
 
-    @unittest.skip("Unit test either errors out or is expected failure")
-    #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_keys_press(self):
         for display in self.backends:
             key = display.keymap
@@ -297,10 +296,10 @@ class ControllerTest(unittest.TestCase):
             self.assertEqual(0, self.wait_end(self.child_app))
 
             # BUG: Qt fails to register a close event in some cases
-            self.show_application()
-            time.sleep(1)
-            display.keys_press([key.ALT, key.F4])
-            self.assertEqual(0, self.wait_end(self.child_app))
+            #self.show_application()
+            #time.sleep(1)
+            #display.keys_press([key.ALT, key.F4])
+            #self.assertEqual(0, self.wait_end(self.child_app))
 
             self.child_app = None
 
