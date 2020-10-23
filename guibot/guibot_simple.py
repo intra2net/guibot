@@ -134,6 +134,11 @@ def mouse_up(target_or_location, button=None):
     return guibot.mouse_up(target_or_location, button)
 
 
+def mouse_scroll(target_or_location, clicks=10, horizontal=False):
+    check_initialized()
+    return guibot.mouse_scroll(target_or_location, clicks, horizontal)
+
+
 def drag_drop(src_target_or_location, dst_target_or_location, modifiers=None):
     check_initialized()
     return guibot.drag_drop(src_target_or_location, dst_target_or_location, modifiers)

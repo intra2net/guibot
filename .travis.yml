@@ -51,6 +51,8 @@ addons:
     # vncdotool
     - xfonts-base
     - x11vnc
+    # pyautogui
+    - scrot
 # install any dependencies and build package
 install:
 - if [[ $INSTALL_VARIANT == "pip" ]]; then travis_retry pip --default-timeout=60 install -r packaging/pip_requirements.txt; fi

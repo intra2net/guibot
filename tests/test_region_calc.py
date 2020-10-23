@@ -19,7 +19,7 @@ import unittest
 
 import common_test
 from guibot.region import Region
-from guibot.desktopcontrol import DesktopControl, AutoPyDesktopControl
+from guibot.controller import Controller, AutoPyController
 
 
 @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
@@ -49,7 +49,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(220, bottom_right.y)
 
     def test_screen_clipping(self):
-        screen = AutoPyDesktopControl()
+        screen = AutoPyController()
         screen_width = screen.width
         screen_height = screen.height
 
@@ -70,7 +70,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(screen_height - region.y, region.height)
 
     def test_empty_screen_clipping(self):
-        screen = DesktopControl()
+        screen = Controller()
         screen_width = screen.width
         screen_height = screen.height
         self.assertEqual(screen_width, 0)
@@ -93,7 +93,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(region.height, 200)
 
     def test_nearby(self):
-        screen = AutoPyDesktopControl()
+        screen = AutoPyController()
         screen_width = screen.width
         screen_height = screen.height
 
@@ -117,7 +117,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.height)
 
     def test_nearby_clipping(self):
-        screen = AutoPyDesktopControl()
+        screen = AutoPyController()
         screen_width = screen.width
         screen_height = screen.height
 
@@ -170,7 +170,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(110, region.height)
 
     def test_below(self):
-        screen_height = AutoPyDesktopControl().height
+        screen_height = AutoPyController().height
 
         region = Region(200, 100, 20, 10).below(50)
         self.assertEqual(200, region.x)
@@ -212,7 +212,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.height)
 
     def test_right(self):
-        screen_width = AutoPyDesktopControl().width
+        screen_width = AutoPyController().width
 
         region = Region(200, 100, 20, 10).right(50)
         self.assertEqual(200, region.x)

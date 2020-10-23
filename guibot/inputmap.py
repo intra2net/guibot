@@ -438,31 +438,31 @@ class VNCDoToolKey(Key):
         self.KP_DECIMAL = None
 
 
-class QemuKey(Key):
-    """Helper to contain all key mappings for the Qemu DC backend."""
+class PyAutoGUIKey(Key):
+    """Helper to contain all key mappings for the PyAutoGUI DC backend."""
 
     def __init__(self):
-        """Build an instance containing the key map for the Qemu backend."""
+        """Build an instance containing the key map for the PyAutoGUI backend."""
         super().__init__()
 
-        self.ENTER = 'ret'
+        # TODO: it would be preferable to translate directly to RBF like
+        # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
+        self.ENTER = 'return' # also 'enter'
         self.TAB = 'tab'
-        self.ESC = 'esc'
+        self.ESC = 'escape' # also 'esc'
         self.BACKSPACE = 'backspace'
-        self.DELETE = 'delete'
+        self.DELETE = 'delete' # also 'del'
         self.INSERT = 'insert'
 
-        self.CTRL = 'ctrl'
-        self.ALT = 'alt'
-        # TODO: if needed these are also supported
-        # altgr, altgr_r (right altgr)
-        self.SHIFT = 'shift'
-        # TODO: 'meta' is not available
+        self.CTRL = 'ctrl' # also 'lctrl'
+        self.ALT = 'alt' # also 'lalt'
+        self.SHIFT = 'shift' # also 'lshift'
+        # TODO: 'meta key' is not available
         self.META = None
-        self.RCTRL = 'ctrl_r'
-        self.RALT = 'alt_r'
-        self.RSHIFT = 'shift_r'
-        # TODO: 'right meta' is not available
+        self.RCTRL = 'ctrlright'
+        self.RALT = 'altright'
+        self.RSHIFT = 'shiftright'
+        # TODO: 'meta key' is not available
         self.RMETA = None
 
         self.F1 = 'f1'
@@ -477,15 +477,14 @@ class QemuKey(Key):
         self.F10 = 'f10'
         self.F11 = 'f11'
         self.F12 = 'f12'
-        # TODO: these function keys are not available
-        self.F13 = None
-        self.F14 = None
-        self.F15 = None
-        self.F16 = None
-        self.F17 = None
-        self.F18 = None
-        self.F19 = None
-        self.F20 = None
+        self.F13 = 'f13'
+        self.F14 = 'f14'
+        self.F15 = 'f15'
+        self.F16 = 'f16'
+        self.F17 = 'f17'
+        self.F18 = 'f18'
+        self.F19 = 'f19'
+        self.F20 = 'f20'
 
         self.HOME = 'home'
         self.END = 'end'
@@ -496,36 +495,36 @@ class QemuKey(Key):
         self.PAGE_DOWN = 'pgdn'
         self.PAGE_UP = 'pgup'
 
-        self.CAPS_LOCK = 'caps_lock'
-        self.PRINTSCREEN = 'print'
-        # TODO: 'pause' is not available
-        self.PAUSE = None
-        self.SCROLL_LOCK = 'scroll_lock'
-        self.NUM_LOCK = 'num_lock'
-        self.SYS_REQ = 'sysrq'
-        self.SUPER = '0xdc'
-        self.RSUPER = '0xdb'
-        # TODO: 'hyper' and 'right hyper' are not available
+        self.CAPS_LOCK = 'capslock'
+        self.PRINTSCREEN = 'printscreen'
+        self.PAUSE = 'pause'
+        self.SCROLL_LOCK = 'scrolllock'
+        self.NUM_LOCK = 'numlock'
+        # TODO: these are not available
+        self.SYS_REQ = None
+        self.SUPER = None
+        self.RSUPER = None
         self.HYPER = None
         self.RHYPER = None
-        self.MENU = "menu"
+        self.MENU = None
 
-        self.KP0 = 'kp_0'
-        self.KP1 = 'kp_1'
-        self.KP2 = 'kp_2'
-        self.KP3 = 'kp_3'
-        self.KP4 = 'kp_4'
-        self.KP5 = 'kp_5'
-        self.KP6 = 'kp_6'
-        self.KP7 = 'kp_7'
-        self.KP8 = 'kp_8'
-        self.KP9 = 'kp_9'
-        self.KP_ENTER = 'kp_enter'
-        self.KP_DIVIDE = 'kp_divide'
-        self.KP_MULTIPLY = 'kp_multiply'
-        self.KP_SUBTRACT = 'kp_subtract'
-        self.KP_ADD = 'kp_add'
-        self.KP_DECIMAL = 'kp_decimal'
+        # TODO: these are not available
+        self.KP0 = None
+        self.KP1 = None
+        self.KP2 = None
+        self.KP3 = None
+        self.KP4 = None
+        self.KP5 = None
+        self.KP6 = None
+        self.KP7 = None
+        self.KP8 = None
+        self.KP9 = None
+        self.KP_ENTER = None
+        self.KP_DIVIDE = None
+        self.KP_MULTIPLY = None
+        self.KP_SUBTRACT = None
+        self.KP_ADD = None
+        self.KP_DECIMAL = None
 
 
 class KeyModifier(object):
@@ -605,11 +604,11 @@ class VNCDoToolKeyModifier(KeyModifier):
         self.MOD_META = 'meta'
 
 
-class QemuKeyModifier(KeyModifier):
-    """Helper to contain all modifier key mappings for the Qemu DC backend."""
+class PyAutoGUIKeyModifier(KeyModifier):
+    """Helper to contain all modifier key mappings for the PyAutoGUI DC backend."""
 
     def __init__(self):
-        """Build an instance containing the modifier key map for the Qemu backend."""
+        """Build an instance containing the modifier key map for the PyAutoGUI backend."""
         super().__init__()
 
         # TODO: 'none' is not available
@@ -685,13 +684,13 @@ class VNCDoToolMouseButton(MouseButton):
         self.CENTER_BUTTON = 2
 
 
-class QemuMouseButton(MouseButton):
-    """Helper to contain all mouse button mappings for the Qemu DC backend."""
+class PyAutoGUIMouseButton(MouseButton):
+    """Helper to contain all mouse button mappings for the PyAutoGUI DC backend."""
 
     def __init__(self):
-        """Build an instance containing the mouse button map for the Qemu backend."""
+        """Build an instance containing the mouse button map for the PyAutoGUI backend."""
         super().__init__()
 
-        self.LEFT_BUTTON = 1
-        self.RIGHT_BUTTON = 4
-        self.CENTER_BUTTON = 2
+        self.LEFT_BUTTON = 'left'
+        self.RIGHT_BUTTON = 'right'
+        self.CENTER_BUTTON = 'middle'

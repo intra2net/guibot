@@ -29,29 +29,29 @@ from guibot.match import Match
 from guibot.target import Image, Text
 from guibot.inputmap import Key
 from guibot.finder import *
-from guibot.desktopcontrol import *
+from guibot.controller import *
 from guibot.errors import *
 
 
 class RegionTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.file_resolver = FileResolver()
-        self.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
+    def setUpClass(cls):
+        cls.file_resolver = FileResolver()
+        cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
-        self.script_img = os.path.join(common_test.unittest_dir, 'qt5_image.py')
+        cls.script_img = os.path.join(common_test.unittest_dir, 'qt5_image.py')
 
         # preserve values of static attributes
-        self.prev_loglevel = GlobalConfig.image_logging_level
-        self.prev_logpath = GlobalConfig.image_logging_destination
+        cls.prev_loglevel = GlobalConfig.image_logging_level
+        cls.prev_logpath = GlobalConfig.image_logging_destination
         GlobalConfig.image_logging_level = 0
         GlobalConfig.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
 
     @classmethod
-    def tearDownClass(self):
-        GlobalConfig.image_logging_level = self.prev_loglevel
-        GlobalConfig.image_logging_destination = self.prev_logpath
+    def tearDownClass(cls):
+        GlobalConfig.image_logging_level = cls.prev_loglevel
+        GlobalConfig.image_logging_destination = cls.prev_logpath
 
     def setUp(self):
         self.child_img = None
@@ -104,8 +104,8 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_initialize(self):
-        screen_width = AutoPyDesktopControl().width
-        screen_height = AutoPyDesktopControl().height
+        screen_width = AutoPyController().width
+        screen_height = AutoPyController().height
 
         self.assertEqual(0, self.region.x)
         self.assertEqual(0, self.region.y)

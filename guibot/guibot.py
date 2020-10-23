@@ -34,7 +34,7 @@ class GuiBot(Region):
         Build a guibot object.
 
         :param dc: DC backend used for any desktop control
-        :type dc: :py:class:`desktopcontrol.DesktopControl` or None
+        :type dc: :py:class:`controller.Controller` or None
         :param cv: CV backend used for any target finding
         :type cv: :py:class:`finder.Finder` or None
 

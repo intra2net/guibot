@@ -15,7 +15,7 @@
 
 from .region import Region
 from .location import Location
-from .desktopcontrol import DesktopControl
+from .controller import Controller
 from .finder import Finder
 
 
@@ -38,7 +38,7 @@ class Match(Region):
         :param int dy: y offset from the center of the match region
         :param float similarity: attained similarity of the match region
         """
-        dc = DesktopControl() if dc is None else dc
+        dc = Controller() if dc is None else dc
         cv = Finder() if cv is None else cv
         super(Match, self).__init__(xpos, ypos, width, height, dc=dc, cv=cv)
         # custom DC and CV backends can be set later on by a region

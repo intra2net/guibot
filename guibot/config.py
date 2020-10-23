@@ -35,7 +35,7 @@ class GlobalConfig(type):
     """
 
     # operational parameters shared between all instances
-    _toggle_delay = 0.1
+    _toggle_delay = 0.05
     _click_delay = 0.1
     _drag_delay = 0.5
     _drop_delay = 0.5
@@ -52,7 +52,7 @@ class GlobalConfig(type):
     _image_quality = 3
 
     # backends shared between all instances
-    _desktop_control_backend = "autopy"
+    _display_control_backend = "autopy"
     _find_backend = "hybrid"
     _contour_threshold_backend = "adaptive"
     _template_match_backend = "ccoeff_normed"
@@ -189,7 +189,7 @@ class GlobalConfig(type):
                       desktop control backend
 
         Complete initialization includes connecting to the backend (screen)
-        selected in the :py:func:`GlobalConfig.desktop_control_backend`.
+        selected in the :py:func:`GlobalConfig.display_control_backend`.
 
         If disabled, you have to connect before performing any GUI operations::
 
@@ -304,7 +304,7 @@ class GlobalConfig(type):
     #: relative path of the image logging steps
     image_logging_destination = property(fget=image_logging_destination, fset=image_logging_destination)
 
-    def desktop_control_backend(self, value=None):
+    def display_control_backend(self, value=None):
         """
         Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
@@ -325,13 +325,13 @@ class GlobalConfig(type):
             i.e. the backend has to be installed or you will have unsatisfied imports.
         """
         if value is None:
-            return GlobalConfig._desktop_control_backend
+            return GlobalConfig._display_control_backend
         else:
-            if value not in ["autopy", "xdotool", "vncdotool", "qemu"]:
+            if value not in ["autopy", "xdotool", "vncdotool", "qemu", "pyautogui"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
-            GlobalConfig._desktop_control_backend = value
+            GlobalConfig._display_control_backend = value
     #: name of the desktop control backend
-    desktop_control_backend = property(fget=desktop_control_backend, fset=desktop_control_backend)
+    display_control_backend = property(fget=display_control_backend, fset=display_control_backend)
 
     # these methods do not check for valid values since this
     # is already done during region and target initialization

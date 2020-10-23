@@ -23,7 +23,7 @@ from .imagelogger import ImageLogger
 from .errors import *
 from .target import *
 from .finder import *
-from .desktopcontrol import *
+from .controller import *
 
 import logging
 log = logging.getLogger('guibot.region')
@@ -45,7 +45,7 @@ class Region(object):
         :param int width: width of the region (xpos+width for downright vertex x)
         :param int height: height of the region (ypos+height for downright vertex y)
         :param dc: DC backend used for any desktop control
-        :type dc: :py:class:`desktopcontrol.DesktopControl` or None
+        :type dc: :py:class:`controller.Controller` or None
         :param cv: CV backend used for any target finding
         :type cv: :py:class:`finder.Finder` or None
         :raises: :py:class:`UninitializedBackendError` if the region is empty
@@ -56,14 +56,14 @@ class Region(object):
         available within the screen space.
         """
         if dc is None:
-            if GlobalConfig.desktop_control_backend == "autopy":
-                dc = AutoPyDesktopControl()
-            elif GlobalConfig.desktop_control_backend == "xdotool":
-                dc = XDoToolDesktopControl()
-            elif GlobalConfig.desktop_control_backend == "qemu":
-                dc = QemuDesktopControl()
-            elif GlobalConfig.desktop_control_backend == "vncdotool":
-                dc = VNCDoToolDesktopControl()
+            if GlobalConfig.display_control_backend == "autopy":
+                dc = AutoPyController()
+            elif GlobalConfig.display_control_backend == "xdotool":
+                dc = XDoToolController()
+            elif GlobalConfig.display_control_backend == "vncdotool":
+                dc = VNCDoToolController()
+            elif GlobalConfig.display_control_backend == "pyautogui":
+                dc = PyAutoGUIController()
         if cv is None:
             if GlobalConfig.find_backend == "autopy":
                 cv = AutoPyFinder()
@@ -263,7 +263,7 @@ class Region(object):
         :returns: mouse location
         :rtype: :py:class:`location.Location`
         """
-        return self.dc_backend.get_mouse_location()
+        return self.dc_backend.mouse_location
     mouse_location = property(fget=get_mouse_location)
 
     """Main region methods"""
@@ -840,6 +840,26 @@ class Region(object):
         match = self.hover(target_or_location)
         log.debug("Holding up the mouse at %s", target_or_location)
         self.dc_backend.mouse_up(button)
+        return match
+
+    def mouse_scroll(self, target_or_location, clicks=10, horizontal=False):
+        """
+        Scroll the mouse for a number of clicks.
+
+        :param target_or_location: target or location to scroll on
+        :type target_or_location: :py:class:`match.Match` or :py:class:`location.Location` or
+                                 str or :py:class:`target.Target`
+        :param int clicks: number of clicks to scroll up (positive) or down (negative)
+        :param bool horizontal: whether to perform a horizontal scroll instead
+                                (only available on some platforms)
+        :returns: match from finding the target or nothing if scrolling on a known location
+        :rtype: :py:class:`match.Match` or None
+        """
+        match = self.hover(target_or_location)
+        log.debug("Scrolling the mouse %s for %s clicks at %s",
+                  "horizontally" if horizontal else "vertically",
+                  clicks, target_or_location)
+        self.dc_backend.mouse_scroll(clicks, horizontal)
         return match
 
     def drag_drop(self, src_target_or_location, dst_target_or_location, modifiers=None):
