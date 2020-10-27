@@ -12,7 +12,7 @@ with open(path.join(p, '../README.md')) as f:
 
 setup(
     name='guibot',
-    version='0.40.1',
+    version='0.41.1',
     description='GUI automation tool',
     long_description=README,
     long_description_content_type='text/markdown',
@@ -33,7 +33,7 @@ setup(
     package_dir={'guibot': '../guibot'},
 
     classifiers=[
-          'Development Status :: 3 - Beta',
+          'Development Status :: 4 - Beta',
           'Environment :: Console',
           'Intended Audience :: End Users/Desktop',
           'Intended Audience :: Developers',

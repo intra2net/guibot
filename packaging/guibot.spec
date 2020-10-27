@@ -3,7 +3,7 @@
 %bcond_with opencv
 
 Name:           guibot
-Version:        0.40
+Version:        0.41
 Release:        1%{?dist}
 Summary:        GUI automation tool
 
@@ -84,6 +84,14 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Oct 27 2020 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.41-1
+- New Tesseract OCR backends like pytesseract and tesserocr
+- New text detection method - CNN-based EAST detector
+- Pretrained Faster R-CNN-s for general object detection
+- PyAutoGUI display controller as an AutoPy alternative
+- Backward compatible renaming for clarity of some core modules
+- Nested step files, temporary file resolution paths, and more
+
 * Mon Mar 30 2020 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.40-1
 - Update to more recent versions for all backends
 - Overall bug fixes and code linting

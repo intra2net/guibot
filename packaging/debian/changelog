@@ -1,3 +1,14 @@
+guibot (0.41-1) unstable; urgency=medium
+
+  * New Tesseract OCR backends like pytesseract and tesserocr.
+  * New text detection method - CNN-based EAST detector.
+  * Pretrained Faster R-CNN-s for general object detection.
+  * PyAutoGUI display controller as an AutoPy alternative.
+  * Backward compatible renaming for clarity of some core modules.
+  * Nested step files, temporary file resolution paths, and more.
+
+ -- Plamen Dimitrov <pdimitrov@pevogam.com>  Tue, 27 Oct 2020 12:00:00 +0200
+
 guibot (0.40-1) unstable; urgency=medium
 
   * Update to more recent versions for all backends.
