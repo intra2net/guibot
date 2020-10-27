@@ -16,6 +16,7 @@
 
 import os
 import unittest
+import random
 import pprint
 
 import common_test
@@ -32,6 +33,7 @@ class CalibratorTest(unittest.TestCase):
     def setUpClass(cls):
         cls.patfile_resolver = FileResolver()
         cls.patfile_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
+        random.seed(42)
 
     def tearDown(self):
         if os.path.exists("pairs.list"):
