@@ -115,3 +115,12 @@ For more advanced usages feel free to explore our API here or visit some of the 
    * A `tutorial <https://github.com/intra2net/guibot/wiki/Match-Settings-Tutorial>`__ on match settings explaining how to configure CV backends and fine tune CV parameters building on the last example above.
    * A `tutorial <https://github.com/intra2net/guibot/wiki/Image-Logging-Tutorial>`__ on image logging explaining how to debug GUI scripts written with Guibot.
    * A `tutorial <https://github.com/intra2net/guibot/wiki/Fallback-Chains-Tutorial>`__ on the most advanced types of targets and finders that rely on fallback chains and hybrid finder methods.
+
+Example scripts
+---------------
+
+There are also additional examples for very specific use cases within the *examples* folder of the repository with examples about:
+
+   * A `similarity sampling <https://github.com/intra2net/guibot/blob/master/docs/examples/fixed_image_sampler.py>`__ and a `match calibrating <https://github.com/intra2net/guibot/blob/master/docs/examples/match_calibration.py>`__ script that can be used for testing out and optimizing how a certain target is matched in a controlled background image.
+   * A `deep transfer learning <https://github.com/intra2net/guibot/blob/master/docs/examples/deep_transfer_learning.py>`__ script that could be used to retrain pretrained R-CNN models used for object detection.
+   * A `custom finder <https://github.com/intra2net/guibot/blob/master/docs/examples/custom_finder.py>`__ and a `custom controller <https://github.com/intra2net/guibot/blob/master/docs/examples/custom_controller.py>`__ modules that extend the original hierarchy, are mostly kept as examples of customization, and are not yet fully finished and functional.
