@@ -1,5 +1,5 @@
-guibot.guibot_proxy module
-==========================
+guibot.guibot\_proxy module
+===========================
 
 .. automodule:: guibot.guibot_proxy
     :members:

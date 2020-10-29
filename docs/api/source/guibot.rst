@@ -8,8 +8,10 @@ Submodules
 
    guibot.calibrator
    guibot.config
+   guibot.controller
    guibot.desktopcontrol
    guibot.errors
+   guibot.fileresolver
    guibot.finder
    guibot.guibot
    guibot.guibot_proxy

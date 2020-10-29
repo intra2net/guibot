@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # platform which is understandable for security reasons. So we have to replace
 # them with mock modules in order for the build to succeed (we don't expect
 # these to be used for the documentation build in normal circumstances anyway).
-import mock
+from unittest import mock
 MOCK_MODULES = ['numpy', 'scipy', 'Pyro5']
 for mod_name in MOCK_MODULES:
     sys.modules[mod_name] = mock.Mock()

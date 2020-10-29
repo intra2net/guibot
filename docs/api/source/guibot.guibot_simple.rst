@@ -1,5 +1,5 @@
-guibot.guibot_simple module
-===========================
+guibot.guibot\_simple module
+============================
 
 .. automodule:: guibot.guibot_simple
     :members:
