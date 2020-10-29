@@ -1874,6 +1874,8 @@ class TextFinder(ContourFinder):
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 if backend == "pytesseract":
                     self.params[category]["extra_configs"] = CVParameter("")
+                    # TODO: there could be a decent way to change component modes
+                    self.params[category]["component_level"] = CVParameter(1, 1, 1, enumerated=True)
                 elif backend == "tesserocr":
                     # TODO: there could be a decent way to change component modes
                     self.params[category]["component_level"] = CVParameter(1, 1, 1, enumerated=True)
@@ -2171,9 +2173,6 @@ class TextFinder(ContourFinder):
             elif backend == "tesserocr":
                 self.ocr.SetImage(PIL.Image.fromarray(text_img))
                 output = self.ocr.GetUTF8Text()
-                if self.params["ocr"]["component_level"].value == 1:
-                    # strip of the new line character which is never useful
-                    output = output.rstrip()
             else:
                 stdout_fd = sys.stdout.fileno() if hasattr(sys.stdout, "fileno") else 1
                 stderr_fd = sys.stderr.fileno() if hasattr(sys.stderr, "fileno") else 2
@@ -2192,9 +2191,9 @@ class TextFinder(ContourFinder):
                         os.dup2(cpout_fo.fileno(), stdout_fd)
                         os.dup2(cperr_fo.fileno(), stderr_fd)
                 null_fo.close()
-                if self.params["ocr"]["component_level"].value == 1:
-                    # strip of the new line character which is never useful
-                    output = output.rstrip()
+            if self.params["ocr"]["component_level"].value == 1:
+                # strip of the new line character which is never useful
+                output = output.rstrip()
             log.debug("OCR output %s = '%s'", i+1, output)
 
             similarity = 1.0 - float(needle.distance_to(output)) / max(len(output), len(text_needle))
