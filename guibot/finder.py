@@ -1996,7 +1996,8 @@ class TextFinder(ContourFinder):
                                     self.params["ocr"]["extra_configs"].value)
             elif backend == "tesserocr":
                 from tesserocr import PyTessBaseAPI
-                self.ocr = PyTessBaseAPI(lang=self.params["ocr"]["language"].value,
+                self.ocr = PyTessBaseAPI(path=os.path.join(datapath, "tessdata"),
+                                         lang=self.params["ocr"]["language"].value,
                                          oem=self.params["ocr"]["oem"].value,
                                          psm=self.params["ocr"]["psmode"].value)
                 self.ocr.SetVariable("tessedit_char_whitelist", self.params["ocr"]["char_whitelist"].value)
