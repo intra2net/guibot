@@ -45,3 +45,5 @@ Documentation: http://guibot.readthedocs.io
 Installation: https://github.com/intra2net/guibot/wiki/Packaging
 
 Issue tracking: https://github.com/intra2net/guibot/issues
+
+Project wiki: https://github.com/intra2net/guibot/wiki
