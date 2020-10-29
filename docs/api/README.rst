@@ -1,4 +1,4 @@
-guibot
+Guibot
 ======
 
 A tool for GUI automation using a variety of computer vision and desktop

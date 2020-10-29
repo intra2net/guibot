@@ -29,7 +29,7 @@ The full guibot library API is documented using sphinx and available on [Read th
 
 ## [](#wiki)Wiki and tutorials
 
-Some tutorials regarding specialized topics are available on the guibot GitHub repo page. The example code within the repository is good enough for more basic usage but more tutorials will be added to the wiki in the future.
+Some tutorials regarding specialized topics are available on the Guibot GitHub Wiki page. The example code within the repository is good enough for more basic usage but more tutorials will be added to the wiki in the future.
 
 ## [](#download)Download
 
