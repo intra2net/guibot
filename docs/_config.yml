@@ -4,6 +4,8 @@ theme: jekyll-theme-minimal
 #title: An alternative title
 #description: An alternative description.
 
+# TODO: need PIP/RPM/DEB options here from GitHub package building pipeline
+# instead of the currently used customized docker containers from Travis CI
 # Use this to show the downloads - the three options hardcoded into an
 # HTML layout are GitHub ZIP/TAR + repeated "View on GitHub" but we would
 # prefer to have PIP/RPM/DEB instead. Cloning effort postponed for now.

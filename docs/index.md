@@ -9,7 +9,7 @@ There are a lot of mundane tasks related to GUI operations that could greatly be
 
 ## [](#usage)How to use
 
-A simple use case scenario is the following
+Here is our minimal bootstrap example for those eager to start without any reading:
 
 ```python
 from guibot.guibot_simple import *
@@ -23,20 +23,14 @@ else:
     type_text('Shapes do not exist')
 ```
 
-## [](#apidoc)API reference
-
-The full guibot library API is documented using sphinx and available on [Read the Docs](http://guibot.readthedocs.io/en/latest/).
-
-## [](#wiki)Wiki and tutorials
-
-Some tutorials regarding specialized topics are available on the Guibot GitHub Wiki page. The example code within the repository is good enough for more basic usage but more tutorials will be added to the wiki in the future.
+For those interested in more serious examples, please check [Read the Docs](http://guibot.readthedocs.io/en/latest/) where you can find a gradation of them with increasing difficulty. The quick readers will also most probably need the complete API documentation which can also be found there.
 
 ## [](#download)Download
 
-The fastest way to get the code is to through PyPI as
+The most platform independent way to get the code is through PyPI as
 
 ```
 pip install guibot
 ```
 
-RPM and Debian packages can also be produced from the SPEC file provided in the packaging folder. For more information, check the README or packaging page.
+RPM and Debian packages are also produced from the sources provided in the packaging folder. For more information on these, check the [Packaging Wiki](https://github.com/intra2net/guibot/wiki/Packaging) page.
