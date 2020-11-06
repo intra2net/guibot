@@ -975,5 +975,41 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names (+1 as we match with template)
         dumps = self._verify_and_get_dumps(9, multistep=True)
 
+class CVParameterTest(unittest.TestCase):
+    """Tests for the computer vision backends parameters."""
+
+    def test_instance_comparison(self):
+        """Check if equality and inequality operators are correctly implemented."""
+        cv1 = CVParameter(
+            3, min_val=0.003, max_val=150, delta=1030.25,
+            tolerance=10.2, fixed=True, enumerated=False
+        )
+        cv2 = CVParameter(
+            4, min_val=0.003, max_val=150, delta=1030.25,
+            tolerance=10.2, fixed=True, enumerated=False
+        )
+        self.assertTrue(cv1 == cv1)
+        self.assertTrue(cv1 != cv2)
+        self.assertFalse(cv1 == 10)
+        self.assertTrue(cv1 != 10)
+
+    def test_parameter_parsing(self):
+        """Check that basic parameter parsing works."""
+        expected = CVParameter(
+            3, min_val=0.003, max_val=150, delta=1030.25,
+            tolerance=10.2, fixed=True, enumerated=False
+        )
+        parsed = CVParameter.from_string("<value='3' min='0.003' max='150' delta='1030.25' tolerance='10.2' fixed='True' enumerated='False'>")
+        self.assertEqual(parsed, expected)
+
+    def test_value_with_dots(self):
+        """Check that the parser doesn't mark values with dots at the end as floats."""
+        expected = CVParameter(
+            "123456789.", min_val=None, max_val=None, delta=1030.25,
+            tolerance=10.2, fixed=False, enumerated=False
+        )
+        parsed = CVParameter.from_string("<value='123456789.' min='None' max='None' delta='1030.25' tolerance='10.2' fixed='False' enumerated='False'>")
+        self.assertEqual(parsed, expected)
+
 if __name__ == '__main__':
     unittest.main()
