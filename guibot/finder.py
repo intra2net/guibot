@@ -104,6 +104,17 @@ class CVParameter(object):
         return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s' enumerated='%s'>"
                 % (self.value, self.min_val, self.max_val, self.delta, self.tolerance, self.fixed, self.enumerated))
 
+    def __eq__(self, other):
+        """
+        Custom implementation for equality check.
+
+        :returns: whether this instance is equal to another
+        :rtype: bool
+        """
+        if not isinstance(other, CVParameter):
+            return NotImplemented
+        return repr(self) == repr(other)
+
     @staticmethod
     def from_string(raw):
         """
@@ -128,7 +139,7 @@ class CVParameter(object):
                 arg = False
             elif re.match(r"-?\d+$", arg):
                 arg = int(arg)
-            elif re.match(r"[\d.]+$", arg):
+            elif re.match(r"-?\d+(?:\.\d+)?$", arg):
                 arg = float(arg)
             else:
                 arg = str(arg)
