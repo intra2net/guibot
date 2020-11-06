@@ -47,7 +47,7 @@ All three interfaces offer the same portfolio of functions: the functional capab
         # type a text with our disappointment from the outcome
         guibot.type_text('Ok button does not exist')
 
-This example code performs the simple actions of looking for a button using default CV and DC backends (listed and managed in the `config <https://guibot.readthedocs.io/en/latest/source/guibot.config.html>`__ module) and clicking on it if it was found or typing that it could not be found.
+This example code performs the simple actions of looking for a button using default computer vision (CV) and display controller (DC) backends (listed and managed in the `config <https://guibot.readthedocs.io/en/latest/source/guibot.config.html>`__ module) and clicking on it if it was found or typing that it could not be found.
 
 ::
 

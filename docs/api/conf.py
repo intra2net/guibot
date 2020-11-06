@@ -65,8 +65,8 @@ master_doc = 'source/modules'
 
 # General information about the project.
 project = u'guibot'
-copyright = u'2017, Plamen Dimitrov and Thomas Jarosch'
-author = u'Plamen Dimitrov and Thomas Jarosch'
+copyright = u'2020, Intra2net AG'
+author = u'Intra2net AG and contributors'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
