@@ -587,8 +587,8 @@ class Region(object):
             if self.exists(target, 0) is None:
                 return True
 
-            # don't hog the CPU
-            time.sleep(0.2)
+            # don't hog the CPU (as rescan within find will check the inverse)
+            time.sleep(GlobalConfig.rescan_speed_on_find)
 
         # target is still there
         raise NotFindError(target)
