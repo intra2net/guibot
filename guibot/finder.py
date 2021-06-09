@@ -436,6 +436,7 @@ class Finder(LocalConfig):
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
+            self.imglog.clear()
             return
         # logging is being collected for a specific logtype
         elif ImageLogger.accumulate_logging:
@@ -801,6 +802,7 @@ class ContourFinder(Finder):
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
+            self.imglog.clear()
             return
         # logging is being collected for a specific logtype
         elif ImageLogger.accumulate_logging:
@@ -1011,6 +1013,7 @@ class TemplateFinder(Finder):
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
+            self.imglog.clear()
             return
         # logging is being collected for a specific logtype
         elif ImageLogger.accumulate_logging:
@@ -1628,6 +1631,7 @@ class FeatureFinder(Finder):
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
+            self.imglog.clear()
             return
         # logging is being collected for a specific logtype
         elif ImageLogger.accumulate_logging:
@@ -2489,6 +2493,7 @@ class TextFinder(ContourFinder):
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
+            self.imglog.clear()
             return
         # logging is being collected for a specific logtype
         elif ImageLogger.accumulate_logging:
@@ -2744,6 +2749,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
+            self.imglog.clear()
             return
         # logging is being collected for a specific logtype
         elif ImageLogger.accumulate_logging:
@@ -3013,6 +3019,7 @@ class DeepFinder(Finder):
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
+            self.imglog.clear()
             return
         # logging is being collected for a specific logtype
         elif ImageLogger.accumulate_logging:
