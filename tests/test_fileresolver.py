@@ -52,8 +52,7 @@ class FileResolverTest(unittest.TestCase):
         with mock.patch.object(logger, "warn") as mock_warn:
             mock_warn.assert_not_called()
             from guibot.path import Path
-            # TODO replace by assert_called_once when support for Python 3.5 is dropped
-            self.assertEqual(len(mock_warn.mock_calls), 1)
+            mock_warn.assert_called_once()
             self.assertEqual(Path, FileResolver)
 
     def test_add_path(self):

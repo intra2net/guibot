@@ -10,7 +10,6 @@ TODO - hierarchical notes
     - known problems
         - .lan is removed by .match in match dumping
         - mysterious kills of calibration after days
-        - vncdotool needs some patches for py3.4 like byte % replacement (only supports py>3.5)
 - wikis about backends
     - sweetspot height of letters is 30-50px
     - tesseract also prefers black text on white bg
