@@ -52,7 +52,7 @@ class GlobalConfig(type):
     _image_quality = 3
 
     # backends shared between all instances
-    _display_control_backend = "autopy"
+    _display_control_backend = "pyautogui"
     _find_backend = "hybrid"
     _contour_threshold_backend = "adaptive"
     _template_match_backend = "ccoeff_normed"
@@ -312,14 +312,18 @@ class GlobalConfig(type):
         :raises: :py:class:`ValueError` if value is not among the supported backends
 
         Supported backends:
-           * autopy - Windows, Linux (and OS X) compatible with both the GUI
+           * pyautogui - Windows, Linux, and OS X compatible with both the GUI
+                         actions and their calls executed on the same machine
+           * autopy - Windows, Linux, and OS X compatible with both the GUI
                       actions and their calls executed on the same machine.
-           * qemu - guest OS independent with GUI actions on a virtual machine
-                    through Qemu Monitor object (provided by Autotest) and
-                    their calls on the host machine.
            * vncdotool - guest OS independent or Linux remote OS with GUI
                          actions on a remote machine through vnc and their
                          calls on a vnc client machine.
+           * xdotool - Linux X server compatible with both the GUI
+                       actions and their calls executed on the same machine.
+           * qemu - guest OS independent with GUI actions on a virtual machine
+                    through Qemu Monitor object (provided by Autotest) and
+                    their calls on the host machine.
 
         .. warning:: To use a particular backend you need to satisfy its dependencies,
             i.e. the backend has to be installed or you will have unsatisfied imports.
@@ -342,7 +346,7 @@ class GlobalConfig(type):
         :param value: name of the computer vision backend
 
         Supported backends:
-            * autopy - simple bitmap matching provided by autopy
+            * autopy - simple bitmap matching provided by AutoPy
             * contour - contour matching using overall shape estimation
             * template - template matching using correlation coefficients,
                          square difference, etc.

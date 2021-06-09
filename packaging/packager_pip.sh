@@ -28,9 +28,8 @@ dnf -y install tesseract tesseract-devel
 dnf -y install gcc-c++
 # screen controlling
 dnf -y install xdotool xwd ImageMagick
-# TODO: PyAutoGUI's scrot dependencies are broken on CentOS/Rocky
+# TODO: PyAutoGUI's scrot dependencies are broken on CentOS/Rocky, currently provided offline
 #dnf -y install scrot
-export DISABLE_PYAUTOGUI=1
 dnf -y install x11vnc
 
 # dependencies that could be installed using pip
