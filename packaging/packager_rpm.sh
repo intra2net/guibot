@@ -50,6 +50,8 @@ rm -fr "$distro_root/$NAME-$VERSION"
 dnf install -y xorg-x11-server-Xvfb
 export DISPLAY=:99.0
 Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
+touch /root/.Xauthority
+xauth add ${HOST}:99 . $(xxd -l 16 -p /dev/urandom)
 sleep 3  # give xvfb some time to start
 
 # unit tests
