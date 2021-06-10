@@ -3,6 +3,7 @@ set -e
 
 readonly distro="${DISTRO:-fedora}"
 readonly distro_version="${VERSION:-30}"
+readonly distro_root="${ROOT:-$HOME}"
 
 # rpm dependencies
 # python3
@@ -32,16 +33,15 @@ dnf -y install x11vnc
 
 # rpm packaging and installing of current guibot source
 dnf -y install rpm-build
-ROOT=""
-NAME=$(sed -n 's/^Name:[ \t]*//p' "$ROOT/guibot/packaging/guibot.spec")
-VERSION=$(sed -n 's/^Version:[ \t]*//p' "$ROOT/guibot/packaging/guibot.spec")
-cp -r "$ROOT/guibot" "$ROOT/$NAME-$VERSION"
+NAME=$(sed -n 's/^Name:[ \t]*//p' "$distro_root/guibot/packaging/guibot.spec")
+VERSION=$(sed -n 's/^Version:[ \t]*//p' "$distro_root/guibot/packaging/guibot.spec")
+cp -r "$distro_root/guibot" "$distro_root/$NAME-$VERSION"
 mkdir -p ~/rpmbuild/SOURCES
-tar czvf ~/rpmbuild/SOURCES/$NAME-$VERSION.tar.gz -C "$ROOT/" --exclude=.* --exclude=*.pyc $NAME-$VERSION
-rpmbuild -ba "$ROOT/$NAME-$VERSION/packaging/guibot.spec" --with opencv
-cp ~/rpmbuild/RPMS/x86_64/python3-$NAME-$VERSION*.rpm "$ROOT/guibot"
-dnf -y install "$ROOT/guibot/python3-"$NAME-$VERSION*.rpm
-rm -fr "$ROOT/$NAME-$VERSION"
+tar czvf ~/rpmbuild/SOURCES/$NAME-$VERSION.tar.gz -C "$distro_root/" --exclude=.* --exclude=*.pyc $NAME-$VERSION
+rpmbuild -ba "$distro_root/$NAME-$VERSION/packaging/guibot.spec" --with opencv
+cp ~/rpmbuild/RPMS/x86_64/python3-$NAME-$VERSION*.rpm "$distro_root/guibot"
+dnf -y install "$distro_root/guibot/python3-"$NAME-$VERSION*.rpm
+rm -fr "$distro_root/$NAME-$VERSION"
 
 # virtual display
 dnf install -y xorg-x11-server-Xvfb

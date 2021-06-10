@@ -3,6 +3,7 @@ set -e
 
 readonly distro="${DISTRO:-ubuntu}"
 readonly distro_version="${VERSION:-xenial}"
+readonly distro_root="${ROOT:-$HOME}"
 
 # deb dependencies
 export DEBIAN_FRONTEND=noninteractive
@@ -41,16 +42,15 @@ apt-get -y install x11vnc
 
 # deb packaging and installing of current guibot source
 apt-get -y install dh-make dh-python debhelper python3-all devscripts
-ROOT=""
-NAME=$(sed -n 's/^Package:[ \t]*//p' "$ROOT/guibot/packaging/debian/control")
-CHANGELOG_REVS=($(sed -n -e 's/^guibot[ \t]*(\([0-9]*.[0-9]*\)-[0-9]*).*/\1/p' "$ROOT/guibot/packaging/debian/changelog"))
+NAME=$(sed -n 's/^Package:[ \t]*//p' "$distro_root/guibot/packaging/debian/control")
+CHANGELOG_REVS=($(sed -n -e 's/^guibot[ \t]*(\([0-9]*.[0-9]*\)-[0-9]*).*/\1/p' "$distro_root/guibot/packaging/debian/changelog"))
 VERSION=${CHANGELOG_REVS[0]}
-cp -r "$ROOT/guibot" "$ROOT/$NAME-$VERSION"
-cd "$ROOT/$NAME-$VERSION/packaging"
+cp -r "$distro_root/guibot" "$distro_root/$NAME-$VERSION"
+cd "$distro_root/$NAME-$VERSION/packaging"
 debuild --no-tgz-check --no-lintian -i -us -uc -b
-cp ../${NAME}_${VERSION}*.deb "$ROOT/guibot"
-apt-get -y install "$ROOT/guibot/"${NAME}_${VERSION}*.deb
-rm -fr "$ROOT/$NAME-$VERSION"
+cp ../${NAME}_${VERSION}*.deb "$distro_root/guibot"
+apt-get -y install "$distro_root/guibot/"${NAME}_${VERSION}*.deb
+rm -fr "$distro_root/$NAME-$VERSION"
 
 # virtual display
 apt-get -y install xvfb
