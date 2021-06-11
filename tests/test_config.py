@@ -21,6 +21,7 @@ from guibot.config import GlobalConfig, TemporaryConfig
 class ConfigTest(unittest.TestCase):
 
     def test_temporary_config(self):
+        """Check that using a temporary config has a temporary effect."""
         original_value = GlobalConfig.delay_before_drop
         new_value = original_value * 10
 

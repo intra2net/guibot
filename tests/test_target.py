@@ -32,6 +32,7 @@ class ImageTest(unittest.TestCase):
         self.file_all_shapes = os.path.join(common_test.unittest_dir, 'images', 'all_shapes.png')
 
     def test_basic(self):
+        """Test basic image target initialization."""
         image = Image(self.file_all_shapes)
 
         self.assertEqual(400, image.width)
@@ -42,6 +43,7 @@ class ImageTest(unittest.TestCase):
         self.assertFalse(image.use_own_settings)
 
     def test_copy_object(self):
+        """Test sane image target copying."""
         image = Image(self.file_all_shapes)
 
         my_copy = image.copy()
@@ -54,6 +56,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.center_offset, my_copy.center_offset)
 
     def test_center_offset(self):
+        """Test image target center offset calculation."""
         image = Image(self.file_all_shapes)
 
         center_offset = image.center_offset
@@ -78,6 +81,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(0, center_offset.y)
 
     def test_similarity(self):
+        """Test image target copying based on similarity."""
         image = Image(self.file_all_shapes)
 
         new_image = image.with_similarity(0.45)
@@ -93,6 +97,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.center_offset, new_image.center_offset)
 
     def test_save(self):
+        """Test image target data and match settings saving."""
         image = Image(self.file_all_shapes)
 
         with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
@@ -130,6 +135,7 @@ class ImageTest(unittest.TestCase):
                                      loaded_image.match_settings.params[category][key].fixed)
 
     def test_nonexisting_image(self):
+        """Test image target initialization with missing image data."""
         try:
             Image('foobar_does_not_exist')
             self.fail('Exception not thrown')
@@ -137,6 +143,7 @@ class ImageTest(unittest.TestCase):
             pass
 
     def test_image_cache(self):
+        """Test image target caching for the image data."""
         image = Image(self.file_all_shapes)
 
         second_image = Image(self.file_all_shapes)
