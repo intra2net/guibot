@@ -8,8 +8,8 @@ autopy==4.0.0; platform_python_implementation != "PyPy"
 pytesseract==0.3.4
 tesserocr==2.5.1
 opencv-contrib-python==4.2.0.34; platform_python_implementation != "PyPy"
-torch==1.5.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
-torchvision==0.6.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
+torch==1.8.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
+torchvision==0.9.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
 pyautogui==0.9.52; platform_python_implementation != "PyPy"
 
