@@ -1,7 +1,7 @@
 # minimal
 coverage==5.3
 codecov==2.1.9
-Pillow==8.2.0
+Pillow==8.3.2
 
 # backends
 autopy==4.0.0; platform_python_implementation != "PyPy"
