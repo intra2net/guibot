@@ -12,7 +12,7 @@ opencv-contrib-python==4.5.5.62; platform_python_implementation != "PyPy"
 torch==1.8.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 torchvision==0.9.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
-pyautogui==0.9.52; platform_python_implementation != "PyPy"
+pyautogui==0.9.53; platform_python_implementation != "PyPy"
 
 # GUI to use for testing
 PyQt5==5.14.2; platform_python_implementation != "PyPy"
