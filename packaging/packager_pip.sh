@@ -9,8 +9,12 @@ readonly distro_version="${VERSION:-8}"
 readonly distro_root="${ROOT:-$HOME}"
 readonly python_version="${PYTHON_VERSION:-3.8}"
 
+# disable tests and support of backends based on python versions
+if [[ $python_version == '3.9' ]]; then export DISABLE_AUTOPY=1; fi
+
 # environment dependencies not provided by pip
 # python3
+if [[ $python_version == '3.9' ]]; then dnf -y install python39 python39-devel; fi
 if [[ $python_version == '3.8' ]]; then dnf -y install python38 python38-devel; fi
 if [[ $python_version == '3.7' ]]; then dnf -y install python37 python37-devel; fi
 if [[ $python_version == '3.6' ]]; then dnf -y install python36 python36-devel; fi

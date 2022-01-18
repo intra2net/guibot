@@ -22,7 +22,11 @@ pip3 install pytesseract==0.3.4 tesserocr==2.5.1
 # deep learning
 pip3 install torch==1.8.1 torchvision==0.9.1
 # screen controlling
-pip3 install autopy==4.0.0
+if (( distro_version <= 32 )); then
+    pip3 install autopy==4.0.0
+else
+    export DISABLE_AUTOPY=1
+fi
 pip3 install vncdotool==0.12.0
 dnf -y install xdotool xwd ImageMagick
 # TODO: PyAutoGUI's scrot dependencies are broken on Fedora

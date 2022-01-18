@@ -248,8 +248,9 @@ class RegionTest(unittest.TestCase):
         self.close_windows()
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1",
-                     "Disabled OpenCV or OCR")
+                     os.environ.get('DISABLE_OCR', "0") == "1" or
+                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
+                     "Disabled OpenCV or OCR or AutoPy")
     def test_find_guess_target(self):
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -308,8 +309,9 @@ class RegionTest(unittest.TestCase):
             pass
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_PYQT', "0") == "1",
-                     "Disabled OpenCV or PyQt")
+                     os.environ.get('DISABLE_PYQT', "0") == "1" or
+                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
+                     "Disabled OpenCV or PyQt or AutoPy")
     def test_sample(self):
         self.show_image('all_shapes')
 
