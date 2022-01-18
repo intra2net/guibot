@@ -2326,7 +2326,7 @@ class TextFinder(ContourFinder):
         self.imglog.hotmaps.append(text_canvas)
 
         # extract channels to be processed individually - B, G, R, lightness, and gradient magnitude
-        channels = cv2.text.computeNMChannels(img)
+        channels = list(cv2.text.computeNMChannels(img))
         # append negative channels to detect ER- (bright regions over dark background) skipping the gradient channel
         channel_num_without_grad = len(channels)-1
         for i in range(0, channel_num_without_grad):

@@ -605,9 +605,11 @@ class FinderTest(unittest.TestCase):
                     continue
                 # TODO: handle newer OpenCV bugs with some backends
                 import cv2
-                # TODO: OpenCV 4.2.0 Tesseract bindings output nothing
-                if cv2.__version__ == "4.2.0" and ocr == "tesseract":
-                    continue
+                # TODO: OpenCV 4.2.0+ Tesseract bindings output nothing
+                if ocr == "tesseract":
+                    cv_version = [int(v) for v in cv2.__version__.split(".")]
+                    if cv_version[0] >= 4 and cv_version[1] >= 2:
+                        continue
                 # TODO: deprecate OpenCV 3.X versions after time
                 elif cv2.__version__.startswith("3.") and tdetect == "east":
                     continue

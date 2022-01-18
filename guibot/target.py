@@ -410,7 +410,7 @@ class Text(Target):
         """
         str1 = self.value
         import numpy
-        M = numpy.empty((len(str1) + 1, len(str2) + 1), numpy.int)
+        M = numpy.empty((len(str1) + 1, len(str2) + 1), int)
 
         for a in range(0, len(str1)+1):
             M[a,0] = a
