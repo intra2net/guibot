@@ -1011,7 +1011,8 @@ class PyAutoGUIController(Controller):
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
-        self._backend_obj.typewrite(text, interval=GlobalConfig.delay_between_keys)
+        for part in text:
+            self._backend_obj.typewrite(part, interval=GlobalConfig.delay_between_keys)
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
