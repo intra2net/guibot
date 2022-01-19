@@ -162,9 +162,8 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(match.target.x - 50, match_offset.target.x)
         self.assertEqual(match.target.y - 30, match_offset.target.y)
 
-    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
-                     "Disabled OpenCV or AutoPy")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1",
+                     "Disabled OpenCV")
     def test_find_error(self):
         try:
             self.region.find(Image('shape_blue_circle.png'), 0)
@@ -247,15 +246,13 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
         self.close_windows()
 
-    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1" or
-                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
-                     "Disabled OpenCV or OCR or AutoPy")
-    def test_find_guess_target(self):
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
+    def test_find_guess_target_image(self):
+        """Test finding image from string with and without extension."""
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
 
-        # find image from string with and without extension
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.match')))
         self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle.png')))
         self.region.find('shape_blue_circle')
@@ -263,7 +260,13 @@ class RegionTest(unittest.TestCase):
         self.region.find('shape_blue_circle.png')
         self.region.find_all('shape_blue_circle.png')
 
-        # guess from match file configuration (target has match config)
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
+    @unittest.skipIf(os.environ.get('DISABLE_OCR', "0") == "1", "Disabled OCR")
+    def test_find_guess_target_match(self):
+        """Test target guess from match file configuration (target has match config)."""
+        self.show_image('all_shapes')
+        imgroot = os.path.join(common_test.unittest_dir, 'images')
+
         # precedence is given to match file configuration (then data file)
         self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.match')))
         self.assertTrue(os.path.exists(os.path.join(imgroot, 'mouse down.txt')))
@@ -278,13 +281,26 @@ class RegionTest(unittest.TestCase):
         except FindError as e:
             pass
 
-        # guess from data file extension (target has no match config)
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "Disabled AutoPy")
+    def test_find_guess_target_steps(self):
+        """Test target guess from data file extension (target has no match config)."""
+        self.show_image('all_shapes')
+        imgroot = os.path.join(common_test.unittest_dir, 'images')
+
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'circle.match')))
         self.assertTrue(os.path.exists(os.path.join(imgroot, 'circle.steps')))
         self.region.find('circle')
         self.region.find_all('circle')
 
-        # end with default type if also unknown data type
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
+    def test_find_guess_target_default(self):
+        """Test target guess ending with default type if also unknown data type."""
+        self.show_image('all_shapes')
+        imgroot = os.path.join(common_test.unittest_dir, 'images')
+
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.match')))
         self.assertTrue(os.path.exists(os.path.join(imgroot, 'shape_blue_circle_unknown.xtx')))
         self.region.default_target_type = Image
@@ -292,7 +308,13 @@ class RegionTest(unittest.TestCase):
         self.region.find('shape_blue_circle_unknown.xtx')
         self.region.find_all('shape_blue_circle_unknown.xtx')
 
-        # do not fail with default text type if also missing data file
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
+    @unittest.skipIf(os.environ.get('DISABLE_OCR', "0") == "1", "Disabled OCR")
+    def test_find_guess_target_from_match(self):
+        """Test target guess not failing with default text type if also missing data file."""
+        self.show_image('all_shapes')
+        imgroot = os.path.join(common_test.unittest_dir, 'images')
+
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'mouse somewhere.match')))
         self.assertFalse(os.path.exists(os.path.join(imgroot, 'mouse somewhere.txt')))
         self.region.default_target_type = Text
@@ -308,22 +330,29 @@ class RegionTest(unittest.TestCase):
         except FindError as e:
             pass
 
-    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_PYQT', "0") == "1" or
-                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
-                     "Disabled OpenCV or PyQt or AutoPy")
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
     def test_sample(self):
+        """Test that sampling results in good similarity for identical visuals."""
+        self.show_image('all_shapes')
+
+        # initialize template matching region to support similarity
+        shapes = Region(cv=TemplateFinder())
+        similarity = shapes.sample(Image('shape_blue_circle'))
+        self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
+
+        self.close_windows()
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "Disabled AutoPy")
+    def test_sample_no_similarity(self):
+        """Test that sampling results in 0.0 similarity if backend doesn't support it."""
         self.show_image('all_shapes')
 
         # autopy matching does not support similarity
         shapes = Region(cv=AutoPyFinder())
         similarity = shapes.sample(Image('shape_blue_circle'))
         self.assertEqual(similarity, 0.0)
-
-        # initialize template matching region to support similarity
-        shapes = Region(cv=TemplateFinder())
-        similarity = shapes.sample(Image('shape_blue_circle'))
-        self.assertAlmostEqual(similarity, 0.999999, delta=0.001)
 
         self.close_windows()
 
