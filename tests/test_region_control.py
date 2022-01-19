@@ -105,7 +105,6 @@ class RegionTest(unittest.TestCase):
 
             time.sleep(0.2)
 
-    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_get_mouse_location(self):
         self.region.hover(Location(0, 0))
         pos = self.region.mouse_location
@@ -329,9 +328,9 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
-    @unittest.skip("Skip due to fatal error (breaking the entire run)")
-    #@unittest.expectedFailure  # autopy has a bug with arrow keys
     def test_select_at(self):
+        # NOTE: autopy has a bug with arrow keys which would reulst in fatal error
+        # here breaking the entire run
         self.show_application()
         self.region.right_click(self.context_menu_control)
         self.region.select_at(self.context_menu_close_control, 1, 0, 0, mark_clicks=0)

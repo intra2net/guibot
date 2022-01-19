@@ -22,16 +22,16 @@ Requires:       python3-opencv
 
 %description
 A tool for GUI automation using a variety of computer vision and desktop control backends.
-Supported CV backends are based on OpenCV, PyTorch, and autopy, and supported DC backends
-on autopy, vncdotool, and qemu.
+Supported CV backends are based on OpenCV, PyTorch, and AutoPy, and supported DC backends
+on PyAutoGUI, AutoPy, VNCDoTool, and XDoTool.
 
 %package -n python3-guibot
 Summary:        GUI automation tool
 Group:          Development/Tools
 %description -n python3-guibot
 A tool for GUI automation using a variety of computer vision and desktop control backends.
-Supported CV backends are based on OpenCV, PyTorch, and autopy, and supported DC backends
-on autopy, vncdotool, and qemu.
+Supported CV backends are based on OpenCV, PyTorch, and AutoPy, and supported DC backends
+on PyAutoGUI, AutoPy, VNCDoTool, and XDoTool.
 
 #Patch1:        first_fix.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)

@@ -29,10 +29,9 @@ else
 fi
 pip3 install vncdotool==0.12.0
 dnf -y install xdotool xwd ImageMagick
-# TODO: PyAutoGUI's scrot dependencies are broken on Fedora
-export DISABLE_PYAUTOGUI=1
-#dnf -y install python3-tkinter scrot
-#pip3 install pyautogui==0.9.52
+# TODO: PyAutoGUI's scrot dependencies are broken on Fedora 33-, currently provided offline
+dnf -y install python3-tkinter #scrot
+pip3 install pyautogui==0.9.52
 dnf -y install x11vnc
 
 # rpm packaging and installing of current guibot source
@@ -51,6 +50,8 @@ rm -fr "$distro_root/$NAME-$VERSION"
 dnf install -y xorg-x11-server-Xvfb
 export DISPLAY=:99.0
 Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
+touch /root/.Xauthority
+xauth add ${HOST}:99 . $(xxd -l 16 -p /dev/urandom)
 sleep 3  # give xvfb some time to start
 
 # unit tests

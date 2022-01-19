@@ -19,11 +19,15 @@ import unittest
 
 import common_test
 from guibot.region import Region
-from guibot.controller import Controller, AutoPyController
+from guibot.controller import Controller, PyAutoGUIController
 
 
-@unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
+@unittest.skipIf(os.environ.get('DISABLE_PYAUTOGUI', "0") == "1", "PyAutoGUI disabled")
 class RegionTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.screen = PyAutoGUIController()
 
     def test_position_calc(self):
         region = Region(10, 20, 300, 200)
@@ -49,7 +53,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(220, bottom_right.y)
 
     def test_screen_clipping(self):
-        screen = AutoPyController()
+        screen = RegionTest.screen
         screen_width = screen.width
         screen_height = screen.height
 
@@ -93,7 +97,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(region.height, 200)
 
     def test_nearby(self):
-        screen = AutoPyController()
+        screen = RegionTest.screen
         screen_width = screen.width
         screen_height = screen.height
 
@@ -117,7 +121,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.height)
 
     def test_nearby_clipping(self):
-        screen = AutoPyController()
+        screen = RegionTest.screen
         screen_width = screen.width
         screen_height = screen.height
 
@@ -170,7 +174,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(110, region.height)
 
     def test_below(self):
-        screen_height = AutoPyController().height
+        screen_height = RegionTest.screen.height
 
         region = Region(200, 100, 20, 10).below(50)
         self.assertEqual(200, region.x)
@@ -212,7 +216,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(10, region.height)
 
     def test_right(self):
-        screen_width = AutoPyController().width
+        screen_width = RegionTest.screen.width
 
         region = Region(200, 100, 20, 10).right(50)
         self.assertEqual(200, region.x)

@@ -28,9 +28,8 @@ dnf -y install tesseract tesseract-devel
 dnf -y install gcc-c++
 # screen controlling
 dnf -y install xdotool xwd ImageMagick
-# TODO: PyAutoGUI's scrot dependencies are broken on CentOS/Rocky
+# TODO: PyAutoGUI's scrot dependencies are broken on CentOS/Rocky, currently provided offline
 #dnf -y install scrot
-export DISABLE_PYAUTOGUI=1
 dnf -y install x11vnc
 
 # dependencies that could be installed using pip
@@ -50,6 +49,8 @@ pip3 install "$distro_root"/guibot/guibot*.whl
 dnf install -y xorg-x11-server-Xvfb
 export DISPLAY=:99.0
 Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
+touch /root/.Xauthority
+xauth add ${HOST}:99 . $(xxd -l 16 -p /dev/urandom)
 sleep 3  # give xvfb some time to start
 
 # unit tests

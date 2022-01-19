@@ -939,12 +939,12 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(finder._cache[finder.params["deep"]["arch"].value],
                          finder.net)
 
-    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
     def test_hybrid_same(self):
         """Test for successful match of same images for default hybrid CV backend."""
         finder = HybridFinder()
-        finder.configure_backend("autopy")
-        finder.synchronize_backend("autopy")
+        finder.configure_backend("template")
+        finder.synchronize_backend("template")
         finder.params["find"]["similarity"].value = 1.0
         matches = finder.find(Chain('circle_simple'), Image('all_shapes'))
 
@@ -954,14 +954,12 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(matches[0].y, 10)
 
         # verify dumped files count and names
-        dumps = self._verify_and_get_dumps(4)
-        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "autopy")
-        self._verify_single_hotmap(dumps, "autopy")
+        dumps = self._verify_and_get_dumps(5)
+        self._verify_dumped_images('shape_blue_circle', 'all_shapes', dumps, "template")
+        self.assertEqual(len(self._get_matches_in('.*hotmap.*', dumps)), 2)
 
-    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_OCR', "0") == "1" or
-                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
-                     "Disabled OpenCV or OCR or AutoPy")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
+    @unittest.skipIf(os.environ.get('DISABLE_OCR', "0") == "1", "Disabled OCR")
     def test_hybrid_nomatch(self):
         """Test for unsuccessful match of different images for default hybrid CV backend."""
         finder = HybridFinder()
@@ -974,9 +972,8 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
 
         # verify dumped files count and names (4+4+7)
-        dumps = self._verify_and_get_dumps(15, multistep=True)
+        dumps = self._verify_and_get_dumps(5+5+7, multistep=True)
 
-    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_hybrid_fallback(self):
         """Test successful match of fallback representations after unsuccessful one."""
         finder = HybridFinder()
@@ -991,14 +988,14 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(matches[0].y, 10)
 
         # verify dumped files count and names
-        dumps = self._verify_and_get_dumps(8, multistep=True)
+        dumps = self._verify_and_get_dumps(5+5, multistep=True)
 
-    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_AUTOPY', "0") == "1",
-                     "Disabled OpenCV or AutoPy")
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
     def test_hybrid_multiconfig(self):
         """Test hybrid matching with multiple chain configs."""
         finder = HybridFinder()
+        # TOOD: replace autopy to improve coverage across variants
         finder.configure_backend("autopy")
         finder.synchronize_backend("autopy")
         finder.params["find"]["similarity"].value = 1.0
