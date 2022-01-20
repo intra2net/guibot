@@ -2000,12 +2000,15 @@ class TextFinder(ContourFinder):
             return
 
         elif category == "ocr":
+            tessdata_path = os.path.join(datapath, "tessdata")
+            if not os.path.exists(tessdata_path):
+                tessdata_path = os.environ.get("TESSDATA_PREFIX", ".")
 
             if backend == "pytesseract":
                 import pytesseract
                 self.ocr = pytesseract
                 self.ocr_config = r"--tessdata-dir %s --oem %s --psm %s "
-                self.ocr_config %= (os.path.join(datapath, "tessdata"),
+                self.ocr_config %= (tessdata_path,
                                     self.params["ocr"]["oem"].value,
                                     self.params["ocr"]["psmode"].value)
                 self.ocr_config += r"-c tessedit_char_whitelist='%s' %s"
@@ -2013,13 +2016,13 @@ class TextFinder(ContourFinder):
                                     self.params["ocr"]["extra_configs"].value)
             elif backend == "tesserocr":
                 from tesserocr import PyTessBaseAPI
-                self.ocr = PyTessBaseAPI(path=os.path.join(datapath, "tessdata"),
+                self.ocr = PyTessBaseAPI(path=tessdata_path,
                                          lang=self.params["ocr"]["language"].value,
                                          oem=self.params["ocr"]["oem"].value,
                                          psm=self.params["ocr"]["psmode"].value)
                 self.ocr.SetVariable("tessedit_char_whitelist", self.params["ocr"]["char_whitelist"].value)
             elif backend == "tesseract":
-                self.ocr = cv2.text.OCRTesseract_create(os.path.join(datapath, "tessdata"),
+                self.ocr = cv2.text.OCRTesseract_create(tessdata_path,
                                                         language=self.params["ocr"]["language"].value,
                                                         char_whitelist=self.params["ocr"]["char_whitelist"].value,
                                                         oem=self.params["ocr"]["oem"].value,
