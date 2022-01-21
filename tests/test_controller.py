@@ -38,14 +38,6 @@ class ControllerTest(unittest.TestCase):
         os.environ["USER"] = os.environ.get("USER", "root")
         os.environ["HOME"] = os.environ.get("HOME", "/root")
 
-        # create an Xauthority cookiefor the PyAutoGUI backend
-        xauthfile = os.path.join(os.environ["HOME"], ".Xauthority")
-        cls._dummy_xauth = False
-        if not os.path.exists(xauthfile):
-            cls._dummy_xauth = True
-            with open(xauthfile, 'w') as file:
-                pass
-
         # create the password file for the VNC server
         passfile = os.path.join(os.environ["HOME"], ".vnc/passwd")
         os.makedirs(os.path.dirname(passfile), exist_ok=True)
@@ -64,8 +56,6 @@ class ControllerTest(unittest.TestCase):
         if os.path.exists(vnc_config_dir):
             shutil.rmtree(vnc_config_dir)
         xauthfile = os.path.join(os.environ["HOME"], ".Xauthority")
-        if cls._dummy_xauth and os.path.exists(xauthfile):
-            os.unlink(xauthfile)
 
     def setUp(self):
         # gui test scripts
