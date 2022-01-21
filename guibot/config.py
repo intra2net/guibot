@@ -181,31 +181,6 @@ class GlobalConfig(type):
     #: whether to move the mouse cursor to a location instantly or smoothly
     smooth_mouse_drag = property(fget=smooth_mouse_drag, fset=smooth_mouse_drag)
 
-    def screen_autoconnect(self, value=None):
-        """
-        Same as :py:func:`GlobalConfig.smooth_mouse_drag` but with
-
-        :param value: whether to perform complete initialization of the
-                      desktop control backend
-
-        Complete initialization includes connecting to the backend (screen)
-        selected in the :py:func:`GlobalConfig.display_control_backend`.
-
-        If disabled, you have to connect before performing any GUI operations::
-
-            region.dc_backend.connect_screen()
-
-        The use of this is to allow you to perform some configuration first.
-        """
-        if value is None:
-            return GlobalConfig._screen_autoconnect
-        elif value == True or value == False:
-            GlobalConfig._screen_autoconnect = value
-        else:
-            raise ValueError
-    #: whether to perform complete initialization of the desktop control backend
-    screen_autoconnect = property(fget=screen_autoconnect, fset=screen_autoconnect)
-
     def preprocess_special_chars(self, value=None):
         """
         Same as :py:func:`GlobalConfig.smooth_mouse_drag` but with
