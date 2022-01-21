@@ -29,6 +29,6 @@ python setup.py install
 xcopy %DISTRO_ROOT%\guibot\misc %PYTHONPATH%\Lib\site-packages\guibot\misc /E /S /I /Q /V
 xcopy %DISTRO_ROOT%\guibot\tests %PYTHONPATH%\Lib\site-packages\guibot\tests /E /S /I /Q /V
 
-echo Virtuser ready to start!
-REM wait for 30 seconds
-ping -n 31 localhost > nul
+REM Run all unit tests
+cd %PYTHONPATH%\Lib\site-packages\guibot\tests
+python -m unittest discover -v -s ../tests/
