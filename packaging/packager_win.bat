@@ -14,15 +14,8 @@ set PATH=%PYTHONPATH%;%PYTHONPATH%\Scripts;%PATH%
 REM a permanent path variable will be set by the executable once this batch exits
 
 REM GuiBot deps
-pip install Pillow-5.2.0-cp36-cp36m-win_amd64.whl
-pip install autopy-1.0.1-cp36-cp36m-win_amd64.whl
-REM extra dependency - OpenCV for comfort
-pip install numpy-1.14.5-cp36-none-win_amd64.whl
-pip install opencv_python-3.4.1.15-cp36-cp36m-win_amd64.whl
-
-REM Optional proxy guibot interface deps
-pip install serpent-1.25-py2.py3-none-any.whl
-pip install Pyro4-4.73-py2.py3-none-any.whl
+pip install --user --upgrade pip
+pip install -r %DISTRO_ROOT%\guibot\packaging\pip_requirements.txt
 
 REM GuiBot setup
 echo Copying GuiBot files
