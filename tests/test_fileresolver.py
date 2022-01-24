@@ -72,10 +72,12 @@ class FileResolverTest(unittest.TestCase):
     def test_search(self):
         """Check that different :py:class:`FileResolver` instances contain the same paths."""
         self.resolver.add_path("images")
-        self.assertEqual("images/shape_black_box.png", self.resolver.search("shape_black_box.png"))
+        self.assertEqual(os.path.join("images", "shape_black_box.png"),
+                         self.resolver.search("shape_black_box.png"))
 
         new_finder = FileResolver()
-        self.assertEqual("images/shape_black_box.png", new_finder.search("shape_black_box"))
+        self.assertEqual(os.path.join("images", "shape_black_box.png"),
+                         new_finder.search("shape_black_box"))
 
     def test_search_fail(self):
         """Test failed search."""
@@ -87,28 +89,35 @@ class FileResolverTest(unittest.TestCase):
         self.resolver.add_path("images")
 
         # Test without extension
-        self.assertEqual("images/shape_black_box.png", self.resolver.search("shape_black_box"))
-        self.assertEqual("images/mouse down.txt", self.resolver.search("mouse down"))
-        self.assertEqual("images/circle.steps", self.resolver.search("circle"))
+        self.assertEqual(os.path.join("images", "shape_black_box.png"),
+                         self.resolver.search("shape_black_box"))
+        self.assertEqual(os.path.join("images", "mouse down.txt"),
+                         self.resolver.search("mouse down"))
+        self.assertEqual(os.path.join("images", "circle.steps"),
+                         self.resolver.search("circle"))
 
     def test_search_precedence(self):
         """Check the precedence of extensions when searching."""
         self.resolver.add_path("images")
 
         # Test correct precedence of the checks
-        self.assertEqual("images/shape_blue_circle.xml", self.resolver.search("shape_blue_circle.xml"))
-        self.assertEqual("images/shape_blue_circle.png", self.resolver.search("shape_blue_circle"))
+        self.assertEqual(os.path.join("images", "shape_blue_circle.xml"),
+                         self.resolver.search("shape_blue_circle.xml"))
+        self.assertEqual(os.path.join("images", "shape_blue_circle.png"),
+                         self.resolver.search("shape_blue_circle"))
 
     def test_search_keyword(self):
         """Check if the path restriction results in an empty set."""
         self.resolver.add_path("images")
-        self.assertEqual("images/shape_black_box.png", self.resolver.search("shape_black_box.png", "images"))
+        self.assertEqual(os.path.join("images", "shape_black_box.png"),
+                         self.resolver.search("shape_black_box.png", "images"))
         self.assertRaises(FileNotFoundError, self.resolver.search, "shape_black_box.png", "other-images")
 
     def test_search_silent(self):
         """Check that we can disable exceptions from being raised when searching."""
         self.resolver.add_path("images")
-        self.assertEqual("images/shape_black_box.png", self.resolver.search("shape_black_box.png", silent=True))
+        self.assertEqual(os.path.join("images", "shape_black_box.png"),
+                         self.resolver.search("shape_black_box.png", silent=True))
 
         # Fail if the path restriction results in an empty set
         target = self.resolver.search("shape_missing_box.png", silent=True)

@@ -78,7 +78,8 @@ class RegionTest(unittest.TestCase):
             shutil.rmtree(GlobalConfig.image_logging_destination)
 
     def show_application(self):
-        self.child_app = subprocess.Popen(['python3', self.script_app])
+        python = 'python.exe' if os.name == 'nt' else 'python3'
+        self.child_app = subprocess.Popen([python, self.script_app])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 

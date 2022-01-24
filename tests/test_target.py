@@ -17,7 +17,7 @@
 import os
 import unittest
 from unittest.mock import Mock, patch, call
-from tempfile import NamedTemporaryFile, mkdtemp, mkstemp
+from tempfile import NamedTemporaryFile, mkdtemp, mkstemp, gettempdir
 
 import common_test
 from guibot.target import Chain, Image, Pattern, Text
@@ -101,38 +101,39 @@ class ImageTest(unittest.TestCase):
         image = Image(self.file_all_shapes)
 
         with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
-            returned_image = image.save(f.name)
-            loaded_image = Image(f.name)
+            filename = f.name
+        returned_image = image.save(filename)
+        loaded_image = Image(filename)
 
-            self.assertEqual(returned_image.filename, loaded_image.filename)
-            self.assertEqual(image.width, loaded_image.width)
-            self.assertEqual(image.height, loaded_image.height)
+        self.assertEqual(returned_image.filename, loaded_image.filename)
+        self.assertEqual(image.width, loaded_image.width)
+        self.assertEqual(image.height, loaded_image.height)
 
-            image.use_own_settings = True
-            returned_image = image.save(f.name)
-            loaded_image = Image(f.name)
-            os.unlink("%s.match" % f.name[:-4])
+        image.use_own_settings = True
+        returned_image = image.save(filename)
+        loaded_image = Image(filename)
+        os.unlink("%s.match" % filename[:-4])
 
-            for category in returned_image.match_settings.params.keys():
-                self.assertIn(category, loaded_image.match_settings.params.keys())
-                for key in returned_image.match_settings.params[category].keys():
-                    self.assertIn(key, loaded_image.match_settings.params[category])
-                    if not isinstance(returned_image.match_settings.params[category][key], CVParameter):
-                        self.assertEqual(returned_image.match_settings.params[category][key],
-                                         loaded_image.match_settings.params[category][key])
-                        continue
-                    self.assertAlmostEqual(returned_image.match_settings.params[category][key].value,
-                                           loaded_image.match_settings.params[category][key].value)
-                    self.assertEqual(returned_image.match_settings.params[category][key].range[0],
-                                     loaded_image.match_settings.params[category][key].range[0])
-                    self.assertEqual(returned_image.match_settings.params[category][key].range[1],
-                                     loaded_image.match_settings.params[category][key].range[1])
-                    self.assertEqual(returned_image.match_settings.params[category][key].delta,
-                                     loaded_image.match_settings.params[category][key].delta)
-                    self.assertEqual(returned_image.match_settings.params[category][key].tolerance,
-                                     loaded_image.match_settings.params[category][key].tolerance)
-                    self.assertEqual(returned_image.match_settings.params[category][key].fixed,
-                                     loaded_image.match_settings.params[category][key].fixed)
+        for category in returned_image.match_settings.params.keys():
+            self.assertIn(category, loaded_image.match_settings.params.keys())
+            for key in returned_image.match_settings.params[category].keys():
+                self.assertIn(key, loaded_image.match_settings.params[category])
+                if not isinstance(returned_image.match_settings.params[category][key], CVParameter):
+                    self.assertEqual(returned_image.match_settings.params[category][key],
+                                     loaded_image.match_settings.params[category][key])
+                    continue
+                self.assertAlmostEqual(returned_image.match_settings.params[category][key].value,
+                                       loaded_image.match_settings.params[category][key].value)
+                self.assertEqual(returned_image.match_settings.params[category][key].range[0],
+                                 loaded_image.match_settings.params[category][key].range[0])
+                self.assertEqual(returned_image.match_settings.params[category][key].range[1],
+                                 loaded_image.match_settings.params[category][key].range[1])
+                self.assertEqual(returned_image.match_settings.params[category][key].delta,
+                                 loaded_image.match_settings.params[category][key].delta)
+                self.assertEqual(returned_image.match_settings.params[category][key].tolerance,
+                                 loaded_image.match_settings.params[category][key].tolerance)
+                self.assertEqual(returned_image.match_settings.params[category][key].fixed,
+                                 loaded_image.match_settings.params[category][key].fixed)
 
     def test_nonexisting_image(self):
         """Test image target initialization with missing image data."""
@@ -160,25 +161,28 @@ class ChainTest(unittest.TestCase):
     """Tests for the chain target (series of steps)."""
 
     stepsfile_name = "some_stepsfile"
-    stepsfile_fullname = "{}.steps".format(stepsfile_name)
+    stepsfile_fullname = f"{stepsfile_name}.steps"
     # special file that we will report as non-existing for some tests
     stepsfile_missing = "missing_stefile"
     # files that the mock should report as missing
     non_existing_files = [
-        "{}.match".format(stepsfile_name),
-        "{}.steps".format(stepsfile_missing),
-        "/tmp/some_text_content.txt",
-        "/tmp/some_text_content.txt.png",
-        "/tmp/some_text_content.txt.xml",
-        "/tmp/some_text_content.txt.txt",
-        "/tmp/some_text_content.txt.csv",
-        "/tmp/some_text_content.txt.steps",
-        "/tmp/17.csv",
-        "/tmp/17.csv.png",
-        "/tmp/17.csv.xml",
-        "/tmp/17.csv.txt",
-        "/tmp/17.csv.csv",
-        "/tmp/17.csv.steps",
+        f"{stepsfile_name}.match",
+        f"{stepsfile_missing}.steps",
+        # TODO: the current unit test mocking for file existence is hard to debug
+        ".txt",
+        "some_text_content.txt",
+        os.path.join(gettempdir(), "some_text_content.txt"),
+        os.path.join(gettempdir(), "some_text_content.txt.png"),
+        os.path.join(gettempdir(), "some_text_content.txt.xml"),
+        os.path.join(gettempdir(), "some_text_content.txt.txt"),
+        os.path.join(gettempdir(), "some_text_content.txt.csv"),
+        os.path.join(gettempdir(), "some_text_content.txt.steps"),
+        os.path.join(gettempdir(), "17.csv"),
+        os.path.join(gettempdir(), "17.csv.png"),
+        os.path.join(gettempdir(), "17.csv.xml"),
+        os.path.join(gettempdir(), "17.csv.txt"),
+        os.path.join(gettempdir(), "17.csv.csv"),
+        os.path.join(gettempdir(), "17.csv.steps"),
     ]
 
     def setUp(self):
@@ -208,6 +212,7 @@ class ChainTest(unittest.TestCase):
     def tearDown(self):
         """Cleanup removing any patches and files created."""
         # start with a clean environment
+        FileResolver().clear()
         for p in self._old_paths:
             FileResolver().add_path(p)
 
@@ -269,10 +274,28 @@ class ChainTest(unittest.TestCase):
         self._tmpfiles.append(filename)
         return filename
 
+    def _create_temp_text_file(self, filename):
+        """
+        Create a temporary text file, needed for some text file including tests.
+
+        :param str filename: name of the fake text file
+        :returns: name of the temporary text file generated
+        :rtype: str
+
+        The Text target stepfile data accepts either a file or a text string and
+        we test with both modes. For the first mode we need a real file.
+        """
+        text_file = self._create_temp_file(prefix=filename, extension=".txt", contents="ocr_string")
+        dirname, basename = os.path.dirname(text_file), os.path.basename(text_file)
+        FileResolver().add_path(dirname)
+        # we mock the existence of all file so have to register the simple basename as nonexisting
+        self.non_existing_files.append(basename)
+        return basename
+
     def test_stepsfile_lookup(self):
         """Test that the stepsfile will be searched using :py:class:`guibot.fileresolver.FileResolver`."""
         tmp_dir = mkdtemp()
-        tmp_steps_file = "{}/{}.steps".format(tmp_dir, self.stepsfile_missing)
+        tmp_steps_file = os.path.join(tmp_dir, self.stepsfile_missing) + ".steps"
         with open(tmp_steps_file, "w") as fp:
             fp.write("image_for_autopy.png	some_autopy_matchfile.match")
         filename = os.path.basename(os.path.splitext(tmp_steps_file)[0])
@@ -288,6 +311,9 @@ class ChainTest(unittest.TestCase):
 
     def test_finder_creation(self):
         """Test that all finders are correctly created from a stepsfile."""
+        # actually create files as mocking os.open() would be too cumbersome
+        text_file = self._create_temp_text_file("item_for_text")
+
         stepsfile_contents = [
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
@@ -296,7 +322,7 @@ class ChainTest(unittest.TestCase):
             "item_for_cascade.xml	some_cascade_matchfile.match",
             "item_for_template.png	some_template_matchfile.match",
             "item_for_autopy.png	some_autopy_matchfile.match",
-            "item_for_text.txt	some_text_matchfile.match"
+            f"{text_file}	some_text_matchfile.match"
         ]
         self._build_chain(os.linesep.join(stepsfile_contents))
 
@@ -312,6 +338,9 @@ class ChainTest(unittest.TestCase):
 
     def test_steps_list(self):
         """Test that the resulting step chain contains all the items from the stepsfile."""
+        # actually create files as mocking os.open() would be too cumbersome
+        text_file = self._create_temp_text_file("item_for_text")
+
         stepsfile_contents = [
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
@@ -320,7 +349,7 @@ class ChainTest(unittest.TestCase):
             "item_for_cascade.xml	some_cascade_matchfile.match",
             "item_for_template.png	some_template_matchfile.match",
             "item_for_autopy.png	some_autopy_matchfile.match",
-            "item_for_text.txt	some_text_matchfile.match"
+            f"{text_file}	some_text_matchfile.match"
         ]
         chain = self._build_chain(os.linesep.join(stepsfile_contents))
         expected_types = [Image, Image, Image, Pattern, Pattern, Image, Image, Text]
@@ -328,11 +357,8 @@ class ChainTest(unittest.TestCase):
 
     def test_step_save(self):
         """Test that dumping a chain to a file works and that the content is preserved."""
-        # The Text target accepts either a file or a text string and we test
-        # with both modes. For the first mode we need a real file.
-        text_file = self._create_temp_file(prefix="some_text_file", extension=".txt")
-        with open(text_file, "w") as fp:
-            fp.write("ocr_string")
+        # actually create files as mocking os.open() would be too cumbersome
+        text_file = self._create_temp_text_file("some_text_file")
 
         # create real temp files for these -- they are saved using open() and we are not
         # mocking those calls. Also, the temp files will automatically be removed on tear down
@@ -347,12 +373,12 @@ class ChainTest(unittest.TestCase):
             "item_for_contour.png	some_contour_matchfile.match",
             "item_for_tempfeat.png	some_tempfeat_matchfile.match",
             "item_for_feature.png	some_feature_matchfile.match",
-            "{}	some_deep_matchfile.match".format(deep_csv),
+            f"{deep_csv}	some_deep_matchfile.match",
             "17	some_deep_matchfile.match",
-            "{}	some_cascade_matchfile.match".format(cascade_xml),
+            f"{cascade_xml}	some_cascade_matchfile.match",
             "item_for_template.png	some_template_matchfile.match",
             "item_for_autopy.png	some_autopy_matchfile.match",
-            "{}	some_text_matchfile.match".format(os.path.splitext(text_file)[0]),
+            f"{text_file}	some_text_matchfile.match",
             "some_text_content	some_text_matchfile.match"
         ]
 
@@ -372,32 +398,28 @@ class ChainTest(unittest.TestCase):
         source_stepsfile = self._create_temp_file(prefix=self.stepsfile_name,
             extension=".steps", contents=os.linesep.join(stepsfile_contents))
 
-        FileResolver().add_path(os.path.dirname(text_file))
-        try:
-            chain = Chain(os.path.splitext(source_stepsfile)[0])
-            chain.save(target_filename)
+        chain = Chain(os.path.splitext(source_stepsfile)[0])
+        chain.save(target_filename)
 
-            with open(target_filename, "r") as f:
-                generated_content = f.read().splitlines()
+        with open(target_filename, "r") as f:
+            generated_content = f.read().splitlines()
 
-            # assert that the generated steps file has the expected content
-            self.assertEqual(generated_content, expected_content)
+        # assert that the generated steps file has the expected content
+        self.assertEqual(generated_content, expected_content)
 
-            # build a list of the match filenames generated from
-            # the calls to `Finder.to_match_file()`
-            generated_match_names = []
-            for c in self.mock_match_write.call_args_list:
-               generated_match_names.append(c[0][1])
+        # build a list of the match filenames generated from
+        # the calls to `Finder.to_match_file()`
+        generated_match_names = []
+        for c in self.mock_match_write.call_args_list:
+           generated_match_names.append(c[0][1])
 
-            # get a list
-            expected_match_names = [x.split("\t")[1] for x in expected_content]
-            expected_match_names.insert(0, os.path.splitext(source_stepsfile)[0] + ".match")
+        # get a list
+        expected_match_names = [x.split("\t")[1] for x in expected_content]
+        expected_match_names.insert(0, os.path.splitext(source_stepsfile)[0] + ".match")
 
-            # and assert that a match file was generated for each line
-            # and for the steps file itself
-            self.assertEqual(generated_match_names, expected_match_names)
-        finally:
-            FileResolver().remove_path(os.path.dirname(text_file))
+        # and assert that a match file was generated for each line
+        # and for the steps file itself
+        self.assertEqual(generated_match_names, expected_match_names)
 
     def test_malformed_stepsfile(self):
         """Test that the malformed stepsfiles are correctly handled."""
@@ -432,9 +454,10 @@ class ChainTest(unittest.TestCase):
 
     def test_nested_stepsfiles(self):
         """Test that stepsfiles within stepsfiles are correctly handled."""
-        # phisically create the files -- mocking os.open() would be too cumbersome
+        # actually create files as mocking os.open() would be too cumbersome
+        text_file = self._create_temp_text_file("item_for_text")
         stepsfile1 = self._create_temp_file(extension=".steps",
-            contents="item_for_text.txt	some_text_matchfile.match")
+            contents=f"{text_file}	some_text_matchfile.match")
 
         # second step file contains a reference to the first
         stepsfile2 = self._create_temp_file(extension=".steps",
@@ -456,9 +479,10 @@ class ChainTest(unittest.TestCase):
 
     def test_nested_stepsfiles_order(self):
         """Test that stepsfiles within stepsfiles are loaded in order."""
-        # phisically create the files -- mocking os.open() would be too cumbersome
+        # actually create files as mocking os.open() would be too cumbersome
+        text_file = self._create_temp_text_file("item_for_text")
         stepsfile1 = self._create_temp_file(extension=".steps",
-            contents="item_for_text.txt	some_text_matchfile.match")
+            contents=f"{text_file}	some_text_matchfile.match")
         stepsfile2 = self._create_temp_file(extension=".steps",
             contents="item_for_contour.png	some_contour_matchfile.match")
 
