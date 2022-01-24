@@ -130,6 +130,7 @@ class CalibratorTest(unittest.TestCase):
                              "Match similarity before a search must be less"
                              " or equal to the similarity after a search")
 
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_benchmark_autopy(self):
         """Check that benchmarking of the AutoPy backend produces correct results."""
         self.benchmark_setUp()
