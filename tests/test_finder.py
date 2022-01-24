@@ -18,6 +18,7 @@ import os
 import re
 import unittest
 import shutil
+import ssl
 
 import common_test
 from guibot.config import GlobalConfig
@@ -45,11 +46,18 @@ class FinderTest(unittest.TestCase):
         GlobalConfig.image_logging_destination = cls.logpath
         GlobalConfig.image_logging_step_width = 4
 
+        # TODO: PyTorch has bugs downloading models from their hub on Windows
+        cls.orig_https_context = ssl._create_default_https_context
+        ssl._create_default_https_context = ssl._create_unverified_context
+
     @classmethod
     def tearDownClass(cls):
         GlobalConfig.image_logging_level = cls.prev_loglevel
         GlobalConfig.image_logging_destination = cls.prev_logpath
         GlobalConfig.image_logging_step_width = cls.prev_logwidth
+
+        # TODO: PyTorch has bugs downloading models from their hub on Windows
+        ssl._create_default_https_context = cls.orig_https_context
 
     def setUp(self):
         # the image logger will recreate its logging destination

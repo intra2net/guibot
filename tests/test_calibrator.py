@@ -18,6 +18,7 @@ import os
 import unittest
 import random
 import pprint
+import ssl
 
 import common_test
 from guibot.calibrator import Calibrator
@@ -35,9 +36,18 @@ class CalibratorTest(unittest.TestCase):
         cls.patfile_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
         random.seed(42)
 
+        # TODO: PyTorch has bugs downloading models from their hub on Windows
+        cls.orig_https_context = ssl._create_default_https_context
+        ssl._create_default_https_context = ssl._create_unverified_context
+
     def tearDown(self):
         if os.path.exists("pairs.list"):
             os.unlink("pairs.list")
+
+    @classmethod
+    def tearDownClass(cls):
+        # TODO: PyTorch has bugs downloading models from their hub on Windows
+        ssl._create_default_https_context = cls.orig_https_context
 
     def calibration_setUp(self, needle, haystack, calibrate_backends):
         # use a single finder type for these tests

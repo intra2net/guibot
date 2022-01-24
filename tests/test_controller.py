@@ -33,6 +33,10 @@ class ControllerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # the VNC display controller is disabled on OS-es like Windows
+        if os.environ.get('DISABLE_VNCDOTOOL', "0") == "1":
+            return
+
         cls.vncpass = "test1234"
 
         os.environ["USER"] = os.environ.get("USER", "root")
@@ -50,6 +54,10 @@ class ControllerTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        # the VNC display controller is disabled on OS-es like Windows
+        if os.environ.get('DISABLE_VNCDOTOOL', "0") == "1":
+            return
+
         # kill the current server
         cls._server.terminate()
         vnc_config_dir = os.path.join(os.environ["HOME"], ".vnc")
@@ -80,7 +88,7 @@ class ControllerTest(unittest.TestCase):
             self.backends += [XDoToolController()]
         if os.environ.get('DISABLE_PYAUTOGUI', "0") == "0":
             self.backends += [PyAutoGUIController()]
-        if os.environ.get('DISABLE_VNC', "0") == "0":
+        if os.environ.get('DISABLE_VNCDOTOOl', "0") == "0":
             vncdotool = VNCDoToolController(synchronize=False)
             vncdotool.params["vncdotool"]["vnc_password"] = self.vncpass
             vncdotool.synchronize_backend()

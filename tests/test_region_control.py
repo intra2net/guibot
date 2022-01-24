@@ -252,6 +252,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_DRAG', "0") == "1", "Drag and drop disabled")
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_drag_drop(self):
         self.show_application()
@@ -259,6 +260,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_DRAG', "0") == "1", "Drag and drop disabled")
     @unittest.skip("Unit test either errors out or is expected failure")
     #@unittest.expectedFailure  # hangs with PyQt5 (worked with PyQt4)
     #@unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
@@ -274,6 +276,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_DRAG', "0") == "1", "Drag and drop disabled")
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_drop_at(self):
         self.show_application()

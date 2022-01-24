@@ -4,6 +4,17 @@ SET DISTRO="windows"
 SET DISTRO_VERSION="10"
 SET DISTRO_ROOT="%HOMEDRIVE%"
 
+REM AutoPy is not available for Python3.9 at present
+SET DISABLE_AUTOPY=1
+REM Tesseract doesn't have original installers for Windows
+SET DISABLE_OCR=1
+REM Drag/drop with the current default DC backend is not supported on Windows
+SET DISABLE_DRAG=1
+REM Requires X server and thus only available on Linux
+SET DISABLE_XDOTOOL=1
+REM Requires VNC server and thus only available on Linux
+SET DISABLE_VNCDOTOOl=1
+
 REM Main deps
 cd %DISTRO_ROOT%\
 REM Assuming a local python executable to avoid overloading the download web page
