@@ -63,6 +63,9 @@ if (( distro_version <= 7 )); then
 else
     COVERAGE="coverage-${python_version}"
 fi
-LIBPATH=".." COVERAGE="$COVERAGE" sh run_tests.sh
+LIBPATH=".." COVERAGE="$COVERAGE" sh coverage_analysis.sh
+# TODO: need supported git provider (e.g. GH actions web hooks) for codecov submissions
+#mv "$distro_root/guibot/.git" /usr/local/lib/python3*/site-packages/guibot/
+#LIBPATH=".." COVERAGE="$COVERAGE" SUBMIT=1 sh coverage_analysis.sh
 
 exit 0

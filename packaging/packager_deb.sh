@@ -66,6 +66,6 @@ export XDG_RUNTIME_DIR="/tmp/runtime-root"
 mkdir /tmp/runtime-root
 chmod 0700 /tmp/runtime-root
 cd /usr/lib/python3/dist-packages/guibot/tests
-LIBPATH=".." COVERAGE="python3-coverage" sh run_tests.sh
+LIBPATH=".." COVERAGE="python3-coverage" sh coverage_analysis.sh
 
 exit 0

@@ -64,7 +64,7 @@ before_script:
 # run tests
 script:
 - if [[ $INSTALL_VARIANT != "pip" ]]; then cd packaging && bash packager_docker.sh;
-  else cd tests && bash run_tests.sh; fi
+  else cd tests && bash coverage_analysis.sh; fi
 - if [[ $INSTALL_VARIANT == "pip" ]]; then codecov; fi
 # use this to disable email notifications (e.g. while testing configuration)
 #notifications:

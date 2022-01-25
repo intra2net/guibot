@@ -62,6 +62,6 @@ if (( distro_version <= 30 )); then
 else
     COVERAGE="coverage"
 fi
-LIBPATH=".." COVERAGE="$COVERAGE" sh run_tests.sh
+LIBPATH=".." COVERAGE="$COVERAGE" sh coverage_analysis.sh
 
 exit 0
