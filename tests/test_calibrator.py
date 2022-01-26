@@ -155,6 +155,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 0.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.name == 'nt', "Exhibits hiccups on Windows")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_contour(self):
         """Check that benchmarking of the OpenCV countour backend produces correct results."""
@@ -170,6 +171,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.name == 'nt', "Exhibits hiccups on Windows")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_template(self):
         """Check that benchmarking of the OpenCV template backend produces correct results."""
@@ -201,6 +203,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertLessEqual(result[1], 1.0, "Incorrect similarity for case '%s' %s %s" % result)
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
+    @unittest.skipIf(os.name == 'nt', "Exhibits hiccups on Windows")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_benchmark_cascade(self):
         """Check that benchmarking of the OpenCV cascade backend produces correct results."""
