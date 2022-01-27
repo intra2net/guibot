@@ -353,29 +353,30 @@ class Text(Target):
     using OCR or general text detection methods.
     """
 
-    def __init__(self, value, match_settings=None):
+    def __init__(self, value=None, text_filename=None, match_settings=None):
         """
         Build a text object.
 
         :param str value: text value to search for
+        :param str text_filename: custom filename to read the text from
         :param match_settings: predefined configuration for the CV backend if any
         :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Text, self).__init__(match_settings)
         self.value = value
-        self.text_file = None
+        self.filename = text_filename
 
         try:
-            filename = FileResolver().search(str(self) + ".txt")
+            filename = self.filename if self.filename else str(self) + ".txt"
             self.load(filename)
-            self.text_file = filename
+            self.filename = filename
         except FileNotFoundError:
             # text generated on the fly is also acceptable
             pass
 
     def __str__(self):
         """Provide a part of the text value."""
-        return self.value[:30]
+        return self.value[:30].replace('/', '').replace('\\', '')
 
     def load(self, filename, **kwargs):
         """
@@ -576,7 +577,10 @@ class Chain(Target):
             elif step_backend in ["cascade", "deep"]:
                 data_and_config = Pattern(data, match_settings=self.match_settings)
             elif step_backend == "text":
-                data_and_config = Text(data, match_settings=self.match_settings)
+                if data.endswith(".txt"):
+                    data_and_config = Text(text_filename=data, match_settings=self.match_settings)
+                else:
+                    data_and_config = Text(value=data, match_settings=self.match_settings)
             else:
                 # in particular, we cannot have a chain within the chain since it is not useful
                 raise UnsupportedBackendError("No target step type for '%s' backend" % step_backend)
@@ -612,12 +616,12 @@ class Chain(Target):
             elif step_backend == "text":
                 # special case - dynamic text without a filename
                 # save only the matchfile and add the corresponding line
-                if not data_and_config.text_file:
+                if not data_and_config.filename:
                     matchfile = str(data_and_config) + ".match"
                     Target.save(data_and_config, matchfile)
                     save_lines.append(data_and_config.value + "\t" + matchfile + "\n")
                     continue
-                data = data_and_config.text_file
+                data = data_and_config.filename
             else:
                 # in particular, we cannot have a chain within the chain since it is not useful
                 raise UnsupportedBackendError("No target step type for '%s' backend" % step_backend)

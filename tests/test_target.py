@@ -449,7 +449,7 @@ class ChainTest(unittest.TestCase):
         finder = Finder(False, False)
         finder.params["find"] = { "backend": "unknown" }
         chain = self._build_chain("")
-        chain._steps.append(Text("", finder))
+        chain._steps.append(Text("", match_settings=finder))
         self.assertRaises(UnsupportedBackendError, chain.save, "foobar")
 
     def test_nested_stepsfiles(self):
