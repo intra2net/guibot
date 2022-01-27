@@ -309,8 +309,8 @@ class ChainTest(unittest.TestCase):
             os.unlink(tmp_steps_file)
             os.rmdir(tmp_dir)
 
-    def test_finder_creation(self):
-        """Test that all finders are correctly created from a stepsfile."""
+    def test_match_file_loading(self):
+        """Test that all match files in the steps file are correctly loaded."""
         # actually create files as mocking os.open() would be too cumbersome
         text_file = self._create_temp_text_file("item_for_text")
 
@@ -326,15 +326,10 @@ class ChainTest(unittest.TestCase):
         ]
         self._build_chain(os.linesep.join(stepsfile_contents))
 
-        calls = []
         for l in stepsfile_contents:
             item, match = l.split("\t")
             # we need to have a finder created for each .match file (inside Chain itself)
-            calls.append(call(match))
-            # and a finder for each target file (except for text and pattern items)
-            if os.path.splitext(item)[1] not in [".txt", ".xml", ".csv"]:
-                calls.append(call(os.path.splitext(item)[0] + ".match"))
-        self.mock_match_read.assert_has_calls(calls)
+            self.mock_match_read.assert_any_call(match)
 
     def test_steps_list(self):
         """Test that the resulting step chain contains all the items from the stepsfile."""
