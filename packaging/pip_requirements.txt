@@ -20,6 +20,9 @@ Pyro4==4.82
 # coverage analysis to use for testing
 coverage
 codecov
+# linters and auto-reviews
+pycodestyle
+pydocstyle
 # GUI to use for testing
 # TODO: the most recent version at the time works on windows but not on linux
 PyQt5==5.15.6; sys_platform == 'win32' and platform_python_implementation != "PyPy"
