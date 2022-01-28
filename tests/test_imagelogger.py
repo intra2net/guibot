@@ -89,8 +89,8 @@ class ImageLoggerTest(unittest.TestCase):
             self.imglog.dump_matched_images()
             self.mock_mkdir.assert_called_once_with(ImageLogger.logging_destination)
             # assert for folder creation and actual file saving
-            self.imglog.needle.save.assert_called_once_with('./imglog/imglog018-1needle-test_needle')
-            self.imglog.haystack.save.assert_called_once_with('./imglog/imglog018-2haystack-test_haystack')
+            self.imglog.needle.save.assert_called_once_with(os.path.join('imglog', 'imglog018-1needle-test_needle'))
+            self.imglog.haystack.save.assert_called_once_with(os.path.join('imglog', 'imglog018-2haystack-test_haystack'))
 
     def test_hotmap_dumping(self):
         """Check that hotmaps are dumped correctly."""

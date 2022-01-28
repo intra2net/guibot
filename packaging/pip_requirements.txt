@@ -1,18 +1,25 @@
 # minimal
-coverage==5.3
-codecov==2.1.9
 Pillow==8.2.0; python_version == '3.6'
 Pillow==9.0.0; python_version >= '3.7'
 
 # backends
 autopy==4.0.0; python_version <= '3.8' and platform_python_implementation != "PyPy"
-pytesseract==0.3.4
-tesserocr==2.5.1
+# OCR is currently not tested on Windows due to custom Tesseract OCR installers
+pytesseract==0.3.4; sys_platform != 'win32'
+tesserocr==2.5.1; sys_platform != 'win32'
 opencv-contrib-python==4.5.5.62; platform_python_implementation != "PyPy"
 torch==1.8.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 torchvision==0.9.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
 pyautogui==0.9.53; platform_python_implementation != "PyPy"
 
+# optional proxy guibot interface deps
+serpent==1.40
+Pyro4==4.82
+
+# coverage analysis to use for testing
+coverage==5.3
+codecov==2.1.9
 # GUI to use for testing
-PyQt5==5.14.2; platform_python_implementation != "PyPy"
+PyQt5==5.15.6; sys_platform == 'win32' and platform_python_implementation != "PyPy"
+PyQt5==5.14.2; sys_platform != 'win32' and platform_python_implementation != "PyPy"

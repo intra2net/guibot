@@ -75,7 +75,8 @@ class RegionTest(unittest.TestCase):
 
     def show_image(self, filename):
         filename = self.file_resolver.search(filename)
-        self.child_img = subprocess.Popen(['python3', self.script_img, filename])
+        python = 'python.exe' if os.name == 'nt' else 'python3'
+        self.child_img = subprocess.Popen([python, self.script_img, filename])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 

@@ -33,6 +33,10 @@ class ControllerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # the VNC display controller is disabled on OS-es like Windows
+        if os.environ.get('DISABLE_VNCDOTOOL', "0") == "1":
+            return
+
         cls.vncpass = "test1234"
 
         os.environ["USER"] = os.environ.get("USER", "root")
@@ -50,12 +54,15 @@ class ControllerTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        # the VNC display controller is disabled on OS-es like Windows
+        if os.environ.get('DISABLE_VNCDOTOOL', "0") == "1":
+            return
+
         # kill the current server
         cls._server.terminate()
         vnc_config_dir = os.path.join(os.environ["HOME"], ".vnc")
         if os.path.exists(vnc_config_dir):
             shutil.rmtree(vnc_config_dir)
-        xauthfile = os.path.join(os.environ["HOME"], ".Xauthority")
 
     def setUp(self):
         # gui test scripts
@@ -80,7 +87,7 @@ class ControllerTest(unittest.TestCase):
             self.backends += [XDoToolController()]
         if os.environ.get('DISABLE_PYAUTOGUI', "0") == "0":
             self.backends += [PyAutoGUIController()]
-        if os.environ.get('DISABLE_VNC', "0") == "0":
+        if os.environ.get('DISABLE_VNCDOTOOl', "0") == "0":
             vncdotool = VNCDoToolController(synchronize=False)
             vncdotool.params["vncdotool"]["vnc_password"] = self.vncpass
             vncdotool.synchronize_backend()
@@ -97,7 +104,8 @@ class ControllerTest(unittest.TestCase):
                 display._backend_obj.disconnect()
 
     def show_application(self):
-        self.child_app = subprocess.Popen(['python3', self.script_app])
+        python = 'python.exe' if os.name == 'nt' else 'python3'
+        self.child_app = subprocess.Popen([python, self.script_app])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 
