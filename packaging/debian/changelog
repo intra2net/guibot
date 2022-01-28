@@ -1,3 +1,11 @@
+guibot (0.50-1) unstable; urgency=medium
+
+  * Windows packager script and CI verification.
+  * Default PyAutoGUI display controller instead of AutoPy.
+  * Minor improvements on CV usability and DC behavior.
+
+ -- Plamen Dimitrov <plamen.dimitrov@intra2net.com>  Fri, 28 Jan 2022 12:00:00 +0200
+
 guibot (0.41-1) unstable; urgency=medium
 
   * New Tesseract OCR backends like pytesseract and tesserocr.

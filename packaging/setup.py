@@ -12,7 +12,7 @@ with open(path.join(p, '../README.md')) as f:
 
 setup(
     name='guibot',
-    version='0.41.1',
+    version='0.50.1',
     description='GUI automation tool',
     long_description=README,
     long_description_content_type='text/markdown',
