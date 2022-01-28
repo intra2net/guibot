@@ -13,12 +13,28 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Main guibot interface for GUI automation.
+
+This frontend is recommended for use in most normal cases.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import logging
-log = logging.getLogger('guibot')
-log.addHandler(logging.NullHandler())
 
 from .fileresolver import FileResolver
 from .region import Region
+
+
+log = logging.getLogger('guibot')
+log.addHandler(logging.NullHandler())
 
 
 class GuiBot(Region):

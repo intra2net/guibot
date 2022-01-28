@@ -13,10 +13,23 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Global and local (per target or region instance) configuration.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import logging
-log = logging.getLogger('guibot.config')
 
 from .errors import *
+
+log = logging.getLogger('guibot.config')
 
 
 class GlobalConfig(type):
@@ -174,7 +187,7 @@ class GlobalConfig(type):
         """
         if value is None:
             return GlobalConfig._smooth_mouse_drag
-        elif value == True or value == False:
+        elif value is True or value is False:
             GlobalConfig._smooth_mouse_drag = value
         else:
             raise ValueError
@@ -193,7 +206,7 @@ class GlobalConfig(type):
         """
         if value is None:
             return GlobalConfig._preprocess_special_chars
-        elif value == True or value == False:
+        elif value is True or value is False:
             GlobalConfig._preprocess_special_chars = value
         else:
             raise ValueError
@@ -208,7 +221,7 @@ class GlobalConfig(type):
         """
         if value is None:
             return GlobalConfig._save_needle_on_error
-        elif value == True or value == False:
+        elif value is True or value is False:
             GlobalConfig._save_needle_on_error = value
         else:
             raise ValueError
@@ -493,6 +506,7 @@ class GlobalConfig(object, metaclass=GlobalConfig):
     The methods of this class are shared among
     all of its instances.
     """
+
     pass
 
 
@@ -519,7 +533,9 @@ class TemporaryConfig(object):
         >>> print(GlobalConfig.delay_before_drop)
         0.5
     """
+
     def __init__(self):
+        """Build a temporary global config."""
         object.__setattr__(self, "_original_values", {})
 
     def __getattribute__(self, name):
@@ -655,4 +671,3 @@ class LocalConfig(object):
         :param bool reset: whether to (re)sync all parent backends as well
         """
         self.synchronize_backend(reset=reset)
-

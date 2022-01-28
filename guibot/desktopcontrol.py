@@ -13,11 +13,26 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Old module for display controllers (DC backends) - to be deprecated.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import logging
+
+from .controller import *
+
+
 logging.getLogger("guibot.desktopcontrol")\
     .warn("The `desktopcontrol` module is deprecated, use `controller` instead.")
 
-from .controller import *
 
 DesktopControl = Controller
 AutoPyDesktopControl = AutoPyController

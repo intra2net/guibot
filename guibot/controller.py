@@ -13,11 +13,22 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Display controllers (DC backends) to perform user operations.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import os
 import re
 import time
 import logging
-log = logging.getLogger('guibot.controller')
 
 import PIL.Image
 from tempfile import NamedTemporaryFile
@@ -29,6 +40,7 @@ from .location import Location
 from .errors import *
 
 
+log = logging.getLogger('guibot.controller')
 __all__ = ['Controller', 'AutoPyController', 'XDoToolController',
            'VNCDoToolController', 'PyAutoGUIController']
 
@@ -46,7 +58,7 @@ class Controller(LocalConfig):
         # available and currently fully compatible methods
         self.categories["control"] = "control_methods"
         self.algorithms["control_methods"] = ["autopy", "pyautogui",
-                                              "xdotool",  "vncdotool"]
+                                              "xdotool", "vncdotool"]
 
         # other attributes
         self._backend_obj = None
@@ -398,7 +410,7 @@ class AutoPyController(Controller):
         try:
             autopy_bmp = self._backend_obj.bitmap.capture_screen(((xpos, ypos), (width, height)))
         except ValueError:
-            return Image(None, PIL.Image.new('RGB', (1,1)))
+            return Image(None, PIL.Image.new('RGB', (1, 1)))
         autopy_bmp.save(filename)
 
         with PIL.Image.open(filename) as f:
@@ -428,7 +440,7 @@ class AutoPyController(Controller):
         toggle_timeout = GlobalConfig.toggle_delay
         click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mouse.click(button)
@@ -436,7 +448,7 @@ class AutoPyController(Controller):
             time.sleep(toggle_timeout)
             self.mouse_up(button)
             time.sleep(click_timeout)
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button):
@@ -470,7 +482,7 @@ class AutoPyController(Controller):
 
         See base method for details.
         """
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
         for part in text:
@@ -480,7 +492,7 @@ class AutoPyController(Controller):
             # alternative option:
             # autopy.key.type_string(text)
 
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
 
@@ -602,7 +614,7 @@ class XDoToolController(Controller):
         toggle_timeout = GlobalConfig.toggle_delay
         click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             # BUG: the xdotool click is too fast and non-configurable with timeout
@@ -611,7 +623,7 @@ class XDoToolController(Controller):
             time.sleep(toggle_timeout)
             self.mouse_up(button)
             time.sleep(click_timeout)
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button):
@@ -648,13 +660,13 @@ class XDoToolController(Controller):
 
         See base method for details.
         """
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
         for part in text:
             self._backend_obj.run('type', str(part))
 
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
 
@@ -777,7 +789,7 @@ class VNCDoToolController(Controller):
         toggle_timeout = GlobalConfig.toggle_delay
         click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             # BUG: some VNC servers (as the QEMU built-in) don't handle click events
@@ -787,7 +799,7 @@ class VNCDoToolController(Controller):
             time.sleep(toggle_timeout)
             self.mouse_up(button)
             time.sleep(click_timeout)
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button):
@@ -830,7 +842,7 @@ class VNCDoToolController(Controller):
 
         See base method for details.
         """
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
         for part in text:
@@ -846,7 +858,7 @@ class VNCDoToolController(Controller):
                 time.sleep(GlobalConfig.delay_between_keys)
                 self._backend_obj.keyPress(char)
 
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
 
@@ -950,7 +962,7 @@ class PyAutoGUIController(Controller):
         toggle_timeout = GlobalConfig.toggle_delay
         click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             # NOTE: we don't use higher level API calls since we want to also
@@ -960,7 +972,7 @@ class PyAutoGUIController(Controller):
             time.sleep(toggle_timeout)
             self._backend_obj.mouseUp(button=button)
             time.sleep(click_timeout)
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
     def mouse_down(self, button):
@@ -1008,11 +1020,11 @@ class PyAutoGUIController(Controller):
 
         See base method for details.
         """
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
         for part in text:
             self._backend_obj.typewrite(part, interval=GlobalConfig.delay_between_keys)
 
-        if modifiers != None:
+        if modifiers is not None:
             self.keys_toggle(modifiers, False)

@@ -13,6 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Calibration and benchmarking for all CV backends on a given matching target.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import time
 import math
 import copy
@@ -174,7 +186,7 @@ class Calibrator(object):
         best_error = self.run(finder, **kwargs)
         best_params = init_params = finder.params
         for i in range(random_starts):
-            log.info("Random run %s\%s, best error %s", i+1, random_starts, best_error)
+            log.info("Random run %s\\%s, best error %s", i+1, random_starts, best_error)
 
             params = copy.deepcopy(init_params)
             for category in params.keys():
@@ -247,7 +259,7 @@ class Calibrator(object):
         log.log(9, "Calibration start with error=%s", best_error)
 
         for n in range(max_attempts):
-            log.info("Try %s\%s, best error %s", n+1, max_attempts, best_error)
+            log.info("Try %s\\%s, best error %s", n+1, max_attempts, best_error)
 
             if best_error == 0.0:
                 log.info("Exiting due to zero error")
@@ -277,21 +289,21 @@ class Calibrator(object):
                         start_value = param.value
 
                     # add the delta to the current parameter
-                    if type(param.value) == float:
-                        if param.range[1] != None:
+                    if isinstance(param.value, float):
+                        if param.range[1] is not None:
                             param.value = min(start_value + param.delta,
                                               param.range[1])
                         else:
                             param.value = start_value + param.delta
-                    elif type(param.value) == int and not param.enumerated:
+                    elif isinstance(param.value, int) and not param.enumerated:
                         intdelta = int(math.ceil(param.delta))
-                        if param.range[1] != None:
+                        if param.range[1] is not None:
                             param.value = min(start_value + intdelta,
                                               param.range[1])
                         else:
                             param.value = start_value + intdelta
                     # remaining types require special handling
-                    elif type(param.value) == int and param.enumerated:
+                    elif isinstance(param.value, int) and param.enumerated:
                         delta_coeff = 0.9
                         for mode in range(*param.range):
                             if start_value == mode:
@@ -307,7 +319,7 @@ class Calibrator(object):
                         param.delta *= delta_coeff
                         param.max_delta = param.delta
                         continue
-                    elif type(param.value) == bool:
+                    elif isinstance(param.value, bool):
                         if param.value:
                             param.value = False
                         else:
@@ -325,20 +337,20 @@ class Calibrator(object):
                         param.max_delta = param.delta
                     else:
 
-                        if type(param.value) == float:
-                            if param.range[0] != None:
+                        if isinstance(param.value, float):
+                            if param.range[0] is not None:
                                 param.value = max(start_value - param.delta,
                                                   param.range[0])
                             else:
                                 param.value = start_value - param.delta
-                        elif type(param.value) == int:
+                        elif isinstance(param.value, int):
                             intdelta = int(math.floor(param.delta))
-                            if param.range[0] != None:
+                            if param.range[0] is not None:
                                 param.value = max(start_value - intdelta,
                                                   param.range[0])
                             else:
                                 param.value = start_value - intdelta
-                        elif type(param.value) == bool:
+                        elif isinstance(param.value, bool):
                             # the default boolean value was already checked
                             param.value = start_value
                             continue
@@ -393,8 +405,8 @@ class Calibrator(object):
                 matches = finder.find(needle, haystack)
                 # pick similarity of the best match as representative
                 similarity = matches[0].similarity
-            except:
-                log.warning("No match was found at this step (due to internal error or other)")
+            except Exception as error:
+                log.warning("No match was found at this step (%s)", error)
                 similarity = 0.0
             finder.imglog.clear()
             total_similarity += similarity if maximize else 1.0 - similarity
@@ -424,8 +436,8 @@ class Calibrator(object):
                 matches = finder.find(needle, haystack)
                 # pick similarity of the best match as representative
                 similarity = matches[0].similarity
-            except:
-                log.warning("No match was found at this step (due to internal error or other)")
+            except Exception as error:
+                log.warning("No match was found at this step (%s)", error)
                 similarity = 0.0
             total_time = time.time() - start_time
             finder.imglog.clear()
@@ -460,7 +472,7 @@ class Calibrator(object):
         discriminate against those.
         """
         self._handle_restricted_values(finder)
-        peak_location = kwargs.get("peak_location", (0,0))
+        peak_location = kwargs.get("peak_location", (0, 0))
 
         total_similarity = 0.0
         for needle, haystack, maximize in self.cases:
@@ -474,8 +486,8 @@ class Calibrator(object):
                         subtotal_similarity += 1.0 - match.similarity
                 # final match case similarity is the mean for all matches
                 similarity = subtotal_similarity / len(matches)
-            except:
-                log.warning("No match was found at this step (due to internal error or other)")
+            except Exception as error:
+                log.warning("No match was found at this step (%s)", error)
                 similarity = 0.0
             finder.imglog.clear()
             total_similarity += similarity if maximize else 1.0 - similarity

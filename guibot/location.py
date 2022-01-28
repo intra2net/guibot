@@ -13,6 +13,21 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Simple class to hold screen location data.
+
+..note:: Unless this class becomes more useful for the extra OOP abstraction
+it might get deprecated in favor of a simple (x, y) tuple.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 
 class Location(object):
     """Simple location on a 2D surface, region, or screen."""

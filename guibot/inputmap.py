@@ -13,6 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Key mappings, modifiers, and mouse buttons.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 
 class Key(object):
     """Helper to contain all key mappings for a custom desktop control backend."""
@@ -271,7 +283,7 @@ class XDoToolKey(Key):
         """Build an instance containing the key map for the xdotool backend."""
         super().__init__()
 
-        self.ENTER = 'Return' # also 'enter'
+        self.ENTER = 'Return'  # also 'enter'
         self.TAB = 'Tab'
         self.ESC = 'Escape'
         self.BACKSPACE = 'BackSpace'
@@ -359,17 +371,17 @@ class VNCDoToolKey(Key):
 
         # TODO: it would be preferable to translate directly to RBF like
         # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
-        self.ENTER = 'return' # also 'enter'
+        self.ENTER = 'return'  # also 'enter'
         self.TAB = 'tab'
         self.ESC = 'esc'
         self.BACKSPACE = 'bsp'
-        self.DELETE = 'del' # also 'delete'
+        self.DELETE = 'del'  # also 'delete'
         self.INSERT = 'ins'
 
-        self.CTRL = 'ctrl' # also 'lctrl'
-        self.ALT = 'alt' # also 'lalt'
-        self.SHIFT = 'shift' # also 'lshift'
-        self.META = 'meta' # also 'lmeta'
+        self.CTRL = 'ctrl'  # also 'lctrl'
+        self.ALT = 'alt'  # also 'lalt'
+        self.SHIFT = 'shift'  # also 'lshift'
+        self.META = 'meta'  # also 'lmeta'
         self.RCTRL = 'rctrl'
         self.RALT = 'ralt'
         self.RSHIFT = 'rshift'
@@ -412,9 +424,9 @@ class VNCDoToolKey(Key):
         self.SCROLL_LOCK = 'scrlk'
         self.NUM_LOCK = 'numlk'
         self.SYS_REQ = 'sysrq'
-        self.SUPER = 'super' # also 'lsuper'
+        self.SUPER = 'super'  # also 'lsuper'
         self.RSUPER = 'rsuper'
-        self.HYPER = 'hyper' # also 'lhyper'
+        self.HYPER = 'hyper'  # also 'lhyper'
         self.RHYPER = 'rhyper'
         # TODO: 'menu' is not available
         self.MENU = None
@@ -447,16 +459,16 @@ class PyAutoGUIKey(Key):
 
         # TODO: it would be preferable to translate directly to RBF like
         # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
-        self.ENTER = 'return' # also 'enter'
+        self.ENTER = 'return'  # also 'enter'
         self.TAB = 'tab'
-        self.ESC = 'escape' # also 'esc'
+        self.ESC = 'escape'  # also 'esc'
         self.BACKSPACE = 'backspace'
-        self.DELETE = 'delete' # also 'del'
+        self.DELETE = 'delete'  # also 'del'
         self.INSERT = 'insert'
 
-        self.CTRL = 'ctrl' # also 'lctrl'
-        self.ALT = 'alt' # also 'lalt'
-        self.SHIFT = 'shift' # also 'lshift'
+        self.CTRL = 'ctrl'  # also 'lctrl'
+        self.ALT = 'alt'  # also 'lalt'
+        self.SHIFT = 'shift'  # also 'lshift'
         # TODO: 'meta key' is not available
         self.META = None
         self.RCTRL = 'ctrlright'

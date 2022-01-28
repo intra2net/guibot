@@ -13,11 +13,26 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Cached and reused paths for target files to search in and load target data from.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import os
 from .errors import *
 
 import logging
+
+
 log = logging.getLogger('guibot.path')
+
 
 class FileResolver(object):
     """
@@ -119,6 +134,7 @@ class FileResolver(object):
     def __len__(self):
         return len(self._target_paths)
 
+
 class CustomFileResolver(object):
     """
     Class to be used to search for files inside certain paths.
@@ -129,6 +145,7 @@ class CustomFileResolver(object):
     This means that any call to :py:func:`FileResolver.search` will
     take only these paths into account.
     """
+
     def __init__(self, *paths):
         """
         Create the class with the paths that the search will be

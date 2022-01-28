@@ -13,6 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Image logging for enhanced debugging and verbosity of guibot's operation.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import os
 import shutil
 import PIL.Image

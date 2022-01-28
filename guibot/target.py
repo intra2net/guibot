@@ -13,6 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Classes and functionality related to sought targets on screen.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import copy
 import os
 import re
@@ -96,7 +108,7 @@ class Target(object):
         :type match_settings: :py:class:`finder.Finder` or None
         """
         self.match_settings = match_settings
-        if self.match_settings != None:
+        if self.match_settings is not None:
             self.use_own_settings = True
         else:
             if GlobalConfig.find_backend == "autopy":
@@ -414,16 +426,16 @@ class Text(Target):
         M = numpy.empty((len(str1) + 1, len(str2) + 1), int)
 
         for a in range(0, len(str1)+1):
-            M[a,0] = a
+            M[a, 0] = a
         for b in range(0, len(str2)+1):
-            M[0,b] = b
+            M[0, b] = b
 
-        for a in range(1, len(str1)+1):  #(size_t a = 1; a <= NA; ++a):
-            for b in range(1, len(str2)+1):  #(size_t b = 1; b <= NB; ++b)
-                z = M[a-1,b-1] + (0 if str1[a-1] == str2[b-1] else 1)
-                M[a,b] = min(min(M[a-1,b] + 1, M[a,b-1] + 1), z)
+        for a in range(1, len(str1)+1):  # (size_t a = 1; a <= NA; ++a):
+            for b in range(1, len(str2)+1):  # (size_t b = 1; b <= NB; ++b)
+                z = M[a-1, b-1] + (0 if str1[a-1] == str2[b-1] else 1)
+                M[a, b] = min(min(M[a-1, b] + 1, M[a, b-1] + 1), z)
 
-        return M[len(str1),len(str2)]
+        return M[len(str1), len(str2)]
 
 
 class Pattern(Target):
@@ -558,7 +570,7 @@ class Chain(Target):
             if dataconfig[0].endswith(".steps"):
                 nested_steps_filename = resolve_stepsfile(dataconfig[0])
                 # avoid infinite loops
-                if not nested_steps_filename in stepsfiles_seen:
+                if nested_steps_filename not in stepsfiles_seen:
                     stepsfiles_seen.append(nested_steps_filename)
                     with open(nested_steps_filename) as f:
                         lines = f.readlines() + lines

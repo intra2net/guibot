@@ -13,6 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Class and functionality related to target matches on screen.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 from .region import Region
 from .location import Location
 from .controller import Controller

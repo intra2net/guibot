@@ -13,6 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Exceptions used by all guibot interfaces and modules.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 
 __all__ = ['GuiBotError', 'FileNotFoundError',
            'IncompatibleTargetError', 'IncompatibleTargetFileError',

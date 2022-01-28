@@ -13,6 +13,23 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Secondary (and more advanced) interface for generic screen regions.
+
+The main guibot interface is just a specialized region where we could match
+and work with subregions. Any region instance can also be a complete screen,
+hence the increased generality of using this as an interface and calling it
+directly.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import time
 import os
 
@@ -267,6 +284,7 @@ class Region(object):
     mouse_location = property(fget=get_mouse_location)
 
     """Main region methods"""
+
     def nearby(self, rrange=50):
         """
         Obtain a region containing the previous one but enlarged
@@ -379,6 +397,7 @@ class Region(object):
                       self.dc_backend, self.cv_backend)
 
     """Image expect methods"""
+
     def find(self, target, timeout=10):
         """
         Find a target (image, text, etc.) on the screen.
@@ -503,8 +522,8 @@ class Region(object):
             return target.match_settings
         if isinstance(target, Text) and not isinstance(self.cv_backend, TextFinder):
             raise IncompatibleTargetError("Need text matcher for matching text")
-        if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeFinder) or
-                                               isinstance(self.cv_backend, DeepFinder)):
+        if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeFinder)
+                                                or isinstance(self.cv_backend, DeepFinder)):
             raise IncompatibleTargetError("Need pattern matcher for matching patterns")
         if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridFinder):
             raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
@@ -594,6 +613,7 @@ class Region(object):
         raise NotFindError(target)
 
     """Mouse methods"""
+
     def idle(self, timeout):
         """
         Wait for a number of seconds and continue the nested call chain.
@@ -663,7 +683,7 @@ class Region(object):
         """
         match = self.hover(target_or_location)
         log.info("Clicking at %s", target_or_location)
-        if modifiers != None:
+        if modifiers is not None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 1, modifiers)
         return match
@@ -677,7 +697,7 @@ class Region(object):
         """
         match = self.hover(target_or_location)
         log.info("Right clicking at %s", target_or_location)
-        if modifiers != None:
+        if modifiers is not None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.RIGHT_BUTTON, 1, modifiers)
         return match
@@ -691,7 +711,7 @@ class Region(object):
         """
         match = self.hover(target_or_location)
         log.info("Double clicking at %s", target_or_location)
-        if modifiers != None:
+        if modifiers is not None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 2, modifiers)
         return match
@@ -705,7 +725,7 @@ class Region(object):
         """
         match = self.hover(target_or_location)
         log.info("Clicking %s times at %s", count, target_or_location)
-        if modifiers != None:
+        if modifiers is not None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
         self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
@@ -892,7 +912,7 @@ class Region(object):
         match = self.hover(target_or_location)
 
         time.sleep(0.2)
-        if modifiers != None:
+        if modifiers is not None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
             self.dc_backend.keys_toggle(modifiers, True)
             #self.dc_backend.keys_toggle(["Ctrl"], True)
@@ -917,13 +937,14 @@ class Region(object):
         self.dc_backend.mouse_up(self.LEFT_BUTTON)
 
         time.sleep(0.5)
-        if modifiers != None:
+        if modifiers is not None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
             self.dc_backend.keys_toggle(modifiers, False)
 
         return match
 
     """Keyboard methods"""
+
     def press_keys(self, keys):
         """
         Press a single key or a list of keys simultaneously.
@@ -972,7 +993,7 @@ class Region(object):
                     if isinstance(key, int):
                         key = str(key)
                     elif len(key) > 1:
-                        raise # a key cannot be a string (text)
+                        raise  # a key cannot be a string (text)
                     key_strings.append(key)
                 keys_list.append(key)
             log.info("Pressing together keys '%s'%s",
@@ -988,7 +1009,7 @@ class Region(object):
                 if isinstance(key, int):
                     key = str(key)
                 elif len(key) > 1:
-                    raise # only left keys are chars
+                    raise  # only left keys are chars
                 log.info("Pressing key '%s'%s", key, at_str)
             keys_list.append(key)
         return keys_list
@@ -1017,7 +1038,7 @@ class Region(object):
         """
         text_list = self._parse_text(text)
         time.sleep(GlobalConfig.delay_before_keys)
-        if modifiers != None:
+        if modifiers is not None:
             if isinstance(modifiers, str):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
@@ -1034,10 +1055,10 @@ class Region(object):
         """
         text_list = self._parse_text(text, target_or_location)
         match = None
-        if target_or_location != None:
+        if target_or_location is not None:
             match = self.click(target_or_location)
         time.sleep(GlobalConfig.delay_before_keys)
-        if modifiers != None:
+        if modifiers is not None:
             if isinstance(modifiers, str):
                 modifiers = [modifiers]
             log.info("Holding the modifiers '%s'", "'+'".join(modifiers))
@@ -1064,6 +1085,7 @@ class Region(object):
         return text_list
 
     """Mixed (form) methods"""
+
     def fill_at(self, anchor, text, dx, dy,
                 del_flag=True, esc_flag=True,
                 mark_clicks=1):

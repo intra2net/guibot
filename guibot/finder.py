@@ -13,6 +13,18 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+
+SUMMARY
+------------------------------------------------------
+Computer vision finders (CV backends) to perform find targets on screen.
+
+
+INTERFACE
+------------------------------------------------------
+
+"""
+
 import os
 import sys
 import re
@@ -74,16 +86,16 @@ class CVParameter(object):
         self.min_val = min_val
         if min_val is not None:
             assert value >= min_val
-        elif type(self.value) == float:
+        elif isinstance(self.value, float):
             min_val = -sys.float_info.max
-        elif type(self.value) == int:
+        elif isinstance(self.value, int):
             min_val = -sys.maxsize
         self.max_val = max_val
         if max_val is not None:
             assert value <= max_val
-        elif type(self.value) == float:
+        elif isinstance(self.value, float):
             max_val = sys.float_info.max
-        elif type(self.value) == int:
+        elif isinstance(self.value, int):
             max_val = sys.maxsize
         self.range = (min_val, max_val)
 
@@ -165,21 +177,21 @@ class CVParameter(object):
         .. note:: Only uniform distribution is used for boolean values.
         """
         start, end = self.range[0], self.range[1]
-        if type(self.value) == float:
+        if isinstance(self.value, float):
             if mu is None or self.enumerated:
                 return random.uniform(self.range[0], self.range[1])
             elif sigma is None:
                 return min(max(random.gauss(mu, (start-end)/4), start), end)
             else:
                 return min(max(random.gauss(mu, sigma), start), end)
-        elif type(self.value) == int:
+        elif isinstance(self.value, int):
             if mu is None or self.enumerated:
                 return random.randint(start, end)
             elif sigma is None:
                 return min(max(int(random.gauss(mu, (start-end)/4)), start), end)
             else:
                 return min(max(int(random.gauss(mu, sigma)), start), end)
-        elif type(self.value) == bool:
+        elif isinstance(self.value, bool):
             value = random.randint(0, 1)
             return value == 1
         else:
@@ -543,7 +555,7 @@ class AutoPyFinder(Finder):
             matches = [Match(x, y, w, h, dx, dy, similarity)]
             from PIL import ImageDraw
             draw = ImageDraw.Draw(self.imglog.hotmaps[-1])
-            draw.rectangle((x, y, x+w, y+h), outline=(0,0,255))
+            draw.rectangle((x, y, x+w, y+h), outline=(0, 0, 255))
             del draw
         else:
             matches = []
@@ -694,8 +706,8 @@ class ContourFinder(Finder):
             for j, ncontour in enumerate(needle_contours):
                 if cv2.contourArea(ncontour) < self.params["contour"]["minArea"].value:
                     continue
-                distances[i,j] = cv2.matchShapes(hcontour, ncontour, self.params["contour"]["contoursMatch"].value, 0)
-                assert distances[i,j] >= 0.0
+                distances[i, j] = cv2.matchShapes(hcontour, ncontour, self.params["contour"]["contoursMatch"].value, 0)
+                assert distances[i, j] >= 0.0
 
         from .match import Match
         matches = []
@@ -704,12 +716,12 @@ class ContourFinder(Finder):
             matching_haystack_contours = []
             matching_haystack_distances = numpy.zeros(len(needle_contours))
             for j in range(len(needle_contours)):
-                matching_haystack_distances[j] = numpy.min(distances[:,j])
-                index = numpy.where(distances[:,j] == matching_haystack_distances[j])
+                matching_haystack_distances[j] = numpy.min(distances[:, j])
+                index = numpy.where(distances[:, j] == matching_haystack_distances[j])
                 # we don't allow collapsing into the same needle contour, i.e.
                 # the map from the needle to the haystack contours is injective
                 # -> so here we cross the entire row rather than one value in it
-                distances[index[0][0],:] = 1.1  # like this works even for similarity 0.0
+                distances[index[0][0], :] = 1.1  # like this works even for similarity 0.0
                 matching_haystack_contours.append(haystack_contours[index[0][0]])
             average_distance = numpy.average(matching_haystack_distances)
             required_distance = 1.0 - self.params["find"]["similarity"].value
@@ -726,8 +738,8 @@ class ContourFinder(Finder):
                                     min(int(needle_upleft[1]+needle.height*float(h)/nh), haystack.height))
                 needle_center_offset = (needle.center_offset.x*float(w)/nw,
                                         needle.center_offset.y*float(h)/nh)
-                cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (0,0,0), 2)
-                cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (255,255,255), 1)
+                cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (0, 0, 0), 2)
+                cv2.rectangle(self.imglog.hotmaps[-1], needle_upleft, needle_downright, (255, 255, 255), 1)
                 # NOTE: to extract the region of interest just do:
                 # roi = thresh_haystack[y:y+h,x:x+w]
                 similarity = 1.0 - average_distance
@@ -749,11 +761,11 @@ class ContourFinder(Finder):
         blurDeviation = self.params["threshold"]["blurKernelSigma"].value
         gray_image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
         if self.params["threshold"]["blurType"].value == 1:
-            blur_image = cv2.blur(gray_image, (blurSize,blurSize))
+            blur_image = cv2.blur(gray_image, (blurSize, blurSize))
         elif self.params["threshold"]["blurType"].value == 2:
             blur_image = cv2.medianBlur(gray_image, blurSize)
         elif self.params["threshold"]["blurType"].value == 3:
-            blur_image = cv2.GaussianBlur(gray_image, (blurSize,blurSize), blurDeviation)
+            blur_image = cv2.GaussianBlur(gray_image, (blurSize, blurSize), blurDeviation)
         elif self.params["threshold"]["blurType"].value == 4:
             blur_image = gray_image
 
@@ -772,8 +784,8 @@ class ContourFinder(Finder):
                                                  self.params["threshold"]["constant"].value)
         elif self.params["threshold"]["backend"] == "canny":
             thresh_image = cv2.Canny(blur_image,
-                                      self.params["threshold"]["threshold1"].value,
-                                      self.params["threshold"]["threshold2"].value)
+                                     self.params["threshold"]["threshold1"].value,
+                                     self.params["threshold"]["threshold2"].value)
 
         if log:
             self.imglog.hotmaps.append(thresh_image)
@@ -790,7 +802,7 @@ class ContourFinder(Finder):
             contours, hierarchy = rargs
         image_contours = [cv2.approxPolyDP(cnt, 3, True) for cnt in contours]
         if log:
-            cv2.drawContours(countours_image, image_contours, -1, (255,255,255))
+            cv2.drawContours(countours_image, image_contours, -1, (255, 255, 255))
             self.imglog.hotmaps.append(countours_image)
         return image_contours
 
@@ -927,7 +939,7 @@ class TemplateFinder(Finder):
                     self.imglog.similarities.append(maxVal)
                     self.imglog.locations.append(maxLoc)
                     current_hotmap = numpy.copy(universal_hotmap)
-                    cv2.circle(current_hotmap, (maxLoc[0],maxLoc[1]), int(30*maxVal), (255,255,255))
+                    cv2.circle(current_hotmap, (maxLoc[0], maxLoc[1]), int(30*maxVal), (255, 255, 255))
                     self.imglog.hotmaps.append(current_hotmap)
                     self.imglog.hotmaps.append(final_hotmap)
 
@@ -937,12 +949,12 @@ class TemplateFinder(Finder):
                 self.imglog.similarities.append(maxVal)
                 self.imglog.locations.append(maxLoc)
                 current_hotmap = numpy.copy(universal_hotmap)
-                cv2.circle(current_hotmap, (maxLoc[0],maxLoc[1]), int(30*maxVal), (255,255,255))
+                cv2.circle(current_hotmap, (maxLoc[0], maxLoc[1]), int(30*maxVal), (255, 255, 255))
                 x, y = maxLoc
                 w, h = needle.width, needle.height
                 dx, dy = needle.center_offset.x, needle.center_offset.y
-                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0,0,0), 2)
-                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255,255,255), 1)
+                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0, 0, 0), 2)
+                cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255, 255, 255), 1)
                 self.imglog.hotmaps.append(current_hotmap)
                 log.debug("Next best match is acceptable")
                 matches.append(Match(x, y, w, h, dx, dy, maxVal))
@@ -964,7 +976,7 @@ class TemplateFinder(Finder):
                     match_y0, match_y1, 0, res_h)
 
             # clean found image to look for next safe distance match
-            result[match_y0:match_y1,match_x0:match_x1] = 0.0
+            result[match_y0:match_y1, match_x0:match_x1] = 0.0
 
             log.log(9, "Total maxima up to the point are %i", len(matches))
         log.debug("A total of %i matches found", len(matches))
@@ -1056,8 +1068,8 @@ class FeatureFinder(Finder):
         self.algorithms["feature_matchers"] = ("BruteForce", "BruteForce-L1", "BruteForce-Hamming",
                                                "BruteForce-Hamming(2)")
         self.algorithms["feature_detectors"] = ("ORB", "BRISK", "KAZE", "AKAZE", "MSER",
-                                                  "AgastFeatureDetector", "FastFeatureDetector", "GFTTDetector",
-                                                 "SimpleBlobDetector")
+                                                "AgastFeatureDetector", "FastFeatureDetector", "GFTTDetector",
+                                                "SimpleBlobDetector")
         # TODO: we could also support "StereoSGBM" but it needs initialization arguments
         # BUG: "KAZE", "AKAZE" we get internal error when using KAZE/AKAZE even though it should be possible
         self.algorithms["feature_extractors"] = ("ORB", "BRISK")
@@ -1368,7 +1380,7 @@ class FeatureFinder(Finder):
         min_features = self.params["feature"]["minDetectedFeatures"].value
         if len(nkp) < min_features or len(hkp) < min_features:
             log.debug("No acceptable best match after feature detection: "
-                      "only %s\%s needle and %s\%s haystack features detected",
+                      "only %s\\%s needle and %s\\%s haystack features detected",
                       len(nkp), min_features, len(hkp), min_features)
             return None
 
@@ -1414,7 +1426,7 @@ class FeatureFinder(Finder):
 
         # include only methods tested for compatibility
         if (detect in self.algorithms["feature_detectors"]
-              and extract in self.algorithms["feature_extractors"]):
+                and extract in self.algorithms["feature_extractors"]):
             self.synchronize_backend(category="fdetect")
             self.synchronize_backend(category="fextract")
 
@@ -1585,8 +1597,8 @@ class FeatureFinder(Finder):
         elif self.params["feature"]["projectionMethod"].value == 1:
             H, mask = cv2.findFundamentalMat(numpy.array([kp.pt for kp in mnkp]),
                                              numpy.array([kp.pt for kp in mhkp]),
-                                             method = cv2.RANSAC, param1 = 10.0,
-                                             param2 = 0.9)
+                                             method=cv2.RANSAC, param1=10.0,
+                                             param2=0.9)
         else:
             raise ValueError("Unsupported projection method - use 0 for homography and "
                              "1 for fundamentlal matrix")
@@ -1749,14 +1761,14 @@ class CascadeFinder(Finder):
                                                  self.params["cascade"]["minHeight"].value),
                                                 (self.params["cascade"]["maxWidth"].value,
                                                  self.params["cascade"]["maxHeight"].value))
-        for (x,y,w,h) in rects:
-            cv2.rectangle(canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
-            cv2.rectangle(canvas, (x,y), (x+w,y+h), (255, 0, 0), 1)
+        for (x, y, w, h) in rects:
+            cv2.rectangle(canvas, (x, y), (x+w, y+h), (0, 0, 0), 2)
+            cv2.rectangle(canvas, (x, y), (x+w, y+h), (255, 0, 0), 1)
             dx, dy = needle.center_offset.x, needle.center_offset.y
             matches.append(Match(x, y, w, h, dx, dy))
 
         self.imglog.similarities.append(self.params["find"]["similarity"].value)
-        self.imglog.locations = [(l.x,l.y) for l in matches]
+        self.imglog.locations = [(loc.x, loc.y) for loc in matches]
         self.imglog.hotmaps.append(canvas)
         self.imglog.log(30)
         return matches
@@ -2035,9 +2047,9 @@ class TextFinder(ContourFinder):
                 with open(os.path.join(datapath, 'OCRHMM_transitions_table.xml')) as f:
                     transition_p_xml = f.read()
                     transition_p_data = re.search("<data>(.*)</data>",
-                                                  transition_p_xml.replace("\n"," "))
+                                                  transition_p_xml.replace("\n", " "))
                     assert transition_p_data is not None, "Corrupted transition probability data"
-                transition_p = numpy.fromstring(transition_p_data.group(1).strip(), sep=' ').reshape(62,62)
+                transition_p = numpy.fromstring(transition_p_data.group(1).strip(), sep=' ').reshape(62, 62)
                 emission_p = numpy.eye(62, dtype=numpy.float64)
 
                 if backend == "hmm":
@@ -2151,8 +2163,8 @@ class TextFinder(ContourFinder):
 
             # main OCR preprocessing stage
             border = self.params["ocr"]["border_size"].value
-            text_img = img_haystack[max(text_box[1]-border,0):min(text_box[1]+text_box[3]+border,img_haystack.shape[0]),
-                                    max(text_box[0]-border,0):min(text_box[0]+text_box[2]+border,img_haystack.shape[1])]
+            text_img = img_haystack[max(text_box[1]-border, 0):min(text_box[1]+text_box[3]+border, img_haystack.shape[0]),
+                                    max(text_box[0]-border, 0):min(text_box[0]+text_box[2]+border, img_haystack.shape[1])]
             factor = self.params["ocr"]["zoom_factor"].value
             log.debug("Zooming x%i candidate for improved OCR processing", factor)
             text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
@@ -2225,7 +2237,7 @@ class TextFinder(ContourFinder):
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (0, 0, 0), 2)
                 cv2.rectangle(final_hotmap, (x, y), (x+w, y+h), (255, 255, 255), 1)
                 matches.append(Match(x, y, w, h, dx, dy, similarity))
-        matches = sorted(matches, key=lambda x:x.similarity, reverse=True)
+        matches = sorted(matches, key=lambda x: x.similarity, reverse=True)
 
         self.imglog.hotmaps.append(final_hotmap)
         self.imglog.log(30)
@@ -2257,7 +2269,7 @@ class TextFinder(ContourFinder):
         # the output probabilities and the text bounding box coordinates
         output_layers = ["feature_fusion/Conv_7/Sigmoid", "feature_fusion/concat_3"]
         probability, geometry = self.east_net.forward(output_layers)
-        char_canvas[:] = cv2.resize(probability[0,0]*255.0, (char_canvas.shape[1], char_canvas.shape[0]))
+        char_canvas[:] = cv2.resize(probability[0, 0]*255.0, (char_canvas.shape[1], char_canvas.shape[0]))
 
         rects = []
         for row in range(0, probability.shape[2]):
@@ -2281,8 +2293,8 @@ class TextFinder(ContourFinder):
                 x1, y1 = x2 - w, y2 - h
 
                 rect = (int(x1), int(y1), int(w), int(h))
-                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
-                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (255, 255, 255), 1)
+                cv2.rectangle(char_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (255, 255, 255), 1)
                 rects.append(rect)
                 # TODO: needed for outsourced nonmaxima supression
                 # confidences.append(row_scores[x])
@@ -2305,16 +2317,16 @@ class TextFinder(ContourFinder):
             for r2pair in region_queue:
                 r2, _ = r2pair
                 # if the two regions intersect
-                if (r1[0] < r2[0] + r2[2] and r1[0] + r1[2] > r2[0] and
-                        r1[1] < r2[1] + r2[3] and r1[1] + r1[3] > r2[1]):
+                if (r1[0] < r2[0] + r2[2] and r1[0] + r1[2] > r2[0]
+                        and r1[1] < r2[1] + r2[3] and r1[1] + r1[3] > r2[1]):
                     r1 = [min(r1[0], r2[0]), min(r1[1], r2[1]), max(r1[2], r2[2]), max(r1[3], r2[3])]
                     # second region will no longer be considered
                     r2pair[1] = False
             # first region is now merged with all intersecting regions
             text_regions.append(r1)
         for rect in text_regions:
-            cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
-            cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 255), 1)
+            cv2.rectangle(text_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 255), 1)
 
         logging.debug("A total of %s final text regions found", len(text_regions))
         return text_regions
@@ -2346,8 +2358,8 @@ class TextFinder(ContourFinder):
             logging.debug("A total of %s possible character regions found on channel %s", len(regions), i)
             rects = [cv2.boundingRect(p.reshape(-1, 1, 2)) for p in regions]
             for rect in rects:
-                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
-                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 255), 1)
+                cv2.rectangle(char_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 255), 1)
 
             if len(regions) == 0:
                 continue
@@ -2355,8 +2367,8 @@ class TextFinder(ContourFinder):
             region_groups = cv2.text.erGrouping(img, channel, [r.tolist() for r in regions])
             logging.debug("A total of %s possible text regions found on channel %s", len(region_groups), i)
             for rect in region_groups:
-                cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
-                cv2.rectangle(text_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 255, 0), 1)
+                cv2.rectangle(text_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(text_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 255, 0), 1)
 
             char_regions.extend(regions)
             text_regions.extend(region_groups)
@@ -2374,8 +2386,8 @@ class TextFinder(ContourFinder):
             for r2pair in region_queue:
                 r2, _ = r2pair
                 # if the two regions intersect
-                if (r1[0] < r2[0] + r2[2] and r1[0] + r1[2] > r2[0] and
-                        r1[1] < r2[1] + r2[3] and r1[1] + r1[3] > r2[1]):
+                if (r1[0] < r2[0] + r2[2] and r1[0] + r1[2] > r2[0]
+                        and r1[1] < r2[1] + r2[3] and r1[1] + r1[3] > r2[1]):
                     r1 = [min(r1[0], r2[0]), min(r1[1], r2[1]), max(r1[2], r2[2]), max(r1[3], r2[3])]
                     # second region will no longer be considered
                     r2pair[1] = False
@@ -2400,22 +2412,22 @@ class TextFinder(ContourFinder):
         for hcontour in haystack_contours:
             x, y, w, h = cv2.boundingRect(hcontour)
             area, ratio = cv2.contourArea(hcontour), float(w)/h
-            if (area < self.params["contour"]["minArea"].value or
-                area > self.params["tdetect"]["maxArea"].value or
-                w < self.params["tdetect"]["minWidth"].value or
-                w > self.params["tdetect"]["maxWidth"].value or
-                h < self.params["tdetect"]["minHeight"].value or
-                h > self.params["tdetect"]["maxHeight"].value or
-                ratio < self.params["tdetect"]["minAspectRatio"].value or
-                ratio > self.params["tdetect"]["maxAspectRatio"].value):
+            if (area < self.params["contour"]["minArea"].value
+                or area > self.params["tdetect"]["maxArea"].value
+                or w < self.params["tdetect"]["minWidth"].value
+                or w > self.params["tdetect"]["maxWidth"].value
+                or h < self.params["tdetect"]["minHeight"].value
+                or h > self.params["tdetect"]["maxHeight"].value
+                or ratio < self.params["tdetect"]["minAspectRatio"].value
+                    or ratio > self.params["tdetect"]["maxAspectRatio"].value):
                 log.debug("Ignoring contour with area %sx%s>%s and aspect ratio %s/%s=%s",
                           w, h, area, w, h, ratio)
                 continue
             else:
-                cv2.rectangle(char_canvas, (x,y), (x+w,y+h), (0, 0, 0), 2)
-                cv2.rectangle(char_canvas, (x,y), (x+w,y+h), (0, 0, 255), 1)
+                cv2.rectangle(char_canvas, (x, y), (x+w, y+h), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (x, y), (x+w, y+h), (0, 0, 255), 1)
                 char_regions.append([x, y, w, h])
-        char_regions = sorted(char_regions, key=lambda x:x[0])
+        char_regions = sorted(char_regions, key=lambda x: x[0])
 
         # group characters into horizontally-correlated regions
         text_regions = []
@@ -2438,7 +2450,7 @@ class TextFinder(ContourFinder):
                 elif text_orientation == 1:
                     is_text = y2 - (y1 + h1) < dy and y1 - (y2 + h2) < dy and abs(x1 - x2) < dx and abs(w1 - w2) < 2*dx
                 if is_text:
-                    region1 = [min(x1,x2), min(y1,y2), max(x1+w1,x2+w2)-min(x1,x2), max(y1+h1,y2+h2)-min(y1,y2)]
+                    region1 = [min(x1, x2), min(y1, y2), max(x1+w1, x2+w2)-min(x1, x2), max(y1+h1, y2+h2)-min(y1, y2)]
                     chars_for_text += 1
                     char_regions[j] = None
             if chars_for_text < min_chars_for_text:
@@ -2446,8 +2458,8 @@ class TextFinder(ContourFinder):
                           chars_for_text, min_chars_for_text)
                 continue
             x, y, w, h = region1
-            cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 0, 0), 2)
-            cv2.rectangle(text_canvas, (x, y), (x+w,y+h), (0, 255, 0), 1)
+            cv2.rectangle(text_canvas, (x, y), (x+w, y+h), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (x, y), (x+w, y+h), (0, 255, 0), 1)
             text_regions.append(region1)
             char_regions[i] = None
 
@@ -2465,18 +2477,18 @@ class TextFinder(ContourFinder):
         connectivity = self.params["tdetect"]["connectivity"].value
         label_num, label_img, stats, centroids = cv2.connectedComponentsWithStats(img, connectivity, cv2.CV_32S)
         logging.debug("Detected %s component labels with centroids: %s", label_num,
-                      ", ".join([str((int(c[0]),int(c[1]))) for c in centroids]))
+                      ", ".join([str((int(c[0]), int(c[1]))) for c in centroids]))
         self.imglog.hotmaps.append(label_img * 255)
         for i in range(label_num):
-            x, y = stats[i,cv2.CC_STAT_LEFT], stats[i,cv2.CC_STAT_TOP]
-            w, h = stats[i,cv2.CC_STAT_WIDTH], stats[i,cv2.CC_STAT_HEIGHT]
-            area = stats[i,cv2.CC_STAT_AREA]
+            x, y = stats[i, cv2.CC_STAT_LEFT], stats[i, cv2.CC_STAT_TOP]
+            w, h = stats[i, cv2.CC_STAT_WIDTH], stats[i, cv2.CC_STAT_HEIGHT]
+            area = stats[i, cv2.CC_STAT_AREA]
             if area < self.params["contour"]["minArea"].value:
                 continue
             else:
                 rect = [x, y, w, h]
-                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 0), 2)
-                cv2.rectangle(char_canvas, (rect[0],rect[1]), (rect[0]+rect[2],rect[1]+rect[3]), (0, 0, 255), 1)
+                cv2.rectangle(char_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 0), 2)
+                cv2.rectangle(char_canvas, (rect[0], rect[1]), (rect[0]+rect[2], rect[1]+rect[3]), (0, 0, 255), 1)
 
         # TODO: log here since not fully implemented
         self.imglog.hotmaps[-1] = cv2.normalize(label_img, label_img, 0, 255, cv2.NORM_MINMAX, cv2.CV_8U)
@@ -2582,7 +2594,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         self.__configure_backend(backend, category, reset)
 
     def __configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None, reset=True):
+                    feature_extract=None, feature_match=None, reset=True):
         self.__configure_backend(category="tempfeat", reset=reset)
         self.__configure_backend(template_match, "template")
         self.__configure_backend(category="feature")
@@ -2671,9 +2683,9 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
 
             res = self._project_features(frame_points, ngray, haystack_region, feature_similarity)
             # if the feature matching succeeded or is worse than satisfactory template matching
-            if res != None or (self.imglog.similarities[-1] > 0.0 and
-                               self.imglog.similarities[-1] < self.imglog.similarities[i] and
-                               self.imglog.similarities[i] > feature_similarity):
+            if res is not None or (self.imglog.similarities[-1] > 0.0
+                                   and self.imglog.similarities[-1] < self.imglog.similarities[i]
+                                   and self.imglog.similarities[i] > feature_similarity):
                 # take the template matching location rather than the feature one
                 # for stability (they should ultimately be the same)
                 log.debug("Using template result %s instead of the worse feature result %s",
@@ -2726,14 +2738,14 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
 
         matches = []
         from .match import Match
-        maxima = sorted(feature_maxima, key=lambda x:x[1], reverse=True)
+        maxima = sorted(feature_maxima, key=lambda x: x[1], reverse=True)
         for maximum in maxima:
             similarity = maximum[1]
             x, y = maximum[2]
             w, h = needle.width, needle.height
             dx, dy = needle.center_offset.x, needle.center_offset.y
-            cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,0), 2)
-            cv2.rectangle(final_hotmap, (x,y), (x+needle.width,y+needle.height), (0,0,255), 1)
+            cv2.rectangle(final_hotmap, (x, y), (x+needle.width, y+needle.height), (0, 0, 0), 2)
+            cv2.rectangle(final_hotmap, (x, y), (x+needle.width, y+needle.height), (0, 0, 255), 1)
             matches.append(Match(x, y, w, h, dx, dy, similarity))
         self.imglog.hotmaps.append(final_hotmap)
         # log one best match for final hotmap filename
@@ -2955,7 +2967,7 @@ class DeepFinder(Finder):
         import torch
         if needle.data_file is not None:
             with open(needle.data_file, "rt") as f:
-                classes_list = [l.rstrip() for l in f.readlines()]
+                classes_list = [line.rstrip() for line in f.readlines()]
                 classes = lambda x: classes_list[x]
         else:
             # an infinite list as a string identity map
@@ -2981,27 +2993,27 @@ class DeepFinder(Finder):
         for i in range(len(pred[0]['labels'])):
             label = classes(pred[0]['labels'][i].cpu().item())
             score = pred[0]['scores'][i].cpu().item()
-            x, y, w, h =  list(pred[0]['boxes'][i].cpu().numpy())
+            x, y, w, h = list(pred[0]['boxes'][i].cpu().numpy())
             rect = (int(x), int(y), int(x+w), int(y+h))
 
             from PIL import ImageDraw
             draw = ImageDraw.Draw(full_hotmap)
-            draw.rectangle(rect, outline=(255,0,0))
-            draw.text((rect[0], rect[1]), label, fill=(255,0,0,0))
+            draw.rectangle(rect, outline=(255, 0, 0))
+            draw.text((rect[0], rect[1]), label, fill=(255, 0, 0, 0))
             if score < similarity:
                 logging.debug("Found %s has a low confidence score %s<%s, skipping",
                               label, score, similarity)
                 continue
             draw = ImageDraw.Draw(filtered_hotmap)
-            draw.rectangle(rect, outline=(0,255,0))
-            draw.text((rect[0], rect[1]), label, fill=(0,255,0,0))
+            draw.rectangle(rect, outline=(0, 255, 0))
+            draw.text((rect[0], rect[1]), label, fill=(0, 255, 0, 0))
             if label != needle_class:
                 logging.debug("Found %s is not %s, skipping", label, needle_class)
                 continue
             logging.debug("Found %s with sufficient confidence %s at (%s, %s)",
                           label, score, x, y)
             draw = ImageDraw.Draw(final_hotmap)
-            draw.rectangle(rect, outline=(0,0,255))
+            draw.rectangle(rect, outline=(0, 0, 255))
 
             self.imglog.locations.append((x, y))
             self.imglog.similarities.append(score)
