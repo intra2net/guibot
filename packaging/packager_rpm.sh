@@ -47,7 +47,7 @@ dnf -y install "$distro_root/guibot/python3-"$NAME-$VERSION*.rpm
 rm -fr "$distro_root/$NAME-$VERSION"
 
 # virtual display
-dnf install -y xorg-x11-server-Xvfb
+dnf install -y xorg-x11-server-Xvfb vim-common
 export DISPLAY=:99.0
 Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
 touch /root/.Xauthority

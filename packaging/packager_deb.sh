@@ -53,7 +53,7 @@ apt-get -y install "$distro_root/guibot/"${NAME}_${VERSION}*.deb
 rm -fr "$distro_root/$NAME-$VERSION"
 
 # virtual display
-apt-get -y install xvfb
+apt-get -y install xvfb vim-common
 export DISPLAY=:99.0
 Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
 touch /root/.Xauthority
