@@ -58,7 +58,6 @@ handler.setFormatter(formatter)
 GlobalConfig.image_logging_level = 0
 GlobalConfig.image_logging_destination = LOGPATH
 GlobalConfig.image_logging_step_width = 4
-ImageLogger.step = 1
 
 
 # Main configuration steps
