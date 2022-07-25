@@ -87,7 +87,7 @@ class ControllerTest(unittest.TestCase):
             self.backends += [XDoToolController()]
         if os.environ.get('DISABLE_PYAUTOGUI', "0") == "0":
             self.backends += [PyAutoGUIController()]
-        if os.environ.get('DISABLE_VNCDOTOOl', "0") == "0":
+        if os.environ.get('DISABLE_VNCDOTOOL', "0") == "0":
             vncdotool = VNCDoToolController(synchronize=False)
             vncdotool.params["vncdotool"]["vnc_password"] = self.vncpass
             vncdotool.synchronize_backend()

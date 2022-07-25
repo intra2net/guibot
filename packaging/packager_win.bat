@@ -13,7 +13,7 @@ SET DISABLE_DRAG=1
 REM Requires X server and thus only available on Linux
 SET DISABLE_XDOTOOL=1
 REM Requires VNC server and thus only available on Linux
-SET DISABLE_VNCDOTOOl=1
+SET DISABLE_VNCDOTOOL=1
 
 REM Main deps
 cd %DISTRO_ROOT%\
