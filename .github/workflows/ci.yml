@@ -1,0 +1,92 @@
+name: GH Actions
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  original-travis-ci-job:
+    name: Linux ${{ matrix.install_variant }} with Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    env:
+      DISPLAY: ':99.0'
+
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
+        install_variant: ["pip"]
+        include:
+        - python-version: 3.7
+          install_variant: "rpm.fedora.31"
+        - python-version: 3.8
+          install_variant: "rpm.fedora.32"
+        - python-version: 3.6
+          install_variant: "deb.ubuntu.bionic"
+        - python-version: 3.7
+          install_variant: "deb.ubuntu.focal"
+      fail-fast: false
+
+    steps:
+      - run: echo "Job triggered by a ${{ github.event_name }} event on branch is ${{ github.ref }} in repository is ${{ github.repository }}, runner on ${{ runner.os }}"
+      - name: Check out repository code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Cache large ML models
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/torch/hub/checkpoints
+          key: fasterrcnn-258fb6c6+maskrcnn-bf2d0c1e
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+          cache-dependency-path: 'packaging/pip_requirements.txt'
+        if: matrix.install_variant == 'pip'
+      - name: Display Python version
+        run: python -c "import sys; print(sys.version)"
+        if: matrix.install_variant == 'pip'
+      - name: Install non-python dependencies using system packager
+        run: |
+          # ocr
+          sudo apt-get -y install pkg-config tesseract-ocr libtesseract-dev
+          # xdotool
+          sudo apt-get -y install xdotool x11-apps imagemagick
+          # vncdotool
+          sudo apt-get -y install xfonts-base x11vnc
+          # pyautogui
+          sudo apt-get -y install scrot
+        if: matrix.install_variant == 'pip'
+      - name: Install any dependencies and build the package
+        run: pip --default-timeout=60 install -r packaging/pip_requirements.txt
+        if: matrix.install_variant == 'pip'
+      - run: sleep 3
+      - name: Prepare virtual screen (fake display)
+        run: |
+          sudo apt-get -y install libx11-dev libxtst-dev xvfb vim-common
+          sudo apt-get install -y x11-utils libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0
+          Xvfb :99 -screen 0 1024x768x24 &> /tmp/xvfb.log  &
+          sudo touch ~/.Xauthority
+          sudo xauth -f ~/.Xauthority add ${HOST}:99 . $(xxd -l 16 -p /dev/urandom)
+          sudo chmod a+rxw ~/.Xauthority
+          # give xvfb some time to start
+          sleep 3
+      - name: Run current semi-isolation semi-integration tests (to be separated in the future)
+        run: |
+          if [[ ${{ matrix.python-version }} == '3.9' ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ ${{ matrix.install_variant }} != "pip" ]]; then cd packaging && bash packager_docker.sh;
+          else cd tests && bash coverage_analysis.sh; fi
+        env:
+          INSTALL_VARIANT: ${{ matrix.install_variant }}
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: tests/coverage.xml
+          verbose: true
+        if: matrix.install_variant == 'pip'
+      - run: echo "🥑 This job's status is ${{ job.status }}."
