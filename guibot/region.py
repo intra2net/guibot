@@ -1099,13 +1099,37 @@ class Region(object):
         return text_list
 
     """Mixed (form) methods"""
+    def click_at(self, anchor, dx, dy, count=1):
+        """
+        Clicks on a relative location using a displacement from an anchor.
+
+        :param anchor: target of reference for relative location
+        :type anchor: :py:class:`Match` or :py:class:`Location` or :py:class:`Target` or str
+        :param int dx: displacement from the anchor in the x direction
+        :param int dy: displacement from the anchor in the y direction
+        :param int count: 0, 1, 2, ... clicks on the relative location
+        :returns: self
+        :rtype: :py:class:`Region`
+        :raises: :py:class:`exceptions.ValueError` if `count` is not acceptable value
+        """
+        from .match import Match
+        if isinstance(anchor, Match):
+            start_loc = anchor.target
+        elif isinstance(anchor, Location):
+            start_loc = anchor
+        else:
+            start_loc = self.hover(anchor).target
+
+        loc = Location(start_loc.x + dx, start_loc.y + dy)
+        self.multi_click(loc, count=count)
+
+        return self
 
     def fill_at(self, anchor, text, dx, dy,
                 del_flag=True, esc_flag=True,
                 mark_clicks=1):
         """
-        Fills a new text at a text box with variable content
-        using an anchor image and a displacement from that image.
+        Fills a new text at a text box using a displacement from an anchor.
 
         :param anchor: target of reference for the input field
         :type anchor: :py:class:`Match` or :py:class:`Location` or :py:class:`Target` or str
@@ -1132,15 +1156,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not text:
             return
-        from .match import Match
-        if isinstance(anchor, Match):
-            start_loc = anchor.target
-        elif isinstance(anchor, Location):
-            start_loc = anchor
-        else:
-            start_loc = self.hover(anchor).target
-        loc = Location(start_loc.x + dx, start_loc.y + dy)
-        self.multi_click(loc, count=mark_clicks)
+        self.click_at(anchor, dx, dy, count=mark_clicks)
 
         if isinstance(text, str):
             text = [text]
@@ -1192,15 +1208,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not image_or_index:
             return
-        from .match import Match
-        if isinstance(anchor, Match):
-            start_loc = anchor.target
-        elif isinstance(anchor, Location):
-            start_loc = anchor
-        else:
-            start_loc = self.hover(anchor).target
-        loc = Location(start_loc.x + dx, start_loc.y + dy)
-        self.multi_click(loc, count=mark_clicks)
+        self.click_at(anchor, dx, dy, count=mark_clicks)
 
         # make sure the dropdown options appear
         time.sleep(1)

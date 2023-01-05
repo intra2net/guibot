@@ -229,6 +229,10 @@ class GuiBotProxy(GuiBot):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).type_at(target_or_location, text, modifiers))
 
+    def click_at(self, anchor, dx, dy, count=1):
+        """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+        return self._proxify(super(GuiBotProxy, self).click_at(anchor, dx, dy, count))
+
     def fill_at(self, anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_clicks=1):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_clicks))

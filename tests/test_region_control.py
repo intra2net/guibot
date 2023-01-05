@@ -334,6 +334,13 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_click_at(self):
+        self.show_application()
+        self.region.click_at(self.click_control, 0, 0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_fill_at(self):
         self.show_application()
         self.region.fill_at(self.textedit_quit_control, 'quit', 0, 0)
