@@ -40,7 +40,7 @@ guibot (0.30-1) unstable; urgency=medium
 
 guibot (0.21-1) unstable; urgency=medium
 
-  * XDoTool desktop control backend and password support for VNCDoTool.
+  * XDoTool display control backend and password support for VNCDoTool.
   * Improved form filling region methods.
 
  -- Plamen Dimitrov <pdimitrov@pevogam.com>  Fri, 29 Jun 2018 21:32:35 +0700

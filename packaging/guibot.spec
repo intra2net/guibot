@@ -21,7 +21,7 @@ Requires:       python3-opencv
 %endif
 
 %description
-A tool for GUI automation using a variety of computer vision and desktop control backends.
+A tool for GUI automation using a variety of computer vision and display control backends.
 Supported CV backends are based on OpenCV, PyTorch, and AutoPy, and supported DC backends
 on PyAutoGUI, AutoPy, VNCDoTool, and XDoTool.
 
@@ -29,7 +29,7 @@ on PyAutoGUI, AutoPy, VNCDoTool, and XDoTool.
 Summary:        GUI automation tool
 Group:          Development/Tools
 %description -n python3-guibot
-A tool for GUI automation using a variety of computer vision and desktop control backends.
+A tool for GUI automation using a variety of computer vision and display control backends.
 Supported CV backends are based on OpenCV, PyTorch, and AutoPy, and supported DC backends
 on PyAutoGUI, AutoPy, VNCDoTool, and XDoTool.
 
@@ -110,7 +110,7 @@ rm -rf %{buildroot}
 - API version updates for AutoPy, PyTorch, VNCDoTool
 
 * Fri Jun 29 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.21-1
-- XDoTool desktop control backend and password support for VNCDoTool
+- XDoTool display control backend and password support for VNCDoTool
 - Improved form filling region methods
 
 * Fri Mar 23 2018 Plamen Dimitrov <pdimitrov@pevogam.com> - 0.20-1

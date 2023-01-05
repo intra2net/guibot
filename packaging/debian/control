@@ -12,6 +12,6 @@ Package: python3-guibot
 Architecture: all
 Depends: ${python3:Depends}, python3-pil
 Description: GUI automation tool
- A tool for GUI automation using a variety of computer vision and desktop control backends.
+ A tool for GUI automation using a variety of computer vision and display control backends.
  Supported CV backends are based on OpenCV, PyTorch, and autopy, and supported DC backends
  on autopy, vncdotool, and qemu.

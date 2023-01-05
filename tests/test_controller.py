@@ -133,7 +133,7 @@ class ControllerTest(unittest.TestCase):
             time.sleep(0.2)
 
     def test_basic(self):
-        """Check basic functionality for all desktop controller backends."""
+        """Check basic functionality for all display controller backends."""
         for display in self.backends:
             self.assertTrue(display.width > 0)
             self.assertTrue(display.height > 0)
@@ -147,7 +147,7 @@ class ControllerTest(unittest.TestCase):
             self.assertLessEqual(location.y, display.height)
 
     def test_single_backend(self):
-        """Check desktop controller backend configuration and synchronization."""
+        """Check display controller backend configuration and synchronization."""
         for display in self.backends:
             # the VNC controller has additional setup in these tests
             if isinstance(display, VNCDoToolController):
@@ -185,7 +185,7 @@ class ControllerTest(unittest.TestCase):
                 display.synchronize_backend(backend=category, category="control")
 
     def test_capture(self):
-        """Check screendump capabilities for all desktop controller backends."""
+        """Check screendump capabilities for all display controller backends."""
         for display in self.backends:
             screen_width = display.width
             screen_height = display.height
@@ -207,7 +207,7 @@ class ControllerTest(unittest.TestCase):
             self.assertEqual(200, captured.height)
 
     def test_capture_clipping(self):
-        """Check screendump clipping for all desktop controller backends."""
+        """Check screendump clipping for all display controller backends."""
         for display in self.backends:
             screen_width = display.width
             screen_height = display.height
@@ -221,7 +221,7 @@ class ControllerTest(unittest.TestCase):
             self.assertEqual(1, captured.height)
 
     def test_mouse_move(self):
-        """Check mouse move locations for all desktop controller backends."""
+        """Check mouse move locations for all display controller backends."""
         for display in self.backends:
             for is_smooth in [False, True]:
                 display.mouse_move(Location(0, 0), smooth=is_smooth)
@@ -238,7 +238,7 @@ class ControllerTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_mouse_click(self):
-        """Check mouse click effect for all desktop controller backends."""
+        """Check mouse click effect for all display controller backends."""
         for display in self.backends:
             mouse = display.mousemap
             for button in [mouse.LEFT_BUTTON, mouse.CENTER_BUTTON, mouse.RIGHT_BUTTON]:
@@ -272,7 +272,7 @@ class ControllerTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_mouse_updown(self):
-        """Check mouse up/down effect for all desktop controller backends."""
+        """Check mouse up/down effect for all display controller backends."""
         for display in self.backends:
             mouse = display.mousemap
             for switch in ["up", "down"]:
@@ -293,7 +293,7 @@ class ControllerTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_mouse_scroll(self):
-        """Check mouse scroll effect for all desktop controller backends."""
+        """Check mouse scroll effect for all display controller backends."""
         for display in self.backends:
             for horizontal in [False, True]:
                 # TODO: method not available for other backends
@@ -313,7 +313,7 @@ class ControllerTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_keys_press(self):
-        """Check key press effect for all desktop controller backends."""
+        """Check key press effect for all display controller backends."""
         for display in self.backends:
             key = display.keymap
 
@@ -332,7 +332,7 @@ class ControllerTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_keys_type(self):
-        """Check key type effect for all desktop controller backends."""
+        """Check key type effect for all display controller backends."""
         for display in self.backends:
             # include some modifiers without direct effect in this case
             for modifiers in [None, [display.keymap.ALT]]:

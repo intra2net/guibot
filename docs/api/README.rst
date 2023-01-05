@@ -1,7 +1,7 @@
 Guibot
 ======
 
-A tool for GUI automation using a variety of computer vision and desktop control backends.
+A tool for GUI automation using a variety of computer vision and display control backends.
 
 .. note:: This is a complete guide on the concepts and usage of the Guibot python package and its interfaces. For a brief overview listing all backends and resources, see the project's README on Github. The resource links there are useful for information on installation, issue reporting, and advanced usage.
 

@@ -49,13 +49,13 @@ class GuiBot(Region):
         """
         Build a guibot object.
 
-        :param dc: DC backend used for any desktop control
+        :param dc: DC backend used for any display control
         :type dc: :py:class:`controller.Controller` or None
         :param cv: CV backend used for any target finding
         :type cv: :py:class:`finder.Finder` or None
 
         We will initialize with default region of full screen and default
-        desktop control and computer vision backends if none are provided.
+        display control and computer vision backends if none are provided.
         """
         super(GuiBot, self).__init__(dc=dc, cv=cv)
 

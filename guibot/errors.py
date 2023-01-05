@@ -92,4 +92,4 @@ class MissingHotmapError(GuiBotError):
 
 
 class UninitializedBackendError(GuiBotError):
-    """Exception raised when a region is created within an empty screen (a disconnected desktop control backend)"""
+    """Exception raised when a region is created within an empty screen (a disconnected display control backend)"""

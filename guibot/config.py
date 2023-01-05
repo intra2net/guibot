@@ -296,7 +296,7 @@ class GlobalConfig(type):
         """
         Same as :py:func:`GlobalConfig.image_logging_destination` but with
 
-        :param value: name of the desktop control backend
+        :param value: name of the display control backend
         :raises: :py:class:`ValueError` if value is not among the supported backends
 
         Supported backends:
@@ -322,7 +322,7 @@ class GlobalConfig(type):
             if value not in ["autopy", "xdotool", "vncdotool", "qemu", "pyautogui"]:
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
             GlobalConfig._display_control_backend = value
-    #: name of the desktop control backend
+    #: name of the display control backend
     display_control_backend = property(fget=display_control_backend, fset=display_control_backend)
 
     # these methods do not check for valid values since this
@@ -565,7 +565,7 @@ class TemporaryConfig(object):
 
 class LocalConfig(object):
     """
-    Container for the configuration of all desktop control and
+    Container for the configuration of all display control and
     computer vision backends, responsible for making them behave
     according to the selected parameters as well as for providing
     information about them and the current parameters.

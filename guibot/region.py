@@ -61,7 +61,7 @@ class Region(object):
         :param int ypos: y coordinate of the upleft vertex of the region
         :param int width: width of the region (xpos+width for downright vertex x)
         :param int height: height of the region (ypos+height for downright vertex y)
-        :param dc: DC backend used for any desktop control
+        :param dc: DC backend used for any display control
         :type dc: :py:class:`controller.Controller` or None
         :param cv: CV backend used for any target finding
         :type cv: :py:class:`finder.Finder` or None

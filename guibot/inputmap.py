@@ -27,7 +27,7 @@ INTERFACE
 
 
 class Key(object):
-    """Helper to contain all key mappings for a custom desktop control backend."""
+    """Helper to contain all key mappings for a custom display control backend."""
 
     def __init__(self):
         """Build an instance containing an empty key map."""
@@ -540,7 +540,7 @@ class PyAutoGUIKey(Key):
 
 
 class KeyModifier(object):
-    """Helper to contain all modifier key mappings for a custom desktop control backend."""
+    """Helper to contain all modifier key mappings for a custom display control backend."""
 
     def __init__(self):
         """Build an instance containing an empty modifier key map."""
@@ -633,7 +633,7 @@ class PyAutoGUIKeyModifier(KeyModifier):
 
 
 class MouseButton(object):
-    """Helper to contain all mouse button mappings for a custom desktop control backend."""
+    """Helper to contain all mouse button mappings for a custom display control backend."""
 
     def __init__(self):
         """Build an instance containing an empty mouse button map."""
