@@ -30,20 +30,28 @@ INTERFACE
 
 """
 
+from collections import namedtuple
+
 from .guibot import GuiBot
 
 
 # accessible attributes of this module
 guibot = None
 last_match = None
+buttons = namedtuple('Buttons', ["mouse", "key", "mod"])
 
 
 def initialize():
     """Initialize the simple API."""
     global guibot
-    global last_match
     guibot = GuiBot()
+    global last_match
     last_match = guibot.last_match
+
+    global buttons
+    buttons.mouse = guibot.dc_backend.mousemap
+    buttons.key = guibot.dc_backend.keymap
+    buttons.mod = guibot.dc_backend.modmap
 
 
 def check_initialized():
