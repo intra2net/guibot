@@ -334,6 +334,13 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_click_at(self):
+        self.show_application()
+        self.region.click_at(self.click_control, 0, 0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_fill_at(self):
         self.show_application()
         self.region.fill_at(self.textedit_quit_control, 'quit', 0, 0)
@@ -341,12 +348,19 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     def test_select_at(self):
-        # NOTE: autopy has a bug with arrow keys which would reulst in fatal error
+        # NOTE: autopy has a bug with arrow keys which would result in a fatal error
         # here breaking the entire run
         self.show_application()
         self.region.right_click(self.context_menu_control)
         self.region.select_at(self.context_menu_close_control, 1, 0, 0, mark_clicks=0)
         self.assertEqual(0, self.wait_end(self.child_app))
+
+        self.show_application()
+        self.region.right_click(self.context_menu_control)
+        self.region.select_at(self.context_menu_close_control,
+                              self.context_menu_close_control, 0, 0, mark_clicks=0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+
         self.child_app = None
 
 if __name__ == '__main__':
