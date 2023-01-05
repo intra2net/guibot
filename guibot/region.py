@@ -612,8 +612,6 @@ class Region(object):
         # target is still there
         raise NotFindError(target)
 
-    """Mouse methods"""
-
     def idle(self, timeout):
         """
         Wait for a number of seconds and continue the nested call chain.
@@ -632,6 +630,8 @@ class Region(object):
         log.debug("Waiting for %ss", timeout)
         time.sleep(timeout)
         return self
+
+    """Mouse methods"""
 
     def hover(self, target_or_location):
         """

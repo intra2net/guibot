@@ -106,6 +106,12 @@ def get_mouse_location():
     return guibot.get_mouse_location()
 
 
+def idle(timeout):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.idle(timeout)
+
+
 def hover(target_or_location):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()

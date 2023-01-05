@@ -146,6 +146,10 @@ class GuiBotProxy(GuiBot):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).wait_vanish(target, timeout))
 
+    def idle(self, timeout):
+        """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+        return self._proxify(super(GuiBotProxy, self).idle(timeout))
+
     def hover(self, target_or_location):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).hover(target_or_location))
