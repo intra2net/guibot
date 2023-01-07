@@ -437,19 +437,30 @@ class Region(object):
 
         # TODO: decide about updating the last_match attribute
         last_matches = []
+        moving_targets = True
         timeout_limit = time.time() + timeout
         while True:
             screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = cv_backend.find(target, screen_capture)
-            if len(found_pics) > 0:
+            relative_matches = cv_backend.find(target, screen_capture)
+            if len(relative_matches) > 0:
                 from .match import Match
-                for match in found_pics:
-                    last_matches.append(Match(match.x+self.x, match.y+self.y,
-                                              match.width, match.height, match.dx, match.dy,
-                                              match.similarity, dc=dc_backend, cv=cv_backend))
+                for i, match in enumerate(relative_matches):
+                    absolute_x, absolute_y = match.x + self.x, match.y + self.y
+                    new_match = Match(absolute_x, absolute_y,
+                                      match.width, match.height, match.dx, match.dy,
+                                      match.similarity, dc=dc_backend, cv=cv_backend)
+                    if len(last_matches) > i:
+                        if last_matches[i].x == absolute_x and last_matches[i].y == absolute_y:
+                            moving_targets = False
+                        last_matches[i] = new_match
+                    else:
+                        # disappearing or appearing (teleporting) targets count as moving targets
+                        moving_targets = True
+                        last_matches.append(new_match)
                 self._last_match = last_matches[-1]
-                return last_matches
+                if not GlobalConfig.wait_for_animations or not moving_targets:
+                    return last_matches
 
             elif time.time() > timeout_limit:
                 if allow_zero:
