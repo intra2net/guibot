@@ -29,8 +29,8 @@ else
 fi
 pip3 install vncdotool==0.12.0
 dnf -y install xdotool xwd ImageMagick
-# TODO: PyAutoGUI's scrot dependencies are broken on Fedora 33-, currently provided offline
-dnf -y install python3-tkinter #scrot
+# NOTE: PyAutoGUI's scrot dependencies are broken on Fedora 33- so we don't support these
+dnf -y install python3-tkinter scrot
 pip3 install pyautogui==0.9.53
 dnf -y install x11vnc
 
