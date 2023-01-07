@@ -2156,7 +2156,7 @@ class TextFinder(ContourFinder):
                     text_img = self._binarize_image(text_img)
                 finally:
                     self.params["threshold"] = first_threshold
-                    return text_img
+                return text_img
             else:
                 return cv2.cvtColor(text_img, cv2.COLOR_RGB2GRAY)
         for i, text_box in enumerate(text_regions):

@@ -97,6 +97,8 @@ class Target(object):
             target = Pattern(filename, match_settings=finder)
         elif finder.params["find"]["backend"] == "hybrid":
             target = Chain(name, match_settings=finder)
+        else:
+            raise RuntimeError("Could not detect the target type from the find backend")
 
         return target
 

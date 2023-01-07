@@ -1030,7 +1030,8 @@ class CVParameterTest(unittest.TestCase):
             4, min_val=0.003, max_val=150, delta=1030.25,
             tolerance=10.2, fixed=True, enumerated=False
         )
-        self.assertTrue(cv1 == cv1)
+        cv3 = cv1
+        self.assertTrue(cv1 == cv3)
         self.assertTrue(cv1 != cv2)
         self.assertFalse(cv1 == 10)
         self.assertTrue(cv1 != 10)
