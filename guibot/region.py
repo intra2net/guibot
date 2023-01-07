@@ -400,51 +400,19 @@ class Region(object):
 
     def find(self, target, timeout=10):
         """
-        Find a target (image, text, etc.) on the screen.
+        Find a target on the screen.
 
         :param target: target to look for
         :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
-        :raises: :py:class:`errors.FindError` if no match is found
 
         This method is the main entrance to all our target finding capabilities
         and is the milestone for all target expect methods.
         """
-        if isinstance(target, str):
-            target = self._target_from_string(target)
-        log.debug("Looking for target %s", target)
-        cv_backend = self._determine_cv_backend(target)
-        dc_backend = self.dc_backend
-
-        timeout_limit = time.time() + timeout
-        while True:
-            screen_capture = dc_backend.capture_screen(self)
-
-            found_pics = cv_backend.find(target, screen_capture)
-            if len(found_pics) > 0:
-                from .match import Match
-                match = found_pics[0]
-                self._last_match = Match(match.x+self.x, match.y+self.y,
-                                         match.width, match.height, match.dx, match.dy,
-                                         match.similarity, dc=dc_backend, cv=cv_backend)
-                return self._last_match
-
-            elif time.time() > timeout_limit:
-                if GlobalConfig.save_needle_on_error:
-                    if not os.path.exists(ImageLogger.logging_destination):
-                        os.mkdir(ImageLogger.logging_destination)
-                    dump_path = GlobalConfig.image_logging_destination
-                    hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
-                    ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
-                    screen_capture.save(hdump_path)
-                    target.save(ndump_path)
-                raise FindError(target)
-
-            else:
-                # don't hog the CPU
-                time.sleep(GlobalConfig.rescan_speed_on_find)
+        matches = self.find_all(target, timeout=timeout, allow_zero=False)
+        return matches[0]
 
     def find_all(self, target, timeout=10, allow_zero=False):
         """
