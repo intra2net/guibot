@@ -156,13 +156,13 @@ def multi_click(target_or_location, count=3, modifiers=None):
     return guibot.multi_click(target_or_location, count, modifiers)
 
 
-def click_expect(click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+def click_expect(click_image_or_location, expect_image_or_location, modifiers=None, timeout=60):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.click_expect(click_image_or_location, expect_image_or_location, modifiers, timeout)
 
 
-def click_vanish(click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+def click_vanish(click_image_or_location, expect_image_or_location, modifiers=None, timeout=60):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.click_vanish(click_image_or_location, expect_image_or_location, modifiers, timeout)
@@ -220,6 +220,18 @@ def press_at(target_or_location=None, keys=None):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.press_at(target_or_location, keys)
+
+
+def press_expect(keys, expect_target, modifiers=None, timeout=60, retries=3):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.press_expect(keys, expect_target=None, modifiers=None, timeout=60, retries=3)
+
+
+def press_vanish(keys, expect_target, modifiers=None, timeout=60, retries=3):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.press_vanish(keys, expect_target, modifiers=None, timeout=60, retries=3)
 
 
 def type_text(text, modifiers=None):

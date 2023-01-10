@@ -724,46 +724,40 @@ class Region(object):
         return match
 
     def click_expect(self, click_image_or_location,
-                     expect_image_or_location=None,
-                     modifiers=None, timeout=60):
+                     expect_target, modifiers=None, timeout=60):
         """
         Click on an image or location and wait for another one to appear.
 
         :param click_image_or_location: image or location to click on
         :type click_image_or_location: Image or Location
-        :param expect_image_or_location: image or location to wait for
-        :type expect_image_or_location: Image or Location or None
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
-        :param int timout: time in seconds to wait for
+        :param int timeout: time in seconds to wait for
         :returns: match obtained from finding the second target within the region
         :rtype: :py:class:`match.Match`
         """
         self.click(click_image_or_location, modifiers=modifiers)
-        if expect_image_or_location is None:
-            expect_image_or_location = click_image_or_location
-        return self.wait(expect_image_or_location, timeout)
+        return self.wait(expect_target, timeout)
 
     def click_vanish(self, click_image_or_location,
-                     expect_image_or_location=None,
-                     modifiers=None, timeout=60):
+                     expect_target, modifiers=None, timeout=60):
         """
         Click on an image or location and wait for another one to disappear.
 
         :param click_image_or_location: image or location to click on
         :type click_image_or_location: Image or Location
-        :param expect_image_or_location: image or location to wait for
-        :type expect_image_or_location: Image or Location or None
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
-        :param int timout: time in seconds to wait for
-        :returns: whether the second target disappeared from the region
-        :rtype: bool
+        :param int timeout: time in seconds to wait for
+        :returns: self
+        :rtype: :py:class:`Region`
         """
         self.click(click_image_or_location, modifiers=modifiers)
-        if expect_image_or_location is None:
-            expect_image_or_location = click_image_or_location
-        return self.wait_vanish(expect_image_or_location, timeout)
+        return self.wait_vanish(expect_target, timeout)
 
     def click_at_index(self, anchor, index=0, find_number=3, timeout=10):
         """
@@ -1006,6 +1000,42 @@ class Region(object):
                 log.info("Pressing key '%s'%s", key, at_str)
             keys_list.append(key)
         return keys_list
+
+    def press_expect(self, keys, expect_target, timeout=60):
+        """
+        Press a key and wait for a target to appear.
+
+        :param keys: characters or special keys depending on the backend
+                     (see :py:class:`inputmap.Key` for extensive list)
+        :type keys: [str] or str (possibly special keys in both cases)
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
+        :param modifiers: key modifiers when clicking
+        :type modifiers: [Key] or None
+        :param int timeout: time in seconds to wait for
+        :returns: match obtained from finding the second target within the region
+        :rtype: :py:class:`match.Match`
+        """
+        self.press_keys(keys)
+        return self.wait(expect_target, timeout)
+
+    def press_vanish(self, keys, expect_target, timeout=60):
+        """
+        Press a key and wait for a target to disappear.
+
+        :param keys: characters or special keys depending on the backend
+                     (see :py:class:`inputmap.Key` for extensive list)
+        :type keys: [str] or str (possibly special keys in both cases)
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
+        :param modifiers: key modifiers when clicking
+        :type modifiers: [Key] or None
+        :param int timeout: time in seconds to wait for
+        :returns: self
+        :rtype: :py:class:`Region`
+        """
+        self.press_keys(keys)
+        return self.wait_vanish(expect_target, timeout)
 
     def type_text(self, text, modifiers=None):
         """
