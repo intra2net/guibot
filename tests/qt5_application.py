@@ -93,6 +93,7 @@ class ControlsWithLayout(QtWidgets.QWidget):
         image2 = ImageChangeLabel(image1, self)
         image2.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir, "images/shape_green_box.png")))
         self.changing_image = image2
+        self.changing_image_counter = 1
 
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(button_click)
@@ -148,8 +149,11 @@ class ControlsWithLayout(QtWidgets.QWidget):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
         elif e.key() == QtCore.Qt.Key_Shift:
-            self.changing_image.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir,
-                                                                     "images/shape_black_box.png")))
+            if self.changing_image_counter == 3:
+                self.changing_image.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir,
+                                                                        "images/shape_black_box.png")))
+            else:
+                self.changing_image_counter += 1
 
     def closeEvent(self, e):
         self.close()
@@ -214,10 +218,14 @@ class ImageChangeLabel(QtWidgets.QLabel):
     def __init__(self, image, parent):
         super(ImageChangeLabel, self).__init__(parent)
         self.image = image
+        self.counter = 1
 
     def mousePressEvent(self, e):
-        self.image.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir,
-                                                        "images/shape_black_box.png")))
+        if self.counter == 3:
+            self.image.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir,
+                                                            "images/shape_black_box.png")))
+        else:
+            self.counter += 1
 
 
 if __name__ == "__main__":

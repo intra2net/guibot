@@ -723,8 +723,8 @@ class Region(object):
         self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
 
-    def click_expect(self, click_image_or_location,
-                     expect_target, modifiers=None, timeout=60):
+    def click_expect(self, click_image_or_location, expect_target,
+                     modifiers=None, timeout=60, retries=3):
         """
         Click on an image or location and wait for another one to appear.
 
@@ -735,14 +735,22 @@ class Region(object):
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
         :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
         :returns: match obtained from finding the second target within the region
         :rtype: :py:class:`match.Match`
         """
-        self.click(click_image_or_location, modifiers=modifiers)
-        return self.wait(expect_target, timeout)
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the mouse click (%s of %s)", i+1, retries)
+            self.click(click_image_or_location, modifiers=modifiers)
+            try:
+                return self.wait(expect_target, timeout)
+            except FindError as error:
+                if i == retries - 1:
+                    raise error
 
-    def click_vanish(self, click_image_or_location,
-                     expect_target, modifiers=None, timeout=60):
+    def click_vanish(self, click_image_or_location, expect_target,
+                     modifiers=None, timeout=60, retries=3):
         """
         Click on an image or location and wait for another one to disappear.
 
@@ -753,11 +761,19 @@ class Region(object):
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
         :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
         :returns: self
         :rtype: :py:class:`Region`
         """
-        self.click(click_image_or_location, modifiers=modifiers)
-        return self.wait_vanish(expect_target, timeout)
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the mouse click (%s of %s)", i+1, retries)
+            self.click(click_image_or_location, modifiers=modifiers)
+            try:
+                return self.wait_vanish(expect_target, timeout)
+            except NotFindError as error:
+                if i == retries - 1:
+                    raise error
 
     def click_at_index(self, anchor, index=0, find_number=3, timeout=10):
         """
@@ -1001,7 +1017,7 @@ class Region(object):
             keys_list.append(key)
         return keys_list
 
-    def press_expect(self, keys, expect_target, timeout=60):
+    def press_expect(self, keys, expect_target, timeout=60, retries=3):
         """
         Press a key and wait for a target to appear.
 
@@ -1013,13 +1029,21 @@ class Region(object):
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
         :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
         :returns: match obtained from finding the second target within the region
         :rtype: :py:class:`match.Match`
         """
-        self.press_keys(keys)
-        return self.wait(expect_target, timeout)
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the key press (%s of %s)", i+1, retries)
+            self.press_keys(keys)
+            try:
+                return self.wait(expect_target, timeout)
+            except FindError as error:
+                if i == retries - 1:
+                    raise error
 
-    def press_vanish(self, keys, expect_target, timeout=60):
+    def press_vanish(self, keys, expect_target, timeout=60, retries=3):
         """
         Press a key and wait for a target to disappear.
 
@@ -1031,11 +1055,19 @@ class Region(object):
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
         :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
         :returns: self
         :rtype: :py:class:`Region`
         """
-        self.press_keys(keys)
-        return self.wait_vanish(expect_target, timeout)
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the key press (%s of %s)", i+1, retries)
+            self.press_keys(keys)
+            try:
+                return self.wait_vanish(expect_target, timeout)
+            except NotFindError as error:
+                if i == retries - 1:
+                    raise error
 
     def type_text(self, text, modifiers=None):
         """
