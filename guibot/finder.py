@@ -1868,6 +1868,8 @@ class TextFinder(ContourFinder):
                 # 13 different page segmentation modes - see Tesseract API
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 self.params[category]["extra_configs"] = CVParameter("")
+                self.params[category]["recursion_height"] = CVParameter(0.3, 0.0, 1.0, 0.01)
+                self.params[category]["recursion_width"] = CVParameter(0.3, 0.0, 1.0, 0.01)
             elif backend == "east":
                 # network input dimensions - must be divisible by 32, however currently only
                 # 320x320 doesn't error out from the OpenCV implementation
@@ -2272,30 +2274,49 @@ class TextFinder(ContourFinder):
     def _detect_text_boxes(self, haystack):
         import cv2
         import numpy
-        img_haystack = numpy.array(haystack.pil_image)
-        img_haystack = numpy.array(haystack.pil_image)
-        self.imglog.hotmaps.append(img_haystack)
-
-        output = self.tbox.run_and_get_output(img_haystack, 'box',
-                                              self.params["tdetect"]["language"].value,
-                                              config=self.tbox_config)
+        char_canvas = numpy.array(haystack.pil_image)
+        text_canvas = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(char_canvas)
+        self.imglog.hotmaps.append(text_canvas)
 
         text_regions = []
-        for line in output.splitlines():
-            tokens = line.rstrip().split(" ", maxsplit=6)
-            if tokens[0] != "WordStr":
-                continue
-            left = int(tokens[1])
-            bottom = haystack.height - int(tokens[2])
-            right = int(tokens[3])
-            top = haystack.height - int(tokens[4])
-            text = tokens[6][1:]
+        recursive_regions = [(0, 0, numpy.array(haystack.pil_image))]
+        while len(recursive_regions) > 0:
+            offset_x, offset_y, next_region = recursive_regions.pop()
+            region_w, region_h = next_region.shape[1], next_region.shape[0]
 
-            x, y, w, h = left, top, right - left, bottom - top
-            logging.debug("Found text '%s' with tesseract-provided box %s", text, (x, y, w, h))
-            cv2.rectangle(img_haystack, (x, y), (x+w, y+h), (0, 0, 0), 2)
-            cv2.rectangle(img_haystack, (x, y), (x+w, y+h), (0, 255, 0), 1)
-            text_regions.append([x, y, w, h])
+            output = self.tbox.run_and_get_output(next_region, 'box',
+                                                  self.params["tdetect"]["language"].value,
+                                                  config=self.tbox_config)
+            for line in output.splitlines():
+                tokens = line.rstrip().split(" ", maxsplit=6)
+                if tokens[0] != "WordStr":
+                    continue
+                left = int(tokens[1])
+                bottom = region_h - int(tokens[2])
+                right = int(tokens[3])
+                top = region_h - int(tokens[4])
+                text = tokens[6][1:]
+
+                dx, dy, w, h = left, top, right - left, bottom - top
+                x, y = offset_x + dx, offset_y + dy
+                if text == "":
+                    logging.debug("Empty text found, skipping region")
+                    continue
+                recursion_width = self.params["tdetect"]["recursion_width"].value * haystack.width
+                recursion_height = self.params["tdetect"]["recursion_height"].value * haystack.height
+                if (w > recursion_width and h > 0) or (h > recursion_height and w > 0):
+                    subregion_npy = next_region[max(dy, 0):min(dy+h, region_h),
+                                                max(dx, 0):min(dx+w, region_w)]
+                    if next_region.shape != subregion_npy.shape:
+                        logging.debug("Large region of size %sx%s detected, rescanning inside of it", w, h)
+                        recursive_regions.append((x, y, subregion_npy))
+                    continue
+
+                logging.debug("Found text '%s' with tesseract-provided box %s", text, (x, y, w, h))
+                cv2.rectangle(text_canvas, (x, y), (x+w, y+h), (0, 0, 0), 2)
+                cv2.rectangle(text_canvas, (x, y), (x+w, y+h), (0, 255, 0), 1)
+                text_regions.append([x, y, w, h])
 
         return text_regions
 
