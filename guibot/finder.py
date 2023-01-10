@@ -1799,7 +1799,7 @@ class TextFinder(ContourFinder):
         self.categories["threshold2"] = "threshold_filters2"
         self.categories["threshold3"] = "threshold_filters3"
         self.algorithms["text_matchers"] = ("mixed",)
-        self.algorithms["text_detectors"] = ("east", "erstat", "contours", "components")
+        self.algorithms["text_detectors"] = ("pytesseract", "east", "erstat", "contours", "components")
         self.algorithms["text_recognizers"] = ("pytesseract", "tesserocr", "tesseract", "hmm", "beamSearch")
         self.algorithms["threshold_filters2"] = tuple(self.algorithms["threshold_filters"])
         self.algorithms["threshold_filters3"] = tuple(self.algorithms["threshold_filters"])
@@ -1858,7 +1858,17 @@ class TextFinder(ContourFinder):
         if category == "text":
             self.params[category]["datapath"] = CVParameter("../misc")
         elif category == "tdetect":
-            if backend == "east":
+            if backend == "pytesseract":
+                # eng, deu, etc. (ISO 639-3)
+                self.params[category]["language"] = CVParameter("eng")
+                self.params[category]["char_whitelist"] = CVParameter(" 0123456789abcdefghijklmnopqrst"
+                                                                      "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
+                self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
+                # 13 different page segmentation modes - see Tesseract API
+                self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
+                self.params[category]["extra_configs"] = CVParameter("")
+            elif backend == "east":
                 # network input dimensions - must be divisible by 32, however currently only
                 # 320x320 doesn't error out from the OpenCV implementation
                 self.params[category]["input_res_x"] = CVParameter(320, 32, None, 32.0)
@@ -1994,6 +2004,20 @@ class TextFinder(ContourFinder):
             # nothing to sync
             return
 
+        elif category == "tdetect" and backend == "pytesseract":
+            tessdata_path = os.path.join(datapath, "tessdata")
+            if not os.path.exists(tessdata_path):
+                tessdata_path = os.environ.get("TESSDATA_PREFIX", ".")
+
+            import pytesseract
+            self.tbox = pytesseract
+            self.tbox_config = r"--tessdata-dir %s --oem %s --psm %s "
+            self.tbox_config %= (tessdata_path,
+                                 self.params["tdetect"]["oem"].value,
+                                 self.params["tdetect"]["psmode"].value)
+            self.tbox_config += r"-c tessedit_char_whitelist='%s' %s batch.nochop wordstrbox"
+            self.tbox_config %=  (self.params["tdetect"]["char_whitelist"].value,
+                                  self.params["tdetect"]["extra_configs"].value)
         elif category == "tdetect" and backend == "east":
             self.east_net = cv2.dnn.readNet(os.path.join(datapath, 'frozen_east_text_detection.pb'))
         elif category == "tdetect" and backend == "erstat":
@@ -2132,7 +2156,9 @@ class TextFinder(ContourFinder):
         # detect characters and group them into detected text
         backend = self.params["tdetect"]["backend"]
         log.debug("Detecting text with %s", backend)
-        if backend == "east":
+        if backend == "pytesseract":
+            text_regions = self._detect_text_boxes(haystack)
+        elif backend == "east":
             text_regions = self._detect_text_east(haystack)
         elif backend == "erstat":
             text_regions = self._detect_text_erstat(haystack)
@@ -2243,6 +2269,36 @@ class TextFinder(ContourFinder):
         self.imglog.log(30)
         return matches
 
+    def _detect_text_boxes(self, haystack):
+        import cv2
+        import numpy
+        img_haystack = numpy.array(haystack.pil_image)
+        img_haystack = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(img_haystack)
+
+        output = self.tbox.run_and_get_output(img_haystack, 'box',
+                                              self.params["tdetect"]["language"].value,
+                                              config=self.tbox_config)
+
+        text_regions = []
+        for line in output.splitlines():
+            tokens = line.rstrip().split(" ", maxsplit=6)
+            if tokens[0] != "WordStr":
+                continue
+            left = int(tokens[1])
+            bottom = haystack.height - int(tokens[2])
+            right = int(tokens[3])
+            top = haystack.height - int(tokens[4])
+            text = tokens[6][1:]
+
+            x, y, w, h = left, top, right - left, bottom - top
+            logging.debug("Found text '%s' with tesseract-provided box %s", text, (x, y, w, h))
+            cv2.rectangle(img_haystack, (x, y), (x+w, y+h), (0, 0, 0), 2)
+            cv2.rectangle(img_haystack, (x, y), (x+w, y+h), (0, 255, 0), 1)
+            text_regions.append([x, y, w, h])
+
+        return text_regions
+
     def _detect_text_east(self, haystack):
         #:.. note:: source implementation by Adrian Rosebrock from his post:
         #:   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
@@ -2284,7 +2340,7 @@ class TextFinder(ContourFinder):
                 w = min(row_data[1][col] + row_data[3][col], inp_width) * width_ratio
                 # output layer dimensions are 4x smaller than the input layer dimentions
                 (dx, dy) = (col + 1) * 4.0, (row + 1) * 4.0
-                # calculate the rotation angle from the prediction ouput
+                # calculate the rotation angle from the prediction output
                 sin, cos = numpy.sin(row_data[4][col]), numpy.cos(row_data[4][col])
                 # compute the starting (from ending) coordinates for the text bounding box
                 x2 = min(dx + cos * row_data[1][col] + sin * row_data[2][col], inp_width) * width_ratio
