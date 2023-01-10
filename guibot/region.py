@@ -575,15 +575,15 @@ class Region(object):
         :param target: target to look for
         :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
-        :returns: whether the target disappeared from the region
-        :rtype: bool
+        :returns: self
+        :rtype: :py:class:`Region`
         :raises: :py:class:`errors.NotFindError` if match is still found
         """
         log.info("Waiting for %s to vanish", target)
         expires = time.time() + timeout
         while time.time() < expires:
             if self.exists(target, 0) is None:
-                return True
+                return self
 
             # don't hog the CPU (as rescan within find will check the inverse)
             time.sleep(GlobalConfig.rescan_speed_on_find)
