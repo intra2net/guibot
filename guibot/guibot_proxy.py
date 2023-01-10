@@ -162,6 +162,10 @@ class GuiBotProxy(GuiBot):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).right_click(target_or_location, modifiers))
 
+    def middle_click(self, target_or_location, modifiers=None):
+        """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+        return self._proxify(super(GuiBotProxy, self).middle_click(target_or_location, modifiers))
+
     def double_click(self, target_or_location, modifiers=None):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).double_click(target_or_location, modifiers))

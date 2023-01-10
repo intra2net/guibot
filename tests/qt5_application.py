@@ -139,6 +139,10 @@ class ControlsWithLayout(QtWidgets.QWidget):
         if sender.text() == "quit":
             self.close()
 
+    def mousePressEvent(self, e):
+        if e.button() == QtCore.Qt.MiddleButton:
+            self.close()
+
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()

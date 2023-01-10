@@ -138,6 +138,12 @@ def right_click(target_or_location, modifiers=None):
     return guibot.right_click(target_or_location, modifiers)
 
 
+def middle_click(target_or_location, modifiers=None):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.middle_click(target_or_location, modifiers)
+
+
 def double_click(target_or_location, modifiers=None):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()

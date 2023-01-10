@@ -702,6 +702,20 @@ class Region(object):
         self.dc_backend.mouse_click(self.RIGHT_BUTTON, 1, modifiers)
         return match
 
+    def middle_click(self, target_or_location, modifiers=None):
+        """
+        Click on a target or location using the middle mouse button and
+        optionally holding special keys.
+
+        Arguments and return values are analogical to :py:func:`Region.click`.
+        """
+        match = self.hover(target_or_location)
+        log.info("Right clicking at %s", target_or_location)
+        if modifiers is not None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
+        self.dc_backend.mouse_click(self.CENTER_BUTTON, 1, modifiers)
+        return match
+
     def double_click(self, target_or_location, modifiers=None):
         """
         Double click on a target or location using the left mouse button

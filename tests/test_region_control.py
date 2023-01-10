@@ -69,6 +69,7 @@ class RegionTest(unittest.TestCase):
         self.textedit_any_control = Location(65, 95)
         self.drag_control = Location(435, 25)
         self.drop_control = Location(435, 65)
+        self.no_control = Location(555, 135)
 
         self.region = Region()
 
@@ -149,6 +150,13 @@ class RegionTest(unittest.TestCase):
         self.show_application()
         self.region.right_click(self.context_menu_control)
         self.region.idle(3).click(self.context_menu_close_control)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_middle_click(self):
+        self.show_application()
+        self.region.middle_click(self.no_control)
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
