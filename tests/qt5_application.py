@@ -92,6 +92,7 @@ class ControlsWithLayout(QtWidgets.QWidget):
         image1.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir, "images/shape_red_box.png")))
         image2 = ImageChangeLabel(image1, self)
         image2.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir, "images/shape_green_box.png")))
+        self.changing_image = image2
 
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(button_click)
@@ -146,6 +147,9 @@ class ControlsWithLayout(QtWidgets.QWidget):
     def keyPressEvent(self, e):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
+        elif e.key() == QtCore.Qt.Key_Shift:
+            self.changing_image.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir,
+                                                                     "images/shape_black_box.png")))
 
     def closeEvent(self, e):
         self.close()

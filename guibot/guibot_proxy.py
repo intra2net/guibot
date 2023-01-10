@@ -221,6 +221,14 @@ class GuiBotProxy(GuiBot):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).press_at(target_or_location, keys))
 
+    def press_expect(self, keys, expect_target, modifiers=None, timeout=60, retries=3):
+        """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+        return self._proxify(super(GuiBotProxy, self).press_expect(keys, expect_target, modifiers=None, timeout=60, retries=3))
+
+    def press_vanish(self, keys, expect_target, modifiers=None, timeout=60, retries=3):
+        """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+        return self._proxify(super(GuiBotProxy, self).press_vanish(keys, expect_target, modifiers=None, timeout=60, retries=3))
+
     def type_text(self, text, modifiers=None):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).type_text(text, modifiers))
