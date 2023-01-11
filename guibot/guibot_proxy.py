@@ -98,153 +98,150 @@ class GuiBotProxy(GuiBot):
             self._pyroDaemon.register(obj)
         return obj
 
-    def nearby(self, rrange=50):
+    def nearby(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).nearby(rrange))
+        return self._proxify(super(GuiBotProxy, self).nearby(*args, **kwargs))
 
-    def above(self, rrange=0):
+    def above(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).above(rrange))
+        return self._proxify(super(GuiBotProxy, self).above(*args, **kwargs))
 
-    def below(self, rrange=0):
+    def below(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).below(rrange))
+        return self._proxify(super(GuiBotProxy, self).below(*args, **kwargs))
 
-    def left(self, rrange=0):
+    def left(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).left(rrange))
+        return self._proxify(super(GuiBotProxy, self).left(*args, **kwargs))
 
-    def right(self, rrange=0):
+    def right(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).right(rrange))
+        return self._proxify(super(GuiBotProxy, self).right(*args, **kwargs))
 
-    def find(self, target, timeout=10):
+    def find(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).find(target, timeout))
+        return self._proxify(super(GuiBotProxy, self).find(*args, **kwargs))
 
-    def find_all(self, target, timeout=10, allow_zero=False):
+    def find_all(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        matches = super(GuiBotProxy, self).find_all(target, timeout, allow_zero)
+        matches = super(GuiBotProxy, self).find_all(*args, **kwargs)
         proxified = []
         for match in matches:
             proxified.append(self._proxify(match))
         return proxified
 
-    def sample(self, target):
+    def sample(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).sample(target))
+        return self._proxify(super(GuiBotProxy, self).sample(*args, **kwargs))
 
-    def exists(self, target, timeout=0):
+    def exists(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).exists(target, timeout))
+        return self._proxify(super(GuiBotProxy, self).exists(*args, **kwargs))
 
-    def wait(self, target, timeout=30):
+    def wait(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).wait(target, timeout))
+        return self._proxify(super(GuiBotProxy, self).wait(*args, **kwargs))
 
-    def wait_vanish(self, target, timeout=30):
+    def wait_vanish(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).wait_vanish(target, timeout))
+        return self._proxify(super(GuiBotProxy, self).wait_vanish(*args, **kwargs))
 
-    def idle(self, timeout):
+    def idle(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).idle(timeout))
+        return self._proxify(super(GuiBotProxy, self).idle(*args, **kwargs))
 
-    def hover(self, target_or_location):
+    def hover(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).hover(target_or_location))
+        return self._proxify(super(GuiBotProxy, self).hover(*args, **kwargs))
 
-    def click(self, target_or_location, modifiers=None):
+    def click(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).click(target_or_location, modifiers))
+        return self._proxify(super(GuiBotProxy, self).click(*args, **kwargs))
 
-    def right_click(self, target_or_location, modifiers=None):
+    def right_click(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).right_click(target_or_location, modifiers))
+        return self._proxify(super(GuiBotProxy, self).right_click(*args, **kwargs))
 
-    def middle_click(self, target_or_location, modifiers=None):
+    def middle_click(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).middle_click(target_or_location, modifiers))
+        return self._proxify(super(GuiBotProxy, self).middle_click(*args, **kwargs))
 
-    def double_click(self, target_or_location, modifiers=None):
+    def double_click(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).double_click(target_or_location, modifiers))
+        return self._proxify(super(GuiBotProxy, self).double_click(*args, **kwargs))
 
-    def multi_click(self, target_or_location, count=3, modifiers=None):
+    def multi_click(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).multi_click(target_or_location, count, modifiers))
+        return self._proxify(super(GuiBotProxy, self).multi_click(*args, **kwargs))
 
-    def click_expect(self, click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+    def click_expect(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).click_expect(click_image_or_location,
-                                                                   expect_image_or_location, modifiers, timeout))
+        return self._proxify(super(GuiBotProxy, self).click_expect(*args, **kwargs))
 
-    def click_vanish(self, click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+    def click_vanish(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).click_vanish(click_image_or_location,
-                                                                   expect_image_or_location, modifiers, timeout))
+        return self._proxify(super(GuiBotProxy, self).click_vanish(*args, **kwargs))
 
-    def click_at_index(self, anchor, index=0, find_number=3, timeout=10):
+    def click_at_index(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).click_at_index(anchor, index, find_number, timeout))
+        return self._proxify(super(GuiBotProxy, self).click_at_index(*args, **kwargs))
 
-    def mouse_down(self, target_or_location, button=None):
+    def mouse_down(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).mouse_down(target_or_location, button))
+        return self._proxify(super(GuiBotProxy, self).mouse_down(*args, **kwargs))
 
-    def mouse_up(self, target_or_location, button=None):
+    def mouse_up(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).mouse_up(target_or_location, button))
+        return self._proxify(super(GuiBotProxy, self).mouse_up(*args, **kwargs))
 
-    def mouse_scroll(self, target_or_location, clicks=10, horizontal=False):
+    def mouse_scroll(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).mouse_scroll(target_or_location, clicks, horizontal))
+        return self._proxify(super(GuiBotProxy, self).mouse_scroll(*args, **kwargs))
 
-    def drag_drop(self, src_target_or_location, dst_target_or_location, modifiers=None):
+    def drag_drop(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).drag_drop(src_target_or_location,
-                                                                dst_target_or_location, modifiers))
+        return self._proxify(super(GuiBotProxy, self).drag_drop(*args, **kwargs))
 
-    def drag_from(self, target_or_location, modifiers=None):
+    def drag_from(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).drag(target_or_location, modifiers))
+        return self._proxify(super(GuiBotProxy, self).drag_from(*args, **kwargs))
 
-    def drop_at(self, target_or_location, modifiers=None):
+    def drop_at(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).drop_at(target_or_location, modifiers))
+        return self._proxify(super(GuiBotProxy, self).drop_at(*args, **kwargs))
 
-    def press_keys(self, keys):
+    def press_keys(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).press(keys))
+        return self._proxify(super(GuiBotProxy, self).press_keys(*args, **kwargs))
 
-    def press_at(self, target_or_location=None, keys=None):
+    def press_at(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).press_at(target_or_location, keys))
+        return self._proxify(super(GuiBotProxy, self).press_at(*args, **kwargs))
 
-    def press_expect(self, keys, expect_target, modifiers=None, timeout=60, retries=3):
+    def press_expect(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).press_expect(keys, expect_target, modifiers=None, timeout=60, retries=3))
+        return self._proxify(super(GuiBotProxy, self).press_expect(*args, **kwargs))
 
-    def press_vanish(self, keys, expect_target, modifiers=None, timeout=60, retries=3):
+    def press_vanish(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).press_vanish(keys, expect_target, modifiers=None, timeout=60, retries=3))
+        return self._proxify(super(GuiBotProxy, self).press_vanish(*args, **kwargs))
 
-    def type_text(self, text, modifiers=None):
+    def type_text(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).type_text(text, modifiers))
+        return self._proxify(super(GuiBotProxy, self).type_text(*args, **kwargs))
 
-    def type_at(self, target_or_location=None, text='', modifiers=None):
+    def type_at(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).type_at(target_or_location, text, modifiers))
+        return self._proxify(super(GuiBotProxy, self).type_at(*args, **kwargs))
 
-    def click_at(self, anchor, dx, dy, count=1):
+    def click_at(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).click_at(anchor, dx, dy, count))
+        return self._proxify(super(GuiBotProxy, self).click_at(*args, **kwargs))
 
-    def fill_at(self, anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_clicks=1):
+    def fill_at(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_clicks))
+        return self._proxify(super(GuiBotProxy, self).fill_at(*args, **kwargs))
 
-    def select_at(self, anchor, image_or_index, dx, dy, dw=0, dh=0, ret_flag=True, mark_clicks=1):
+    def select_at(self, *args, **kwargs):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
-        return self._proxify(super(GuiBotProxy, self).select_at(anchor, image_or_index, dx, dy, dw, dh, ret_flag, mark_clicks))
+        return self._proxify(super(GuiBotProxy, self).select_at(*args, **kwargs))
