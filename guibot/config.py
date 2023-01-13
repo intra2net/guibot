@@ -55,6 +55,7 @@ class GlobalConfig(type):
     _keys_delay = 0.2
     _type_delay = 0.1
     _rescan_speed_on_find = 0.2
+    _wait_for_animations = False
     _smooth_mouse_drag = True
     _screen_autoconnect = True
     _preprocess_special_chars = True
@@ -171,6 +172,29 @@ class GlobalConfig(type):
             GlobalConfig._rescan_speed_on_find = value
     #: time interval between two image matching attempts (used to reduce overhead on the CPU)
     rescan_speed_on_find = property(fget=rescan_speed_on_find, fset=rescan_speed_on_find)
+
+    def wait_for_animations(self, value=None):
+        """
+        Getter/setter for property attribute.
+
+        :param value: whether to wait for animations to complete and match only static (not moving) targets
+        :type value: bool or None
+        :returns: current value if no argument was passed otherwise only sets it
+        :rtype: bool or None
+        :raises: :py:class:`ValueError` if value is not boolean or None
+
+        This is useful to handle highly animated environments with lots of moving
+        targets where it might be inappropriate to click on a target until it stops
+        and the corresponding animation has finished.
+        """
+        if value is None:
+            return GlobalConfig._wait_for_animations
+        elif value is True or value is False:
+            GlobalConfig._wait_for_animations = value
+        else:
+            raise ValueError
+    #: whether to wait for animations to complete and match only static (not moving) targets
+    wait_for_animations = property(fget=wait_for_animations, fset=wait_for_animations)
 
     def smooth_mouse_drag(self, value=None):
         """

@@ -21,7 +21,7 @@ import shutil
 import subprocess
 
 import common_test
-from guibot.config import GlobalConfig
+from guibot.config import GlobalConfig, TemporaryConfig
 from guibot.fileresolver import FileResolver
 from guibot.location import Location
 from guibot.region import Region
@@ -245,6 +245,20 @@ class RegionTest(unittest.TestCase):
 
         matches = self.region.find_all(Image('shape_blue_circle'), allow_zero=True)
         self.assertEqual(len(matches), 0)
+        self.close_windows()
+
+    def test_find_in_animation(self):
+        """Test a switch where a moving match is actually matched when stopping."""
+        match_frames = [Match(0, 0, 10, 20, 0, 0, 1.0), Match(30, 30, 10, 20, 0, 0, 1.0),
+                        Match(30, 45, 10, 20, 0, 0, 1.0), Match(30, 45, 10, 20, 0, 0, 1.0)]
+        self.region.cv_backend.find = lambda x, y: [match_frames.pop(0)]
+
+        with TemporaryConfig() as config:
+            config.wait_for_animations = True
+            match = self.region.find('shape_blue_circle')
+            self.assertEqual(match.x, 30)
+            self.assertEqual(match.y, 45)
+
         self.close_windows()
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")

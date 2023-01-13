@@ -30,20 +30,28 @@ INTERFACE
 
 """
 
+from collections import namedtuple
+
 from .guibot import GuiBot
 
 
 # accessible attributes of this module
 guibot = None
 last_match = None
+buttons = namedtuple('Buttons', ["mouse", "key", "mod"])
 
 
 def initialize():
     """Initialize the simple API."""
     global guibot
-    global last_match
     guibot = GuiBot()
+    global last_match
     last_match = guibot.last_match
+
+    global buttons
+    buttons.mouse = guibot.dc_backend.mousemap
+    buttons.key = guibot.dc_backend.keymap
+    buttons.mod = guibot.dc_backend.modmap
 
 
 def check_initialized():
@@ -52,175 +60,205 @@ def check_initialized():
         raise AssertionError("Guibot module not initialized - run initialize() before using the simple API")
 
 
-def add_path(directory):
+def add_path(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    guibot.add_path(directory)
+    guibot.add_path(*args, **kwargs)
 
 
-def remove_path(directory):
+def remove_path(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    guibot.remove_path(directory)
+    guibot.remove_path(*args, **kwargs)
 
 
-def find(target, timeout=10):
+def find(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.find(target, timeout)
+    return guibot.find(*args, **kwargs)
 
 
-def find_all(target, timeout=10, allow_zero=False):
+def find_all(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.find_all(target, timeout, allow_zero)
+    return guibot.find_all(*args, **kwargs)
 
 
-def sample(target):
+def sample(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.sample(target)
+    return guibot.sample(*args, **kwargs)
 
 
-def exists(target, timeout=0):
+def exists(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.exists(target, timeout)
+    return guibot.exists(*args, **kwargs)
 
 
-def wait(target, timeout=30):
+def wait(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.wait(target, timeout)
+    return guibot.wait(*args, **kwargs)
 
 
-def wait_vanish(target, timeout=30):
+def wait_vanish(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.wait_vanish(target, timeout)
+    return guibot.wait_vanish(*args, **kwargs)
 
 
-def get_mouse_location():
+def get_mouse_location(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.get_mouse_location()
+    return guibot.get_mouse_location(*args, **kwargs)
 
 
-def hover(target_or_location):
+def idle(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.hover(target_or_location)
+    return guibot.idle(*args, **kwargs)
 
 
-def click(target_or_location, modifiers=None):
+def hover(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.click(target_or_location, modifiers)
+    return guibot.hover(*args, **kwargs)
 
 
-def right_click(target_or_location, modifiers=None):
+def click(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.right_click(target_or_location, modifiers)
+    return guibot.click(*args, **kwargs)
 
 
-def double_click(target_or_location, modifiers=None):
+def right_click(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.double_click(target_or_location, modifiers)
+    return guibot.right_click(*args, **kwargs)
 
 
-def multi_click(target_or_location, count=3, modifiers=None):
+def middle_click(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.multi_click(target_or_location, count, modifiers)
+    return guibot.middle_click(*args, **kwargs)
 
 
-def click_expect(click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+def double_click(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.click_expect(click_image_or_location, expect_image_or_location, modifiers, timeout)
+    return guibot.double_click(*args, **kwargs)
 
 
-def click_vanish(click_image_or_location, expect_image_or_location=None, modifiers=None, timeout=60):
+def multi_click(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.click_vanish(click_image_or_location, expect_image_or_location, modifiers, timeout)
+    return guibot.multi_click(*args, **kwargs)
 
 
-def click_at_index(anchor, index=0, find_number=3, timeout=10):
+def click_expect(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.click_at_index(anchor, index, find_number, timeout)
+    return guibot.click_expect(*args, **kwargs)
 
 
-def mouse_down(target_or_location, button=None):
+def click_vanish(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.mouse_down(target_or_location, button)
+    return guibot.click_vanish(*args, **kwargs)
 
 
-def mouse_up(target_or_location, button=None):
+def click_at_index(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.mouse_up(target_or_location, button)
+    return guibot.click_at_index(*args, **kwargs)
 
 
-def mouse_scroll(target_or_location, clicks=10, horizontal=False):
+def mouse_down(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.mouse_scroll(target_or_location, clicks, horizontal)
+    return guibot.mouse_down(*args, **kwargs)
 
 
-def drag_drop(src_target_or_location, dst_target_or_location, modifiers=None):
+def mouse_up(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.drag_drop(src_target_or_location, dst_target_or_location, modifiers)
+    return guibot.mouse_up(*args, **kwargs)
 
 
-def drag_from(target_or_location, modifiers=None):
+def mouse_scroll(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.drag(target_or_location, modifiers)
+    return guibot.mouse_scroll(*args, **kwargs)
 
 
-def drop_at(target_or_location, modifiers=None):
+def drag_drop(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.drop_at(target_or_location, modifiers)
+    return guibot.drag_drop(*args, **kwargs)
 
 
-def press_keys(keys):
+def drag_from(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.press(keys)
+    return guibot.drag_from(*args, **kwargs)
 
 
-def press_at(target_or_location=None, keys=None):
+def drop_at(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.press_at(target_or_location, keys)
+    return guibot.drop_at(*args, **kwargs)
 
 
-def type_text(text, modifiers=None):
+def press_keys(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.type_text(text, modifiers)
+    return guibot.press_keys(*args, **kwargs)
 
 
-def type_at(target_or_location=None, text='', modifiers=None):
+def press_at(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.type_at(target_or_location, text, modifiers)
+    return guibot.press_at(*args, **kwargs)
 
 
-def fill_at(anchor, text, dx, dy, del_flag=True, esc_flag=True, mark_clicks=1):
+def press_expect(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.fill_at(anchor, text, dx, dy, del_flag, esc_flag, mark_clicks)
+    return guibot.press_expect(*args, **kwargs)
 
 
-def select_at(anchor, image_or_index, dx, dy, dw=0, dh=0, ret_flag=True, mark_clicks=1):
+def press_vanish(*args, **kwargs):
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
-    return guibot.select_at(anchor, image_or_index, dx, dy, dw, dh, ret_flag, mark_clicks)
+    return guibot.press_vanish(*args, **kwargs)
+
+
+def type_text(*args, **kwargs):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.type_text(*args, **kwargs)
+
+
+def type_at(*args, **kwargs):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.type_at(*args, **kwargs)
+
+
+def click_at(*args, **kwargs):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.click_at(*args, **kwargs)
+
+
+def fill_at(*args, **kwargs):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.fill_at(*args, **kwargs)
+
+
+def select_at(*args, **kwargs):
+    """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
+    check_initialized()
+    return guibot.select_at(*args, **kwargs)

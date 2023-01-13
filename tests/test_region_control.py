@@ -25,9 +25,6 @@ from guibot.config import GlobalConfig
 from guibot.fileresolver import FileResolver
 from guibot.location import Location
 from guibot.region import Region
-from guibot.match import Match
-from guibot.target import Image, Text
-from guibot.inputmap import Key
 from guibot.finder import *
 from guibot.controller import *
 from guibot.errors import *
@@ -69,6 +66,7 @@ class RegionTest(unittest.TestCase):
         self.textedit_any_control = Location(65, 95)
         self.drag_control = Location(435, 25)
         self.drop_control = Location(435, 65)
+        self.no_control = Location(555, 135)
 
         self.region = Region()
 
@@ -153,6 +151,13 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_middle_click(self):
+        self.show_application()
+        self.region.middle_click(self.no_control)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_double_click(self):
         self.show_application()
         self.region.double_click(self.double_click_control)
@@ -176,15 +181,11 @@ class RegionTest(unittest.TestCase):
                      "Disabled OpenCV or PyQt")
     def test_click_expect(self):
         self.show_application()
-        self.region.click_expect('shape_green_box')
-        self.close_windows()
-
-    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_PYQT', "0") == "1",
-                     "Disabled OpenCV or PyQt")
-    def test_click_expect_different(self):
-        self.show_application()
-        self.region.click_expect('shape_green_box', 'shape_black_box')
+        with self.assertRaises(FindError):
+            self.region.click_expect('shape_green_box', 'shape_black_box',
+                                     timeout=1, retries=1)
+        self.region.click_expect('shape_green_box', 'shape_black_box',
+                                 timeout=1, retries=2)
         self.close_windows()
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
@@ -192,15 +193,11 @@ class RegionTest(unittest.TestCase):
                      "Disabled OpenCV or PyQt")
     def test_click_vanish(self):
         self.show_application()
-        self.region.click_vanish('shape_red_box')
-        self.close_windows()
-
-    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
-                     os.environ.get('DISABLE_PYQT', "0") == "1",
-                     "Disabled OpenCV or PyQt")
-    def test_click_vanish_different(self):
-        self.show_application()
-        self.region.click_vanish('shape_green_box', 'shape_red_box')
+        with self.assertRaises(NotFindError):
+            self.region.click_vanish('shape_green_box', 'shape_red_box',
+                                     timeout=1, retries=1)
+        self.region.click_vanish('shape_green_box', 'shape_red_box',
+                                 timeout=1, retries=2)
         self.close_windows()
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
@@ -310,6 +307,30 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(0, self.wait_end(self.child_app))
         self.child_app = None
 
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
+    def test_press_expect(self):
+        self.show_application()
+        with self.assertRaises(FindError):
+            self.region.press_expect(self.region.SHIFT, 'shape_black_box',
+                                     timeout=1, retries=1)
+        self.region.press_expect(self.region.SHIFT, 'shape_black_box',
+                                 timeout=1, retries=2)
+        self.close_windows()
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
+                     os.environ.get('DISABLE_PYQT', "0") == "1",
+                     "Disabled OpenCV or PyQt")
+    def test_press_vanish(self):
+        self.show_application()
+        with self.assertRaises(NotFindError):
+            self.region.press_vanish(self.region.SHIFT, 'shape_green_box',
+                                     timeout=1, retries=1)
+        self.region.press_vanish(self.region.SHIFT, 'shape_green_box',
+                                 timeout=1, retries=2)
+        self.close_windows()
+
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_type_text(self):
         self.show_application()
@@ -326,6 +347,13 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_click_at(self):
+        self.show_application()
+        self.region.click_at(self.click_control, 0, 0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+        self.child_app = None
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_fill_at(self):
         self.show_application()
         self.region.fill_at(self.textedit_quit_control, 'quit', 0, 0)
@@ -333,12 +361,19 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     def test_select_at(self):
-        # NOTE: autopy has a bug with arrow keys which would reulst in fatal error
+        # NOTE: autopy has a bug with arrow keys which would result in a fatal error
         # here breaking the entire run
         self.show_application()
         self.region.right_click(self.context_menu_control)
         self.region.select_at(self.context_menu_close_control, 1, 0, 0, mark_clicks=0)
         self.assertEqual(0, self.wait_end(self.child_app))
+
+        self.show_application()
+        self.region.right_click(self.context_menu_control)
+        self.region.select_at(self.context_menu_close_control,
+                              self.context_menu_close_control, 0, 0, mark_clicks=0)
+        self.assertEqual(0, self.wait_end(self.child_app))
+
         self.child_app = None
 
 if __name__ == '__main__':

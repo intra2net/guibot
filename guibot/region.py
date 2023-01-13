@@ -400,51 +400,19 @@ class Region(object):
 
     def find(self, target, timeout=10):
         """
-        Find a target (image, text, etc.) on the screen.
+        Find a target on the screen.
 
         :param target: target to look for
         :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
         :returns: match obtained from finding the target within the region
         :rtype: :py:class:`match.Match`
-        :raises: :py:class:`errors.FindError` if no match is found
 
         This method is the main entrance to all our target finding capabilities
         and is the milestone for all target expect methods.
         """
-        if isinstance(target, str):
-            target = self._target_from_string(target)
-        log.debug("Looking for target %s", target)
-        cv_backend = self._determine_cv_backend(target)
-        dc_backend = self.dc_backend
-
-        timeout_limit = time.time() + timeout
-        while True:
-            screen_capture = dc_backend.capture_screen(self)
-
-            found_pics = cv_backend.find(target, screen_capture)
-            if len(found_pics) > 0:
-                from .match import Match
-                match = found_pics[0]
-                self._last_match = Match(match.x+self.x, match.y+self.y,
-                                         match.width, match.height, match.dx, match.dy,
-                                         match.similarity, dc=dc_backend, cv=cv_backend)
-                return self._last_match
-
-            elif time.time() > timeout_limit:
-                if GlobalConfig.save_needle_on_error:
-                    if not os.path.exists(ImageLogger.logging_destination):
-                        os.mkdir(ImageLogger.logging_destination)
-                    dump_path = GlobalConfig.image_logging_destination
-                    hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
-                    ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
-                    screen_capture.save(hdump_path)
-                    target.save(ndump_path)
-                raise FindError(target)
-
-            else:
-                # don't hog the CPU
-                time.sleep(GlobalConfig.rescan_speed_on_find)
+        matches = self.find_all(target, timeout=timeout, allow_zero=False)
+        return matches[0]
 
     def find_all(self, target, timeout=10, allow_zero=False):
         """
@@ -469,19 +437,30 @@ class Region(object):
 
         # TODO: decide about updating the last_match attribute
         last_matches = []
+        moving_targets = True
         timeout_limit = time.time() + timeout
         while True:
             screen_capture = dc_backend.capture_screen(self)
 
-            found_pics = cv_backend.find(target, screen_capture)
-            if len(found_pics) > 0:
+            relative_matches = cv_backend.find(target, screen_capture)
+            if len(relative_matches) > 0:
                 from .match import Match
-                for match in found_pics:
-                    last_matches.append(Match(match.x+self.x, match.y+self.y,
-                                              match.width, match.height, match.dx, match.dy,
-                                              match.similarity, dc=dc_backend, cv=cv_backend))
+                for i, match in enumerate(relative_matches):
+                    absolute_x, absolute_y = match.x + self.x, match.y + self.y
+                    new_match = Match(absolute_x, absolute_y,
+                                      match.width, match.height, match.dx, match.dy,
+                                      match.similarity, dc=dc_backend, cv=cv_backend)
+                    if len(last_matches) > i:
+                        if last_matches[i].x == absolute_x and last_matches[i].y == absolute_y:
+                            moving_targets = False
+                        last_matches[i] = new_match
+                    else:
+                        # disappearing or appearing (teleporting) targets count as moving targets
+                        moving_targets = True
+                        last_matches.append(new_match)
                 self._last_match = last_matches[-1]
-                return last_matches
+                if not GlobalConfig.wait_for_animations or not moving_targets:
+                    return last_matches
 
             elif time.time() > timeout_limit:
                 if allow_zero:
@@ -596,23 +575,21 @@ class Region(object):
         :param target: target to look for
         :type target: str or :py:class:`target.Target`
         :param int timeout: timeout before giving up
-        :returns: whether the target disappeared from the region
-        :rtype: bool
+        :returns: self
+        :rtype: :py:class:`Region`
         :raises: :py:class:`errors.NotFindError` if match is still found
         """
         log.info("Waiting for %s to vanish", target)
         expires = time.time() + timeout
         while time.time() < expires:
             if self.exists(target, 0) is None:
-                return True
+                return self
 
             # don't hog the CPU (as rescan within find will check the inverse)
             time.sleep(GlobalConfig.rescan_speed_on_find)
 
         # target is still there
         raise NotFindError(target)
-
-    """Mouse methods"""
 
     def idle(self, timeout):
         """
@@ -632,6 +609,8 @@ class Region(object):
         log.debug("Waiting for %ss", timeout)
         time.sleep(timeout)
         return self
+
+    """Mouse methods"""
 
     def hover(self, target_or_location):
         """
@@ -702,6 +681,20 @@ class Region(object):
         self.dc_backend.mouse_click(self.RIGHT_BUTTON, 1, modifiers)
         return match
 
+    def middle_click(self, target_or_location, modifiers=None):
+        """
+        Click on a target or location using the middle mouse button and
+        optionally holding special keys.
+
+        Arguments and return values are analogical to :py:func:`Region.click`.
+        """
+        match = self.hover(target_or_location)
+        log.info("Right clicking at %s", target_or_location)
+        if modifiers is not None:
+            log.info("Holding the modifiers %s", " ".join(modifiers))
+        self.dc_backend.mouse_click(self.CENTER_BUTTON, 1, modifiers)
+        return match
+
     def double_click(self, target_or_location, modifiers=None):
         """
         Double click on a target or location using the left mouse button
@@ -730,47 +723,57 @@ class Region(object):
         self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
 
-    def click_expect(self, click_image_or_location,
-                     expect_image_or_location=None,
-                     modifiers=None, timeout=60):
+    def click_expect(self, click_image_or_location, expect_target,
+                     modifiers=None, timeout=60, retries=3):
         """
         Click on an image or location and wait for another one to appear.
 
         :param click_image_or_location: image or location to click on
         :type click_image_or_location: Image or Location
-        :param expect_image_or_location: image or location to wait for
-        :type expect_image_or_location: Image or Location or None
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
-        :param int timout: time in seconds to wait for
+        :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
         :returns: match obtained from finding the second target within the region
         :rtype: :py:class:`match.Match`
         """
-        self.click(click_image_or_location, modifiers=modifiers)
-        if expect_image_or_location is None:
-            expect_image_or_location = click_image_or_location
-        return self.wait(expect_image_or_location, timeout)
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the mouse click (%s of %s)", i+1, retries)
+            self.click(click_image_or_location, modifiers=modifiers)
+            try:
+                return self.wait(expect_target, timeout)
+            except FindError as error:
+                if i == retries - 1:
+                    raise error
 
-    def click_vanish(self, click_image_or_location,
-                     expect_image_or_location=None,
-                     modifiers=None, timeout=60):
+    def click_vanish(self, click_image_or_location, expect_target,
+                     modifiers=None, timeout=60, retries=3):
         """
         Click on an image or location and wait for another one to disappear.
 
         :param click_image_or_location: image or location to click on
         :type click_image_or_location: Image or Location
-        :param expect_image_or_location: image or location to wait for
-        :type expect_image_or_location: Image or Location or None
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
         :param modifiers: key modifiers when clicking
         :type modifiers: [Key] or None
-        :param int timout: time in seconds to wait for
-        :returns: whether the second target disappeared from the region
-        :rtype: bool
+        :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
+        :returns: self
+        :rtype: :py:class:`Region`
         """
-        self.click(click_image_or_location, modifiers=modifiers)
-        if expect_image_or_location is None:
-            expect_image_or_location = click_image_or_location
-        return self.wait_vanish(expect_image_or_location, timeout)
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the mouse click (%s of %s)", i+1, retries)
+            self.click(click_image_or_location, modifiers=modifiers)
+            try:
+                return self.wait_vanish(expect_target, timeout)
+            except NotFindError as error:
+                if i == retries - 1:
+                    raise error
 
     def click_at_index(self, anchor, index=0, find_number=3, timeout=10):
         """
@@ -1014,6 +1017,58 @@ class Region(object):
             keys_list.append(key)
         return keys_list
 
+    def press_expect(self, keys, expect_target, timeout=60, retries=3):
+        """
+        Press a key and wait for a target to appear.
+
+        :param keys: characters or special keys depending on the backend
+                     (see :py:class:`inputmap.Key` for extensive list)
+        :type keys: [str] or str (possibly special keys in both cases)
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
+        :param modifiers: key modifiers when clicking
+        :type modifiers: [Key] or None
+        :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
+        :returns: match obtained from finding the second target within the region
+        :rtype: :py:class:`match.Match`
+        """
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the key press (%s of %s)", i+1, retries)
+            self.press_keys(keys)
+            try:
+                return self.wait(expect_target, timeout)
+            except FindError as error:
+                if i == retries - 1:
+                    raise error
+
+    def press_vanish(self, keys, expect_target, timeout=60, retries=3):
+        """
+        Press a key and wait for a target to disappear.
+
+        :param keys: characters or special keys depending on the backend
+                     (see :py:class:`inputmap.Key` for extensive list)
+        :type keys: [str] or str (possibly special keys in both cases)
+        :param expect_target: target to wait for
+        :type expect_target: :type target: str or :py:class:`target.Target`
+        :param modifiers: key modifiers when clicking
+        :type modifiers: [Key] or None
+        :param int timeout: time in seconds to wait for
+        :param int retries: number of retries to reach expected target behavior
+        :returns: self
+        :rtype: :py:class:`Region`
+        """
+        for i in range(retries):
+            if i > 0:
+                log.info("Retrying the key press (%s of %s)", i+1, retries)
+            self.press_keys(keys)
+            try:
+                return self.wait_vanish(expect_target, timeout)
+            except NotFindError as error:
+                if i == retries - 1:
+                    raise error
+
     def type_text(self, text, modifiers=None):
         """
         Type a list of consecutive character keys (without special keys).
@@ -1085,13 +1140,37 @@ class Region(object):
         return text_list
 
     """Mixed (form) methods"""
+    def click_at(self, anchor, dx, dy, count=1):
+        """
+        Clicks on a relative location using a displacement from an anchor.
+
+        :param anchor: target of reference for relative location
+        :type anchor: :py:class:`Match` or :py:class:`Location` or :py:class:`Target` or str
+        :param int dx: displacement from the anchor in the x direction
+        :param int dy: displacement from the anchor in the y direction
+        :param int count: 0, 1, 2, ... clicks on the relative location
+        :returns: self
+        :rtype: :py:class:`Region`
+        :raises: :py:class:`exceptions.ValueError` if `count` is not acceptable value
+        """
+        from .match import Match
+        if isinstance(anchor, Match):
+            start_loc = anchor.target
+        elif isinstance(anchor, Location):
+            start_loc = anchor
+        else:
+            start_loc = self.hover(anchor).target
+
+        loc = Location(start_loc.x + dx, start_loc.y + dy)
+        self.multi_click(loc, count=count)
+
+        return self
 
     def fill_at(self, anchor, text, dx, dy,
                 del_flag=True, esc_flag=True,
                 mark_clicks=1):
         """
-        Fills a new text at a text box with variable content
-        using an anchor image and a displacement from that image.
+        Fills a new text at a text box using a displacement from an anchor.
 
         :param anchor: target of reference for the input field
         :type anchor: :py:class:`Match` or :py:class:`Location` or :py:class:`Target` or str
@@ -1118,15 +1197,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not text:
             return
-        from .match import Match
-        if isinstance(anchor, Match):
-            start_loc = anchor.target
-        elif isinstance(anchor, Location):
-            start_loc = anchor
-        else:
-            start_loc = self.hover(anchor).target
-        loc = Location(start_loc.x + dx, start_loc.y + dy)
-        self.multi_click(loc, count=mark_clicks)
+        self.click_at(anchor, dx, dy, count=mark_clicks)
 
         if isinstance(text, str):
             text = [text]
@@ -1178,15 +1249,7 @@ class Region(object):
         # NOTE: handle cases of empty value no filling anything
         if not image_or_index:
             return
-        from .match import Match
-        if isinstance(anchor, Match):
-            start_loc = anchor.target
-        elif isinstance(anchor, Location):
-            start_loc = anchor
-        else:
-            start_loc = self.hover(anchor).target
-        loc = Location(start_loc.x + dx, start_loc.y + dy)
-        self.multi_click(loc, count=mark_clicks)
+        self.click_at(anchor, dx, dy, count=mark_clicks)
 
         # make sure the dropdown options appear
         time.sleep(1)
@@ -1213,6 +1276,7 @@ class Region(object):
             # which is 0, implying empty space repeated in the dropdown box and the
             # list, therefore a total of 2 option heights spanning the haystack height.
             # The haystack y displacement relative to 'loc' is then 1/2*1/2*dh
+            loc = self.get_mouse_location()
             dropdown_haystack = Region(xpos=int(loc.x - dw / 2),
                                        ypos=int(loc.y - dh / 4),
                                        width=dw, height=dh,
