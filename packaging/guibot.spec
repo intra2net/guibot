@@ -61,7 +61,7 @@ pushd packaging
 %{__python3} setup.py install --root %{buildroot}
 popd
 %{__install} -d %{buildroot}%{python3_sitelib}/guibot/tests/images
-%{__install} -d %{buildroot}%{python3_sitelib}/guibot/misc/tessdata
+%{__install} -d %{buildroot}%{python3_sitelib}/guibot/misc
 %{__cp} -a tests/* %{buildroot}%{python3_sitelib}/guibot/tests
 %{__cp} -a misc/* %{buildroot}%{python3_sitelib}/guibot/misc
 
