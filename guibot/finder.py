@@ -2002,19 +2002,22 @@ class TextFinder(ContourFinder):
 
         import cv2
         datapath = self.params["text"]["datapath"].value
+        tessdata_path = os.path.join(datapath, "tessdata")
+        if not os.path.exists(tessdata_path):
+            tessdata_path = os.environ.get("TESSDATA_PREFIX", "./tessdata")
+            if not os.path.exists(tessdata_path):
+                tessdata_path = None
+
         if category == "text" or category in ["contour", "threshold", "threshold2"]:
             # nothing to sync
             return
 
         elif category == "tdetect" and backend == "pytesseract":
-            tessdata_path = os.path.join(datapath, "tessdata")
-            if not os.path.exists(tessdata_path):
-                tessdata_path = os.environ.get("TESSDATA_PREFIX", ".")
-
             import pytesseract
             self.tbox = pytesseract
-            self.tbox_config = r"--tessdata-dir %s --oem %s --psm %s "
-            self.tbox_config %= (tessdata_path,
+            tessdata_dir = "--tessdata-dir '" + tessdata_path + "'" if tessdata_path else ""
+            self.tbox_config = r"%s --oem %s --psm %s "
+            self.tbox_config %= (tessdata_dir,
                                  self.params["tdetect"]["oem"].value,
                                  self.params["tdetect"]["psmode"].value)
             self.tbox_config += r"-c tessedit_char_whitelist='%s' %s batch.nochop wordstrbox"
@@ -2038,15 +2041,12 @@ class TextFinder(ContourFinder):
             return
 
         elif category == "ocr":
-            tessdata_path = os.path.join(datapath, "tessdata")
-            if not os.path.exists(tessdata_path):
-                tessdata_path = os.environ.get("TESSDATA_PREFIX", ".")
-
             if backend == "pytesseract":
                 import pytesseract
                 self.ocr = pytesseract
-                self.ocr_config = r"--tessdata-dir '%s' --oem %s --psm %s "
-                self.ocr_config %= (tessdata_path,
+                tessdata_dir = "--tessdata-dir '" + tessdata_path + "'" if tessdata_path else ""
+                self.ocr_config = r"%s --oem %s --psm %s "
+                self.ocr_config %= (tessdata_dir,
                                     self.params["ocr"]["oem"].value,
                                     self.params["ocr"]["psmode"].value)
                 self.ocr_config += r"-c tessedit_char_whitelist='%s' %s"
@@ -2054,17 +2054,23 @@ class TextFinder(ContourFinder):
                                     self.params["ocr"]["extra_configs"].value)
             elif backend == "tesserocr":
                 from tesserocr import PyTessBaseAPI
-                self.ocr = PyTessBaseAPI(path=tessdata_path,
-                                         lang=self.params["ocr"]["language"].value,
-                                         oem=self.params["ocr"]["oem"].value,
-                                         psm=self.params["ocr"]["psmode"].value)
+                kwargs = {"lang": self.params["ocr"]["language"].value,
+                          "oem": self.params["ocr"]["oem"].value,
+                          "psm": self.params["ocr"]["psmode"].value}
+                if tessdata_path:
+                    self.ocr = PyTessBaseAPI(path=tessdata_path, **kwargs)
+                else:
+                    self.ocr = PyTessBaseAPI(**kwargs)
                 self.ocr.SetVariable("tessedit_char_whitelist", self.params["ocr"]["char_whitelist"].value)
             elif backend == "tesseract":
-                self.ocr = cv2.text.OCRTesseract_create(tessdata_path,
-                                                        language=self.params["ocr"]["language"].value,
-                                                        char_whitelist=self.params["ocr"]["char_whitelist"].value,
-                                                        oem=self.params["ocr"]["oem"].value,
-                                                        psmode=self.params["ocr"]["psmode"].value)
+                kwargs = {"language": self.params["ocr"]["language"].value,
+                          "char_whitelist": self.params["ocr"]["char_whitelist"].value,
+                          "oem": self.params["ocr"]["oem"].value,
+                          "psmode": self.params["ocr"]["psmode"].value}
+                if tessdata_path:
+                    self.ocr = cv2.text.OCRTesseract_create(datapath, **kwargs)
+                else:
+                    self.ocr = cv2.text.OCRTesseract_create(**kwargs)
             elif backend in ["hmm", "beamSearch"]:
 
                 import numpy
