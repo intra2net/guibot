@@ -2019,7 +2019,7 @@ class TextFinder(ContourFinder):
             if backend == "pytesseract":
                 import pytesseract
                 self.ocr = pytesseract
-                self.ocr_config = r"--tessdata-dir %s --oem %s --psm %s "
+                self.ocr_config = r"--tessdata-dir '%s' --oem %s --psm %s "
                 self.ocr_config %= (tessdata_path,
                                     self.params["ocr"]["oem"].value,
                                     self.params["ocr"]["psmode"].value)
