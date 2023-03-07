@@ -1054,5 +1054,15 @@ class CVParameterTest(unittest.TestCase):
         parsed = CVParameter.from_string("<value='123456789.' min='None' max='None' delta='1030.25' tolerance='10.2' fixed='False' enumerated='False'>")
         self.assertEqual(parsed, expected)
 
+    def test_empty_value(self):
+        """Check that the parser handles empty CVParameter value gracefully."""
+        expected = CVParameter(
+            "", min_val=None, max_val=None, delta=10.0,
+            tolerance=1.0, fixed=True, enumerated=False
+        )
+        parsed = CVParameter.from_string("<value='' min='None' max='None' delta='10.0' tolerance='1.0' fixed='True' enumerated='False'>")
+        self.assertEqual(parsed, expected)
+
+
 if __name__ == '__main__':
     unittest.main()
