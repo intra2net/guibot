@@ -1198,6 +1198,8 @@ class Region(object):
         if not text:
             return
         self.click_at(anchor, dx, dy, count=mark_clicks)
+        # make sure any highlighting is given enough time
+        self.idle(1)
 
         if isinstance(text, str):
             text = [text]
@@ -1250,9 +1252,9 @@ class Region(object):
         if not image_or_index:
             return
         self.click_at(anchor, dx, dy, count=mark_clicks)
-
         # make sure the dropdown options appear
-        time.sleep(1)
+        self.idle(1)
+
         if isinstance(image_or_index, int):
             move_key = self.UP if image_or_index < 0 else self.DOWN
             for _ in range(abs(image_or_index)):
