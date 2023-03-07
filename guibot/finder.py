@@ -138,7 +138,7 @@ class CVParameter(object):
         :raises: :py:class:`ValueError` if unsupported type is encountered
         """
         args = []
-        string_args = re.match(r"<value='(.+)' min='(-?[\d.None]+)' max='([\d.None]+)'"
+        string_args = re.match(r"<value='(.*)' min='(-?[\d.None]+)' max='([\d.None]+)'"
                                r" delta='([\d.]+)' tolerance='([\d.]+)' fixed='(\w+)' enumerated='(\w+)'>",
                                raw).group(1, 2, 3, 4, 5, 6)
 
