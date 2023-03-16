@@ -1868,6 +1868,7 @@ class TextFinder(ContourFinder):
                 # 13 different page segmentation modes - see Tesseract API
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 self.params[category]["extra_configs"] = CVParameter("")
+                self.params[category]["binarize_detection"] = CVParameter(False)
                 self.params[category]["recursion_height"] = CVParameter(0.3, 0.0, 1.0, 0.01)
                 self.params[category]["recursion_width"] = CVParameter(0.3, 0.0, 1.0, 0.01)
             elif backend == "east":
@@ -2280,13 +2281,22 @@ class TextFinder(ContourFinder):
     def _detect_text_boxes(self, haystack):
         import cv2
         import numpy
-        char_canvas = numpy.array(haystack.pil_image)
+
+        detection_img = numpy.array(haystack.pil_image)
+        if self.params["tdetect"]["binarize_detection"].value:
+            detection_img = self._binarize_image(detection_img)
+        else:
+            detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
+        detection_width = int(self.params["tdetect"]["recursion_width"].value * haystack.width)
+        detection_height = int(self.params["tdetect"]["recursion_height"].value * haystack.height)
+
+        char_canvas = detection_img
         text_canvas = numpy.array(haystack.pil_image)
         self.imglog.hotmaps.append(char_canvas)
         self.imglog.hotmaps.append(text_canvas)
 
         text_regions = []
-        recursive_regions = [(0, 0, numpy.array(haystack.pil_image))]
+        recursive_regions = [(0, 0, detection_img)]
         while len(recursive_regions) > 0:
             offset_x, offset_y, next_region = recursive_regions.pop()
             region_w, region_h = next_region.shape[1], next_region.shape[0]
@@ -2309,9 +2319,7 @@ class TextFinder(ContourFinder):
                 if text == "":
                     logging.debug("Empty text found, skipping region")
                     continue
-                recursion_width = self.params["tdetect"]["recursion_width"].value * haystack.width
-                recursion_height = self.params["tdetect"]["recursion_height"].value * haystack.height
-                if (w > recursion_width and h > 0) or (h > recursion_height and w > 0):
+                if (w > detection_width and h > 0) or (h > detection_height and w > 0):
                     subregion_npy = next_region[max(dy, 0):min(dy+h, region_h),
                                                 max(dx, 0):min(dx+w, region_w)]
                     if next_region.shape != subregion_npy.shape:
