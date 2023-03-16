@@ -2313,6 +2313,10 @@ class TextFinder(ContourFinder):
             offset_x, offset_y, next_region = recursive_regions.pop()
             region_w, region_h = next_region.shape[1], next_region.shape[0]
 
+            # TODO: activate flag for word-only matching if there is enough interest for this
+            #output = self.tbox.image_to_boxes(next_region, self.params["tdetect"]["language"].value,
+            #                                  config=self.tbox_config, output_type=self.tbox.Output.DICT)
+            # ...process dict
             output = self.tbox.run_and_get_output(next_region, 'box',
                                                   self.params["tdetect"]["language"].value,
                                                   config=self.tbox_config)
