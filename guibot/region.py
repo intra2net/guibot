@@ -545,11 +545,11 @@ class Region(object):
                   or nothing if no match is found
         :rtype: :py:class:`match.Match` or None
         """
-        log.debug("Checking if %s is present", target)
+        log.info("Checking if %s is present", target)
         try:
             return self.find(target, timeout)
         except FindError:
-            pass
+            log.info("%s is not present", target)
         return None
 
     def wait(self, target, timeout=30):
