@@ -223,7 +223,7 @@ class Controller(LocalConfig):
                      nothing to obtain an image of the full screen
         :type args: [int] or :py:class:`region.Region` or None
         :returns: image of the current screen
-        :rtype: :py:class:`image.Image`
+        :rtype: :py:class:`target.Image`
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
         raise NotImplementedError("Method is not available for this controller implementation")
