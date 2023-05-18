@@ -87,7 +87,7 @@ class ImageTest(unittest.TestCase):
         new_image = image.with_similarity(0.45)
         self.assertEqual(0.45, new_image.similarity)
         # TODO: create a separate config for defaults to extract this from there
-        self.assertEqual(0.8, image.similarity)
+        self.assertEqual(0.75, image.similarity)
 
         self.assertEqual(image.filename, new_image.filename)
         self.assertNotEqual(image.similarity, new_image.similarity)
