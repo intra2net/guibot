@@ -20,7 +20,7 @@ dnf -y install tesseract tesseract-devel
 dnf -y install gcc-c++
 pip3 install pytesseract==0.3.4 tesserocr==2.5.1
 # deep learning
-pip3 install torch==1.13.0 torchvision==0.14.0
+pip3 install torch==1.13.0 torchvision==0.15.1
 # screen controlling
 if (( distro_version <= 32 )); then
     pip3 install autopy==4.0.0
