@@ -31,7 +31,7 @@ else
     pip3 install pytesseract==0.3.4 tesserocr==2.5.1
 fi
 # deep learning
-pip3 install torch==1.12.0 torchvision==0.13.0
+pip3 install torch==1.13.0 torchvision==0.14.0
 # screen controlling
 pip3 install autopy==4.0.0
 pip3 install vncdotool==0.12.0
