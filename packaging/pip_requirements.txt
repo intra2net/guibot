@@ -8,7 +8,7 @@ pytesseract==0.3.4; sys_platform != 'win32'
 tesserocr==2.5.1; sys_platform != 'win32'
 opencv-contrib-python==4.5.5.62; platform_python_implementation != "PyPy"
 torch==1.13.0; 'generic' not in platform_release and platform_python_implementation != "PyPy"
-torchvision==0.15.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
+torchvision==0.14.0; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
 pyautogui==0.9.53; platform_python_implementation != "PyPy"
 
