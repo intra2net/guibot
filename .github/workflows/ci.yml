@@ -20,7 +20,7 @@ jobs:
         python-version: [3.7, 3.8, 3.9, 3.10.8, 3.11]
         install_variant: ["pip"]
         include:
-        - python-version: 3.11
+        - python-version: 3.10.8
           install_variant: "rpm.fedora.34"
         - python-version: 3.7
           install_variant: "deb.ubuntu.focal"

@@ -12,7 +12,8 @@ readonly release_tag="${RELEASE_TAG:-}"
 
 # disable tests and support of backends based on python versions
 if [[ $python_version == '3.9' ]]; then export DISABLE_AUTOPY=1; fi
-
+if [[ $python_version == '3.10.8' ]]; then export DISABLE_AUTOPY=1; fi
+if [[ $python_version == '3.11' ]]; then export DISABLE_AUTOPY=1; fi
 # environment dependencies not provided by pip
 # python3
 
