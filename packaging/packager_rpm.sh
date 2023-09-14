@@ -31,7 +31,7 @@ pip3 install vncdotool==0.12.0
 dnf -y install xdotool xwd ImageMagick
 # NOTE: PyAutoGUI's scrot dependencies are broken on Fedora 33- so we don't support these
 dnf -y install python3-tkinter scrot
-pip3 install pyautogui==0.9.53
+pip3 install pyautogui==0.9.41
 dnf -y install x11vnc
 
 # rpm packaging and installing of current guibot source
