@@ -1,5 +1,7 @@
 # minimal
 Pillow==9.0.0; python_version >= '3.7'
+torch==1.13.0; python_version == '3.7'
+torchvision==0.14.0; python_version == '3.7'
 
 # backends
 autopy==4.0.0; python_version <= '3.8' and platform_python_implementation != "PyPy"
