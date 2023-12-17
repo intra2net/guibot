@@ -11,16 +11,16 @@ readonly python_version="${PYTHON_VERSION:-3.8}"
 readonly release_tag="${RELEASE_TAG:-}"
 
 # disable tests and support of backends based on python versions
-if [[ $python_version == '3.9' ]]; then export DISABLE_AUTOPY=1; fi
-if [[ $python_version == '3.10.8' ]]; then export DISABLE_AUTOPY=1; fi
-if [[ $python_version == '3.11' ]]; then export DISABLE_AUTOPY=1; fi
+if [[ "$python_version" == '3.9' ]]; then export DISABLE_AUTOPY=1; fi
+if [[ "$python_version" == '3.10.8' ]]; then export DISABLE_AUTOPY=1; fi
+if [[ "$python_version" == '3.11' ]]; then export DISABLE_AUTOPY=1; fi
 # environment dependencies not provided by pip
 # python3
 
-if [[ $python_version == '3.9' ]]; then dnf -y install python39 python39-devel; fi
-if [[ $python_version == '3.8' ]]; then dnf -y install python38 python38-devel; fi
-if [[ $python_version == '3.7' ]]; then dnf -y install python37 python37-devel; fi
-if [[ $python_version == '3.6' ]]; then dnf -y install python36 python36-devel; fi
+if [[ "$python_version" == '3.9' ]]; then dnf -y install python39 python39-devel; fi
+if [[ "$python_version" == '3.8' ]]; then dnf -y install python38 python38-devel; fi
+if [[ "$python_version" == '3.7' ]]; then dnf -y install python37 python37-devel; fi
+if [[ "$python_version" == '3.6' ]]; then dnf -y install python36 python36-devel; fi
 alternatives --install /usr/bin/python3 python3 /usr/bin/python${python_version} 60 \
              --slave /usr/bin/pip3 pip3 /usr/bin/pip${python_version}
 alternatives --set python3 /usr/bin/python${python_version}
