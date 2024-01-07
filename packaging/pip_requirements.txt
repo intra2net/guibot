@@ -1,5 +1,5 @@
 # minimal
-Pillow==8.1.2; python_version >= '3.7'
+Pillow==9.2.0; python_version >= '3.7'
 torch==1.13.0; python_version == '3.7'
 torchvision==0.14.0; python_version == '3.7'
 
