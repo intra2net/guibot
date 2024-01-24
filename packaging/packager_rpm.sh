@@ -9,7 +9,7 @@ readonly distro_root="${ROOT:-$HOME}"
 # python3
 dnf -y install python3 python3-coverage
 # python-imaging
-dnf -y install python3-pillow
+dnf -y install python3-pillow-9.3.0
 # pip dependencies (for dependencies not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
 pip3 install --upgrade pip
