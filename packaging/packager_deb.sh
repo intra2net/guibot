@@ -12,7 +12,7 @@ apt-get update
 apt-get -y install python3 python3-coverage
 # python-imaging
 apt-get -y install python3-pil
-apt-get install python3-pillow=9.3.0
+apt-get install python3-pillow=9.3
 # pip dependencies (for dependencies not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
 pip3 install --upgrade pip
