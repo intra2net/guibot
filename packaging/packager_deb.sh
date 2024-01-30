@@ -13,6 +13,7 @@ apt-get -y install python3 python3-coverage
 # python-imaging
 apt-get -y install python3-pip
 pip3 install --upgrade pip
+pip3 install pyscreeze
 apt-get -y install python3-pil
 apt-get install python3-pillow
 pip3 install --upgrade Pillow

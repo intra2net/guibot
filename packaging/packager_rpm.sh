@@ -14,6 +14,7 @@ dnf -y install python3-pip
 pip3 install --upgrade pip
 pip3 install Pillow
 pip3 install --upgrade Pillow
+pip3 install pyscreeze
 # pip dependencies (for dependencies not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
 pip3 install --upgrade pip
