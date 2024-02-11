@@ -10,13 +10,15 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 # python3
 apt-get -y install python3 python3-coverage
+#python version
+python3 --version
 # python-imaging
 apt-get -y install python3-pip
 pip3 install --upgrade pip
 pip3 install pyscreeze
 apt-get -y install python3-pil
 apt-get install python3-pillow
-pip3 install --upgrade Pillow
+# pip3 install --upgrade Pillow 
 # pip dependencies (for dependencies not available as DEB)
 apt-get -y install gcc libx11-dev libxtst-dev python3-dev libpng-dev python3-pip
 pip3 install --upgrade pip

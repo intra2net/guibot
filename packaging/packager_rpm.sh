@@ -8,6 +8,8 @@ readonly distro_root="${ROOT:-$HOME}"
 # rpm dependencies
 # python3
 dnf -y install python3 python3-coverage
+#python version
+python3 --version
 # python-imaging
 # dnf -y install python3-pillow
 dnf -y install python3-pip
