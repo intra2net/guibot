@@ -6,11 +6,16 @@ readonly distro_version="${VERSION:-30}"
 readonly distro_root="${ROOT:-$HOME}"
 
 # rpm dependencies
+echo "${distro}"
+echo "${distro_version}"
+echo "${distro}"
 # python3
 dnf -y install python3 python3-coverage
 #python version
+echo "python ver"
 python3 --version
 # python-imaging
+echo "python img"
 # dnf -y install python3-pillow
 dnf -y install python3-pip
 pip3 install --upgrade pip
