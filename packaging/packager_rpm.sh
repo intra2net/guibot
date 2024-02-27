@@ -10,7 +10,8 @@ echo "${distro}"
 echo "${distro_version}"
 echo "${distro}"
 # python3
-dnf -y install python3 python3-coverage
+# dnf -y install python3 python3-coverage
+dnf -y install python3-3.10.8 python3-coverage
 #python version
 echo "python ver"
 python3 --version
