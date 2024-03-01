@@ -21,7 +21,7 @@ jobs:
         install_variant: ["pip"]
         include:
         - python-version: 3.10.8
-          install_variant: "rpm.fedora.34"
+          install_variant: "rpm.fedora.39"
         - python-version: 3.7
           install_variant: "deb.ubuntu.focal"
       fail-fast: false
@@ -75,7 +75,7 @@ jobs:
       - name: Run current semi-isolation semi-integration tests (to be separated in the future)
         run: |
           if [[ ${{ matrix.python-version }} == '3.9' ]]; then export DISABLE_AUTOPY=1; fi
-          if [[ ${{ matrix.python-version }} == '3.10.8' ]] && [[ ${{ matrix.install_variant }} != 'rpm.fedora.34' ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ ${{ matrix.python-version }} == '3.10.8' ]]; then export DISABLE_AUTOPY=1; fi
           if [[ ${{ matrix.python-version }} == '3.11' ]]; then export DISABLE_AUTOPY=1; fi
           if [[ ${{ matrix.install_variant }} != "pip" ]]; then cd packaging && bash packager_docker.sh;
           else cd tests && bash coverage_analysis.sh; fi

@@ -13,16 +13,10 @@ dnf -y install python3
 echo "Python COVERAGE installation"
 dnf -y install python3-coverage
 #python version
-echo "python ver"
 python3 --version
 # python-imaging
 echo "python img"
-# dnf -y install python3-pillow
-dnf -y install python3-pip
-pip3 install --upgrade pip
-pip3 install Pillow
-pip3 install --upgrade Pillow
-pip3 install pyscreeze
+dnf -y install python3-pillow
 # pip dependencies (for dependencies not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
 pip3 install --upgrade pip
