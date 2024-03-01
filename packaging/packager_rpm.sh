@@ -40,8 +40,8 @@ dnf -y install xdotool xwd ImageMagick
 dnf -y install python3-tkinter scrot
 pip3 install pyautogui==0.9.53
 # Python Packages checks
-echo "Python Packages checks" 
-pip3 list
+echo "PYTHON PACKAGE CHECK" 
+pip3 show pyautogui
 echo "------------------------------------------" 
 dnf -y install x11vnc
 
