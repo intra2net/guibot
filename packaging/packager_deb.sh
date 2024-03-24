@@ -10,8 +10,6 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 # python3
 apt-get -y install python3 python3-coverage
-#python version
-python3 --version
 # python-imaging
 apt-get -y install python3-pil
 # pip dependencies (for dependencies not available as DEB)
@@ -33,7 +31,7 @@ else
     pip3 install pytesseract==0.3.4 tesserocr==2.5.1
 fi
 # deep learning
-pip3 install torch==2.0.1 torchvision==0.15.2
+pip3 install torch==1.8.1 torchvision==0.9.1
 # screen controlling
 pip3 install autopy==4.0.0
 pip3 install vncdotool==0.12.0

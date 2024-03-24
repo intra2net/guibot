@@ -7,15 +7,8 @@ readonly distro_root="${ROOT:-$HOME}"
 
 # rpm dependencies
 # python3
-# dnf -y install python3 python3-coverage
-echo "Python installation"
-dnf -y install python3 
-echo "Python COVERAGE installation"
-dnf -y install python3-coverage
-#python version
-python3 --version
+dnf -y install python3 python3-coverage
 # python-imaging
-echo "python img"
 dnf -y install python3-pillow
 # pip dependencies (for dependencies not available as RPM)
 dnf -y install gcc libX11-devel libXtst-devel python3-devel libpng-devel python3-pip redhat-rpm-config
@@ -27,8 +20,7 @@ dnf -y install tesseract tesseract-devel
 dnf -y install gcc-c++
 pip3 install pytesseract==0.3.4 tesserocr==2.5.1
 # deep learning
-
-pip3 install torch==2.0.1 torchvision==0.15.2
+pip3 install torch==1.8.1 torchvision==0.9.1
 # screen controlling
 if (( distro_version <= 32 )); then
     pip3 install autopy==4.0.0
@@ -40,10 +32,6 @@ dnf -y install xdotool xwd ImageMagick
 # NOTE: PyAutoGUI's scrot dependencies are broken on Fedora 33- so we don't support these
 dnf -y install python3-tkinter scrot
 pip3 install pyautogui==0.9.53
-# Python Packages checks
-echo "PYTHON PACKAGE CHECK" 
-pip3 show pyautogui
-echo "------------------------------------------" 
 dnf -y install x11vnc
 
 # rpm packaging and installing of current guibot source
