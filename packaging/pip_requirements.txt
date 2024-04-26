@@ -1,6 +1,6 @@
 # minimal
-Pillow==8.2.0; python_version == '3.6'
-Pillow==9.0.0; python_version >= '3.7'
+Pillow==9.3.0; python_version >= '3.7' and python_version < '3.12'
+Pillow==10.3.0; python_version >= '3.12'
 
 # backends
 autopy==4.0.0; python_version <= '3.8' and platform_python_implementation != "PyPy"
@@ -8,10 +8,14 @@ autopy==4.0.0; python_version <= '3.8' and platform_python_implementation != "Py
 pytesseract==0.3.4; sys_platform != 'win32'
 tesserocr==2.5.1; sys_platform != 'win32'
 opencv-contrib-python==4.5.5.62; platform_python_implementation != "PyPy"
-torch==1.8.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
-torchvision==0.9.1; 'generic' not in platform_release and platform_python_implementation != "PyPy"
+torch==1.13.0; python_version == '3.7'
+torchvision==0.14.0; python_version == '3.7'
+torch==2.2.0; python_version != '3.7' and 'generic' not in platform_release and platform_python_implementation != "PyPy"
+torchvision==0.17.0 ; python_version != '3.7' and 'generic' not in platform_release and platform_python_implementation != "PyPy"
 vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
 pyautogui==0.9.53; platform_python_implementation != "PyPy"
+# NOTE: These decared version of Pillow has issues with the latest Pyscreeze 0.1.30 thus there is a restrain on Pyscreeze installation
+pyscreeze==0.1.28
 
 # optional proxy guibot interface deps
 serpent==1.40

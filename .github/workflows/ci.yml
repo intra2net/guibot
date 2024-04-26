@@ -17,7 +17,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9, 3.10.8, 3.11, 3.12]
         install_variant: ["pip"]
         include:
         - python-version: 3.10.8
@@ -75,6 +75,9 @@ jobs:
       - name: Run current semi-isolation semi-integration tests (to be separated in the future)
         run: |
           if [[ ${{ matrix.python-version }} == '3.9' ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ ${{ matrix.python-version }} == '3.10.8' ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ ${{ matrix.python-version }} == '3.11' ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ ${{ matrix.python-version }} == '3.12' ]]; then export DISABLE_AUTOPY=1; fi
           if [[ ${{ matrix.install_variant }} != "pip" ]]; then cd packaging && bash packager_docker.sh;
           else cd tests && bash coverage_analysis.sh; fi
         env:
