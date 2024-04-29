@@ -1869,6 +1869,7 @@ class TextFinder(ContourFinder):
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 self.params[category]["extra_configs"] = CVParameter("")
                 self.params[category]["binarize_detection"] = CVParameter(False)
+                self.params[category]["segment_line_max"] = CVParameter(1, 1, None, 1.0)
                 self.params[category]["recursion_height"] = CVParameter(0.3, 0.0, 1.0, 0.01)
                 self.params[category]["recursion_width"] = CVParameter(0.3, 0.0, 1.0, 0.01)
             elif backend == "east":
@@ -2285,6 +2286,17 @@ class TextFinder(ContourFinder):
         detection_img = numpy.array(haystack.pil_image)
         if self.params["tdetect"]["binarize_detection"].value:
             detection_img = self._binarize_image(detection_img)
+
+            # remove segment line residue from thresholding text containing boxes (GUI elements)
+            max_segment = self.params["tdetect"]["segment_line_max"].value
+            for i in range(1, max_segment):
+                hline = cv2.getStructuringElement(cv2.MORPH_RECT, (max_segment, i))
+                hlopened = cv2.morphologyEx(detection_img, cv2.MORPH_OPEN, hline, iterations=1)
+                vline = cv2.getStructuringElement(cv2.MORPH_RECT, (i, max_segment))
+                vlopened = cv2.morphologyEx(detection_img, cv2.MORPH_OPEN, vline, iterations=1)
+                detection_img -= hlopened
+                detection_img -= vlopened
+
         else:
             detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
         detection_width = int(self.params["tdetect"]["recursion_width"].value * haystack.width)
