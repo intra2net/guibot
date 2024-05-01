@@ -2,6 +2,6 @@ guibot.region module
 ====================
 
 .. automodule:: guibot.region
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

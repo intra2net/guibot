@@ -1799,7 +1799,7 @@ class TextFinder(ContourFinder):
         self.categories["threshold2"] = "threshold_filters2"
         self.categories["threshold3"] = "threshold_filters3"
         self.algorithms["text_matchers"] = ("mixed",)
-        self.algorithms["text_detectors"] = ("east", "erstat", "contours", "components")
+        self.algorithms["text_detectors"] = ("pytesseract", "east", "erstat", "contours", "components")
         self.algorithms["text_recognizers"] = ("pytesseract", "tesserocr", "tesseract", "hmm", "beamSearch")
         self.algorithms["threshold_filters2"] = tuple(self.algorithms["threshold_filters"])
         self.algorithms["threshold_filters3"] = tuple(self.algorithms["threshold_filters"])
@@ -1858,7 +1858,21 @@ class TextFinder(ContourFinder):
         if category == "text":
             self.params[category]["datapath"] = CVParameter("../misc")
         elif category == "tdetect":
-            if backend == "east":
+            if backend == "pytesseract":
+                # eng, deu, etc. (ISO 639-3)
+                self.params[category]["language"] = CVParameter("eng")
+                self.params[category]["char_whitelist"] = CVParameter(" 0123456789abcdefghijklmnopqrst"
+                                                                      "uvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
+                self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
+                # 13 different page segmentation modes - see Tesseract API
+                self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
+                self.params[category]["extra_configs"] = CVParameter("")
+                self.params[category]["binarize_detection"] = CVParameter(False)
+                self.params[category]["segment_line_max"] = CVParameter(1, 1, None, 1.0)
+                self.params[category]["recursion_height"] = CVParameter(0.3, 0.0, 1.0, 0.01)
+                self.params[category]["recursion_width"] = CVParameter(0.3, 0.0, 1.0, 0.01)
+            elif backend == "east":
                 # network input dimensions - must be divisible by 32, however currently only
                 # 320x320 doesn't error out from the OpenCV implementation
                 self.params[category]["input_res_x"] = CVParameter(320, 32, None, 32.0)
@@ -1990,10 +2004,27 @@ class TextFinder(ContourFinder):
 
         import cv2
         datapath = self.params["text"]["datapath"].value
+        tessdata_path = os.path.join(datapath, "tessdata")
+        if not os.path.exists(tessdata_path):
+            tessdata_path = os.environ.get("TESSDATA_PREFIX", "./tessdata")
+            if not os.path.exists(tessdata_path):
+                tessdata_path = None
+
         if category == "text" or category in ["contour", "threshold", "threshold2"]:
             # nothing to sync
             return
 
+        elif category == "tdetect" and backend == "pytesseract":
+            import pytesseract
+            self.tbox = pytesseract
+            tessdata_dir = "--tessdata-dir '" + tessdata_path + "'" if tessdata_path else ""
+            self.tbox_config = r"%s --oem %s --psm %s "
+            self.tbox_config %= (tessdata_dir,
+                                 self.params["tdetect"]["oem"].value,
+                                 self.params["tdetect"]["psmode"].value)
+            self.tbox_config += r"-c tessedit_char_whitelist='%s' %s batch.nochop wordstrbox"
+            self.tbox_config %=  (self.params["tdetect"]["char_whitelist"].value,
+                                  self.params["tdetect"]["extra_configs"].value)
         elif category == "tdetect" and backend == "east":
             self.east_net = cv2.dnn.readNet(os.path.join(datapath, 'frozen_east_text_detection.pb'))
         elif category == "tdetect" and backend == "erstat":
@@ -2012,15 +2043,12 @@ class TextFinder(ContourFinder):
             return
 
         elif category == "ocr":
-            tessdata_path = os.path.join(datapath, "tessdata")
-            if not os.path.exists(tessdata_path):
-                tessdata_path = os.environ.get("TESSDATA_PREFIX", ".")
-
             if backend == "pytesseract":
                 import pytesseract
                 self.ocr = pytesseract
-                self.ocr_config = r"--tessdata-dir '%s' --oem %s --psm %s "
-                self.ocr_config %= (tessdata_path,
+                tessdata_dir = "--tessdata-dir '" + tessdata_path + "'" if tessdata_path else ""
+                self.ocr_config = r"%s --oem %s --psm %s "
+                self.ocr_config %= (tessdata_dir,
                                     self.params["ocr"]["oem"].value,
                                     self.params["ocr"]["psmode"].value)
                 self.ocr_config += r"-c tessedit_char_whitelist='%s' %s"
@@ -2028,17 +2056,23 @@ class TextFinder(ContourFinder):
                                     self.params["ocr"]["extra_configs"].value)
             elif backend == "tesserocr":
                 from tesserocr import PyTessBaseAPI
-                self.ocr = PyTessBaseAPI(path=tessdata_path,
-                                         lang=self.params["ocr"]["language"].value,
-                                         oem=self.params["ocr"]["oem"].value,
-                                         psm=self.params["ocr"]["psmode"].value)
+                kwargs = {"lang": self.params["ocr"]["language"].value,
+                          "oem": self.params["ocr"]["oem"].value,
+                          "psm": self.params["ocr"]["psmode"].value}
+                if tessdata_path:
+                    self.ocr = PyTessBaseAPI(path=tessdata_path, **kwargs)
+                else:
+                    self.ocr = PyTessBaseAPI(**kwargs)
                 self.ocr.SetVariable("tessedit_char_whitelist", self.params["ocr"]["char_whitelist"].value)
             elif backend == "tesseract":
-                self.ocr = cv2.text.OCRTesseract_create(tessdata_path,
-                                                        language=self.params["ocr"]["language"].value,
-                                                        char_whitelist=self.params["ocr"]["char_whitelist"].value,
-                                                        oem=self.params["ocr"]["oem"].value,
-                                                        psmode=self.params["ocr"]["psmode"].value)
+                kwargs = {"language": self.params["ocr"]["language"].value,
+                          "char_whitelist": self.params["ocr"]["char_whitelist"].value,
+                          "oem": self.params["ocr"]["oem"].value,
+                          "psmode": self.params["ocr"]["psmode"].value}
+                if tessdata_path:
+                    self.ocr = cv2.text.OCRTesseract_create(datapath, **kwargs)
+                else:
+                    self.ocr = cv2.text.OCRTesseract_create(**kwargs)
             elif backend in ["hmm", "beamSearch"]:
 
                 import numpy
@@ -2132,7 +2166,9 @@ class TextFinder(ContourFinder):
         # detect characters and group them into detected text
         backend = self.params["tdetect"]["backend"]
         log.debug("Detecting text with %s", backend)
-        if backend == "east":
+        if backend == "pytesseract":
+            text_regions = self._detect_text_boxes(haystack)
+        elif backend == "east":
             text_regions = self._detect_text_east(haystack)
         elif backend == "erstat":
             text_regions = self._detect_text_erstat(haystack)
@@ -2243,6 +2279,77 @@ class TextFinder(ContourFinder):
         self.imglog.log(30)
         return matches
 
+    def _detect_text_boxes(self, haystack):
+        import cv2
+        import numpy
+
+        detection_img = numpy.array(haystack.pil_image)
+        if self.params["tdetect"]["binarize_detection"].value:
+            detection_img = self._binarize_image(detection_img)
+
+            # remove segment line residue from thresholding text containing boxes (GUI elements)
+            max_segment = self.params["tdetect"]["segment_line_max"].value
+            for i in range(1, max_segment):
+                hline = cv2.getStructuringElement(cv2.MORPH_RECT, (max_segment, i))
+                hlopened = cv2.morphologyEx(detection_img, cv2.MORPH_OPEN, hline, iterations=1)
+                vline = cv2.getStructuringElement(cv2.MORPH_RECT, (i, max_segment))
+                vlopened = cv2.morphologyEx(detection_img, cv2.MORPH_OPEN, vline, iterations=1)
+                detection_img -= hlopened
+                detection_img -= vlopened
+
+        else:
+            detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
+        detection_width = int(self.params["tdetect"]["recursion_width"].value * haystack.width)
+        detection_height = int(self.params["tdetect"]["recursion_height"].value * haystack.height)
+
+        char_canvas = detection_img
+        text_canvas = numpy.array(haystack.pil_image)
+        self.imglog.hotmaps.append(char_canvas)
+        self.imglog.hotmaps.append(text_canvas)
+
+        text_regions = []
+        recursive_regions = [(0, 0, detection_img)]
+        while len(recursive_regions) > 0:
+            offset_x, offset_y, next_region = recursive_regions.pop()
+            region_w, region_h = next_region.shape[1], next_region.shape[0]
+
+            # TODO: activate flag for word-only matching if there is enough interest for this
+            #output = self.tbox.image_to_boxes(next_region, self.params["tdetect"]["language"].value,
+            #                                  config=self.tbox_config, output_type=self.tbox.Output.DICT)
+            # ...process dict
+            output = self.tbox.run_and_get_output(next_region, 'box',
+                                                  self.params["tdetect"]["language"].value,
+                                                  config=self.tbox_config)
+            for line in output.splitlines():
+                tokens = line.rstrip().split(" ", maxsplit=6)
+                if tokens[0] != "WordStr":
+                    continue
+                left = int(tokens[1])
+                bottom = region_h - int(tokens[2])
+                right = int(tokens[3])
+                top = region_h - int(tokens[4])
+                text = tokens[6][1:]
+
+                dx, dy, w, h = left, top, right - left, bottom - top
+                x, y = offset_x + dx, offset_y + dy
+                if text == "":
+                    logging.debug("Empty text found, skipping region")
+                    continue
+                if (w > detection_width and h > 0) or (h > detection_height and w > 0):
+                    subregion_npy = next_region[max(dy, 0):min(dy+h, region_h),
+                                                max(dx, 0):min(dx+w, region_w)]
+                    if next_region.shape != subregion_npy.shape:
+                        logging.debug("Large region of size %sx%s detected, rescanning inside of it", w, h)
+                        recursive_regions.append((x, y, subregion_npy))
+                    continue
+
+                logging.debug("Found text '%s' with tesseract-provided box %s", text, (x, y, w, h))
+                cv2.rectangle(text_canvas, (x, y), (x+w, y+h), (0, 0, 0), 2)
+                cv2.rectangle(text_canvas, (x, y), (x+w, y+h), (0, 255, 0), 1)
+                text_regions.append([x, y, w, h])
+
+        return text_regions
+
     def _detect_text_east(self, haystack):
         #:.. note:: source implementation by Adrian Rosebrock from his post:
         #:   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
@@ -2284,7 +2391,7 @@ class TextFinder(ContourFinder):
                 w = min(row_data[1][col] + row_data[3][col], inp_width) * width_ratio
                 # output layer dimensions are 4x smaller than the input layer dimentions
                 (dx, dy) = (col + 1) * 4.0, (row + 1) * 4.0
-                # calculate the rotation angle from the prediction ouput
+                # calculate the rotation angle from the prediction output
                 sin, cos = numpy.sin(row_data[4][col]), numpy.cos(row_data[4][col])
                 # compute the starting (from ending) coordinates for the text bounding box
                 x2 = min(dx + cos * row_data[1][col] + sin * row_data[2][col], inp_width) * width_ratio

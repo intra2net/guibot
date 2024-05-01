@@ -2,6 +2,6 @@ guibot.imagelogger module
 =========================
 
 .. automodule:: guibot.imagelogger
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

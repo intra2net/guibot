@@ -5,6 +5,7 @@ Submodules
 ----------
 
 .. toctree::
+   :maxdepth: 4
 
    guibot.calibrator
    guibot.config
@@ -28,6 +29,6 @@ Module contents
 ---------------
 
 .. automodule:: guibot
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:
