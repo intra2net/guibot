@@ -14,7 +14,7 @@ torch==2.2.0; python_version != '3.7' and 'generic' not in platform_release and 
 torchvision==0.17.0 ; python_version != '3.7' and 'generic' not in platform_release and platform_python_implementation != "PyPy"
 vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
 pyautogui==0.9.53; platform_python_implementation != "PyPy"
-# NOTE: These decared version of Pillow has issues with the latest Pyscreeze 0.1.30 thus there is a restrain on Pyscreeze installation
+# NOTE: These declared version of Pillow has issues with the latest Pyscreeze 0.1.30 thus there is a restrain on Pyscreeze installation
 pyscreeze==0.1.28
 
 # optional proxy guibot interface deps
