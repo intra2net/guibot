@@ -1,3 +1,10 @@
+guibot (0.51-1) unstable; urgency=medium
+
+  * API improvements like standardization and additional convenience methods.
+  * Support for native (py)tesseract text detection and simpler tessdata setup.
+
+ -- Plamen Dimitrov <plamen.dimitrov@intra2net.com>  Thu, 2 May 2024 13:00:00 +0700
+
 guibot (0.50-1) unstable; urgency=medium
 
   * Windows packager script and CI verification.

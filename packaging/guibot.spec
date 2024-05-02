@@ -3,7 +3,7 @@
 %bcond_with opencv
 
 Name:           guibot
-Version:        0.50
+Version:        0.51
 Release:        1%{?dist}
 Summary:        GUI automation tool
 
@@ -84,6 +84,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu May 2 2024 Plamen Dimitrov <plamen.dimitrov@intra2net.com> - 0.51-1
+- API improvements like standardization and additional convenience methods.
+- Support for native (py)tesseract text detection and simpler tessdata setup.
+
 * Fri Jan 28 2022 Plamen Dimitrov <plamen.dimitrov@intra2net.com> - 0.50-1
 - Windows packager script and CI verification
 - Default PyAutoGUI display controller instead of AutoPy
