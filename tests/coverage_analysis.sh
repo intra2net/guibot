@@ -11,5 +11,5 @@ $coverage run --source="$libpath" -m unittest discover -v -s ../tests/
 $coverage report -m -i
 # codecov is poorly documented and even in verbose mode and various directory changes
 # won't tell us where it runs the xml command and why it ends up not finding it
-$coverage xml
+$coverage xml -i
 if [[ $submit == 1 ]]; then codecov; fi
