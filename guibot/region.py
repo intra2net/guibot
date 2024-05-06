@@ -746,6 +746,7 @@ class Region(object):
             try:
                 return self.wait(expect_target, timeout)
             except FindError as error:
+                self.hover(Location(0, 0))
                 if i == retries - 1:
                     raise error
 
@@ -772,6 +773,7 @@ class Region(object):
             try:
                 return self.wait_vanish(expect_target, timeout)
             except NotFindError as error:
+                self.hover(Location(0, 0))
                 if i == retries - 1:
                     raise error
 
@@ -1220,7 +1222,7 @@ class Region(object):
 
     def select_at(self, anchor, image_or_index, dx, dy,
                   dw=0, dh=0, ret_flag=True,
-                  mark_clicks=1):
+                  mark_clicks=1, tries=3):
         """
         Select an option at a dropdown list using either an integer index
         or an option image if the order cannot be easily inferred.
@@ -1235,6 +1237,7 @@ class Region(object):
         :param int dh: height to add to the displacement for an image search area
         :param bool ret_flag: whether to press Enter after selecting
         :param int mark_clicks: 0, 1, 2, ... clicks to highlight previous text
+        :param int tries: retries if the dropdown menu doesn't open after the initial click
         :returns: self
         :rtype: :py:class:`Region`
 
@@ -1283,6 +1286,14 @@ class Region(object):
                                        ypos=int(loc.y - dh / 4),
                                        width=dw, height=dh,
                                        dc=self.dc_backend, cv=self.cv_backend)
-            dropdown_haystack.click(image_or_index)
+            try:
+                dropdown_haystack.click(image_or_index)
+            except FindError:
+                self.hover(Location(0, 0))
+                if tries == 1:
+                    raise
+                logging.info("Opening the dropdown menu didn't work, retrying")
+                self.select_at(anchor, image_or_index, dx, dy, dw, dh,
+                               mark_clicks=mark_clicks, tries=tries-1)
 
         return self
