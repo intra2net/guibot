@@ -32,7 +32,7 @@ INTERFACE
 class Location(object):
     """Simple location on a 2D surface, region, or screen."""
 
-    def __init__(self, xpos=0, ypos=0):
+    def __init__(self, xpos: int = 0, ypos: int = 0) -> None:
         """
         Build a location object.
 
@@ -42,26 +42,24 @@ class Location(object):
         self._xpos = xpos
         self._ypos = ypos
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide a compact form for the location."""
         return "(%s, %s)" % (self._xpos, self._ypos)
 
-    def get_x(self):
+    def get_x(self) -> int:
         """
         Getter for readonly attribute.
 
         :returns: x coordinate of the location
-        :rtype: int
         """
         return self._xpos
     x = property(fget=get_x)
 
-    def get_y(self):
+    def get_y(self) -> int:
         """
         Getter for readonly attribute.
 
         :returns: y coordinate of the location
-        :rtype: int
         """
         return self._ypos
     y = property(fget=get_y)

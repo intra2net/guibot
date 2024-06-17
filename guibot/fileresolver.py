@@ -27,6 +27,7 @@ INTERFACE
 
 import os
 from .errors import *
+from typing import Generator
 
 import logging
 
@@ -46,24 +47,23 @@ class FileResolver(object):
     # Shared between all instances
     _target_paths = []
 
-    def add_path(self, directory):
+    def add_path(self, directory: str) -> None:
         """
         Add a path to the list of currently accessible paths
         if it wasn't already added.
 
-        :param str directory: path to add
+        :param directory: path to add
         """
         if directory not in FileResolver._target_paths:
             log.info("Adding target path %s", directory)
             FileResolver._target_paths.append(directory)
 
-    def remove_path(self, directory):
+    def remove_path(self, directory: str) -> bool:
         """
         Remove a path from the list of currently accessible paths.
 
-        :param str directory: path to add
+        :param directory: path to add
         :returns: whether the removal succeeded
-        :rtype: bool
         """
         try:
             FileResolver._target_paths.remove(directory)
@@ -73,20 +73,19 @@ class FileResolver(object):
         log.info("Removing target path %s", directory)
         return True
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all currently accessible paths."""
         # empty list but keep reference
         del FileResolver._target_paths[:]
 
-    def search(self, filename, restriction="", silent=False):
+    def search(self, filename: str, restriction: str = "", silent: bool = False) -> str | None:
         """
         Search for a filename in the currently accessible paths.
 
-        :param str filename: filename of the target to search for
-        :param str restriction: simple string to restrict the number of paths
-        :param bool silent: whether to return None instead of error out
+        :param filename: filename of the target to search for
+        :param restriction: simple string to restrict the number of paths
+        :param silent: whether to return None instead of error out
         :returns: the full name of the found target file or None if silent and no file was found
-        :rtype: str or None
         :raises: :py:class:`FileNotFoundError` if no such file was found and not silent
         """
         for directory in FileResolver._target_paths:
@@ -127,11 +126,11 @@ class FileResolver(object):
 
         return None
 
-    def __iter__(self):
+    def __iter__(self) -> Generator[str, None, None]:
         for p in self._target_paths:
             yield p
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._target_paths)
 
 
@@ -146,7 +145,7 @@ class CustomFileResolver(object):
     take only these paths into account.
     """
 
-    def __init__(self, *paths):
+    def __init__(self, *paths: tuple[type, ...]) -> None:
         """
         Create the class with the paths that the search will be
         restricted to.
@@ -155,12 +154,11 @@ class CustomFileResolver(object):
         """
         self._paths = paths
 
-    def __enter__(self):
+    def __enter__(self) -> FileResolver:
         """
         Start this context.
 
         :returns: instance of the file resolver that can be used to search files
-        :rtype: py:class:`FileResolver`
 
         The paths used by the py:class:`FileResolver` class will be replaced by
         the paths used to initialize this class during the duration of this context.
@@ -172,7 +170,7 @@ class CustomFileResolver(object):
             file_resolver.add_path(p)
         return file_resolver
 
-    def __exit__(self, *args):
+    def __exit__(self, *args: tuple[type, ...],) -> None:
         """
         Exit this context and restore the original paths.
 

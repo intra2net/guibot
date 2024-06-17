@@ -29,7 +29,7 @@ INTERFACE
 class Key(object):
     """Helper to contain all key mappings for a custom display control backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing an empty key map."""
         self.ENTER = None
         self.TAB = None
@@ -102,18 +102,17 @@ class Key(object):
         self.KP_ENTER = None
         self.KP_DIVIDE = None
         self.KP_MULTIPLY = None
-        self.KP_SUBTRACT = None
+        self.KP_SUBTRACT: str = None
         self.KP_ADD = None
         self.KP_DECIMAL = None
 
-    def to_string(self, key):
+    def to_string(self, key: str) -> str:
         """
         Provide with a text representation of a desired key
         according to the custom BC backend.
 
-        :param str key: selected key name according to the custom backend
+        :param key: selected key name according to the custom backend
         :returns: text representation of the selected key
-        :rtype: str
         :raises: :py:class:`ValueError` if `key` is not found in the current key map
         """
         if key is None:
@@ -192,7 +191,7 @@ class Key(object):
 class AutoPyKey(Key):
     """Helper to contain all key mappings for the AutoPy DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the key map for the AutoPy backend."""
         super().__init__()
 
@@ -279,7 +278,7 @@ class AutoPyKey(Key):
 class XDoToolKey(Key):
     """Helper to contain all key mappings for the xdotool DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the key map for the xdotool backend."""
         super().__init__()
 
@@ -365,7 +364,7 @@ class XDoToolKey(Key):
 class VNCDoToolKey(Key):
     """Helper to contain all key mappings for the VNCDoTool DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the key map for the VNCDoTool backend."""
         super().__init__()
 
@@ -453,7 +452,7 @@ class VNCDoToolKey(Key):
 class PyAutoGUIKey(Key):
     """Helper to contain all key mappings for the PyAutoGUI DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the key map for the PyAutoGUI backend."""
         super().__init__()
 
@@ -542,22 +541,21 @@ class PyAutoGUIKey(Key):
 class KeyModifier(object):
     """Helper to contain all modifier key mappings for a custom display control backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing an empty modifier key map."""
         self.MOD_NONE = None
         self.MOD_CTRL = None
         self.MOD_ALT = None
         self.MOD_SHIFT = None
-        self.MOD_META = None
+        self.MOD_META: str = None
 
-    def to_string(self, key):
+    def to_string(self, key: str) -> str:
         """
         Provide with a text representation of a desired modifier key
         according to the custom BC backend.
 
-        :param str key: selected modifier name according to the current backend
+        :param key: selected modifier name according to the current backend
         :returns: text representation of the selected modifier
-        :rtype: str
         :raises: :py:class:`ValueError` if `key` is not found in the current modifier map
         """
         if key is None:
@@ -572,7 +570,7 @@ class KeyModifier(object):
 class AutoPyKeyModifier(KeyModifier):
     """Helper to contain all modifier key mappings for the AutoPy DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the modifier key map for the AutoPy backend."""
         super().__init__()
 
@@ -589,7 +587,7 @@ class AutoPyKeyModifier(KeyModifier):
 class XDoToolKeyModifier(KeyModifier):
     """Helper to contain all modifier key mappings for the xdotool DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the modifier key map for the xdotool backend."""
         super().__init__()
 
@@ -604,7 +602,7 @@ class XDoToolKeyModifier(KeyModifier):
 class VNCDoToolKeyModifier(KeyModifier):
     """Helper to contain all modifier key mappings for the VNCDoTool DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the modifier key map for the VNCDoTool backend."""
         super().__init__()
 
@@ -619,7 +617,7 @@ class VNCDoToolKeyModifier(KeyModifier):
 class PyAutoGUIKeyModifier(KeyModifier):
     """Helper to contain all modifier key mappings for the PyAutoGUI DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the modifier key map for the PyAutoGUI backend."""
         super().__init__()
 
@@ -635,20 +633,19 @@ class PyAutoGUIKeyModifier(KeyModifier):
 class MouseButton(object):
     """Helper to contain all mouse button mappings for a custom display control backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing an empty mouse button map."""
         self.LEFT_BUTTON = None
         self.RIGHT_BUTTON = None
-        self.CENTER_BUTTON = None
+        self.CENTER_BUTTON: str = None
 
-    def to_string(self, key):
+    def to_string(self, key: str) -> str:
         """
         Provide with a text representation of a desired mouse button
         according to the custom BC backend.
 
-        :param str key: selected mouse button according to the current backend
+        :param key: selected mouse button according to the current backend
         :returns: text representation of the selected mouse button
-        :rtype: str
         :raises: :py:class:`ValueError` if `key` is not found in the current mouse map
         """
         if key is None:
@@ -661,7 +658,7 @@ class MouseButton(object):
 class AutoPyMouseButton(MouseButton):
     """Helper to contain all mouse button mappings for the AutoPy DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the mouse button map for the AutoPy backend."""
         super().__init__()
 
@@ -675,7 +672,7 @@ class AutoPyMouseButton(MouseButton):
 class XDoToolMouseButton(MouseButton):
     """Helper to contain all mouse button mappings for the xdotool DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the mouse button map for the xdotool backend."""
         super().__init__()
 
@@ -687,7 +684,7 @@ class XDoToolMouseButton(MouseButton):
 class VNCDoToolMouseButton(MouseButton):
     """Helper to contain all mouse button mappings for the VNCDoTool DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the mouse button map for the VNCDoTool backend."""
         super().__init__()
 
@@ -699,7 +696,7 @@ class VNCDoToolMouseButton(MouseButton):
 class PyAutoGUIMouseButton(MouseButton):
     """Helper to contain all mouse button mappings for the PyAutoGUI DC backend."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an instance containing the mouse button map for the PyAutoGUI backend."""
         super().__init__()
 

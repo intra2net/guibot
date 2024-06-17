@@ -30,22 +30,22 @@ class FileResolverTest(unittest.TestCase):
     """Tests for the FileResolverTest class."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         # Change to 'tests' directory
         cls.saved_working_dir = os.getcwd()
         os.chdir(common_test.unittest_dir)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         os.chdir(cls.saved_working_dir)
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.resolver = FileResolver()
         # Clear paths from any previous unit test since
         # the paths are shared between all FileResolver instances
         self.resolver.clear()
 
-    def test_deprecated_class(self):
+    def test_deprecated_class(self) -> None:
         """Check that the deprecated :py:class:`Path` class still works."""
         logger = logging.getLogger("guibot.path")
         # import the legacy path module should log a warning
@@ -55,21 +55,21 @@ class FileResolverTest(unittest.TestCase):
             mock_warn.assert_called_once()
             self.assertEqual(Path, FileResolver)
 
-    def test_add_path(self):
+    def test_add_path(self) -> None:
         """Test that adding a path works."""
         self.resolver.add_path("paths")
 
-    def test_remove_path(self):
+    def test_remove_path(self) -> None:
         """Test that removing a path works."""
         self.resolver.add_path("images")
         self.assertEqual(True, self.resolver.remove_path("images"))
         self.assertEqual(False, self.resolver.remove_path("images"))
 
-    def test_remove_unknown_path(self):
+    def test_remove_unknown_path(self) -> None:
         """Check that removing unknown paths doesn't break anything."""
         self.resolver.remove_path("foobar_does_not_exist")
 
-    def test_search(self):
+    def test_search(self) -> None:
         """Check that different :py:class:`FileResolver` instances contain the same paths."""
         self.resolver.add_path("images")
         self.assertEqual(os.path.join("images", "shape_black_box.png"),
@@ -79,12 +79,12 @@ class FileResolverTest(unittest.TestCase):
         self.assertEqual(os.path.join("images", "shape_black_box.png"),
                          new_finder.search("shape_black_box"))
 
-    def test_search_fail(self):
+    def test_search_fail(self) -> None:
         """Test failed search."""
         self.resolver.add_path("images")
         self.assertRaises(FileNotFoundError, self.resolver.search, "foobar_does_not_exist")
 
-    def test_search_type(self):
+    def test_search_type(self) -> None:
         """Test that searching file names without extension works."""
         self.resolver.add_path("images")
 
@@ -96,7 +96,7 @@ class FileResolverTest(unittest.TestCase):
         self.assertEqual(os.path.join("images", "circle.steps"),
                          self.resolver.search("circle"))
 
-    def test_search_precedence(self):
+    def test_search_precedence(self) -> None:
         """Check the precedence of extensions when searching."""
         self.resolver.add_path("images")
 
@@ -106,14 +106,14 @@ class FileResolverTest(unittest.TestCase):
         self.assertEqual(os.path.join("images", "shape_blue_circle.png"),
                          self.resolver.search("shape_blue_circle"))
 
-    def test_search_keyword(self):
+    def test_search_keyword(self) -> None:
         """Check if the path restriction results in an empty set."""
         self.resolver.add_path("images")
         self.assertEqual(os.path.join("images", "shape_black_box.png"),
                          self.resolver.search("shape_black_box.png", "images"))
         self.assertRaises(FileNotFoundError, self.resolver.search, "shape_black_box.png", "other-images")
 
-    def test_search_silent(self):
+    def test_search_silent(self) -> None:
         """Check that we can disable exceptions from being raised when searching."""
         self.resolver.add_path("images")
         self.assertEqual(os.path.join("images", "shape_black_box.png"),
@@ -123,14 +123,14 @@ class FileResolverTest(unittest.TestCase):
         target = self.resolver.search("shape_missing_box.png", silent=True)
         self.assertIsNone(target)
 
-    def test_paths_iterator(self):
+    def test_paths_iterator(self) -> None:
         """Test that the FileResolver iterator yields the correct list."""
         self.assertListEqual(self.resolver._target_paths, [x for x in self.resolver])
 
 class CustomFileResolverTest(unittest.TestCase):
     """Tests for the CustomFileResolver class."""
 
-    def test_custom_paths(self):
+    def test_custom_paths(self) -> None:
         """Test if custom paths work correctly."""
         # temporary directory 1
         tmp_dir1 = mkdtemp()
