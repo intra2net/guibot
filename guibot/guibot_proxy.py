@@ -42,15 +42,13 @@ from . import errors
 from .guibot import GuiBot
 
 
-def serialize_custom_error(class_obj):
+def serialize_custom_error(class_obj: classobj) -> dict[str, str | getset_descriptor | dictproxy]:
     """
     Serialization method for the :py:class:`errors.UnsupportedBackendError`
     which was chosen just as a sample.
 
     :param class_obj: class object for the serialized error class
-    :type class_obj: classobj
     :returns: serialization dictionary with the class name, arguments, and attributes
-    :rtype: {str, str or getset_descriptor or dictproxy}
     """
     serialized = {}
     serialized["__class__"] = re.search("<class '(.+)'>", str(type(class_obj))).group(1)
@@ -82,7 +80,7 @@ class GuiBotProxy(GuiBot):
     from code which is executed on another machine somewhere on the network.
     """
 
-    def __init__(self, dc=None, cv=None):
+    def __init__(self, dc: Controller = None, cv: Finder = None) -> None:
         """Build a proxy guibot object of the original main guibot object."""
         super(GuiBotProxy, self).__init__(dc=dc, cv=cv)
         # NOTE: the following attribute is set by PyRO when registering
@@ -92,6 +90,7 @@ class GuiBotProxy(GuiBot):
         register_exception_serialization()
 
     def _proxify(self, obj):
+        #..todo:: obj is not documented
         if isinstance(obj, (int, float, bool, str)) or obj is None:
             return obj
         if obj not in self._pyroDaemon.objectsById.values():

@@ -28,6 +28,7 @@ INTERFACE
 import os
 import shutil
 import PIL.Image
+import numpy
 
 from .config import GlobalConfig
 
@@ -74,12 +75,11 @@ class ImageLogger(object):
         ImageLogger.logging_destination = GlobalConfig.image_logging_destination
         ImageLogger.step_width = GlobalConfig.image_logging_step_width
 
-    def get_printable_step(self):
+    def get_printable_step(self) -> str:
         """
         Getter for readonly attribute.
 
         :returns: step number prepended with zeroes to obtain a fixed length enumeration
-        :rtype: str
         """
         return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
     printable_step = property(fget=get_printable_step)
@@ -131,13 +131,13 @@ class ImageLogger(object):
                                      haystack_name)
         self.haystack.save(haystack_path)
 
-    def dump_hotmap(self, name, hotmap):
+    def dump_hotmap(self, name: str, hotmap) -> None:
         """
         Write a file the given hotmap.
 
-        :param str name: filename to use for the image
+        :param name: filename to use for the image
         :param hotmap: image (with matching results) to write
-        :type hotmap: :py:class:`PIL.Image` or :py:class:`numpy.ndarray`
+        :type hotmap: PIL.Image | numpy.ndarray
         """
         if ImageLogger.logging_level > 30:
             return
