@@ -37,18 +37,19 @@ class Match(Region):
     of matches on a screen.
     """
 
-    def __init__(self, xpos, ypos, width, height, dx=0, dy=0,
-                 similarity=0.0, dc=None, cv=None):
+    def __init__(self, xpos: int, ypos: int, width: int, height: int,
+		 dx: int = 0, dy: int = 0, similarity: float = 0.0,
+		 dc: Controller = None, cv: "Finder" = None) -> None:
         """
         Build a match object.
 
-        :param int xpos: x coordinate of the upleft vertex of the match region
-        :param int ypos: y coordinate of the upleft vertex of the match region
-        :param int width: x distance from upleft to downright vertex of the match region
-        :param int height: y distance from upleft to downright vertex of the match region
-        :param int dx: x offset from the center of the match region
-        :param int dy: y offset from the center of the match region
-        :param float similarity: attained similarity of the match region
+        :param xpos: x coordinate of the upleft vertex of the match region
+        :param ypos: y coordinate of the upleft vertex of the match region
+        :param width: x distance from upleft to downright vertex of the match region
+        :param height: y distance from upleft to downright vertex of the match region
+        :param dx: x offset from the center of the match region
+        :param dy: y offset from the center of the match region
+        :param similarity: attained similarity of the match region
         """
         dc = Controller() if dc is None else dc
         cv = Finder() if cv is None else cv
@@ -59,88 +60,81 @@ class Match(Region):
         self._similarity = similarity
         self._dx, self._dy = dx, dy
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide the target location of the match distinguishing it from any location."""
         return "%s (match)" % self.target
 
-    def set_x(self, value):
+    def set_x(self, value: int) -> None:
         """
         Setter for previously readonly attribute.
 
         Necessary to override match location in a subregion (displaced).
 
         :param value: x coordinate of the upleft vertex of the region
-        :type value: int
         """
         self._xpos = value
     x = property(fget=Region.get_x, fset=set_x)
 
-    def set_y(self, value):
+    def set_y(self, value: int) -> None:
         """
         Setter for previously readonly attribute.
 
         Necessary to override match location in a subregion (displaced).
 
         :param value: y coordinate of the upleft vertex of the region
-        :type value: int
         """
         self._ypos = value
     y = property(fget=Region.get_y, fset=set_y)
 
-    def get_dx(self):
+    def get_dx(self) -> int:
         """
         Getter for readonly attribute.
 
         :returns: x offset from the center of the match region
-        :rtype: int
         """
         return self._dx
     dx = property(fget=get_dx)
 
-    def get_dy(self):
+    def get_dy(self) -> int:
         """
         Getter for readonly attribute.
 
         :returns: y offset from the center of the match region
-        :rtype: int
         """
         return self._dy
     dy = property(fget=get_dy)
 
-    def get_similarity(self):
+    def get_similarity(self) -> float:
         """
         Getter for readonly attribute.
 
         :returns: similarity the match was obtained with
-        :rtype: float
         """
         return self._similarity
     similarity = property(fget=get_similarity)
 
-    def get_target(self):
+    def get_target(self) -> Location:
         """
         Getter for readonly attribute.
 
         :returns: target location to click on if clicking on the match
-        :rtype: :py:class:`location.Location`
         """
         return self.calc_click_point(self._xpos, self._ypos,
                                      self._width, self._height,
                                      Location(self._dx, self._dy))
     target = property(fget=get_target)
 
-    def calc_click_point(self, xpos, ypos, width, height, offset):
+    def calc_click_point(self, xpos: int, ypos: int, width: int, height: int,
+                         offset: Location) -> Location:
         """
         Calculate target location to click on if clicking on the match.
 
-        :param int xpos: x coordinate of upleft vertex of the match region
-        :param int ypos: y coordinate of upleft vertex of the match region
-        :param int width: width of the match region
-        :param int height: height of the match region
+        :param xpos: x coordinate of upleft vertex of the match region
+        :param ypos: y coordinate of upleft vertex of the match region
+        :param width: width of the match region
+        :param height: height of the match region
         :param offset: offset from the match region center for the final target
-        :type offset: :py:class:`location.Location`
         :returns: target location to click on if clicking on the match
-        :rtype: :py:class:`location.Location`
         """
         center_region = Region(0, 0, width, height,
                                dc=self.dc_backend, cv=self.cv_backend)

@@ -20,6 +20,7 @@ import time
 import shutil
 import unittest
 import subprocess
+from typing import Any
 
 import common_test
 from guibot.errors import *
@@ -32,7 +33,7 @@ from guibot.config import GlobalConfig
 class ControllerTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         # the VNC display controller is disabled on OS-es like Windows
         if os.environ.get('DISABLE_VNCDOTOOL', "0") == "1":
             return
@@ -53,7 +54,7 @@ class ControllerTest(unittest.TestCase):
                                         ":99", "-rfbauth", passfile])
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         # the VNC display controller is disabled on OS-es like Windows
         if os.environ.get('DISABLE_VNCDOTOOL', "0") == "1":
             return
@@ -64,7 +65,7 @@ class ControllerTest(unittest.TestCase):
         if os.path.exists(vnc_config_dir):
             shutil.rmtree(vnc_config_dir)
 
-    def setUp(self):
+    def setUp(self) -> None:
         # gui test scripts
         self.script_app = os.path.join(common_test.unittest_dir, 'qt5_application.py')
         self.child_app = None
@@ -93,7 +94,7 @@ class ControllerTest(unittest.TestCase):
             vncdotool.synchronize_backend()
             self.backends += [vncdotool]
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.close_windows()
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
@@ -103,13 +104,13 @@ class ControllerTest(unittest.TestCase):
             if isinstance(display, VNCDoToolController):
                 display._backend_obj.disconnect()
 
-    def show_application(self):
+    def show_application(self) -> None:
         python = 'python.exe' if os.name == 'nt' else 'python3'
         self.child_app = subprocess.Popen([python, self.script_app])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 
-    def close_windows(self):
+    def close_windows(self) -> None:
         if self.child_app is not None:
             self.child_app.terminate()
             self.wait_end(self.child_app)
@@ -118,7 +119,7 @@ class ControllerTest(unittest.TestCase):
             # HACK: make sure app is really closed
             time.sleep(0.5)
 
-    def wait_end(self, subprocess_pipe, timeout=30):
+    def wait_end(self, subprocess_pipe: Any, timeout: int = 30) -> int:
         expires = time.time() + timeout
 
         while True:
@@ -132,7 +133,7 @@ class ControllerTest(unittest.TestCase):
 
             time.sleep(0.2)
 
-    def test_basic(self):
+    def test_basic(self) -> None:
         """Check basic functionality for all display controller backends."""
         for display in self.backends:
             self.assertTrue(display.width > 0)
@@ -146,7 +147,7 @@ class ControllerTest(unittest.TestCase):
             self.assertLessEqual(location.x, display.width)
             self.assertLessEqual(location.y, display.height)
 
-    def test_single_backend(self):
+    def test_single_backend(self) -> None:
         """Check display controller backend configuration and synchronization."""
         for display in self.backends:
             # the VNC controller has additional setup in these tests
@@ -184,7 +185,7 @@ class ControllerTest(unittest.TestCase):
             with self.assertRaises(UnsupportedBackendError):
                 display.synchronize_backend(backend=category, category="control")
 
-    def test_capture(self):
+    def test_capture(self) -> None:
         """Check screendump capabilities for all display controller backends."""
         for display in self.backends:
             screen_width = display.width
@@ -206,7 +207,7 @@ class ControllerTest(unittest.TestCase):
             self.assertEqual(320, captured.width)
             self.assertEqual(200, captured.height)
 
-    def test_capture_clipping(self):
+    def test_capture_clipping(self) -> None:
         """Check screendump clipping for all display controller backends."""
         for display in self.backends:
             screen_width = display.width
@@ -220,7 +221,7 @@ class ControllerTest(unittest.TestCase):
             self.assertEqual(1, captured.width)
             self.assertEqual(1, captured.height)
 
-    def test_mouse_move(self):
+    def test_mouse_move(self) -> None:
         """Check mouse move locations for all display controller backends."""
         for display in self.backends:
             for is_smooth in [False, True]:
@@ -237,7 +238,7 @@ class ControllerTest(unittest.TestCase):
                 self.assertAlmostEqual(location.y, 20, delta=1)
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
-    def test_mouse_click(self):
+    def test_mouse_click(self) -> None:
         """Check mouse click effect for all display controller backends."""
         for display in self.backends:
             mouse = display.mousemap
@@ -271,7 +272,7 @@ class ControllerTest(unittest.TestCase):
                         self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
-    def test_mouse_updown(self):
+    def test_mouse_updown(self) -> None:
         """Check mouse up/down effect for all display controller backends."""
         for display in self.backends:
             mouse = display.mousemap
@@ -292,7 +293,7 @@ class ControllerTest(unittest.TestCase):
                 self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
-    def test_mouse_scroll(self):
+    def test_mouse_scroll(self) -> None:
         """Check mouse scroll effect for all display controller backends."""
         for display in self.backends:
             for horizontal in [False, True]:
@@ -312,7 +313,7 @@ class ControllerTest(unittest.TestCase):
                 self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
-    def test_keys_press(self):
+    def test_keys_press(self) -> None:
         """Check key press effect for all display controller backends."""
         for display in self.backends:
             key = display.keymap
@@ -331,7 +332,7 @@ class ControllerTest(unittest.TestCase):
             self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
-    def test_keys_type(self):
+    def test_keys_type(self) -> None:
         """Check key type effect for all display controller backends."""
         for display in self.backends:
             # include some modifiers without direct effect in this case

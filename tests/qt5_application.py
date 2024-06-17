@@ -26,7 +26,7 @@ app = QtWidgets.QApplication(sys.argv)
 
 class ControlsWithLayout(QtWidgets.QWidget):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent: QtWidgets.QWidget = None):
         QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowTitle('guibot test application')
@@ -136,16 +136,16 @@ class ControlsWithLayout(QtWidgets.QWidget):
 
         QtWidgets.QApplication.setStyle(QtWidgets.QStyleFactory.create('cleanlooks'))
 
-    def quit_on_type(self):
+    def quit_on_type(self) -> None:
         sender = self.sender()
         if sender.text() == "quit":
             self.close()
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e) -> None:
         if e.button() == QtCore.Qt.MiddleButton:
             self.close()
 
-    def keyPressEvent(self, e):
+    def keyPressEvent(self, e) -> None:
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
         elif e.key() == QtCore.Qt.Key_Shift:
@@ -155,72 +155,72 @@ class ControlsWithLayout(QtWidgets.QWidget):
             else:
                 self.changing_image_counter += 1
 
-    def closeEvent(self, e):
+    def closeEvent(self, e) -> None:
         self.close()
 
 
 class DragQuitLabel(QtWidgets.QLabel):
 
-    def __init__(self, title, parent):
+    def __init__(self, title: str, parent: QtWidgets.QWidget) -> None:
         super(DragQuitLabel, self).__init__(title, parent)
         self.setAcceptDrops(True)
 
-    def dragEnterEvent(self, e):
+    def dragEnterEvent(self, e) -> None:
         self.parent().close()
 
 
 class DropQuitLabel(QtWidgets.QLabel):
 
-    def __init__(self, title, parent):
+    def __init__(self, title: str, parent: QtWidgets.QWidget) -> None:
         super(DropQuitLabel, self).__init__(title, parent)
         self.setAcceptDrops(True)
 
-    def dragEnterEvent(self, e):
+    def dragEnterEvent(self, e) -> None:
         if e.mimeData().hasFormat('text/plain'):
             e.accept()
         else:
             e.ignore()
 
-    def dropEvent(self, e):
+    def dropEvent(self, e) -> None:
         self.parent().close()
 
 
 class MouseDownQuitLabel(QtWidgets.QLabel):
 
-    def __init__(self, title, parent):
+    def __init__(self, title: str, parent: QtWidgets.QWidget) -> None:
         super(MouseDownQuitLabel, self).__init__(title, parent)
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e) -> None:
         self.parent().close()
 
 
 class MouseUpQuitLabel(QtWidgets.QLabel):
 
-    def __init__(self, title, parent):
+    def __init__(self, title: str, parent: QtWidgets.QWidget) -> None:
         super(MouseUpQuitLabel, self).__init__(title, parent)
         # self.setAcceptDrops(True)
 
-    def mouseReleaseEvent(self, e):
+    def mouseReleaseEvent(self, e) -> None:
         self.parent().close()
 
 
 class ImageQuitLabel(QtWidgets.QLabel):
 
-    def __init__(self, parent):
+    def __init__(self, parent: QtWidgets.QWidget) -> None:
         super(ImageQuitLabel, self).__init__(parent)
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e) -> None:
         self.parent().close()
 
 
 class ImageChangeLabel(QtWidgets.QLabel):
 
-    def __init__(self, image, parent):
+    def __init__(self, image, parent: QtWidgets.QWidget) -> None:
         super(ImageChangeLabel, self).__init__(parent)
         self.image = image
         self.counter = 1
 
-    def mousePressEvent(self, e):
+    def mousePressEvent(self, e) -> None:
         if self.counter == 3:
             self.image.setPixmap(QtGui.QPixmap(os.path.join(common_test.unittest_dir,
                                                             "images/shape_black_box.png")))

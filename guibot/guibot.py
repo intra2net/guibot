@@ -31,6 +31,8 @@ import logging
 
 from .fileresolver import FileResolver
 from .region import Region
+from .controller import Controller
+from .finder import Finder
 
 
 log = logging.getLogger('guibot')
@@ -45,14 +47,12 @@ class GuiBot(Region):
     .. seealso:: Real API is inherited from :py:class:`region.Region`.
     """
 
-    def __init__(self, dc=None, cv=None):
+    def __init__(self, dc: Controller = None, cv: Finder = None) -> None:
         """
         Build a guibot object.
 
         :param dc: DC backend used for any display control
-        :type dc: :py:class:`controller.Controller` or None
         :param cv: CV backend used for any target finding
-        :type cv: :py:class:`finder.Finder` or None
 
         We will initialize with default region of full screen and default
         display control and computer vision backends if none are provided.
@@ -61,19 +61,19 @@ class GuiBot(Region):
 
         self.file_resolver = FileResolver()
 
-    def add_path(self, directory):
+    def add_path(self, directory: str) -> None:
         """
         Add a path to the list of currently accessible paths
         if it wasn't already added.
 
-        :param str directory: path to add
+        :param directory: path to add
         """
         self.file_resolver.add_path(directory)
 
-    def remove_path(self, directory):
+    def remove_path(self, directory: str) -> None:
         """
         Remove a path from the list of currently accessible paths.
 
-        :param str directory: path to add
+        :param directory: path to add
         """
         self.file_resolver.remove_path(directory)

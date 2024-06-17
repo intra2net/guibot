@@ -23,7 +23,7 @@ app = QtWidgets.QApplication(sys.argv)
 
 class ImageWithLayout(QtWidgets.QWidget):
 
-    def __init__(self, filename, title="show_picture", parent=None):
+    def __init__(self, filename: str, title: str = "show_picture", parent: QtWidgets.QWidget = None) -> None:
         QtWidgets.QWidget.__init__(self, parent)
 
         self.setWindowTitle(title)

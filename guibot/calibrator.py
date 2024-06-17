@@ -28,11 +28,13 @@ INTERFACE
 import time
 import math
 import copy
+from typing import Generator
 
 from .finder import *
-from .target import Target
+from .target import Target, Image
 from .imagelogger import ImageLogger
 from .errors import *
+from .location import Location
 
 import logging
 log = logging.getLogger('guibot.calibrator')
@@ -56,14 +58,14 @@ class Calibrator(object):
     multiple random starts from a uniform or normal probability distribution.
     """
 
-    def __init__(self, needle=None, haystack=None, config=None):
+    def __init__(self, needle: Target = None, haystack: Image = None,
+                 config: str = None) -> None:
         """
         Build a calibrator object for a given match case.
 
-        :param haystack: image to look in
-        :type haystack: :py:class:`target.Image` or None
         :param needle: target to look for
-        :type needle: :py:class:`target.Target` or None
+        :param haystack: image to look in
+        :param config: config file for calibration
         """
         self.cases = []
         if needle is not None and haystack is not None:
@@ -86,21 +88,20 @@ class Calibrator(object):
         # this attribute can be changed to use different run function
         self.run = self.run_default
 
-    def benchmark(self, finder, random_starts=0, uniform=False,
-                  calibration=False, max_attempts=3, **kwargs):
+    def benchmark(self, finder: Finder, random_starts: int = 0, uniform: bool = False,
+                  calibration: bool = False, max_attempts: int = 3,
+                  **kwargs: dict[str, type]) -> list[tuple[str, float, float]]:
         """
         Perform benchmarking on all available algorithms of a finder
         for a given needle and haystack.
 
         :param finder: CV backend whose backend algorithms will be benchmarked
-        :type finder: :py:class:`finder.Finder`
-        :param int random_starts: number of random starts to try with (0 for nonrandom)
-        :param bool uniform: whether to use uniform or normal distribution
-        :param bool calibration: whether to use calibration
-        :param int max_attempts: maximal number of refinements to reach
-                                 the parameter delta below the tolerance
-        :returns: list of (method, similarity, location, time) tuples sorted according to similarity
-        :rtype: [(str, float, :py:class:`location.Location`, float)]
+        :param random_starts: number of random starts to try with (0 for nonrandom)
+        :param uniform: whether to use uniform or normal distribution
+        :param calibration: whether to use calibration
+        :param max_attempts: maximal number of refinements to reach
+                             the parameter delta below the tolerance
+        :returns: list of (method, similarity, time) tuples sorted according to similarity
 
         .. note:: Methods that are supported by OpenCV and others but currently don't work
             are excluded from the dictionary. The dictionary can thus also be used to
@@ -120,7 +121,7 @@ class Calibrator(object):
         ordered_categories.remove("find")
 
         # test all matching methods of the current finder
-        def backend_tuples(category_list, finder):
+        def backend_tuples(category_list: list[str], finder: Finder) -> Generator[tuple[str, ...], None, None]:
             if len(category_list) == 0:
                 yield ()
             else:
@@ -159,22 +160,20 @@ class Calibrator(object):
         ImageLogger.accumulate_logging = False
         return sorted(results, key=lambda x: x[1], reverse=True)
 
-    def search(self, finder, random_starts=1, uniform=False,
-               calibration=True, max_attempts=3, **kwargs):
+    def search(self, finder: Finder, random_starts: int = 1, uniform: bool = False,
+               calibration: bool = True, max_attempts: int = 3, **kwargs: dict[str, type]) -> float:
         """
         Search for the best match configuration for a given needle and haystack
         using calibration from random initial conditions.
 
         :param finder: CV backend to use in order to determine deltas, fixed, and free
                        parameters and ultimately tweak to minimize error
-        :type finder: :py:class:`finder.Finder`
-        :param int random_starts: number of random starts to try with
-        :param bool uniform: whether to use uniform or normal distribution
-        :param bool calibration: whether to use calibration
-        :param int max_attempts: maximal number of refinements to reach
-                                 the parameter delta below the tolerance
+        :param random_starts: number of random starts to try with
+        :param uniform: whether to use uniform or normal distribution
+        :param calibration: whether to use calibration
+        :param max_attempts: maximal number of refinements to reach
+                             the parameter delta below the tolerance
         :returns: maximized similarity
-        :rtype: float
 
         If normal distribution is used, the mean will be the current value of the
         respective CV parameter and the standard variation will be determined from
@@ -225,17 +224,15 @@ class Calibrator(object):
                             category, key, param.value, param.delta)
         return 1.0 - best_error
 
-    def calibrate(self, finder, max_attempts=3, **kwargs):
+    def calibrate(self, finder: Finder, max_attempts: int = 3, **kwargs: dict[str, type]) -> float:
         """
         Calibrate the available match configuration for a given needle
         and haystack minimizing the matchign error.
 
         :param finder: configuration for the CV backend to calibrate
-        :type finder: :py:class:`finder.Finder`
-        :param int max_attempts: maximal number of refinements to reach
-                                 the parameter delta below the tolerance
+        :param max_attempts: maximal number of refinements to reach
+                             the parameter delta below the tolerance
         :returns: maximized similarity
-        :rtype: float
 
         This method calibrates only parameters that are not protected
         from calibration, i.e. that have `fixed` attribute set to false.
@@ -291,17 +288,17 @@ class Calibrator(object):
                     # add the delta to the current parameter
                     if isinstance(param.value, float):
                         if param.range[1] is not None:
-                            param.value = min(start_value + param.delta,
+                            param.value = min(float(start_value) + param.delta,
                                               param.range[1])
                         else:
-                            param.value = start_value + param.delta
+                            param.value = float(start_value) + param.delta
                     elif isinstance(param.value, int) and not param.enumerated:
                         intdelta = int(math.ceil(param.delta))
                         if param.range[1] is not None:
-                            param.value = min(start_value + intdelta,
+                            param.value = min(int(start_value) + intdelta,
                                               param.range[1])
                         else:
-                            param.value = start_value + intdelta
+                            param.value = int(start_value) + intdelta
                     # remaining types require special handling
                     elif isinstance(param.value, int) and param.enumerated:
                         delta_coeff = 0.9
@@ -339,17 +336,17 @@ class Calibrator(object):
 
                         if isinstance(param.value, float):
                             if param.range[0] is not None:
-                                param.value = max(start_value - param.delta,
+                                param.value = max(float(start_value) - param.delta,
                                                   param.range[0])
                             else:
-                                param.value = start_value - param.delta
+                                param.value = float(start_value) - param.delta
                         elif isinstance(param.value, int):
                             intdelta = int(math.floor(param.delta))
                             if param.range[0] is not None:
-                                param.value = max(start_value - intdelta,
+                                param.value = max(int(start_value) - intdelta,
                                                   param.range[0])
                             else:
-                                param.value = start_value - intdelta
+                                param.value = int(start_value) - intdelta
                         elif isinstance(param.value, bool):
                             # the default boolean value was already checked
                             param.value = start_value
@@ -388,14 +385,12 @@ class Calibrator(object):
                             category, key, param.value, param.delta)
         return 1.0 - best_error
 
-    def run_default(self, finder, **_kwargs):
+    def run_default(self, finder: Finder, **_kwargs: dict[str, type]) -> float:
         """
         Run a match case and return error from the match as dissimilarity.
 
         :param finder: finder with match configuration to use for the run
-        :type finder: :py:class:`finder.Finder`
         :returns: error obtained as unity minus similarity
-        :rtype: float
         """
         self._handle_restricted_values(finder)
 
@@ -414,20 +409,16 @@ class Calibrator(object):
         error = 1.0 - total_similarity / len(self.cases)
         return error
 
-    def run_performance(self, finder, **kwargs):
+    def run_performance(self, finder: Finder, **kwargs: dict[str, type]) -> float:
         """
         Run a match case and return error from the match as dissimilarity
         and linear performance penalty.
 
         :param finder: finder with match configuration to use for the run
-        :type finder: :py:class:`finder.Finder`
-        :param float max_exec_time: maximum execution time before penalizing
-                                    the run by increasing the error linearly
         :returns: error obtained as unity minus similarity
-        :rtype: float
         """
         self._handle_restricted_values(finder)
-        max_exec_time = kwargs.get("max_exec_time", 1.0)
+        max_exec_time: float = kwargs.get("max_exec_time", 1.0)
 
         total_similarity = 0.0
         for needle, haystack, maximize in self.cases:
@@ -449,18 +440,13 @@ class Calibrator(object):
         error += max(total_time - max_exec_time, 0)
         return error
 
-    def run_peak(self, finder, **kwargs):
+    def run_peak(self, finder: Finder, **kwargs: dict[str, type]) -> float:
         """
         Run a match case and return error from the match as failure to obtain
         high similarity of one match and low similarity of all others.
 
         :param finder: finder with match configuration to use for the run
-        :type finder: :py:class:`finder.Finder`
-        :param peak_location: (x, y) of the match whose similarity should be
-                              maximized while all the rest minimized
-        :type peak_location: (int, int)
         :returns: error obtained as unity minus similarity
-        :rtype: float
 
         This run function doesn't just obtain the optimum similarity for the best
         match in each case of needle and haystack but it minimizes the similarity
@@ -495,7 +481,7 @@ class Calibrator(object):
         error = 1.0 - total_similarity / len(self.cases)
         return error
 
-    def _handle_restricted_values(self, finder):
+    def _handle_restricted_values(self, finder: Finder) -> None:
         if "threshold" in finder.params:
             params = finder.params["threshold"]
             if params["blurKernelSize"].value % 2 == 0:
@@ -524,7 +510,7 @@ class Calibrator(object):
                 diffs = {m: abs(m - params["dt_mask_size"].value) for m in [0, 3, 5]}
                 params["dt_mask_size"].value = min(diffs, key=diffs.get)
 
-    def _prepare_params(self, finder):
+    def _prepare_params(self, finder: Finder) -> None:
         # any similarity parameters will be reset to 0.0 to search optimally
         finder.params["find"]["similarity"].value = 0.0
         finder.params["find"]["similarity"].fixed = True

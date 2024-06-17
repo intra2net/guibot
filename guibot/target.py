@@ -29,6 +29,7 @@ import copy
 import os
 import re
 import PIL.Image
+from typing import Iterator
 
 from .config import GlobalConfig
 from .location import Location
@@ -47,13 +48,12 @@ class Target(object):
     """
 
     @staticmethod
-    def from_data_file(filename):
+    def from_data_file(filename: str) -> "Target":
         """
         Read the target type from the extension of the target filename.
 
-        :param str filename: data filename for the target
+        :param filename: data filename for the target
         :returns: target of type determined from its data filename extension
-        :rtype: :py:class:`target.Target`
         :raises: :py:class:`errors.IncompatibleTargetFileError` if the data file if of unknown type
         """
         if not os.path.exists(filename):
@@ -75,13 +75,12 @@ class Target(object):
         return target
 
     @staticmethod
-    def from_match_file(filename):
+    def from_match_file(filename: str) -> "Target":
         """
         Read the target type and configuration from a match file with the given filename.
 
-        :param str filename: match filename for the configuration
+        :param filename: match filename for the configuration
         :returns: target of type determined from its parsed (and generated) settings
-        :rtype: :py:class:`target.Target`
         """
         if not os.path.exists(filename):
             filename = FileResolver().search(filename)
@@ -102,12 +101,11 @@ class Target(object):
 
         return target
 
-    def __init__(self, match_settings=None):
+    def __init__(self, match_settings: "Finder" = None) -> None:
         """
         Build a target object.
 
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`finder.Finder` or None
         """
         self.match_settings = match_settings
         if self.match_settings is not None:
@@ -135,26 +133,24 @@ class Target(object):
 
         self._center_offset = Location(0, 0)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide a constant name 'target'."""
         return "target"
 
-    def get_similarity(self):
+    def get_similarity(self) -> float:
         """
         Getter for readonly attribute.
 
         :returns: similarity required for the image to be matched
-        :rtype: float
         """
         return self.match_settings.params["find"]["similarity"].value
     similarity = property(fget=get_similarity)
 
-    def get_center_offset(self):
+    def get_center_offset(self) -> Location:
         """
         Getter for readonly attribute.
 
         :returns: offset with respect to the target center (used for clicking)
-        :rtype: :py:class:`location.Location`
 
         This clicking location is set in the target in order to be customizable,
         it is then taken when matching to produce a clicking target for a match.
@@ -162,11 +158,11 @@ class Target(object):
         return self._center_offset
     center_offset = property(fget=get_center_offset)
 
-    def load(self, filename, **kwargs):
+    def load(self, filename: str, **kwargs: dict[str, type]) -> None:
         """
         Load target from a file.
 
-        :param str filename: name for the target file
+        :param filename: name for the target file
 
         If no local file is found, we will perform search in the
         previously added paths.
@@ -183,50 +179,47 @@ class Target(object):
                 pass
             self.use_own_settings = True
 
-    def save(self, filename):
+    def save(self, filename: str) -> None:
         """
         Save target to a file.
 
-        :param str filename: name for the target file
+        :param filename: name for the target file
         """
         match_filename = os.path.splitext(filename)[0] + ".match"
         if self.use_own_settings:
             Finder.to_match_file(self.match_settings, match_filename)
 
-    def copy(self):
+    def copy(self) -> "Target":
         """
         Perform a copy of the target data and match settings.
 
         :returns: copy of the current target (with settings)
-        :rtype: :py:class:`target.Target`
         """
         selfcopy = copy.copy(self)
         copy_settings = self.match_settings.copy()
         selfcopy.match_settings = copy_settings
         return selfcopy
 
-    def with_center_offset(self, xpos, ypos):
+    def with_center_offset(self, xpos: int, ypos: int) -> "Target":
         """
         Perform a copy of the target data with new match settings
         and with a newly defined center offset.
 
-        :param int xpos: new offset in the x direction
-        :param int ypos: new offset in the y direction
+        :param xpos: new offset in the x direction
+        :param ypos: new offset in the y direction
         :returns: copy of the current target with new center offset
-        :rtype: :py:class:`target.Target`
         """
         new_target = self.copy()
         new_target._center_offset = Location(xpos, ypos)
         return new_target
 
-    def with_similarity(self, new_similarity):
+    def with_similarity(self, new_similarity: float) -> "Target":
         """
         Perform a copy of the target data with new match settings
         and with a newly defined required similarity.
 
-        :param float new_similarity: new required similarity
+        :param new_similarity: new required similarity
         :returns: copy of the current target with new similarity
-        :rtype: :py:class:`target.Target`
         """
         new_target = self.copy()
         new_target.match_settings.params["find"]["similarity"].value = new_similarity
@@ -241,27 +234,23 @@ class Image(Target):
 
     _cache = {}
 
-    def __init__(self, image_filename=None,
-                 pil_image=None, match_settings=None,
-                 use_cache=True):
+    def __init__(self, image_filename: str = "", pil_image: PIL.Image.Image = None,
+                 match_settings: "Finder" = None, use_cache: bool = True) -> None:
         """
         Build an image object.
 
         :param image_filename: name of the image file if any
-        :type image_filename: str or None
         :param pil_image: image data - use cache or recreate if none
-        :type pil_image: :py:class:`PIL.Image` or None
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`finder.Finder` or None
-        :param bool use_cache: whether to cache image data for better performance
+        :param use_cache: whether to cache image data for better performance
         """
         super(Image, self).__init__(match_settings)
         self._filename = image_filename
-        self._pil_image = None
+        self._pil_image: PIL.Image.Image = None
         self._width = 0
         self._height = 0
 
-        if self._filename is not None:
+        if self._filename != "":
             self.load(self._filename, use_cache)
         # per instance pil image has the final word
         if pil_image is not None:
@@ -275,56 +264,52 @@ class Image(Target):
             self._width = self._pil_image.size[0]
             self._height = self._pil_image.size[1]
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide the image filename."""
-        return "noname" if self._filename is None else os.path.splitext(os.path.basename(self._filename))[0]
+        return "noname" if self._filename == "" else os.path.splitext(os.path.basename(self._filename))[0]
 
-    def get_filename(self):
+    def get_filename(self) -> str:
         """
         Getter for readonly attribute.
 
         :returns: filename of the image
-        :rtype: str
         """
         return self._filename
     filename = property(fget=get_filename)
 
-    def get_width(self):
+    def get_width(self) -> int:
         """
         Getter for readonly attribute.
 
         :returns: width of the image
-        :rtype: int
         """
         return self._width
     width = property(fget=get_width)
 
-    def get_height(self):
+    def get_height(self) -> int:
         """
         Getter for readonly attribute.
 
         :returns: height of the image
-        :rtype: int
         """
         return self._height
     height = property(fget=get_height)
 
-    def get_pil_image(self):
+    def get_pil_image(self) -> PIL.Image.Image:
         """
         Getter for readonly attribute.
 
         :returns: image data of the image
-        :rtype: :py:class:`PIL.Image`
         """
         return self._pil_image
     pil_image = property(fget=get_pil_image)
 
-    def load(self, filename, use_cache=True, **kwargs):
+    def load(self, filename: str, use_cache: bool = True, **kwargs: dict[str, type]) -> None:
         """
         Load image from a file.
 
-        :param str filename: name for the target file
-        :param bool use_cache: whether to cache image data for better performance
+        :param filename: name for the target file
+        :param use_cache: whether to cache image data for better performance
         """
         super(Image, self).load(filename)
         if not os.path.exists(filename):
@@ -340,13 +325,12 @@ class Image(Target):
                 self._cache[filename] = self._pil_image
         self._filename = filename
 
-    def save(self, filename):
+    def save(self, filename: str) -> "Image":
         """
         Save image to a file.
 
-        :param str filename: name for the target file
+        :param filename: name for the target file
         :returns: copy of the current image with the new filename
-        :rtype: :py:class:`target.Image`
 
         The image is compressed upon saving with a PNG compression setting
         specified by :py:func:`config.GlobalConfig.image_quality`.
@@ -355,7 +339,7 @@ class Image(Target):
         filename += ".png" if os.path.splitext(filename)[-1] != ".png" else ""
         self.pil_image.save(filename, compress_level=GlobalConfig.image_quality)
 
-        new_image = self.copy()
+        new_image: Image = self.copy()
         new_image._filename = filename
 
         return new_image
@@ -367,17 +351,17 @@ class Text(Target):
     using OCR or general text detection methods.
     """
 
-    def __init__(self, value=None, text_filename=None, match_settings=None):
+    def __init__(self, value: str = None, text_filename: str = None,
+                 match_settings: "Finder" = None) -> None:
         """
         Build a text object.
 
-        :param str value: text value to search for
-        :param str text_filename: custom filename to read the text from
+        :param value: text value to search for
+        :param text_filename: custom filename to read the text from
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Text, self).__init__(match_settings)
-        self.value = value
+        self.value: str = value
         self.filename = text_filename
 
         try:
@@ -388,15 +372,15 @@ class Text(Target):
             # text generated on the fly is also acceptable
             pass
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide a part of the text value."""
         return self.value[:30].replace('/', '').replace('\\', '')
 
-    def load(self, filename, **kwargs):
+    def load(self, filename: str, **kwargs: dict[str, type]) -> None:
         """
         Load text from a file.
 
-        :param str filename: name for the target file
+        :param filename: name for the target file
         """
         super(Text, self).load(filename)
         if not os.path.exists(filename):
@@ -404,26 +388,25 @@ class Text(Target):
         with open(filename) as f:
             self.value = f.read()
 
-    def save(self, filename):
+    def save(self, filename: str) -> None:
         """
         Save text to a file.
 
-        :param str filename: name for the target file
+        :param filename: name for the target file
         """
         super(Text, self).save(filename)
         filename += ".txt" if os.path.splitext(filename)[-1] != ".txt" else ""
         with open(filename, "w") as f:
             f.write(self.value)
 
-    def distance_to(self, str2):
+    def distance_to(self, str2: str) -> float:
         """
         Approximate Hungarian distance.
 
-        :param str str2: string to compare to
+        :param str2: string to compare to
         :returns: string distance value
-        :rtype: float
         """
-        str1 = self.value
+        str1 = str(self.value)
         import numpy
         M = numpy.empty((len(str1) + 1, len(str2) + 1), int)
 
@@ -446,13 +429,12 @@ class Pattern(Target):
     training of a classifier in order to recognize a target.
     """
 
-    def __init__(self, id, match_settings=None):
+    def __init__(self, id: str, match_settings: "Finder" = None) -> None:
         """
         Build a pattern object.
 
-        :param str id: alphanumeric id of logit or label for the given pattern
+        :param id: alphanumeric id of logit or label for the given pattern
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Pattern, self).__init__(match_settings)
         self.id = id
@@ -472,15 +454,15 @@ class Pattern(Target):
             self.match_settings = match_settings
             self.use_own_settings = True
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide the data filename."""
         return self.id
 
-    def load(self, filename, **kwargs):
+    def load(self, filename: str, **kwargs: dict[str, type]) -> None:
         """
         Load pattern from a file.
 
-        :param str filename: name for the target file
+        :param filename: name for the target file
         """
         super(Pattern, self).load(filename)
         if not os.path.exists(filename):
@@ -488,11 +470,11 @@ class Pattern(Target):
         # loading the actual data is backend specific so only register its path
         self.data_file = filename
 
-    def save(self, filename):
+    def save(self, filename: str) -> None:
         """
         Save pattern to a file.
 
-        :param str filename: name for the target file
+        :param filename: name for the target file
         """
         super(Pattern, self).save(filename)
         filename += ".csv" if "." not in str(self.id) else ""
@@ -512,42 +494,40 @@ class Chain(Target):
     step did not succeed.
     """
 
-    def __init__(self, target_name, match_settings=None):
+    def __init__(self, target_name: str, match_settings: "Finder" = None) -> None:
         """
         Build an chain object.
 
-        :param str target_name: name of the target for all steps
+        :param target_name: name of the target for all steps
         :param match_settings: predefined configuration for the CV backend if any
-        :type match_settings: :py:class:`finder.Finder` or None
         """
         super(Chain, self).__init__(match_settings)
         self.target_name = target_name
         self._steps = []
         self.load(self.target_name)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Provide the target name."""
         return self.target_name
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator["Target"]:
         """Provide an interator over the steps."""
         return self._steps.__iter__()
 
-    def load(self, steps_filename, **kwargs):
+    def load(self, steps_filename: str, **kwargs: dict[str, type]) -> None:
         """
         Load steps from a sequence definition file.
 
-        :param str steps_filename: names for the sequence definition file
+        :param steps_filename: names for the sequence definition file
         :raises: :py:class:`errors.UnsupportedBackendError` if a chain step is of unknown type
         :raises: :py:class:`IOError` if an chain step line cannot be parsed
         """
-        def resolve_stepsfile(filename):
+        def resolve_stepsfile(filename: str) -> str:
             """
             Try to find a valid steps file from a given file name.
 
-            :param str filename: full or partial name of the file to find
+            :param filename: full or partial name of the file to find
             :returns: valid path to a steps file
-            :rtype: str
             """
             if not filename.endswith(".steps"):
                 filename += ".steps"
@@ -604,11 +584,11 @@ class Chain(Target):
         # now define own match configuration
         super(Chain, self).load(steps_filename)
 
-    def save(self, steps_filename):
+    def save(self, steps_filename: str) -> None:
         """
         Save steps to a sequence definition file.
 
-        :param str steps_filename: names for the sequence definition file
+        :param steps_filename: names for the sequence definition file
         """
         super(Chain, self).save(self.target_name)
         save_lines = []
