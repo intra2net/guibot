@@ -106,14 +106,13 @@ class Key(object):
         self.KP_ADD = None
         self.KP_DECIMAL = None
 
-    def to_string(self, key):
+    def to_string(self, key: str) -> str:
         """
         Provide with a text representation of a desired key
         according to the custom BC backend.
 
-        :param str key: selected key name according to the custom backend
+        :param key: selected key name according to the custom backend
         :returns: text representation of the selected key
-        :rtype: str
         :raises: :py:class:`ValueError` if `key` is not found in the current key map
         """
         if key is None:
@@ -550,14 +549,13 @@ class KeyModifier(object):
         self.MOD_SHIFT = None
         self.MOD_META = None
 
-    def to_string(self, key):
+    def to_string(self, key: str) -> str:
         """
         Provide with a text representation of a desired modifier key
         according to the custom BC backend.
 
-        :param str key: selected modifier name according to the current backend
+        :param key: selected modifier name according to the current backend
         :returns: text representation of the selected modifier
-        :rtype: str
         :raises: :py:class:`ValueError` if `key` is not found in the current modifier map
         """
         if key is None:
@@ -641,14 +639,13 @@ class MouseButton(object):
         self.RIGHT_BUTTON = None
         self.CENTER_BUTTON = None
 
-    def to_string(self, key):
+    def to_string(self, key: str) -> str:
         """
         Provide with a text representation of a desired mouse button
         according to the custom BC backend.
 
-        :param str key: selected mouse button according to the current backend
+        :param key: selected mouse button according to the current backend
         :returns: text representation of the selected mouse button
-        :rtype: str
         :raises: :py:class:`ValueError` if `key` is not found in the current mouse map
         """
         if key is None:

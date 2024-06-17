@@ -50,24 +50,21 @@ __all__ = ['CVParameter', 'Finder', 'AutoPyFinder', 'ContourFinder', 'TemplateFi
 class CVParameter(object):
     """A class for a single parameter used for CV backend configuration."""
 
-    def __init__(self, value,
-                 min_val=None, max_val=None,
-                 delta=10.0, tolerance=1.0,
-                 fixed=True, enumerated=False):
+    def __init__(self, value: bool | int | float | str | None,
+                 min_val: int | float = None, max_val: int | float = None,
+                 delta: float = 10.0, tolerance: float = 1.0,
+                 fixed: bool = True, enumerated: bool = False) -> None:
         """
         Build a computer vision parameter.
 
         :param value: value of the parameter
-        :type value: bool or int or float or str or None
         :param min_val: lower boundary for the parameter range
-        :type min_val: int or float or None
         :param max_val: upper boundary for the parameter range
-        :type max_val: int or float or None
         :param float delta: delta for the calibration and random value
                             (no calibration if `delta` < `tolerance`)
-        :param float tolerance: tolerance of calibration
-        :param bool fixed: whether the parameter is prevented from calibration
-        :param bool enumerated: whether the parameter value belongs to an
+        :param tolerance: tolerance of calibration
+        :param fixed: whether the parameter is prevented from calibration
+        :param enumerated: whether the parameter value belongs to an
                                 enumeration or to a range (distance matters)
 
         As a rule of thumb a good choice for the parameter delta is one fourth
@@ -106,35 +103,32 @@ class CVParameter(object):
         if self.enumerated and (self.min_val is None or self.max_val is None):
             raise ValueError("Enumerated parameters must have a finite (usually small) range")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         Provide a representation of the parameter for storing and reporting.
 
         :returns: special syntax representation of the parameter
-        :rtype: str
         """
         return ("<value='%s' min='%s' max='%s' delta='%s' tolerance='%s' fixed='%s' enumerated='%s'>"
                 % (self.value, self.min_val, self.max_val, self.delta, self.tolerance, self.fixed, self.enumerated))
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         """
         Custom implementation for equality check.
 
         :returns: whether this instance is equal to another
-        :rtype: bool
         """
         if not isinstance(other, CVParameter):
             return NotImplemented
         return repr(self) == repr(other)
 
     @staticmethod
-    def from_string(raw):
+    def from_string(raw: str) -> "CVParameter":
         """
         Parse a CV parameter from string.
 
-        :param str raw: string representation for the parameter
+        :param raw: string representation for the parameter
         :returns: parameter parsed from the representation
-        :rtype: :py:class:`CVParameter`
         :raises: :py:class:`ValueError` if unsupported type is encountered
         """
         args = []
@@ -162,17 +156,17 @@ class CVParameter(object):
         log.log(9, "%s", args)
         return CVParameter(*args)
 
-    def random_value(self, mu=None, sigma=None):
+    def random_value(self, mu: bool | int | float | str = None,
+                     sigma: bool | int | float | str = None) -> bool | int | float | str | None:
         """
         Return a random value of the CV parameter given its range and type.
 
         :param mu: mean for a normal distribution, uniform distribution if None
-        :type mu: bool or int or float or str or None
+        :type mu:
         :param sigma: standard deviation for a normal distribution, quarter range if None
                       (maximal range is equivalent to maximal data type values)
-        :type sigma: bool or int or float or str or None
+        :type sigma: or None
         :returns: a random value comforming to the CV parameter range and type
-        :rtype: bool or int or float or str or None
 
         .. note:: Only uniform distribution is used for boolean values.
         """
@@ -211,13 +205,12 @@ class Finder(LocalConfig):
     """
 
     @staticmethod
-    def from_match_file(filename):
+    def from_match_file(filename: str) -> "Finder":
         """
         Read the configuration from a match file with the given filename.
 
-        :param str filename: match filename for the configuration
+        :param filename: match filename for the configuration
         :returns: target finder with the parsed (and generated) settings
-        :rtype: :py:class:`finder.Finder`
         :raises: :py:class:`IOError` if the respective match file couldn't be read
 
         The influence of the read configuration is that of an overwrite, i.e.
@@ -284,13 +277,12 @@ class Finder(LocalConfig):
         return finder
 
     @staticmethod
-    def to_match_file(finder, filename):
+    def to_match_file(finder: "Finder", filename: str) -> None:
         """
         Write the configuration to a match file with the given filename.
 
         :param finder: match configuration to save
-        :type finder: :py:class:`finder.Finder`
-        :param str filename: match filename for the configuration
+        :param filename: match filename for the configuration
         """
         parser = config.RawConfigParser()
         # preserve case sensitivity
@@ -311,7 +303,7 @@ class Finder(LocalConfig):
             configfile.write("# IMAGE MATCH DATA\n")
             parser.write(configfile)
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a finder and its CV backend settings."""
         super(Finder, self).__init__(configure=False, synchronize=False)
 
@@ -328,7 +320,8 @@ class Finder(LocalConfig):
         if configure:
             self.__configure_backend(reset=True)
 
-    def __configure_backend(self, backend=None, category="find", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "find",
+                            reset: bool = False) -> None:
         if category != "find":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -345,7 +338,8 @@ class Finder(LocalConfig):
         self.params[category]["similarity"] = CVParameter(0.75, 0.0, 1.0)
         log.log(9, "%s %s\n", category, self.params[category])
 
-    def configure_backend(self, backend=None, category="find", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "find",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -353,7 +347,8 @@ class Finder(LocalConfig):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend=None, category="find", reset=False):
+    def __synchronize_backend(self, backend: str = None, category: str = "find",
+                            reset: bool = False) -> None:
         if category != "find":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -362,7 +357,8 @@ class Finder(LocalConfig):
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
         backend = self.params[category]["backend"]
 
-    def synchronize_backend(self, backend=None, category="find", reset=False):
+    def synchronize_backend(self, backend: str = None, category: str = "find",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -370,13 +366,13 @@ class Finder(LocalConfig):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def can_calibrate(self, category, mark):
+    def can_calibrate(self, category: str, mark: bool) -> None:
         """
         Fix the parameters for a given category backend algorithm,
         i.e. disallow the calibrator to change them.
 
-        :param bool mark: whether to mark for calibration
-        :param str category: backend category whose parameters are marked
+        :param category: backend category whose parameters are marked
+        :param mark: whether to mark for calibration
         :raises: :py:class:`UnsupportedBackendError` if `category` is not among the
                  supported backend categories
         """
@@ -398,12 +394,11 @@ class Finder(LocalConfig):
                 value.fixed = not mark
             log.debug("Setting %s/%s to fixed=%s for calibration", category, key, value.fixed)
 
-    def copy(self):
+    def copy(self) -> "Finder":
         """
         Deep copy the current finder and its configuration.
 
         :returns: a copy of the current finder with identical configuration
-        :rtype: :py:class:`Finder`
         """
         acopy = type(self)(synchronize=False)
         for category in self.params.keys():
@@ -426,25 +421,23 @@ class Finder(LocalConfig):
 
         return acopy
 
-    def find(self, needle, haystack):
+    def find(self, needle: "Target" | list["Target"],
+             haystack: target.Image) -> list[match.Match]:
         """
         Find all needle targets in a haystack image.
 
         :param needle: image, text, pattern, or a list or chain of such to look for
-        :type needle: :py:class:`target.Target` or [:py:class:`target.Target`]
         :param haystack: image to look in
-        :type haystack: :py:class:`target.Image`
         :returns: all found matches (one in most use cases)
-        :rtype: [:py:class:`match.Match`]
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
         raise NotImplementedError("Abstract method call - call implementation of this class")
 
-    def log(self, lvl):
+    def log(self, lvl: int) -> None:
         """
         Log images with an arbitrary logging level.
 
-        :param int lvl: logging level for the message
+        :param lvl: logging level for the message
         """
         # below selected logging level
         if lvl < self.imglog.logging_level:
@@ -468,7 +461,7 @@ class Finder(LocalConfig):
 class AutoPyFinder(Finder):
     """Simple matching backend provided by AutoPy."""
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a CV backend using AutoPy."""
         super(AutoPyFinder, self).__init__(configure=False, synchronize=False)
 
@@ -479,7 +472,8 @@ class AutoPyFinder(Finder):
         if configure:
             self.__configure_backend(reset=True)
 
-    def __configure_backend(self, backend=None, category="autopy", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "autopy",
+                            reset: bool = False) -> None:
         if category != "autopy":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -488,7 +482,8 @@ class AutoPyFinder(Finder):
         self.params[category] = {}
         self.params[category]["backend"] = "none"
 
-    def configure_backend(self, backend=None, category="autopy", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "autopy",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -496,12 +491,12 @@ class AutoPyFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Image, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
-        :type needle: :py:class:`Image`
+        :param haystack: image to look in
 
         See base method for details.
 
@@ -572,7 +567,7 @@ class ContourFinder(Finder):
     the ones with area (size) similar to the searched image.
     """
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a CV backend using OpenCV's contour matching."""
         super(ContourFinder, self).__init__(configure=False, synchronize=False)
 
@@ -586,7 +581,8 @@ class ContourFinder(Finder):
         if configure:
             self.__configure(reset=True)
 
-    def __configure_backend(self, backend=None, category="contour", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "contour",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -641,7 +637,8 @@ class ContourFinder(Finder):
                 self.params[category]["threshold1"] = CVParameter(100.0, 0.0, None, 50.0)
                 self.params[category]["threshold2"] = CVParameter(1000.0, 0.0, None, 500.0)
 
-    def configure_backend(self, backend=None, category="contour", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "contour",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -649,26 +646,29 @@ class ContourFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __configure(self, threshold_filter=None, reset=True, **kwargs):
-        self.__configure_backend(category="contour", reset=reset)
-        self.__configure_backend(threshold_filter, "threshold")
-
-    def configure(self, threshold_filter=None, reset=True, **kwargs):
+    def __configure(self, threshold_filter: str = None, reset: bool = True, **kwargs) -> None:
         """
         Custom implementation of the base method.
 
         :param threshold_filter: name of a preselected backend
-        :type threshold_filter: str or None
+        """
+        self.__configure_backend(category="contour", reset=reset)
+        self.__configure_backend(threshold_filter, "threshold")
+
+    def configure(self, threshold_filter: str = None, reset: bool = True, **kwargs) -> None:
+        """
+        Custom implementation of the base method.
+
+        :param threshold_filter: name of a preselected backend
         """
         self.__configure(threshold_filter, reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Image, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
-        :type needle: :py:class:`Image`
-
+        :param haystack: image to look in
         See base method for details.
 
         First extract all contours from a binary (boolean, threshold) version of
@@ -754,7 +754,7 @@ class ContourFinder(Finder):
         self.imglog.log(30)
         return matches
 
-    def _binarize_image(self, image, log=False):
+    def _binarize_image(self, image: list[str], log: bool = False) -> list[str]:
         import cv2
         # blur first in order to avoid unwonted edges caused from noise
         blurSize = self.params["threshold"]["blurKernelSize"].value
@@ -791,7 +791,7 @@ class ContourFinder(Finder):
             self.imglog.hotmaps.append(thresh_image)
         return thresh_image
 
-    def _extract_contours(self, countours_image, log=False):
+    def _extract_contours(self, countours_image: list[str], log: bool = False) -> list[str]:
         import cv2
         rargs = cv2.findContours(countours_image,
                                  self.params["contour"]["retrievalMode"].value,
@@ -806,7 +806,7 @@ class ContourFinder(Finder):
             self.imglog.hotmaps.append(countours_image)
         return image_contours
 
-    def log(self, lvl):
+    def log(self, lvl: int) -> None:
         """
         Custom implementation of the base method.
 
@@ -839,7 +839,7 @@ class ContourFinder(Finder):
 class TemplateFinder(Finder):
     """Template matching backend provided by OpenCV."""
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a CV backend using OpenCV's template matching."""
         super(TemplateFinder, self).__init__(configure=False, synchronize=False)
 
@@ -852,7 +852,8 @@ class TemplateFinder(Finder):
         if configure:
             self.__configure_backend(reset=True)
 
-    def __configure_backend(self, backend=None, category="template", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "template",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -874,7 +875,8 @@ class TemplateFinder(Finder):
         self.params[category]["nocolor"] = CVParameter(False)
         log.log(9, "%s %s\n", category, self.params[category])
 
-    def configure_backend(self, backend=None, category="template", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "template",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -882,12 +884,12 @@ class TemplateFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Image, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
-        :type needle: :py:class:`Image`
+        :param haystack: image to look in
         :raises: :py:class:`UnsupportedBackendError` if the choice of template
                  matches is not among the supported ones
 
@@ -985,7 +987,8 @@ class TemplateFinder(Finder):
 
         return matches
 
-    def _match_template(self, needle, haystack, nocolor, method):
+    def _match_template(self, needle: Image, haystack: target.Image, nocolor: str,
+                        method: str) -> list[match.Match]:
         """
         EXTRA DOCSTRING: Template matching backend - wrapper.
 
@@ -1017,7 +1020,7 @@ class TemplateFinder(Finder):
 
         return match
 
-    def log(self, lvl):
+    def log(self, lvl: int) -> None:
         """
         Custom implementation of the base method.
 
@@ -1055,7 +1058,7 @@ class FeatureFinder(Finder):
         by default in newer OpenCV versions (>3.0).
     """
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a CV backend using OpenCV's feature matching."""
         super(FeatureFinder, self).__init__(configure=False, synchronize=False)
 
@@ -1085,7 +1088,8 @@ class FeatureFinder(Finder):
         if synchronize:
             self.__synchronize(reset=False)
 
-    def __configure_backend(self, backend=None, category="feature", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "feature",
+                            reset: bool = False) -> None:
         if category not in ["feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -1185,7 +1189,8 @@ class FeatureFinder(Finder):
                     self.params[category][param] = CVParameter(val)
                 log.log(9, "%s=%s", param, val)
 
-    def configure_backend(self, backend=None, category="feature", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "feature",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -1205,28 +1210,33 @@ class FeatureFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __configure(self, feature_detect=None, feature_extract=None,
-                    feature_match=None, reset=True, **kwargs):
+    def __configure(self, feature_detect: str = None, feature_extract: str = None,
+                    feature_match: str = None, reset: bool = True, **kwargs) -> None:
+        """
+        Custom implementation of the base method.
+
+        :param feature_detect: name of a preselected backend
+        :param feature_extract: name of a preselected backend
+        :param feature_match: name of a preselected backend
+        """
         self.__configure_backend(category="feature", reset=reset)
         self.__configure_backend(feature_detect, "fdetect")
         self.__configure_backend(feature_extract, "fextract")
         self.__configure_backend(feature_match, "fmatch")
 
-    def configure(self, feature_detect=None, feature_extract=None,
-                  feature_match=None, reset=True, **kwargs):
+    def configure(self, feature_detect: str = None, feature_extract: str = None,
+                  feature_match: str = None, reset: bool = True, **kwargs) -> None:
         """
         Custom implementation of the base method.
 
         :param feature_detect: name of a preselected backend
-        :type feature_detect: str or None
         :param feature_extract: name of a preselected backend
-        :type feature_extract: str or None
         :param feature_match: name of a preselected backend
-        :type feature_match: str or None
         """
         self.__configure(feature_detect, feature_extract, feature_match, reset)
 
-    def __synchronize_backend(self, backend=None, category="feature", reset=False):
+    def __synchronize_backend(self, backend: str = None, category: str = "feature",
+                              reset: bool = False) -> None:
         if category not in ["feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -1280,7 +1290,8 @@ class FeatureFinder(Finder):
         elif category == "fmatch":
             self.matcher = backend_obj
 
-    def synchronize_backend(self, backend=None, category="feature", reset=False):
+    def synchronize_backend(self, backend: str = None, category: str = "feature",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -1288,33 +1299,29 @@ class FeatureFinder(Finder):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def __synchronize(self, feature_detect=None, feature_extract=None,
-                      feature_match=None, reset=True):
+    def __synchronize(self, feature_detect: str = None, feature_extract: str = None,
+                      feature_match: str = None, reset: bool = True) -> None:
         self.__synchronize_backend(category="feature", reset=reset)
         self.__synchronize_backend(feature_detect, "fdetect")
         self.__synchronize_backend(feature_extract, "fextract")
         self.__synchronize_backend(feature_match, "fmatch")
 
-    def synchronize(self, feature_detect=None, feature_extract=None,
-                    feature_match=None, reset=True):
+    def synchronize(self, feature_detect: str = None, feature_extract: str = None,
+                    feature_match: str = None, reset: bool = True) -> None:
         """
         Custom implementation of the base method.
 
         :param feature_detect: name of a preselected backend
-        :type feature_detect: str or None
         :param feature_extract: name of a preselected backend
-        :type feature_extract: str or None
         :param feature_match: name of a preselected backend
-        :type feature_match: str or None
         """
         self.__synchronize(feature_detect, feature_extract, feature_match, reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Image, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
-        :type needle: :py:class:`Image`
 
         See base method for details.
 
@@ -1364,6 +1371,8 @@ class FeatureFinder(Finder):
 
         Wrapper for the internal feature detection, matching and location
         projection used by all public feature matching functions.
+
+        ..todo:: locations_in_needle, ngray, hgray, similarity are not documented
         """
         # default logging in case no match is found (further overridden by match stages)
         self.imglog.locations.append((0, 0))
@@ -1411,6 +1420,8 @@ class FeatureFinder(Finder):
         EXTRA DOCSTRING: Feature matching backend - detection/extraction stage (1).
 
         Detect all keypoints and calculate their respective decriptors.
+
+        ..todo:: ngray, hgray, detect, extract are not documented
         """
         nfactor = self.params["fdetect"]["nzoom"].value
         hfactor = self.params["fdetect"]["hzoom"].value
@@ -1463,6 +1474,8 @@ class FeatureFinder(Finder):
         EXTRA DOCSTRING: Feature matching backend - matching stage (2).
 
         Match two sets of keypoints based on their descriptors.
+
+        ..todo:: nkeypoints, ndescriptors, hkeypoints, hdescriptors, match are not documented
         """
         def ratio_test(matches):
             """
@@ -1471,6 +1484,8 @@ class FeatureFinder(Finder):
             match and the probabilty of error when choosing one is greater.
             Therefore these matches are ignored and thus only matches of
             greater probabilty are returned.
+
+            ..todo:: matches is not documented
             """
             matches2 = []
             for m in matches:
@@ -1495,6 +1510,8 @@ class FeatureFinder(Finder):
             sets of keypoints. The two keypoints must be best feature
             matching of each other to ensure the error by accepting the
             match is not too large.
+
+            ..todo:: nmatches, hmatches are not documented
             """
             import cv2
             matches2 = []
@@ -1582,6 +1599,8 @@ class FeatureFinder(Finder):
             i.e. the upper left corner of the image. In case of wild
             transformations of the needle in the haystack this has to
             be reconsidered and the needle center becomes obligatory.
+
+        ..todo:: locations_in_needle, mnkp, mhkp are not documented
         """
         # check matches consistency
         assert len(mnkp) == len(mhkp)
@@ -1635,7 +1654,7 @@ class FeatureFinder(Finder):
 
         return projected
 
-    def log(self, lvl):
+    def log(self, lvl: int) -> None:
         """
         Custom implementation of the base method.
 
@@ -1669,7 +1688,9 @@ class FeatureFinder(Finder):
         self.imglog.clear()
         ImageLogger.step += 1
 
-    def _log_features(self, lvl, locations, hotmap, radius=0, r=255, g=255, b=255):
+    def _log_features(self, lvl: int, locations, hotmap, radius: int = 0, r: int = 255,
+                      g: int = 255, b: int = 255) -> None:
+        # ..todo:: locations, hotmap are not documented
         if lvl < self.imglog.logging_level:
             return
         import cv2
@@ -1692,7 +1713,8 @@ class CascadeFinder(Finder):
     due to the cascade classifier API.
     """
 
-    def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
+    def __init__(self, classifier_datapath: str = ".", configure: bool = True,
+                 synchronize: bool = True) -> None:
         """Build a CV backend using OpenCV's cascade matching options."""
         super(CascadeFinder, self).__init__(configure=False, synchronize=False)
 
@@ -1700,7 +1722,8 @@ class CascadeFinder(Finder):
         if configure:
             self.__configure_backend(reset=True)
 
-    def __configure_backend(self, backend=None, category="cascade", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "cascade",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -1720,7 +1743,8 @@ class CascadeFinder(Finder):
         self.params[category]["minHeight"] = CVParameter(0, 0, None, 100.0)
         self.params[category]["maxHeight"] = CVParameter(1000, 0, None, 100.0)
 
-    def configure_backend(self, backend=None, category="cascade", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "cascade",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -1728,12 +1752,11 @@ class CascadeFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Pattern, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
         :param needle: target pattern (cascade) to search for
-        :type needle: :py:class:`Pattern`
 
         See base method for details.
         """
@@ -1788,7 +1811,7 @@ class TextFinder(ContourFinder):
     Neumann L., Matas J.: Real-Time Scene Text Localization and Recognition, CVPR 2012
     """
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a CV backend using OpenCV's text matching options."""
         super(TextFinder, self).__init__(configure=False, synchronize=False)
 
@@ -1817,7 +1840,8 @@ class TextFinder(ContourFinder):
         if synchronize:
             self.__synchronize(reset=False)
 
-    def __configure_backend(self, backend=None, category="text", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "text",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -1953,7 +1977,8 @@ class TextFinder(ContourFinder):
             # 0 (precise) or 3x3 or 5x5 (the latest only works with Euclidean distance CV_DIST_L2)
             self.params[category]["dt_mask_size"] = CVParameter(3, 0, 5, 8.0, 2.0)
 
-    def configure_backend(self, backend=None, category="text", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "text",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -1961,9 +1986,9 @@ class TextFinder(ContourFinder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __configure(self, text_detector=None, text_recognizer=None,
-                    threshold_filter=None, threshold_filter2=None,
-                    threshold_filter3=None, reset=True):
+    def __configure(self, text_detector: str = None, text_recognizer: str = None,
+                    threshold_filter: str = None, threshold_filter2: str = None,
+                    threshold_filter3: str = None, reset: bool = True) -> None:
         self.__configure_backend(category="text", reset=reset)
         self.__configure_backend(text_detector, "tdetect")
         self.__configure_backend(text_recognizer, "ocr")
@@ -1972,28 +1997,24 @@ class TextFinder(ContourFinder):
         self.__configure_backend(threshold_filter2, "threshold2")
         self.__configure_backend(threshold_filter3, "threshold3")
 
-    def configure(self, text_detector=None, text_recognizer=None,
-                  threshold_filter=None, threshold_filter2=None,
-                  threshold_filter3=None, reset=True, **kwargs):
+    def configure(self, text_detector: str = None, text_recognizer: str = None,
+                  threshold_filter: str = None, threshold_filter2: str = None,
+                  threshold_filter3: str = None, reset: bool = True, **kwargs) -> None:
         """
         Custom implementation of the base method.
 
         :param text_detector: name of a preselected backend
-        :type text_detector: str or None
         :param text_recognizer: name of a preselected backend
-        :type text_recognizer: str or None
         :param threshold_filter: threshold filter for the text detection stage
-        :type threshold_filter: str or None
         :param threshold_filter2: additional threshold filter for the OCR stage
-        :type threshold_filter2: str or None
         :param threshold_filter3: additional threshold filter for distance transformation
-        :type threshold_filter3: str or None
         """
         self.__configure(text_detector, text_recognizer,
                          threshold_filter, threshold_filter2, threshold_filter3,
                          reset)
 
-    def __synchronize_backend(self, backend=None, category="text", reset=False):
+    def __synchronize_backend(self, backend: str = None, category: str = "text",
+                              reset: bool = False) -> None:
         if category not in ["text", "tdetect", "ocr", "contour", "threshold", "threshold2", "threshold3"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -2102,7 +2123,8 @@ class TextFinder(ContourFinder):
             else:
                 raise ValueError("Invalid OCR backend '%s'" % backend)
 
-    def synchronize_backend(self, backend=None, category="text", reset=False):
+    def synchronize_backend(self, backend: str = None, category: str = "text",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -2110,9 +2132,9 @@ class TextFinder(ContourFinder):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def __synchronize(self, text_detector=None, text_recognizer=None,
-                      threshold_filter=None, threshold_filter2=None,
-                      threshold_filter3=None, reset=True):
+    def __synchronize(self, text_detector: str = None, text_recognizer: str = None,
+                      threshold_filter: str = None, threshold_filter2: str = None,
+                      threshold_filter3: str = None, reset: bool = True) -> None:
         self.__synchronize_backend(category="text", reset=reset)
         self.__synchronize_backend(text_detector, "tdetect")
         self.__synchronize_backend(text_recognizer, "ocr")
@@ -2121,33 +2143,27 @@ class TextFinder(ContourFinder):
         self.__synchronize_backend(threshold_filter2, "threshold2")
         self.__synchronize_backend(threshold_filter3, "threshold3")
 
-    def synchronize(self, text_detector=None, text_recognizer=None,
-                    threshold_filter=None, threshold_filter2=None,
-                    threshold_filter3=None, reset=True):
+    def synchronize(self, text_detector: str = None, text_recognizer: str = None,
+                    threshold_filter: str = None, threshold_filter2: str = None,
+                    threshold_filter3: str = None, reset: bool = True) -> None:
         """
         Custom implementation of the base method.
 
         :param text_detector: name of a preselected backend
-        :type text_detector: str or None
         :param text_recognizer: name of a preselected backend
-        :type text_recognizer: str or None
         :param threshold_filter: threshold filter for the text detection stage
-        :type threshold_filter: str or None
         :param threshold_filter2: additional threshold filter for the OCR stage
-        :type threshold_filter2: str or None
         :param threshold_filter3: additional threshold filter for distance transformation
-        :type threshold_filter3: str or None
         """
         self.__synchronize(text_detector, text_recognizer,
                            threshold_filter, threshold_filter2, threshold_filter3,
                            reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Text, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
         :param needle: target text to search for
-        :type needle: :py:class:`Text`
 
         See base method for details.
         """
@@ -2279,7 +2295,7 @@ class TextFinder(ContourFinder):
         self.imglog.log(30)
         return matches
 
-    def _detect_text_boxes(self, haystack):
+    def _detect_text_boxes(self, haystack: target.Image) -> list[match.Match]:
         import cv2
         import numpy
 
@@ -2350,7 +2366,7 @@ class TextFinder(ContourFinder):
 
         return text_regions
 
-    def _detect_text_east(self, haystack):
+    def _detect_text_east(self, haystack: target.Image) -> list[match.Match]:
         #:.. note:: source implementation by Adrian Rosebrock from his post:
         #:   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
         import cv2
@@ -2438,7 +2454,7 @@ class TextFinder(ContourFinder):
         logging.debug("A total of %s final text regions found", len(text_regions))
         return text_regions
 
-    def _detect_text_erstat(self, haystack):
+    def _detect_text_erstat(self, haystack: target.Image) -> list[match.Match]:
         import cv2
         import numpy
         img = numpy.array(haystack.pil_image)
@@ -2502,7 +2518,7 @@ class TextFinder(ContourFinder):
             final_regions.append(r1)
         return final_regions
 
-    def _detect_text_contours(self, haystack):
+    def _detect_text_contours(self, haystack: target.Image) -> list[match.Match]:
         import cv2
         import numpy
         img = numpy.array(haystack.pil_image)
@@ -2572,7 +2588,7 @@ class TextFinder(ContourFinder):
 
         return text_regions
 
-    def _detect_text_components(self, haystack):
+    def _detect_text_components(self, haystack: target.Image) -> list[match.Match]:
         import cv2
         import numpy
         img = numpy.array(haystack.pil_image)
@@ -2607,7 +2623,7 @@ class TextFinder(ContourFinder):
         # myblobs.filter_blobs(325, 2000)
         # blob_count = myblobs.GetNumBlobs()
 
-    def log(self, lvl):
+    def log(self, lvl: int) -> None:
         """
         Custom implementation of the base method.
 
@@ -2658,7 +2674,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
     would otherwise be distracting for the second stage feature matching.
     """
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a CV backend using OpenCV's template and feature matching."""
         super(TemplateFeatureFinder, self).__init__(configure=False, synchronize=False)
 
@@ -2670,7 +2686,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         if synchronize:
             FeatureFinder.synchronize(self, reset=False)
 
-    def __configure_backend(self, backend=None, category="tempfeat", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "tempfeat",
+                            reset: bool = False) -> None:
         if category not in ["tempfeat", "template", "feature", "fdetect", "fextract", "fmatch"]:
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         elif category in ["feature", "fdetect", "fextract", "fmatch"]:
@@ -2692,7 +2709,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         self.params[category]["backend"] = backend
         self.params[category]["front_similarity"] = CVParameter(0.7, 0.0, 1.0)
 
-    def configure_backend(self, backend=None, category="tempfeat", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "tempfeat",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -2700,8 +2718,9 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __configure(self, template_match=None, feature_detect=None,
-                    feature_extract=None, feature_match=None, reset=True):
+    def __configure(self, template_match=None, feature_detect: str = None,
+                    feature_extract: str = None, feature_match: str = None,
+                    reset: bool = True) -> None:
         self.__configure_backend(category="tempfeat", reset=reset)
         self.__configure_backend(template_match, "template")
         self.__configure_backend(category="feature")
@@ -2709,9 +2728,9 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         self.__configure_backend(feature_extract, "fextract")
         self.__configure_backend(feature_match, "fmatch")
 
-    def configure(self, template_match=None, feature_detect=None,
-                  feature_extract=None, feature_match=None,
-                  reset=True, **kwargs):
+    def configure(self, template_match=None, feature_detect: str = None,
+                  feature_extract: str = None, feature_match: str = None,
+                  reset: bool = True, **kwargs) -> None:
         """
         Custom implementation of the base methods.
 
@@ -2719,8 +2738,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         """
         self.__configure(template_match, feature_detect, feature_extract, feature_match, reset)
 
-    def synchronize(self, feature_detect=None, feature_extract=None,
-                    feature_match=None, reset=True):
+    def synchronize(self, feature_detect: str = None, feature_extract: str = None,
+                    feature_match: str = None, reset: bool = True) -> None:
         """
         Custom implementation of the base method.
 
@@ -2733,7 +2752,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
                                   feature_match=feature_match,
                                   reset=False)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Image, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
@@ -2863,7 +2882,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         self.imglog.log(30)
         return matches
 
-    def log(self, lvl):
+    def log(self, lvl: int) -> None:
         """
         Custom implementation of the base method.
 
@@ -2915,7 +2934,8 @@ class DeepFinder(Finder):
 
     _cache = {}
 
-    def __init__(self, classifier_datapath=".", configure=True, synchronize=True):
+    def __init__(self, classifier_datapath: str = ".", configure: bool = True,
+                 synchronize: bool = True) -> None:
         """Build a CV backend using OpenCV's text matching options."""
         super(DeepFinder, self).__init__(configure=False, synchronize=False)
 
@@ -2932,7 +2952,8 @@ class DeepFinder(Finder):
         if synchronize:
             self.__synchronize_backend(reset=False)
 
-    def __configure_backend(self, backend=None, category="deep", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "deep",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -2960,7 +2981,8 @@ class DeepFinder(Finder):
         # file to load pre-trained model weights from
         self.params[category]["model"] = CVParameter("")
 
-    def configure_backend(self, backend=None, category="deep", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "deep",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -2968,7 +2990,8 @@ class DeepFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend=None, category="deep", reset=False):
+    def __synchronize_backend(self, backend: str = None, category: str = "deep",
+                              reset: bool = False) -> None:
         if category != "deep":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -3037,7 +3060,8 @@ class DeepFinder(Finder):
         else:
             raise ValueError("Invalid DL backend '%s'" % backend)
 
-    def synchronize_backend(self, backend=None, category="deep", reset=False):
+    def synchronize_backend(self, backend: str = None, category: str = "deep",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -3045,12 +3069,11 @@ class DeepFinder(Finder):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Pattern, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
         :param needle: target pattern (cascade) to search for
-        :type needle: :py:class:`Pattern`
 
         See base method for details.
         """
@@ -3133,7 +3156,7 @@ class DeepFinder(Finder):
         self.imglog.log(30)
         return matches
 
-    def log(self, lvl):
+    def log(self, lvl: int) -> None:
         """
         Custom implementation of the base method.
 
@@ -3173,7 +3196,7 @@ class HybridFinder(Finder):
     the chain is reached.
     """
 
-    def __init__(self, configure=True, synchronize=True):
+    def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a hybrid matcher."""
         super(HybridFinder, self).__init__(configure=False, synchronize=False)
 
@@ -3190,7 +3213,8 @@ class HybridFinder(Finder):
         if synchronize:
             self.__synchronize_backend(reset=False)
 
-    def __configure_backend(self, backend=None, category="hybrid", reset=False):
+    def __configure_backend(self, backend: str = None, category: str = "hybrid",
+                            reset: bool = False) -> None:
         if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -3205,7 +3229,8 @@ class HybridFinder(Finder):
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
-    def configure_backend(self, backend=None, category="hybrid", reset=False):
+    def configure_backend(self, backend: str = None, category: str = "hybrid",
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -3213,7 +3238,8 @@ class HybridFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend=None, category="hybrid", reset=False):
+    def __synchronize_backend(self, backend: str = None, category: str = "hybrid",
+                              reset: bool = False) -> None:
         if category != "hybrid":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -3240,7 +3266,8 @@ class HybridFinder(Finder):
         elif backend == "deep":
             self.matcher = DeepFinder()
 
-    def synchronize_backend(self, backend=None, category="hybrid", reset=False):
+    def synchronize_backend(self, backend: str = None, category: str = "hybrid",
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -3248,7 +3275,7 @@ class HybridFinder(Finder):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def find(self, needle, haystack):
+    def find(self, needle: Image, haystack: target.Image) -> list[match.Match]:
         """
         Custom implementation of the base method.
 
