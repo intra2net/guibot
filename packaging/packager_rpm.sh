@@ -27,6 +27,8 @@ if (( distro_version <= 32 )); then
 else
     export DISABLE_AUTOPY=1
 fi
+# TODO: vncdotool doesn't control its Twisted which doesn't control its "incremental" dependency
+pip3 install incremental==22.10.0
 pip3 install vncdotool==0.12.0
 dnf -y install xdotool xwd ImageMagick
 # NOTE: PyAutoGUI's scrot dependencies are broken on Fedora 33- so we don't support these

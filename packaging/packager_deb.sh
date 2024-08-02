@@ -34,6 +34,8 @@ fi
 pip3 install torch==1.8.1 torchvision==0.9.1
 # screen controlling
 pip3 install autopy==4.0.0
+# TODO: vncdotool doesn't control its Twisted which doesn't control its "incremental" dependency
+pip3 install incremental==22.10.0
 pip3 install vncdotool==0.12.0
 apt-get -y install xdotool x11-apps imagemagick
 apt-get -y install python3-tk scrot
