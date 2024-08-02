@@ -157,7 +157,7 @@ class Controller(LocalConfig):
         self.__configure_backend(backend, category, reset)
 
     def __synchronize_backend(self, backend: str = None, category: str = "control",
-                          reset: bool = False) -> None:
+                              reset: bool = False) -> None:
         if category != "control":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -166,7 +166,7 @@ class Controller(LocalConfig):
             raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
 
     def synchronize_backend(self, backend: str = None, category: str = "control",
-                          reset: bool = False) -> None:
+                            reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -178,7 +178,7 @@ class Controller(LocalConfig):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def _region_from_args(self, *args: "Region") -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...], str]:
+    def _region_from_args(self, *args: "Region") -> tuple[int, int, int, int, str]:
         if len(args) == 4:
             xpos = args[0]
             ypos = args[1]
@@ -251,7 +251,7 @@ class Controller(LocalConfig):
         Hold down a mouse button.
 
         :param button: button index depending on backend
-                           (see :py:class:`inputmap.MouseButton` for extensive list)
+                       (see :py:class:`inputmap.MouseButton` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
         raise NotImplementedError("Method is not available for this controller implementation")
@@ -261,7 +261,7 @@ class Controller(LocalConfig):
         Release a mouse button.
 
         :param button: button index depending on backend
-                           (see :py:class:`inputmap.MouseButton` for extensive list)
+                       (see :py:class:`inputmap.MouseButton` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
         raise NotImplementedError("Method is not available for this controller implementation")
@@ -398,8 +398,8 @@ class AutoPyController(Controller):
 
         # autopy works in points and requires a minimum of one point along a dimension
         xpos, ypos, width, height = xpos / self._scale, ypos / self._scale, width / self._scale, height / self._scale
-        xpos, ypos = xpos - (1.0 - width) if width < 1.0 else xpos, ypos - (1.0 - height) if height < 1.0 else ypos
-        height, width = 1.0 if height < 1.0 else height, 1.0 if width < 1.0 else width
+        xpos, ypos = float(xpos) - (1.0 - float(width)) if width < 1.0 else xpos, float(ypos) - (1.0 - float(height)) if height < 1.0 else ypos
+        height, width = 1.0 if float(height) < 1.0 else height, 1.0 if float(width) < 1.0 else width
         try:
             autopy_bmp = self._backend_obj.bitmap.capture_screen(((xpos, ypos), (width, height)))
         except ValueError:
@@ -899,7 +899,7 @@ class PyAutoGUIController(Controller):
         self.params[category] = {}
         self.params[category]["backend"] = "none"
 
-    def configure_backend(self, backendstr: str = None, category: str = "pyautogui",
+    def configure_backend(self, backend: str = None, category: str = "pyautogui",
                             reset: bool = False) -> None:
         """
         Custom implementation of the base method.
@@ -909,7 +909,7 @@ class PyAutoGUIController(Controller):
         self.__configure_backend(backend, category, reset)
 
     def __synchronize_backend(self, backend: str = None, category: str = "pyautogui",
-                            reset: bool = False) -> None:
+                              reset: bool = False) -> None:
         if category != "pyautogui":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:

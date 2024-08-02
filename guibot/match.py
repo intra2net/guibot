@@ -28,6 +28,7 @@ INTERFACE
 from .region import Region
 from .location import Location
 from .controller import Controller
+from .finder import Finder
 
 
 class Match(Region):

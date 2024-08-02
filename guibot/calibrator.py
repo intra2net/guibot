@@ -59,13 +59,13 @@ class Calibrator(object):
     """
 
     def __init__(self, needle: Target = None, haystack: Image = None,
-                 config: bool = None) -> None:
+                 config: str = None) -> None:
         """
         Build a calibrator object for a given match case.
 
         :param needle: target to look for
         :param haystack: image to look in
-        :param config:
+        :param config: config file for calibration
         """
         self.cases = []
         if needle is not None and haystack is not None:
@@ -100,8 +100,8 @@ class Calibrator(object):
         :param uniform: whether to use uniform or normal distribution
         :param calibration: whether to use calibration
         :param max_attempts: maximal number of refinements to reach
-                                 the parameter delta below the tolerance
-        :returns: list of (method, similarity, location, time) tuples sorted according to similarity
+                             the parameter delta below the tolerance
+        :returns: list of (method, similarity, time) tuples sorted according to similarity
 
         .. note:: Methods that are supported by OpenCV and others but currently don't work
             are excluded from the dictionary. The dictionary can thus also be used to
@@ -121,7 +121,7 @@ class Calibrator(object):
         ordered_categories.remove("find")
 
         # test all matching methods of the current finder
-        def backend_tuples(category_list: str, finder: Finder) -> Generator[tuple[str, ...], None, None]:
+        def backend_tuples(category_list: list[str], finder: Finder) -> Generator[tuple[str, ...], None, None]:
             if len(category_list) == 0:
                 yield ()
             else:
@@ -172,7 +172,7 @@ class Calibrator(object):
         :param uniform: whether to use uniform or normal distribution
         :param calibration: whether to use calibration
         :param max_attempts: maximal number of refinements to reach
-                                 the parameter delta below the tolerance
+                             the parameter delta below the tolerance
         :returns: maximized similarity
 
         If normal distribution is used, the mean will be the current value of the
@@ -231,7 +231,7 @@ class Calibrator(object):
 
         :param finder: configuration for the CV backend to calibrate
         :param max_attempts: maximal number of refinements to reach
-                                 the parameter delta below the tolerance
+                             the parameter delta below the tolerance
         :returns: maximized similarity
 
         This method calibrates only parameters that are not protected
@@ -409,7 +409,7 @@ class Calibrator(object):
         error = 1.0 - total_similarity / len(self.cases)
         return error
 
-    def run_performance(self, finder: Finder, **kwargs: dict[str, type]) -> int:
+    def run_performance(self, finder: Finder, **kwargs: dict[str, type]) -> float:
         """
         Run a match case and return error from the match as dissimilarity
         and linear performance penalty.
@@ -448,6 +448,8 @@ class Calibrator(object):
         high similarity of one match and low similarity of all others.
 
         :param finder: finder with match configuration to use for the run
+        :param peak_location: (x, y) of the match whose similarity should be
+                              maximized while all the rest minimized
         :returns: error obtained as unity minus similarity
 
         This run function doesn't just obtain the optimum similarity for the best

@@ -78,7 +78,7 @@ class GlobalConfig(type):
     _deep_learn_backend = "pytorch"
     _hybrid_match_backend = "template"
 
-    def toggle_delay(self, value: float = None) -> float:
+    def toggle_delay(self, value: float = None) -> float | None:
         """
         Getter/setter for property attribute.
 
@@ -89,8 +89,7 @@ class GlobalConfig(type):
             return GlobalConfig._toggle_delay
         else:
             GlobalConfig._toggle_delay = value
-            return self.value
-
+            return None
     #: time interval between mouse down and up in a click
     toggle_delay = property(fget=toggle_delay, fset=toggle_delay)
 
@@ -179,7 +178,7 @@ class GlobalConfig(type):
     #: time interval between two image matching attempts (used to reduce overhead on the CPU)
     rescan_speed_on_find = property(fget=rescan_speed_on_find, fset=rescan_speed_on_find)
 
-    def wait_for_animations(self, value: bool = None) -> str | bool | None:
+    def wait_for_animations(self, value: bool = None) -> bool | None:
         """
         Getter/setter for property attribute.
 
@@ -195,13 +194,13 @@ class GlobalConfig(type):
             return GlobalConfig._wait_for_animations
         elif value is True or value is False:
             GlobalConfig._wait_for_animations = value
-            return self.value
+            return None
         else:
             raise ValueError
     #: whether to wait for animations to complete and match only static (not moving) targets
     wait_for_animations = property(fget=wait_for_animations, fset=wait_for_animations)
 
-    def smooth_mouse_drag(self, value: bool = None) -> str | bool | None:
+    def smooth_mouse_drag(self, value: bool = None) -> bool | None:
         """
         Getter/setter for property attribute.
 
@@ -216,7 +215,7 @@ class GlobalConfig(type):
             return GlobalConfig._smooth_mouse_drag
         elif value is True or value is False:
             GlobalConfig._smooth_mouse_drag = value
-            return self.value
+            return None
         else:
             raise ValueError
     #: whether to move the mouse cursor to a location instantly or smoothly
@@ -699,9 +698,8 @@ class LocalConfig(object):
         Synchronize a category backend with the equalizer configuration.
 
         :param backend: name of a preselected backend, see `algorithms[category]`
-        :type backend: str or None
-        :param str category: category for the backend, see `algorithms.keys()`
-        :param bool reset: whether to (re)sync all parent backends as well
+        :param category: category for the backend, see `algorithms.keys()`
+        :param reset: whether to (re)sync all parent backends as well
         :raises: :py:class:`UnsupportedBackendError` if  the category is not found
         :raises: :py:class:`UninitializedBackendError` if there is no backend object
                  that is configured with and with the required name

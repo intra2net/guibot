@@ -437,14 +437,14 @@ class Region(object):
                         moving_targets = True
                         last_matches.append(new_match)
                 self._last_match = last_matches[-1]
-                if not GlobalConfig.wait_for_animations or not moving_targets:
+                if not GlobalConfig.wait_for_animations == True or not moving_targets:
                     return last_matches
 
             elif time.time() > timeout_limit:
                 if allow_zero:
                     return last_matches
                 else:
-                    if GlobalConfig.save_needle_on_error:
+                    if GlobalConfig.save_needle_on_error == True:
                         if not os.path.exists(ImageLogger.logging_destination):
                             os.mkdir(ImageLogger.logging_destination)
                         dump_path = GlobalConfig.image_logging_destination
@@ -937,7 +937,7 @@ class Region(object):
         return match
 
     def _parse_keys(self, keys: str | list[str],
-                    target_or_location: "Match | Location | str | Target = None") -> list[str]:
+                    target_or_location: "Match | Location | str | Target" = None) -> list[str]:
         #..todo:: keys, target_or_location=None
         at_str = " at %s" % target_or_location if target_or_location else ""
 
@@ -1067,7 +1067,7 @@ class Region(object):
         return match
 
     def _parse_text(self, text: list[str] | str,
-                    target_or_location: "Match | Location | str | Target = None") -> list[str]:
+                    target_or_location: "Match | Location | str | Target" = None) -> list[str]:
         at_str = " at %s" % target_or_location if target_or_location else ""
 
         text_list = []

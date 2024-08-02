@@ -32,15 +32,13 @@ import copy
 import random
 import configparser as config
 import PIL.Image
-from .target import Target, Image
-from .match import Match
 from typing import Callable
-from .location import Location
 
 from .config import GlobalConfig, LocalConfig
 from .imagelogger import ImageLogger
 from .fileresolver import FileResolver
 from .errors import *
+from .location import Location
 
 import logging
 log = logging.getLogger('guibot.finder')
@@ -64,7 +62,7 @@ class CVParameter(object):
         :param value: value of the parameter
         :param min_val: lower boundary for the parameter range
         :param max_val: upper boundary for the parameter range
-        :param float delta: delta for the calibration and random value
+        :param delta: delta for the calibration and random value
                             (no calibration if `delta` < `tolerance`)
         :param tolerance: tolerance of calibration
         :param fixed: whether the parameter is prevented from calibration
@@ -166,10 +164,8 @@ class CVParameter(object):
         Return a random value of the CV parameter given its range and type.
 
         :param mu: mean for a normal distribution, uniform distribution if None
-        :type mu:
         :param sigma: standard deviation for a normal distribution, quarter range if None
                       (maximal range is equivalent to maximal data type values)
-        :type sigma: or None
         :returns: a random value comforming to the CV parameter range and type
 
         .. note:: Only uniform distribution is used for boolean values.
@@ -425,7 +421,7 @@ class Finder(LocalConfig):
 
         return acopy
 
-    def find(self, needle: Image, haystack: Image) -> list[Match]:
+    def find(self, needle: "Target", haystack: "Image") -> "list[Match]":
         """
         Find all needle targets in a haystack image.
 
@@ -494,7 +490,7 @@ class AutoPyFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle: Image, haystack: Image) -> list[Match]:
+    def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -666,7 +662,7 @@ class ContourFinder(Finder):
         """
         self.__configure(threshold_filter, reset)
 
-    def find(self, needle: Image, haystack: Image) -> list[Match]:
+    def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -887,7 +883,7 @@ class TemplateFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle: Image, haystack: Image) -> list[Match]:
+    def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -990,7 +986,7 @@ class TemplateFinder(Finder):
 
         return matches
 
-    def _match_template(self, needle: Image, haystack: Image, nocolor: str,
+    def _match_template(self, needle: "Image", haystack: "Image", nocolor: str,
                         method: str) -> "Matlike | None":
         """
         EXTRA DOCSTRING: Template matching backend - wrapper.
@@ -1320,7 +1316,7 @@ class FeatureFinder(Finder):
         """
         self.__synchronize(feature_detect, feature_extract, feature_match, reset)
 
-    def find(self, needle: Image, haystack: Image) -> list[Match]:
+    def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -1368,7 +1364,7 @@ class FeatureFinder(Finder):
         self.imglog.log(40)
         return []
 
-    def _project_features(self, locations_in_needle: int, ngray: int, hgray: int, similarity: float) -> Location:
+    def _project_features(self, locations_in_needle: int, ngray: int, hgray: int, similarity: float) -> list[tuple[int, int]] | None:
         """
         EXTRA DOCSTRING: Feature matching backend - wrapper.
 
@@ -1423,8 +1419,6 @@ class FeatureFinder(Finder):
         EXTRA DOCSTRING: Feature matching backend - detection/extraction stage (1).
 
         Detect all keypoints and calculate their respective decriptors.
-
-        ..todo:: ngray, hgray, detect, extract are not documented
         """
         nfactor = self.params["fdetect"]["nzoom"].value
         hfactor = self.params["fdetect"]["hzoom"].value
@@ -1477,8 +1471,6 @@ class FeatureFinder(Finder):
         EXTRA DOCSTRING: Feature matching backend - matching stage (2).
 
         Match two sets of keypoints based on their descriptors.
-
-        ..todo:: nkeypoints, ndescriptors, hkeypoints, hdescriptors, match are not documented
         """
         def ratio_test(matches: list[str]) -> list[str]:
             """
@@ -1487,8 +1479,6 @@ class FeatureFinder(Finder):
             match and the probabilty of error when choosing one is greater.
             Therefore these matches are ignored and thus only matches of
             greater probabilty are returned.
-
-            ..todo:: matches is not documented
             """
             matches2 = []
             for m in matches:
@@ -1513,8 +1503,6 @@ class FeatureFinder(Finder):
             sets of keypoints. The two keypoints must be best feature
             matching of each other to ensure the error by accepting the
             match is not too large.
-
-            ..todo:: nmatches, hmatches are not documented
             """
             import cv2
             matches2 = []
@@ -1691,7 +1679,7 @@ class FeatureFinder(Finder):
         self.imglog.clear()
         ImageLogger.step += 1
 
-    def _log_features(self, lvl: int, locations: Location, hotmap: Image, radius: int = 0, r: int = 255,
+    def _log_features(self, lvl: int, locations: Location, hotmap: "Image", radius: int = 0, r: int = 255,
                       g: int = 255, b: int = 255) -> None:
         # ..todo:: locations, hotmap are not documented
         if lvl < self.imglog.logging_level:
@@ -1755,7 +1743,7 @@ class CascadeFinder(Finder):
         """
         self.__configure_backend(backend, category, reset)
 
-    def find(self, needle: "Pattern", haystack: Image) -> list[Match]:
+    def find(self, needle: "Pattern", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -2162,7 +2150,7 @@ class TextFinder(ContourFinder):
                            threshold_filter, threshold_filter2, threshold_filter3,
                            reset)
 
-    def find(self, needle: "Text", haystack: Image) -> list[Match]:
+    def find(self, needle: "Text", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -2298,7 +2286,7 @@ class TextFinder(ContourFinder):
         self.imglog.log(30)
         return matches
 
-    def _detect_text_boxes(self, haystack: Image) -> list[Match]:
+    def _detect_text_boxes(self, haystack: "Image") -> list[list[int]]:
         import cv2
         import numpy
 
@@ -2369,7 +2357,7 @@ class TextFinder(ContourFinder):
 
         return text_regions
 
-    def _detect_text_east(self, haystack: Image) -> list[Match]:
+    def _detect_text_east(self, haystack: "Image") -> list[tuple[int, int, int, int]]:
         #:.. note:: source implementation by Adrian Rosebrock from his post:
         #:   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
         import cv2
@@ -2459,7 +2447,7 @@ class TextFinder(ContourFinder):
         logging.debug("A total of %s final text regions found", len(text_regions))
         return text_regions
 
-    def _detect_text_erstat(self, haystack: Image) -> list[Match]:
+    def _detect_text_erstat(self, haystack: "Image") -> "list[Match]":
         import cv2
         import numpy
         img = numpy.array(haystack.pil_image)
@@ -2523,7 +2511,7 @@ class TextFinder(ContourFinder):
             final_regions.append(r1)
         return final_regions
 
-    def _detect_text_contours(self, haystack: Image) -> list[Match]:
+    def _detect_text_contours(self, haystack: "Image") -> list[list[int]]:
         import cv2
         import numpy
         img = numpy.array(haystack.pil_image)
@@ -2593,7 +2581,7 @@ class TextFinder(ContourFinder):
 
         return text_regions
 
-    def _detect_text_components(self, haystack: Image) -> list[Match]:
+    def _detect_text_components(self, haystack: "Image") -> "list[Match]":
         import cv2
         import numpy
         img = numpy.array(haystack.pil_image)
@@ -2757,7 +2745,7 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
                                   feature_match=feature_match,
                                   reset=False)
 
-    def find(self, needle: Image, haystack: Image) -> list[Match]:
+    def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -3074,7 +3062,7 @@ class DeepFinder(Finder):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def find(self, needle: "Pattern", haystack: Image) -> list[Match]:
+    def find(self, needle: "Pattern", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 
@@ -3281,7 +3269,7 @@ class HybridFinder(Finder):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def find(self, needle: Image, haystack: Image) -> list[Match]:
+    def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
         Custom implementation of the base method.
 

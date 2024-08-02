@@ -234,7 +234,7 @@ class Image(Target):
 
     _cache = {}
 
-    def __init__(self, image_filename: str = None, pil_image: "Image" = None,
+    def __init__(self, image_filename: str = None, pil_image: PIL.Image.Image = None,
                  match_settings: "Finder" = None, use_cache: bool = True) -> None:
         """
         Build an image object.
@@ -246,7 +246,7 @@ class Image(Target):
         """
         super(Image, self).__init__(match_settings)
         self._filename = image_filename
-        self._pil_image = None
+        self._pil_image: PIL.Image.Image = None
         self._width = 0
         self._height = 0
 
@@ -295,7 +295,7 @@ class Image(Target):
         return self._height
     height = property(fget=get_height)
 
-    def get_pil_image(self) -> "Image":
+    def get_pil_image(self) -> PIL.Image.Image:
         """
         Getter for readonly attribute.
 
@@ -339,7 +339,7 @@ class Image(Target):
         filename += ".png" if os.path.splitext(filename)[-1] != ".png" else ""
         self.pil_image.save(filename, compress_level=GlobalConfig.image_quality)
 
-        new_image = self.copy()
+        new_image: Image = self.copy()
         new_image._filename = filename
 
         return new_image
