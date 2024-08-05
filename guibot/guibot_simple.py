@@ -91,7 +91,7 @@ def sample(*args: tuple[type, ...], **kwargs: dict[str, type]) -> float:
     return guibot.sample(*args, **kwargs)
 
 
-def exists(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def exists(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.exists(*args, **kwargs)
@@ -109,7 +109,7 @@ def wait_vanish(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Region:
     return guibot.wait_vanish(*args, **kwargs)
 
 
-def get_mouse_location(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Location:
+def get_mouse_location(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Location":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.get_mouse_location(*args, **kwargs)
@@ -121,79 +121,79 @@ def idle(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Region:
     return guibot.idle(*args, **kwargs)
 
 
-def hover(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def hover(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.hover(*args, **kwargs)
 
 
-def click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.click(*args, **kwargs)
 
 
-def right_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def right_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.right_click(*args, **kwargs)
 
 
-def middle_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def middle_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.middle_click(*args, **kwargs)
 
 
-def double_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def double_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.double_click(*args, **kwargs)
 
 
-def multi_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def multi_click(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.multi_click(*args, **kwargs)
 
 
-def click_expect(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def click_expect(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.click_expect(*args, **kwargs)
 
 
-def click_vanish(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def click_vanish(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.click_vanish(*args, **kwargs)
 
 
-def click_at_index(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def click_at_index(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.click_at_index(*args, **kwargs)
 
 
-def mouse_down(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def mouse_down(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.mouse_down(*args, **kwargs)
 
 
-def mouse_up(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def mouse_up(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.mouse_up(*args, **kwargs)
 
 
-def mouse_scroll(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def mouse_scroll(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.mouse_scroll(*args, **kwargs)
 
 
-def drag_drop(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def drag_drop(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.drag_drop(*args, **kwargs)
@@ -205,7 +205,7 @@ def drag_from(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Region:
     return guibot.drag_from(*args, **kwargs)
 
 
-def drop_at(*args: tuple[type, ...], **kwargs: dict[str, type]) -> Match:
+def drop_at(*args: tuple[type, ...], **kwargs: dict[str, type]) -> "Match":
     """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
     check_initialized()
     return guibot.drop_at(*args, **kwargs)

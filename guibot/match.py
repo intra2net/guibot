@@ -37,8 +37,9 @@ class Match(Region):
     of matches on a screen.
     """
 
-    def __init__(self, xpos: int, ypos: int, width: int, height: int, dx: int = 0, dy: int = 0,
-                 similarity: float = 0.0, dc: Controller = None, cv: "Finder" = None) -> None:
+    def __init__(self, xpos: int, ypos: int, width: int, height: int,
+		 dx: int = 0, dy: int = 0, similarity: float = 0.0,
+		 dc: Controller = None, cv: "Finder" = None) -> None:
         """
         Build a match object.
 

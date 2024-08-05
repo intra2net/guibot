@@ -42,7 +42,7 @@ from . import errors
 from .guibot import GuiBot
 
 
-def serialize_custom_error(class_obj: "classobj") -> dict[str, str | getset_descriptor | dictproxy]:
+def serialize_custom_error(class_obj: "classobj") -> dict[str, "str | getset_descriptor | dictproxy"]:
     """
     Serialization method for the :py:class:`errors.UnsupportedBackendError`
     which was chosen just as a sample.
@@ -90,7 +90,6 @@ class GuiBotProxy(GuiBot):
         register_exception_serialization()
 
     def _proxify(self, obj: str) -> str:
-        #..todo:: obj is not documented
         if isinstance(obj, (int, float, bool, str)) or obj is None:
             return obj
         if obj not in self._pyroDaemon.objectsById.values():

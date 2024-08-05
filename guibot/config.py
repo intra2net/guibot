@@ -229,7 +229,7 @@ class GlobalConfig(type):
                       handle them internally
 
         .. warning:: The characters will be forcefully preprocessed for the
-            autopy on linux (capital and special) and vncdotool (capital) backends.
+                     autopy on linux (capital and special) and vncdotool (capital) backends.
         """
         if value is None:
             return GlobalConfig._preprocess_special_chars
@@ -343,7 +343,7 @@ class GlobalConfig(type):
                     their calls on the host machine.
 
         .. warning:: To use a particular backend you need to satisfy its dependencies,
-            i.e. the backend has to be installed or you will have unsatisfied imports.
+           	     i.e. the backend has to be installed or you will have unsatisfied imports.
         """
         if value is None:
             return GlobalConfig._display_control_backend
@@ -374,14 +374,14 @@ class GlobalConfig(type):
             * text - text matching using EAST, ERStat, or custom text detection,
                      followed by Tesseract or Hidden Markov Model OCR
             * tempfeat - a mixture of template and feature matching where the
-                       first is used as necessary and the second as sufficient stage
+                         first is used as necessary and the second as sufficient stage
             * deep - deep learning matching using convolutional neural network but
                      customizable to any type of deep neural network
             * hybrid - use a composite approach with any of the above methods
                        as matching steps in a fallback sequence
 
         .. warning:: To use a particular backend you need to satisfy its dependencies,
-            i.e. the backend has to be installed or you will have unsatisfied imports.
+           	     i.e. the backend has to be installed or you will have unsatisfied imports.
         """
         if value is None:
             return GlobalConfig._find_backend

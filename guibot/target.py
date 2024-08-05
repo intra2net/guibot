@@ -361,7 +361,7 @@ class Text(Target):
         :param match_settings: predefined configuration for the CV backend if any
         """
         super(Text, self).__init__(match_settings)
-        self.value = value
+        self.value: str = value
         self.filename = text_filename
 
         try:
@@ -374,7 +374,7 @@ class Text(Target):
 
     def __str__(self) -> str | None:
         """Provide a part of the text value."""
-        return self.str(value[:30]).replace('/', '').replace('\\', '')
+        return self.value[:30].replace('/', '').replace('\\', '')
 
     def load(self, filename: str, **kwargs: dict[str, type]) -> None:
         """

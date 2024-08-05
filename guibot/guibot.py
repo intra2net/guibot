@@ -65,7 +65,7 @@ class GuiBot(Region):
         Add a path to the list of currently accessible paths
         if it wasn't already added.
 
-        :param str directory: path to add
+        :param directory: path to add
         """
         self.file_resolver.add_path(directory)
 

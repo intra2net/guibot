@@ -270,9 +270,9 @@ class Controller(LocalConfig):
         """
         Scroll the mouse for a number of clicks.
 
-        :param int clicks: number of clicks to scroll up (positive) or down (negative)
-        :param bool horizontal: whether to perform a horizontal scroll instead
-                                (only available on some platforms)
+        :param clicks: number of clicks to scroll up (positive) or down (negative)
+        :param horizontal: whether to perform a horizontal scroll instead
+                           (only available on some platforms)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
         raise NotImplementedError("Method is not available for this controller implementation")

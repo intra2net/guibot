@@ -36,7 +36,7 @@ from guibot.errors import *
 class RegionTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.file_resolver = FileResolver()
         cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
@@ -49,22 +49,22 @@ class RegionTest(unittest.TestCase):
         GlobalConfig.image_logging_destination = os.path.join(common_test.unittest_dir, 'tmp')
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         GlobalConfig.image_logging_level = cls.prev_loglevel
         GlobalConfig.image_logging_destination = cls.prev_logpath
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.child_img = None
         # initialize template matching region to support multiple matches
         GlobalConfig.hybrid_match_backend = "template"
         self.region = Region()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self.close_windows()
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
 
-    def assertAlmostIn(self, match, matches, delta=5):
+    def assertAlmostIn(self, match, matches, delta: int = 5) -> None:
         x, y = match
         for m in matches:
             mx, my = m
@@ -73,14 +73,14 @@ class RegionTest(unittest.TestCase):
                     return
         raise AssertionError("%s not near any of %s" % (match, matches))
 
-    def show_image(self, filename):
+    def show_image(self, filename) -> None:
         filename = self.file_resolver.search(filename)
         python = 'python.exe' if os.name == 'nt' else 'python3'
         self.child_img = subprocess.Popen([python, self.script_img, filename])
         # HACK: avoid small variability in loading speed
         time.sleep(3)
 
-    def close_windows(self):
+    def close_windows(self) -> None:
         if self.child_img is not None:
             self.child_img.terminate()
             self.wait_end(self.child_img)
@@ -89,7 +89,7 @@ class RegionTest(unittest.TestCase):
             # make sure image is really closed
             time.sleep(0.5)
 
-    def wait_end(self, subprocess_pipe, timeout=30):
+    def wait_end(self, subprocess_pipe, timeout=30) -> None:
         expires = time.time() + timeout
 
         while True:
@@ -104,7 +104,7 @@ class RegionTest(unittest.TestCase):
             time.sleep(0.2)
 
     @unittest.skipIf(os.environ.get('DISABLE_PYAUTOGUI', "0") == "1", "PyAutoGUI disabled")
-    def test_initialize(self):
+    def test_initialize(self) -> None:
         screen_width = PyAutoGUIController().width
         screen_height = PyAutoGUIController().height
 
@@ -122,7 +122,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
                      "Disabled OpenCV or PyQt")
-    def test_find(self):
+    def test_find(self) -> None:
         self.show_image('all_shapes')
 
         match = self.region.find(Image('shape_green_box'))
@@ -148,7 +148,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
                      "Disabled OpenCV or PyQt")
-    def test_find_center_offset(self):
+    def test_find_center_offset(self) -> None:
         self.show_image('all_shapes.png')
 
         match = self.region.find(Image('shape_blue_circle.png'))
@@ -165,7 +165,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1",
                      "Disabled OpenCV")
-    def test_find_error(self):
+    def test_find_error(self) -> None:
         try:
             self.region.find(Image('shape_blue_circle.png'), 0)
             self.fail('exception was not thrown')
@@ -181,7 +181,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
                      "Disabled OpenCV or PyQt")
-    def test_find_all(self):
+    def test_find_all(self) -> None:
         self.show_image('all_shapes')
 
         greenbox = Image('shape_green_box')
@@ -236,7 +236,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
                      "Disabled OpenCV or PyQt")
-    def test_find_zero_matches(self):
+    def test_find_zero_matches(self) -> None:
         self.show_image('all_shapes')
 
         matches = self.region.find_all(Image('shape_blue_circle'))
@@ -247,7 +247,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(len(matches), 0)
         self.close_windows()
 
-    def test_find_in_animation(self):
+    def test_find_in_animation(self) -> None:
         """Test a switch where a moving match is actually matched when stopping."""
         match_frames = [Match(0, 0, 10, 20, 0, 0, 1.0), Match(30, 30, 10, 20, 0, 0, 1.0),
                         Match(30, 45, 10, 20, 0, 0, 1.0), Match(30, 45, 10, 20, 0, 0, 1.0)]
@@ -263,7 +263,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
-    def test_find_guess_target_image(self):
+    def test_find_guess_target_image(self) -> None:
         """Test finding image from string with and without extension."""
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -277,7 +277,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_OCR', "0") == "1", "Disabled OCR")
-    def test_find_guess_target_match(self):
+    def test_find_guess_target_match(self) -> None:
         """Test target guess from match file configuration (target has match config)."""
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -299,7 +299,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "Disabled AutoPy")
-    def test_find_guess_target_steps(self):
+    def test_find_guess_target_steps(self) -> None:
         """Test target guess from data file extension (target has no match config)."""
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -311,7 +311,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
-    def test_find_guess_target_default(self):
+    def test_find_guess_target_default(self) -> None:
         """Test target guess ending with default type if also unknown data type."""
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -325,7 +325,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_OCR', "0") == "1", "Disabled OCR")
-    def test_find_guess_target_from_match(self):
+    def test_find_guess_target_from_match(self) -> None:
         """Test target guess not failing with default text type if also missing data file."""
         self.show_image('all_shapes')
         imgroot = os.path.join(common_test.unittest_dir, 'images')
@@ -347,7 +347,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
-    def test_sample(self):
+    def test_sample(self) -> None:
         """Test that sampling results in good similarity for identical visuals."""
         self.show_image('all_shapes')
 
@@ -360,7 +360,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "Disabled AutoPy")
-    def test_sample_no_similarity(self):
+    def test_sample_no_similarity(self) -> None:
         """Test that sampling results in 0.0 similarity if backend doesn't support it."""
         self.show_image('all_shapes')
 
@@ -374,7 +374,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
                      "Disabled OpenCV or PyQt")
-    def test_exists(self):
+    def test_exists(self) -> None:
         self.show_image('all_shapes')
 
         match = self.region.find(Image('shape_blue_circle'))
@@ -388,7 +388,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
                      "Disabled OpenCV or PyQt")
-    def test_wait(self):
+    def test_wait(self) -> None:
         self.show_image('all_shapes')
 
         match = self.region.wait(Image('shape_blue_circle'), timeout=5)
@@ -399,7 +399,7 @@ class RegionTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
                      "Disabled OpenCV or PyQt")
-    def test_wait_vanish(self):
+    def test_wait_vanish(self) -> None:
         self.show_image('all_shapes')
 
         self.assertRaises(NotFindError, self.region.wait_vanish, 'all_shapes', timeout=10)

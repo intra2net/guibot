@@ -646,7 +646,7 @@ class Region(object):
         return match
 
     def middle_click(self, target_or_location: "Match | Location | str | Target",
-                    modifiers: list[str] = None) -> "Match | None":
+                     modifiers: list[str] = None) -> "Match | None":
         """
         Click on a target or location using the middle mouse button and
         optionally holding special keys.
@@ -661,7 +661,7 @@ class Region(object):
         return match
 
     def double_click(self, target_or_location: "Match | Location | str | Target",
-                    modifiers: list[str] = None) -> "Match | None":
+                     modifiers: list[str] = None) -> "Match | None":
         """
         Double click on a target or location using the left mouse button
         and optionally holding special keys.
@@ -746,10 +746,10 @@ class Region(object):
 
         :param anchor: image to find all matches of
         :param index: index of the match to click on (assuming >=1 matches),
-            sorted according to their (x,y) coordinates
+            	      sorted according to their (x,y) coordinates
         :param find_number: expected number of matches which is necessary
-            for fast failure in case some elements are not visualized and/or
-            proper matching result
+            		    for fast failure in case some elements are not visualized and/or
+            		    proper matching result
         :param timeout: timeout before which the number of matches should be found
         :returns: match from finding the target of the desired index
 
@@ -805,7 +805,7 @@ class Region(object):
         return match
 
     def mouse_up(self, target_or_location: "Match | Location | str | Target",
-                   button: int = None) -> "Match | None":
+                 button: int = None) -> "Match | None":
         """
         Release an arbitrary mouse button on a target or location.
 
@@ -927,8 +927,6 @@ class Region(object):
 
         This method is similar to :py:func:`Region.press_keys` but
         with an extra argument like :py:func:`Region.click`.
-
-        ..todo:: keys, target_or_location are not documented
         """
         keys_list = self._parse_keys(keys, target_or_location)
         match = self.click(target_or_location)
@@ -1087,8 +1085,8 @@ class Region(object):
         return text_list
 
     """Mixed (form) methods"""
-    def click_at(self, anchor: "Match | Location | Target | str", dx: int, dy: int,
-                 count: int = 1) -> "Region":
+    def click_at(self, anchor: "Match | Location | Target | str",
+		 dx: int, dy: int, count: int = 1) -> "Region":
         """
         Clicks on a relative location using a displacement from an anchor.
 
@@ -1112,8 +1110,9 @@ class Region(object):
 
         return self
 
-    def fill_at(self, anchor: "Match | Location | Target | str", text: str, dx: int, dy: int,
-                del_flag: bool = True, esc_flag: bool = True, mark_clicks: int = 1) -> "Region":
+    def fill_at(self, anchor: "Match | Location | Target | str",
+		text: str, dx: int, dy: int, del_flag: bool = True,
+		esc_flag: bool = True, mark_clicks: int = 1) -> "Region":
         """
         Fills a new text at a text box using a displacement from an anchor.
 
@@ -1160,9 +1159,10 @@ class Region(object):
 
         return self
 
-    def select_at(self, anchor: "Match | Location | Target | str", image_or_index: str | int,
-                  dx: int, dy: int, dw: int = 0, dh: int = 0, ret_flag: bool = True,
-                  mark_clicks: int = 1, tries: int = 3) -> "Region":
+    def select_at(self, anchor: "Match | Location | Target | str",
+		  image_or_index: str | int, dx: int, dy: int, dw: int = 0,
+		  dh: int = 0, ret_flag: bool = True, mark_clicks: int = 1,
+		  tries: int = 3) -> "Region":
         """
         Select an option at a dropdown list using either an integer index
         or an option image if the order cannot be easily inferred.

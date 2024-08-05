@@ -63,11 +63,11 @@ class CVParameter(object):
         :param min_val: lower boundary for the parameter range
         :param max_val: upper boundary for the parameter range
         :param delta: delta for the calibration and random value
-                            (no calibration if `delta` < `tolerance`)
+                      (no calibration if `delta` < `tolerance`)
         :param tolerance: tolerance of calibration
         :param fixed: whether the parameter is prevented from calibration
         :param enumerated: whether the parameter value belongs to an
-                                enumeration or to a range (distance matters)
+                           enumeration or to a range (distance matters)
 
         As a rule of thumb a good choice for the parameter delta is one fourth
         of the range since the delta will be used as standard deviation when
@@ -339,7 +339,7 @@ class Finder(LocalConfig):
         log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(self, backend: str = None, category: str = "find",
-                            reset: bool = False) -> None:
+                          reset: bool = False) -> None:
         """
         Custom implementation of the base method.
 
@@ -348,7 +348,7 @@ class Finder(LocalConfig):
         self.__configure_backend(backend, category, reset)
 
     def __synchronize_backend(self, backend: str = None, category: str = "find",
-                            reset: bool = False) -> None:
+                              reset: bool = False) -> None:
         if category != "find":
             raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
         if reset:
@@ -1210,7 +1210,8 @@ class FeatureFinder(Finder):
         self.__configure_backend(backend, category, reset)
 
     def __configure(self, feature_detect: str = None, feature_extract: str = None,
-                    feature_match: str = None, reset: bool = True, **kwargs: dict[str, type]) -> None:
+                    feature_match: str = None, reset: bool = True,
+		    **kwargs: dict[str, type]) -> None:
         """
         Custom implementation of the base method.
 
@@ -1224,7 +1225,8 @@ class FeatureFinder(Finder):
         self.__configure_backend(feature_match, "fmatch")
 
     def configure(self, feature_detect: str = None, feature_extract: str = None,
-                  feature_match: str = None, reset: bool = True, **kwargs: dict[str, type]) -> None:
+                  feature_match: str = None, reset: bool = True,
+		  **kwargs: dict[str, type]) -> None:
         """
         Custom implementation of the base method.
 
@@ -1364,14 +1366,13 @@ class FeatureFinder(Finder):
         self.imglog.log(40)
         return []
 
-    def _project_features(self, locations_in_needle: int, ngray: int, hgray: int, similarity: float) -> list[tuple[int, int]] | None:
+    def _project_features(self, locations_in_needle: int, ngray: int,
+			  hgray: int, similarity: float) -> list[tuple[int, int]] | None:
         """
         EXTRA DOCSTRING: Feature matching backend - wrapper.
 
         Wrapper for the internal feature detection, matching and location
         projection used by all public feature matching functions.
-
-        ..todo:: locations_in_needle, ngray, hgray, similarity are not documented
         """
         # default logging in case no match is found (further overridden by match stages)
         self.imglog.locations.append((0, 0))
@@ -1414,7 +1415,8 @@ class FeatureFinder(Finder):
             self._log_features(30, self.imglog.locations, self.imglog.hotmaps[-1], 3, 0, 0, 255)
             return locations_in_haystack
 
-    def _detect_features(self, ngray: int, hgray: int, detect: str, extract: str) -> tuple[str, str, str, str]:
+    def _detect_features(self, ngray: int, hgray: int, detect: str,
+			 extract: str) -> tuple[str, str, str, str]:
         """
         EXTRA DOCSTRING: Feature matching backend - detection/extraction stage (1).
 
@@ -1466,7 +1468,8 @@ class FeatureFinder(Finder):
         return (nkeypoints, ndescriptors, hkeypoints, hdescriptors)
 
     def _match_features(self, nkeypoints: str, ndescriptors: str,
-                        hkeypoints: str, hdescriptors: str, match: str) -> tuple[list[str], list[str]]:
+                        hkeypoints: str, hdescriptors: str,
+			match: str) -> tuple[list[str], list[str]]:
         """
         EXTRA DOCSTRING: Feature matching backend - matching stage (2).
 
@@ -1571,7 +1574,8 @@ class FeatureFinder(Finder):
 
         return (match_nkeypoints, match_hkeypoints)
 
-    def _project_locations(self, locations_in_needle: int, mnkp: str, mhkp: str) -> list[tuple[int, int]]:
+    def _project_locations(self, locations_in_needle: int, mnkp: str,
+			   mhkp: str) -> list[tuple[int, int]]:
         """
         EXTRA DOCSTRING: Feature matching backend - projecting stage (3).
 
@@ -1590,8 +1594,6 @@ class FeatureFinder(Finder):
             i.e. the upper left corner of the image. In case of wild
             transformations of the needle in the haystack this has to
             be reconsidered and the needle center becomes obligatory.
-
-        ..todo:: locations_in_needle, mnkp, mhkp are not documented
         """
         # check matches consistency
         assert len(mnkp) == len(mhkp)
@@ -1679,9 +1681,9 @@ class FeatureFinder(Finder):
         self.imglog.clear()
         ImageLogger.step += 1
 
-    def _log_features(self, lvl: int, locations: Location, hotmap: "Image", radius: int = 0, r: int = 255,
-                      g: int = 255, b: int = 255) -> None:
-        # ..todo:: locations, hotmap are not documented
+    def _log_features(self, lvl: int, locations: Location, hotmap: "Image",
+		      radius: int = 0, r: int = 255, g: int = 255,
+		      b: int = 255) -> None:
         if lvl < self.imglog.logging_level:
             return
         import cv2
@@ -1990,7 +1992,8 @@ class TextFinder(ContourFinder):
 
     def configure(self, text_detector: str = None, text_recognizer: str = None,
                   threshold_filter: str = None, threshold_filter2: str = None,
-                  threshold_filter3: str = None, reset: bool = True, **kwargs: dict[str, type]) -> None:
+                  threshold_filter3: str = None, reset: bool = True,
+		  **kwargs: dict[str, type]) -> None:
         """
         Custom implementation of the base method.
 

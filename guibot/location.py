@@ -36,8 +36,8 @@ class Location(object):
         """
         Build a location object.
 
-        :param int xpos: x coordinate of the location
-        :param int ypos: y coordinate of the location
+        :param xpos: x coordinate of the location
+        :param ypos: y coordinate of the location
         """
         self._xpos = xpos
         self._ypos = ypos

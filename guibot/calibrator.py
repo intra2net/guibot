@@ -415,8 +415,6 @@ class Calibrator(object):
         and linear performance penalty.
 
         :param finder: finder with match configuration to use for the run
-        :param float max_exec_time: maximum execution time before penalizing
-                                    the run by increasing the error linearly
         :returns: error obtained as unity minus similarity
         """
         self._handle_restricted_values(finder)
@@ -448,8 +446,6 @@ class Calibrator(object):
         high similarity of one match and low similarity of all others.
 
         :param finder: finder with match configuration to use for the run
-        :param peak_location: (x, y) of the match whose similarity should be
-                              maximized while all the rest minimized
         :returns: error obtained as unity minus similarity
 
         This run function doesn't just obtain the optimum similarity for the best
