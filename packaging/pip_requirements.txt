@@ -5,17 +5,15 @@ Pillow==10.3.0; python_version >= '3.12'
 # backends
 autopy==4.0.0; python_version <= '3.8' and platform_python_implementation != "PyPy"
 # OCR is currently not tested on Windows due to custom Tesseract OCR installers
-pytesseract==0.3.4; sys_platform != 'win32'
-tesserocr==2.5.1; sys_platform != 'win32'
+pytesseract==0.3.13; sys_platform != 'win32'
+tesserocr==2.7.1; sys_platform != 'win32'
 # TODO: OpenCV and PyTorch don't control their "numpy" dependency
 numpy==1.26.4; platform_python_implementation != "PyPy"
 opencv-contrib-python==4.5.5.62; platform_python_implementation != "PyPy"
 torch==2.2.0; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 torchvision==0.17.0 ; 'generic' not in platform_release and platform_python_implementation != "PyPy"
 vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation != "PyPy"
-pyautogui==0.9.53; platform_python_implementation != "PyPy"
-# NOTE: These decared version of Pillow has issues with the latest Pyscreeze 0.1.30 thus there is a restrain on Pyscreeze installation
-pyscreeze==0.1.28
+pyautogui==0.9.54; platform_python_implementation != "PyPy"
 
 # optional proxy guibot interface deps
 serpent==1.40
