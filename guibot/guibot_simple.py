@@ -41,7 +41,7 @@ from .guibot import GuiBot
 # accessible attributes of this module
 guibot = None
 last_match = None
-buttons = namedtuple('buttons', ["mouse", "key", "mod"])
+buttons = namedtuple("buttons", ["mouse", "key", "mod"])
 
 
 def initialize() -> None:
@@ -60,7 +60,9 @@ def initialize() -> None:
 def check_initialized() -> None:
     """Make sure the simple API is initialized."""
     if guibot is None:
-        raise AssertionError("Guibot module not initialized - run initialize() before using the simple API")
+        raise AssertionError(
+            "Guibot module not initialized - run initialize() before using the simple API"
+        )
 
 
 def add_path(*args: tuple[type, ...], **kwargs: dict[str, type]) -> None:

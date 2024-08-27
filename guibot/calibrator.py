@@ -37,13 +37,16 @@ from .errors import *
 from .location import Location
 
 import logging
-log = logging.getLogger('guibot.calibrator')
+
+log = logging.getLogger("guibot.calibrator")
 
 
 #: explicit blacklist of backend combinations to skip for benchmarking
-benchmark_blacklist = [("mixed", "normal", "mixed", "east", "hmm", "adaptive", "adaptive"),
-                       ("mixed", "adaptive", "mixed", "east", "hmm", "adaptive", "adaptive"),
-                       ("mixed", "canny", "mixed", "east", "hmm", "adaptive", "adaptive")]
+benchmark_blacklist = [
+    ("mixed", "normal", "mixed", "east", "hmm", "adaptive", "adaptive"),
+    ("mixed", "adaptive", "mixed", "east", "hmm", "adaptive", "adaptive"),
+    ("mixed", "canny", "mixed", "east", "hmm", "adaptive", "adaptive"),
+]
 
 
 class Calibrator(object):
@@ -58,8 +61,9 @@ class Calibrator(object):
     multiple random starts from a uniform or normal probability distribution.
     """
 
-    def __init__(self, needle: Target = None, haystack: Image = None,
-                 config: str = None) -> None:
+    def __init__(
+        self, needle: Target = None, haystack: Image = None, config: str = None
+    ) -> None:
         """
         Build a calibrator object for a given match case.
 
@@ -79,18 +83,30 @@ class Calibrator(object):
                     haystack = Target.from_data_file(haystack)
                     maximize = maximize == "max"
                     self.cases.append((needle, haystack, maximize))
-                    log.info("Registering match case with needle %s and haystack %s for %s",
-                             needle, haystack, "maximizing" if maximize else "minimizing")
+                    log.info(
+                        "Registering match case with needle %s and haystack %s for %s",
+                        needle,
+                        haystack,
+                        "maximizing" if maximize else "minimizing",
+                    )
         else:
-            raise ValueError("Need at least a single needle/haystack for calibration"
-                             " or a config file for more than one match case")
+            raise ValueError(
+                "Need at least a single needle/haystack for calibration"
+                " or a config file for more than one match case"
+            )
 
         # this attribute can be changed to use different run function
         self.run = self.run_default
 
-    def benchmark(self, finder: Finder, random_starts: int = 0, uniform: bool = False,
-                  calibration: bool = False, max_attempts: int = 3,
-                  **kwargs: dict[str, type]) -> list[tuple[str, float, float]]:
+    def benchmark(
+        self,
+        finder: Finder,
+        random_starts: int = 0,
+        uniform: bool = False,
+        calibration: bool = False,
+        max_attempts: int = 3,
+        **kwargs: dict[str, type]
+    ) -> list[tuple[str, float, float]]:
         """
         Perform benchmarking on all available algorithms of a finder
         for a given needle and haystack.
@@ -109,8 +125,10 @@ class Calibrator(object):
             for a given `needle` and `haystack`.
         """
         results = []
-        log.info("Performing benchmarking %s calibration",
-                 "with" if calibration else "without")
+        log.info(
+            "Performing benchmarking %s calibration",
+            "with" if calibration else "without",
+        )
         # block logging since we need all its info after the matching finishes
         ImageLogger.accumulate_logging = True
 
@@ -121,7 +139,9 @@ class Calibrator(object):
         ordered_categories.remove("find")
 
         # test all matching methods of the current finder
-        def backend_tuples(category_list: list[str], finder: Finder) -> Generator[tuple[str, ...], None, None]:
+        def backend_tuples(
+            category_list: list[str], finder: Finder
+        ) -> Generator[tuple[str, ...], None, None]:
             if len(category_list) == 0:
                 yield ()
             else:
@@ -130,6 +150,7 @@ class Calibrator(object):
                 for backend in backends:
                     for z in backend_tuples(category_list[1:], finder):
                         yield (backend,) + z
+
         for backend_tuple in backend_tuples(ordered_categories, finder):
             if backend_tuple in benchmark_blacklist:
                 log.warning("Skipping blacklisted benchmarked backend combination")
@@ -138,30 +159,51 @@ class Calibrator(object):
             log.info("Benchmark testing with %s", method)
 
             for backend, category in zip(backend_tuple, ordered_categories):
-                finder.configure_backend(backend=backend, category=category, reset=False)
+                finder.configure_backend(
+                    backend=backend, category=category, reset=False
+                )
                 finder.can_calibrate(category, calibration)
                 try:
-                    finder.synchronize_backend(backend=backend, category=category, reset=False)
+                    finder.synchronize_backend(
+                        backend=backend, category=category, reset=False
+                    )
                 except UnsupportedBackendError as error:
-                    log.debug("Skipping synchronization for %s/backend=%s", category, backend)
+                    log.debug(
+                        "Skipping synchronization for %s/backend=%s", category, backend
+                    )
 
             if random_starts > 0:
-                self.search(finder, random_starts=random_starts, uniform=uniform,
-                            calibration=calibration, max_attempts=max_attempts, **kwargs)
+                self.search(
+                    finder,
+                    random_starts=random_starts,
+                    uniform=uniform,
+                    calibration=calibration,
+                    max_attempts=max_attempts,
+                    **kwargs
+                )
             elif calibration:
                 self.calibrate(finder, max_attempts=max_attempts, **kwargs)
 
             start_time = time.time()
             similarity = 1.0 - self.run(finder, **kwargs)
             total_time = time.time() - start_time
-            log.debug("Obtained similarity %s from %s in %ss", similarity, method, total_time)
+            log.debug(
+                "Obtained similarity %s from %s in %ss", similarity, method, total_time
+            )
             results.append((method, similarity, total_time))
 
         ImageLogger.accumulate_logging = False
         return sorted(results, key=lambda x: x[1], reverse=True)
 
-    def search(self, finder: Finder, random_starts: int = 1, uniform: bool = False,
-               calibration: bool = True, max_attempts: int = 3, **kwargs: dict[str, type]) -> float:
+    def search(
+        self,
+        finder: Finder,
+        random_starts: int = 1,
+        uniform: bool = False,
+        calibration: bool = True,
+        max_attempts: int = 3,
+        **kwargs: dict[str, type]
+    ) -> float:
         """
         Search for the best match configuration for a given needle and haystack
         using calibration from random initial conditions.
@@ -185,7 +227,9 @@ class Calibrator(object):
         best_error = self.run(finder, **kwargs)
         best_params = init_params = finder.params
         for i in range(random_starts):
-            log.info("Random run %s\\%s, best error %s", i+1, random_starts, best_error)
+            log.info(
+                "Random run %s\\%s, best error %s", i + 1, random_starts, best_error
+            )
 
             params = copy.deepcopy(init_params)
             for category in params.keys():
@@ -197,20 +241,33 @@ class Calibrator(object):
                         mean = None if uniform else param.value
                         deviation = None if uniform else param.delta
                         param.value = param.random_value(mean, deviation)
-                        log.debug("Setting %s/%s to random value=%s", category, key, param.value)
+                        log.debug(
+                            "Setting %s/%s to random value=%s",
+                            category,
+                            key,
+                            param.value,
+                        )
 
             finder.params = params
             if calibration:
-                error = 1.0 - self.calibrate(finder, max_attempts=max_attempts, **kwargs)
+                error = 1.0 - self.calibrate(
+                    finder, max_attempts=max_attempts, **kwargs
+                )
             else:
                 error = self.run(finder, **kwargs)
 
             if error < best_error:
-                log.info("Random start ended with smaller error %s < %s", error, best_error)
+                log.info(
+                    "Random start ended with smaller error %s < %s", error, best_error
+                )
                 best_error = error
                 best_params = params
             else:
-                log.debug("Random start did not end with smaller error %s >= %s", error, best_error)
+                log.debug(
+                    "Random start did not end with smaller error %s >= %s",
+                    error,
+                    best_error,
+                )
 
         ImageLogger.accumulate_logging = False
         log.info("Best error for all random starts is %s", best_error)
@@ -220,11 +277,19 @@ class Calibrator(object):
             for key in finder.params[category].keys():
                 param = finder.params[category][key]
                 if hasattr(param, "value"):
-                    log.log(9, "\t%s/%s with value %s +/- delta of %s",
-                            category, key, param.value, param.delta)
+                    log.log(
+                        9,
+                        "\t%s/%s with value %s +/- delta of %s",
+                        category,
+                        key,
+                        param.value,
+                        param.delta,
+                    )
         return 1.0 - best_error
 
-    def calibrate(self, finder: Finder, max_attempts: int = 3, **kwargs: dict[str, type]) -> float:
+    def calibrate(
+        self, finder: Finder, max_attempts: int = 3, **kwargs: dict[str, type]
+    ) -> float:
         """
         Calibrate the available match configuration for a given needle
         and haystack minimizing the matchign error.
@@ -256,7 +321,7 @@ class Calibrator(object):
         log.log(9, "Calibration start with error=%s", best_error)
 
         for n in range(max_attempts):
-            log.info("Try %s\\%s, best error %s", n+1, max_attempts, best_error)
+            log.info("Try %s\\%s, best error %s", n + 1, max_attempts, best_error)
 
             if best_error == 0.0:
                 log.info("Exiting due to zero error")
@@ -269,17 +334,30 @@ class Calibrator(object):
                     if key == "backend":
                         continue
                     elif not isinstance(param, CVParameter):
-                        log.warning("The parameter %s/%s is not a CV parameter!", category, key)
+                        log.warning(
+                            "The parameter %s/%s is not a CV parameter!", category, key
+                        )
                         continue
                     elif param.fixed:
                         log.log(9, "Skip fixed parameter: %s/%s", category, key)
                         continue
                     elif isinstance(param.value, str):
-                        log.log(9, "Skip string parameter: %s/%s (calibration not supported)", category, key)
+                        log.log(
+                            9,
+                            "Skip string parameter: %s/%s (calibration not supported)",
+                            category,
+                            key,
+                        )
                         continue
                     elif param.delta < param.tolerance:
-                        log.log(9, "The parameter %s/%s has slowed down to %s below tolerance %s",
-                                category, key, param.delta, param.tolerance)
+                        log.log(
+                            9,
+                            "The parameter %s/%s has slowed down to %s below tolerance %s",
+                            category,
+                            key,
+                            param.delta,
+                            param.tolerance,
+                        )
                         continue
                     else:
                         slowdown_flag = False
@@ -288,15 +366,17 @@ class Calibrator(object):
                     # add the delta to the current parameter
                     if isinstance(param.value, float):
                         if param.range[1] is not None:
-                            param.value = min(float(start_value) + param.delta,
-                                              param.range[1])
+                            param.value = min(
+                                float(start_value) + param.delta, param.range[1]
+                            )
                         else:
                             param.value = float(start_value) + param.delta
                     elif isinstance(param.value, int) and not param.enumerated:
                         intdelta = int(math.ceil(param.delta))
                         if param.range[1] is not None:
-                            param.value = min(int(start_value) + intdelta,
-                                              param.range[1])
+                            param.value = min(
+                                int(start_value) + intdelta, param.range[1]
+                            )
                         else:
                             param.value = int(start_value) + intdelta
                     # remaining types require special handling
@@ -307,8 +387,17 @@ class Calibrator(object):
                                 continue
                             param.value = mode
                             error = self.run(finder, **kwargs)
-                            log.log(9, "%s/%s: %s +> %s (delta: %s) = %s (best: %s)", category, key,
-                                    start_value, param.value, param.delta, error, best_error)
+                            log.log(
+                                9,
+                                "%s/%s: %s +> %s (delta: %s) = %s (best: %s)",
+                                category,
+                                key,
+                                start_value,
+                                param.value,
+                                param.delta,
+                                error,
+                                best_error,
+                            )
                             if error < best_error:
                                 best_error = error
                                 param.value = mode
@@ -322,12 +411,25 @@ class Calibrator(object):
                         else:
                             param.value = True
                     else:
-                        raise ValueError("Parameter %s/%s is of unsupported type %s",
-                                         category, key, type(param.value))
+                        raise ValueError(
+                            "Parameter %s/%s is of unsupported type %s",
+                            category,
+                            key,
+                            type(param.value),
+                        )
 
                     error = self.run(finder, **kwargs)
-                    log.log(9, "%s/%s: %s +> %s (delta: %s) = %s (best: %s)", category, key,
-                            start_value, param.value, param.delta, error, best_error)
+                    log.log(
+                        9,
+                        "%s/%s: %s +> %s (delta: %s) = %s (best: %s)",
+                        category,
+                        key,
+                        start_value,
+                        param.value,
+                        param.delta,
+                        error,
+                        best_error,
+                    )
                     if error < best_error:
                         best_error = error
                         param.delta *= 1.1
@@ -336,15 +438,17 @@ class Calibrator(object):
 
                         if isinstance(param.value, float):
                             if param.range[0] is not None:
-                                param.value = max(float(start_value) - param.delta,
-                                                  param.range[0])
+                                param.value = max(
+                                    float(start_value) - param.delta, param.range[0]
+                                )
                             else:
                                 param.value = float(start_value) - param.delta
                         elif isinstance(param.value, int):
                             intdelta = int(math.floor(param.delta))
                             if param.range[0] is not None:
-                                param.value = max(int(start_value) - intdelta,
-                                                  param.range[0])
+                                param.value = max(
+                                    int(start_value) - intdelta, param.range[0]
+                                )
                             else:
                                 param.value = int(start_value) - intdelta
                         elif isinstance(param.value, bool):
@@ -353,8 +457,17 @@ class Calibrator(object):
                             continue
 
                         error = self.run(finder, **kwargs)
-                        log.log(9, "%s/%s: %s -> %s (delta: %s) = %s (best: %s)", category, key,
-                                start_value, param.value, param.delta, error, best_error)
+                        log.log(
+                            9,
+                            "%s/%s: %s -> %s (delta: %s) = %s (best: %s)",
+                            category,
+                            key,
+                            start_value,
+                            param.value,
+                            param.delta,
+                            error,
+                            best_error,
+                        )
                         if error < best_error:
                             best_error = error
                             param.delta *= 1.1
@@ -381,8 +494,14 @@ class Calibrator(object):
                         delattr(param, "max_delta")
                     elif param.fixed:
                         param.delta = 0.0
-                    log.log(9, "\t%s/%s with value %s +/- delta of %s",
-                            category, key, param.value, param.delta)
+                    log.log(
+                        9,
+                        "\t%s/%s with value %s +/- delta of %s",
+                        category,
+                        key,
+                        param.value,
+                        param.delta,
+                    )
         return 1.0 - best_error
 
     def run_default(self, finder: Finder, **_kwargs: dict[str, type]) -> float:
@@ -502,7 +621,10 @@ class Calibrator(object):
                 params["blockSize"].value += 1
         if "tdetect" in finder.params:
             params = finder.params["tdetect"]
-            if params["backend"] == "east" and params["input_res_x"].value != params["input_res_y"].value:
+            if (
+                params["backend"] == "east"
+                and params["input_res_x"].value != params["input_res_y"].value
+            ):
                 params["input_res_x"].value = params["input_res_y"].value
         if "ocr" in finder.params:
             params = finder.params["ocr"]

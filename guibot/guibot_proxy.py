@@ -45,7 +45,9 @@ from .finder import Finder
 from .controller import Controller
 
 
-def serialize_custom_error(class_obj: type) -> dict[str, "str | getset_descriptor | dictproxy"]:
+def serialize_custom_error(
+    class_obj: type,
+) -> dict[str, "str | getset_descriptor | dictproxy"]:
     """
     Serialization method for the :py:class:`errors.UnsupportedBackendError`
     which was chosen just as a sample.
@@ -70,7 +72,9 @@ def register_exception_serialization() -> None:
         for it with some extra setup steps and functions below.
     """
     for exception in [errors.UnsupportedBackendError]:
-        pyro.util.SerializerBase.register_class_to_dict(exception, serialize_custom_error)
+        pyro.util.SerializerBase.register_class_to_dict(
+            exception, serialize_custom_error
+        )
 
 
 class GuiBotProxy(GuiBot):
@@ -159,7 +163,7 @@ class GuiBotProxy(GuiBot):
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).click(*args, **kwargs))
 
-    def right_click(self,*args: tuple[type, ...], **kwargs: dict[str, type]) -> str:
+    def right_click(self, *args: tuple[type, ...], **kwargs: dict[str, type]) -> str:
         """See :py:class:`guibot.guibot.GuiBot` and its inherited :py:class:`guibot.region.Region` for details."""
         return self._proxify(super(GuiBotProxy, self).right_click(*args, **kwargs))
 

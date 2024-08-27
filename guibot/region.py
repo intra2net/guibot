@@ -43,7 +43,8 @@ from .finder import *
 from .controller import *
 
 import logging
-log = logging.getLogger('guibot.region')
+
+log = logging.getLogger("guibot.region")
 
 
 class Region(object):
@@ -52,8 +53,15 @@ class Region(object):
     validation of expected images, and mouse and keyboard control.
     """
 
-    def __init__(self, xpos: int = 0, ypos: int = 0, width: int = 0, height: int = 0,
-                 dc: Controller = None, cv: "Finder" = None) -> None:
+    def __init__(
+        self,
+        xpos: int = 0,
+        ypos: int = 0,
+        width: int = 0,
+        height: int = 0,
+        dc: Controller = None,
+        cv: "Finder" = None,
+    ) -> None:
         """
         Build a region object from upleft to downright vertex coordinates.
 
@@ -123,17 +131,17 @@ class Region(object):
 
         mouse_map = self.dc_backend.mousemap
         for mouse_button in dir(mouse_map):
-            if mouse_button.endswith('_BUTTON'):
+            if mouse_button.endswith("_BUTTON"):
                 setattr(self, mouse_button, getattr(mouse_map, mouse_button))
 
         key_map = self.dc_backend.keymap
         for key in dir(key_map):
-            if not key.startswith('__') and key != "to_string":
+            if not key.startswith("__") and key != "to_string":
                 setattr(self, key, getattr(key_map, key))
 
         mod_map = self.dc_backend.modmap
         for modifier_key in dir(mod_map):
-            if modifier_key.startswith('MOD_'):
+            if modifier_key.startswith("MOD_"):
                 setattr(self, modifier_key, getattr(mod_map, modifier_key))
 
     def _ensure_screen_clipping(self) -> None:
@@ -165,6 +173,7 @@ class Region(object):
         :returns: x coordinate of the upleft vertex of the region
         """
         return self._xpos
+
     x = property(fget=get_x)
 
     def get_y(self) -> int:
@@ -174,6 +183,7 @@ class Region(object):
         :returns: y coordinate of the upleft vertex of the region
         """
         return self._ypos
+
     y = property(fget=get_y)
 
     def get_width(self) -> int:
@@ -183,6 +193,7 @@ class Region(object):
         :returns: width of the region (xpos+width for downright vertex x)
         """
         return self._width
+
     width = property(fget=get_width)
 
     def get_height(self) -> int:
@@ -192,6 +203,7 @@ class Region(object):
         :returns: height of the region (ypos+height for downright vertex y)
         """
         return self._height
+
     height = property(fget=get_height)
 
     def get_center(self) -> Location:
@@ -204,6 +216,7 @@ class Region(object):
         ypos = self._ypos + int(self._height / 2)
 
         return Location(xpos, ypos)
+
     center = property(fget=get_center)
 
     def get_top_left(self) -> Location:
@@ -213,6 +226,7 @@ class Region(object):
         :returns: upleft vertex of the region
         """
         return Location(self._xpos, self._ypos)
+
     top_left = property(fget=get_top_left)
 
     def get_top_right(self) -> Location:
@@ -222,6 +236,7 @@ class Region(object):
         :returns: upright vertex of the region
         """
         return Location(self._xpos + self._width, self._ypos)
+
     top_right = property(fget=get_top_right)
 
     def get_bottom_left(self) -> Location:
@@ -231,6 +246,7 @@ class Region(object):
         :returns: downleft vertex of the region
         """
         return Location(self._xpos, self._ypos + self._height)
+
     bottom_left = property(fget=get_bottom_left)
 
     def get_bottom_right(self) -> Location:
@@ -240,6 +256,7 @@ class Region(object):
         :returns: downright vertex of the region
         """
         return Location(self._xpos + self._width, self._ypos + self._height)
+
     bottom_right = property(fget=get_bottom_right)
 
     def is_empty(self) -> bool:
@@ -249,6 +266,7 @@ class Region(object):
         :returns: whether the region is empty, i.e. has zero size
         """
         return self._width == 0 and self._height == 0
+
     is_empty = property(fget=is_empty)
 
     def get_last_match(self) -> "Match":
@@ -258,6 +276,7 @@ class Region(object):
         :returns: last match obtained from finding a target within the region
         """
         return self._last_match
+
     last_match = property(fget=get_last_match)
 
     def get_mouse_location(self) -> Location:
@@ -267,6 +286,7 @@ class Region(object):
         :returns: mouse location
         """
         return self.dc_backend.mouse_location
+
     mouse_location = property(fget=get_mouse_location)
 
     """Main region methods"""
@@ -292,8 +312,9 @@ class Region(object):
         new_height = self._height + rrange + self._ypos - new_ypos
 
         # Final clipping is done in the Region constructor
-        return Region(new_xpos, new_ypos, new_width, new_height,
-                      self.dc_backend, self.cv_backend)
+        return Region(
+            new_xpos, new_ypos, new_width, new_height, self.dc_backend, self.cv_backend
+        )
 
     def above(self, rrange: int = 0) -> "Region":
         """
@@ -315,8 +336,14 @@ class Region(object):
             new_height = self._height + self._ypos - new_ypos
 
         # Final clipping is done in the Region constructor
-        return Region(self._xpos, new_ypos, self._width, new_height,
-                      self.dc_backend, self.cv_backend)
+        return Region(
+            self._xpos,
+            new_ypos,
+            self._width,
+            new_height,
+            self.dc_backend,
+            self.cv_backend,
+        )
 
     def below(self, rrange: int = 0) -> "Region":
         """
@@ -333,8 +360,14 @@ class Region(object):
         new_height = self._height + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self._xpos, self._ypos, self._width, new_height,
-                      self.dc_backend, self.cv_backend)
+        return Region(
+            self._xpos,
+            self._ypos,
+            self._width,
+            new_height,
+            self.dc_backend,
+            self.cv_backend,
+        )
 
     def left(self, rrange: int = 0) -> "Region":
         """
@@ -356,8 +389,14 @@ class Region(object):
             new_width = self._width + self._xpos - new_xpos
 
         # Final clipping is done in the Region constructor
-        return Region(new_xpos, self._ypos, new_width, self._height,
-                      self.dc_backend, self.cv_backend)
+        return Region(
+            new_xpos,
+            self._ypos,
+            new_width,
+            self._height,
+            self.dc_backend,
+            self.cv_backend,
+        )
 
     def right(self, rrange: int = 0) -> "Region":
         """
@@ -374,8 +413,14 @@ class Region(object):
         new_width = self._width + rrange
 
         # Final clipping is done in the Region constructor
-        return Region(self._xpos, self._ypos, new_width, self._height,
-                      self.dc_backend, self.cv_backend)
+        return Region(
+            self._xpos,
+            self._ypos,
+            new_width,
+            self._height,
+            self.dc_backend,
+            self.cv_backend,
+        )
 
     """Image expect methods"""
 
@@ -393,8 +438,9 @@ class Region(object):
         matches = self.find_all(target, timeout=timeout, allow_zero=False)
         return matches[0]
 
-    def find_all(self, target: str | Target, timeout: int = 10,
-                 allow_zero: bool = False) -> "list[Match]":
+    def find_all(
+        self, target: str | Target, timeout: int = 10, allow_zero: bool = False
+    ) -> "list[Match]":
         """
         Find multiples of a target on the screen.
 
@@ -423,13 +469,25 @@ class Region(object):
             relative_matches = cv_backend.find(target, screen_capture)
             if len(relative_matches) > 0:
                 from .match import Match
+
                 for i, match in enumerate(relative_matches):
                     absolute_x, absolute_y = match.x + self.x, match.y + self.y
-                    new_match = Match(absolute_x, absolute_y,
-                                      match.width, match.height, match.dx, match.dy,
-                                      match.similarity, dc=dc_backend, cv=cv_backend)
+                    new_match = Match(
+                        absolute_x,
+                        absolute_y,
+                        match.width,
+                        match.height,
+                        match.dx,
+                        match.dy,
+                        match.similarity,
+                        dc=dc_backend,
+                        cv=cv_backend,
+                    )
                     if len(last_matches) > i:
-                        if last_matches[i].x == absolute_x and last_matches[i].y == absolute_y:
+                        if (
+                            last_matches[i].x == absolute_x
+                            and last_matches[i].y == absolute_y
+                        ):
                             moving_targets = False
                         last_matches[i] = new_match
                     else:
@@ -448,8 +506,12 @@ class Region(object):
                         if not os.path.exists(ImageLogger.logging_destination):
                             os.mkdir(ImageLogger.logging_destination)
                         dump_path = GlobalConfig.image_logging_destination
-                        hdump_path = os.path.join(dump_path, "last_finderror_haystack.png")
-                        ndump_path = os.path.join(dump_path, "last_finderror_needle.png")
+                        hdump_path = os.path.join(
+                            dump_path, "last_finderror_haystack.png"
+                        )
+                        ndump_path = os.path.join(
+                            dump_path, "last_finderror_needle.png"
+                        )
                         screen_capture.save(hdump_path)
                         target.save(ndump_path)
                     raise FindError(target)
@@ -479,11 +541,15 @@ class Region(object):
             return target.match_settings
         if isinstance(target, Text) and not isinstance(self.cv_backend, TextFinder):
             raise IncompatibleTargetError("Need text matcher for matching text")
-        if isinstance(target, Pattern) and not (isinstance(self.cv_backend, CascadeFinder)
-                                                or isinstance(self.cv_backend, DeepFinder)):
+        if isinstance(target, Pattern) and not (
+            isinstance(self.cv_backend, CascadeFinder)
+            or isinstance(self.cv_backend, DeepFinder)
+        ):
             raise IncompatibleTargetError("Need pattern matcher for matching patterns")
         if isinstance(target, Chain) and not isinstance(self.cv_backend, HybridFinder):
-            raise IncompatibleTargetError("Need hybrid matcher for matching chain targets")
+            raise IncompatibleTargetError(
+                "Need hybrid matcher for matching chain targets"
+            )
         target.match_settings = self.cv_backend
         return self.cv_backend
 
@@ -581,7 +647,9 @@ class Region(object):
 
     """Mouse methods"""
 
-    def hover(self, target_or_location: "Match | Location | str | Target") -> "Match | None":
+    def hover(
+        self, target_or_location: "Match | Location | str | Target"
+    ) -> "Match | None":
         """
         Hover the mouse over a target or location.
 
@@ -593,6 +661,7 @@ class Region(object):
 
         # Handle Match
         from .match import Match
+
         if isinstance(target_or_location, Match):
             self.dc_backend.mouse_move(target_or_location.target, smooth)
             return None
@@ -608,8 +677,11 @@ class Region(object):
 
         return match
 
-    def click(self, target_or_location: "Match | Location | str | Target",
-              modifiers: list[str] = None) -> "Match | None":
+    def click(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match | None":
         """
         Click on a target or location using the left mouse button and
         optionally holding special keys.
@@ -630,8 +702,11 @@ class Region(object):
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 1, modifiers)
         return match
 
-    def right_click(self, target_or_location: "Match | Location | str | Target",
-                    modifiers: list[str] = None) -> "Match | None":
+    def right_click(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match | None":
         """
         Click on a target or location using the right mouse button and
         optionally holding special keys.
@@ -645,8 +720,11 @@ class Region(object):
         self.dc_backend.mouse_click(self.RIGHT_BUTTON, 1, modifiers)
         return match
 
-    def middle_click(self, target_or_location: "Match | Location | str | Target",
-                     modifiers: list[str] = None) -> "Match | None":
+    def middle_click(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match | None":
         """
         Click on a target or location using the middle mouse button and
         optionally holding special keys.
@@ -660,8 +738,11 @@ class Region(object):
         self.dc_backend.mouse_click(self.CENTER_BUTTON, 1, modifiers)
         return match
 
-    def double_click(self, target_or_location: "Match | Location | str | Target",
-                     modifiers: list[str] = None) -> "Match | None":
+    def double_click(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match | None":
         """
         Double click on a target or location using the left mouse button
         and optionally holding special keys.
@@ -675,8 +756,12 @@ class Region(object):
         self.dc_backend.mouse_click(self.LEFT_BUTTON, 2, modifiers)
         return match
 
-    def multi_click(self, target_or_location: "Match | Location | str | Target",
-                    count: int = 3, modifiers: list[str] = None) -> "Match | None":
+    def multi_click(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        count: int = 3,
+        modifiers: list[str] = None,
+    ) -> "Match | None":
         """
         Click N times on a target or location using the left mouse button
         and optionally holding special keys.
@@ -690,9 +775,14 @@ class Region(object):
         self.dc_backend.mouse_click(self.LEFT_BUTTON, count, modifiers)
         return match
 
-    def click_expect(self, click_image_or_location: Image | Location,
-                     expect_target: str | Target, modifiers: list[str] = None,
-                     timeout: int = 60, retries: int = 3) -> "Match | Region":
+    def click_expect(
+        self,
+        click_image_or_location: Image | Location,
+        expect_target: str | Target,
+        modifiers: list[str] = None,
+        timeout: int = 60,
+        retries: int = 3,
+    ) -> "Match | Region":
         """
         Click on an image or location and wait for another one to appear.
 
@@ -705,7 +795,7 @@ class Region(object):
         """
         for i in range(retries):
             if i > 0:
-                log.info("Retrying the mouse click (%s of %s)", i+1, retries)
+                log.info("Retrying the mouse click (%s of %s)", i + 1, retries)
             self.click(click_image_or_location, modifiers=modifiers)
             try:
                 return self.wait(expect_target, timeout)
@@ -715,9 +805,14 @@ class Region(object):
                     raise error
         return self
 
-    def click_vanish(self, click_image_or_location: Image | Location,
-                     expect_target: str | Target, modifiers: list[str] = None,
-                     timeout: int = 60, retries: int = 3) -> "Region":
+    def click_vanish(
+        self,
+        click_image_or_location: Image | Location,
+        expect_target: str | Target,
+        modifiers: list[str] = None,
+        timeout: int = 60,
+        retries: int = 3,
+    ) -> "Region":
         """
         Click on an image or location and wait for another one to disappear.
 
@@ -730,7 +825,7 @@ class Region(object):
         """
         for i in range(retries):
             if i > 0:
-                log.info("Retrying the mouse click (%s of %s)", i+1, retries)
+                log.info("Retrying the mouse click (%s of %s)", i + 1, retries)
             self.click(click_image_or_location, modifiers=modifiers)
             try:
                 return self.wait_vanish(expect_target, timeout)
@@ -740,18 +835,23 @@ class Region(object):
                     raise error
         return self
 
-    def click_at_index(self, anchor: str | Target, index: int = 0,
-                       find_number: int = 3, timeout: int = 10) -> "Match":
+    def click_at_index(
+        self,
+        anchor: str | Target,
+        index: int = 0,
+        find_number: int = 3,
+        timeout: int = 10,
+    ) -> "Match":
         """
         Find all instances of an anchor image and click on the one with the
         desired index given that they are horizontally then vertically sorted.
 
         :param anchor: image to find all matches of
         :param index: index of the match to click on (assuming >=1 matches),
-            	      sorted according to their (x,y) coordinates
+                      sorted according to their (x,y) coordinates
         :param find_number: expected number of matches which is necessary
-            		    for fast failure in case some elements are not visualized and/or
-            		    proper matching result
+                            for fast failure in case some elements are not visualized and/or
+                            proper matching result
         :param timeout: timeout before which the number of matches should be found
         :returns: match from finding the target of the desired index
 
@@ -784,13 +884,17 @@ class Region(object):
             self.find(anchor)
 
         sorted_targets = sorted(targets, key=lambda x: (x.x, x.y))
-        logging.debug("Totally %s clicking matches found: %s", len(sorted_targets),
-                      ["(%s, %s)" % (x.x, x.y) for x in sorted_targets])
+        logging.debug(
+            "Totally %s clicking matches found: %s",
+            len(sorted_targets),
+            ["(%s, %s)" % (x.x, x.y) for x in sorted_targets],
+        )
         self.click(sorted_targets[index])
         return sorted_targets[index]
 
-    def mouse_down(self, target_or_location: "Match | Location | str | Target",
-                   button: int = None) -> "Match | None":
+    def mouse_down(
+        self, target_or_location: "Match | Location | str | Target", button: int = None
+    ) -> "Match | None":
         """
         Hold down an arbitrary mouse button on a target or location.
 
@@ -806,8 +910,9 @@ class Region(object):
         self.dc_backend.mouse_down(button)
         return match
 
-    def mouse_up(self, target_or_location: "Match | Location | str | Target",
-                 button: int = None) -> "Match | None":
+    def mouse_up(
+        self, target_or_location: "Match | Location | str | Target", button: int = None
+    ) -> "Match | None":
         """
         Release an arbitrary mouse button on a target or location.
 
@@ -823,8 +928,12 @@ class Region(object):
         self.dc_backend.mouse_up(button)
         return match
 
-    def mouse_scroll(self, target_or_location: "Match | Location | str | Target",
-                     clicks: int = 10, horizontal: bool = False) -> "Match | None":
+    def mouse_scroll(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        clicks: int = 10,
+        horizontal: bool = False,
+    ) -> "Match | None":
         """
         Scroll the mouse for a number of clicks.
 
@@ -835,15 +944,21 @@ class Region(object):
         :returns: match from finding the target or nothing if scrolling on a known location
         """
         match = self.hover(target_or_location)
-        log.debug("Scrolling the mouse %s for %s clicks at %s",
-                  "horizontally" if horizontal else "vertically",
-                  clicks, target_or_location)
+        log.debug(
+            "Scrolling the mouse %s for %s clicks at %s",
+            "horizontally" if horizontal else "vertically",
+            clicks,
+            target_or_location,
+        )
         self.dc_backend.mouse_scroll(clicks, horizontal)
         return match
 
-    def drag_drop(self, src_target_or_location: "Match | Location | str | Target",
-                  dst_target_or_location: "Match | Location | str | Target",
-                  modifiers: list[str] = None) -> "Match | None":
+    def drag_drop(
+        self,
+        src_target_or_location: "Match | Location | str | Target",
+        dst_target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match | None":
         """
         Drag from and drop at a target or location optionally holding special keys.
 
@@ -857,8 +972,11 @@ class Region(object):
         match = self.drop_at(dst_target_or_location, modifiers)
         return match
 
-    def drag_from(self, target_or_location: "Match | Location | str | Target",
-                  modifiers: list[str] = None) -> "Match":
+    def drag_from(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match":
         """
         Drag from a target or location optionally holding special keys.
 
@@ -871,7 +989,7 @@ class Region(object):
         if modifiers is not None:
             log.info("Holding the modifiers %s", " ".join(modifiers))
             self.dc_backend.keys_toggle(modifiers, True)
-            #self.dc_backend.keys_toggle(["Ctrl"], True)
+            # self.dc_backend.keys_toggle(["Ctrl"], True)
 
         log.info("Dragging %s", target_or_location)
         self.dc_backend.mouse_down(self.LEFT_BUTTON)
@@ -879,8 +997,11 @@ class Region(object):
 
         return match
 
-    def drop_at(self, target_or_location: "Match | Location | str | Target",
-                modifiers: list[str] = None) -> "Match":
+    def drop_at(
+        self,
+        target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match":
         """
         Drop at a target or location optionally holding special keys.
 
@@ -921,8 +1042,11 @@ class Region(object):
         self.dc_backend.keys_press(keys_list)
         return self
 
-    def press_at(self, keys: str | list[str],
-                 target_or_location: "Match | Location | str | Target") -> "Match":
+    def press_at(
+        self,
+        keys: str | list[str],
+        target_or_location: "Match | Location | str | Target",
+    ) -> "Match":
         """
         Press a single key or a list of keys simultaneously
         at a specified target or location.
@@ -936,8 +1060,11 @@ class Region(object):
         self.dc_backend.keys_press(keys_list)
         return match
 
-    def _parse_keys(self, keys: str | list[str],
-                    target_or_location: "Match | Location | str | Target" = None) -> list[str]:
+    def _parse_keys(
+        self,
+        keys: str | list[str],
+        target_or_location: "Match | Location | str | Target" = None,
+    ) -> list[str]:
         at_str = " at %s" % target_or_location if target_or_location else ""
 
         keys_list = []
@@ -953,14 +1080,18 @@ class Region(object):
                         raise  # a key cannot be a string (text)
                     key_strings.append(key)
                 keys_list.append(key)
-            log.info("Pressing together keys '%s'%s",
-                     "'+'".join(keystr for keystr in key_strings),
-                     at_str)
+            log.info(
+                "Pressing together keys '%s'%s",
+                "'+'".join(keystr for keystr in key_strings),
+                at_str,
+            )
         else:
             # if not a list (i.e. if a single key)
             key = keys
             try:
-                log.info("Pressing key '%s'%s", self.dc_backend.keymap.to_string(key), at_str)
+                log.info(
+                    "Pressing key '%s'%s", self.dc_backend.keymap.to_string(key), at_str
+                )
             # if not a special key (i.e. if a character key)
             except KeyError:
                 if isinstance(key, int):
@@ -971,8 +1102,13 @@ class Region(object):
             keys_list.append(key)
         return keys_list
 
-    def press_expect(self, keys: list[str] | str, expect_target: str | Target,
-                     timeout: int = 60, retries: int = 3) -> "Match":
+    def press_expect(
+        self,
+        keys: list[str] | str,
+        expect_target: str | Target,
+        timeout: int = 60,
+        retries: int = 3,
+    ) -> "Match":
         """
         Press a key and wait for a target to appear.
 
@@ -985,7 +1121,7 @@ class Region(object):
         """
         for i in range(retries):
             if i > 0:
-                log.info("Retrying the key press (%s of %s)", i+1, retries)
+                log.info("Retrying the key press (%s of %s)", i + 1, retries)
             self.press_keys(keys)
             try:
                 return self.wait(expect_target, timeout)
@@ -993,8 +1129,13 @@ class Region(object):
                 if i == retries - 1:
                     raise error
 
-    def press_vanish(self, keys: list[str] | str, expect_target: str | Target,
-                     timeout: int = 60, retries: int = 3) -> "Region":
+    def press_vanish(
+        self,
+        keys: list[str] | str,
+        expect_target: str | Target,
+        timeout: int = 60,
+        retries: int = 3,
+    ) -> "Region":
         """
         Press a key and wait for a target to disappear.
 
@@ -1007,7 +1148,7 @@ class Region(object):
         """
         for i in range(retries):
             if i > 0:
-                log.info("Retrying the key press (%s of %s)", i+1, retries)
+                log.info("Retrying the key press (%s of %s)", i + 1, retries)
             self.press_keys(keys)
             try:
                 return self.wait_vanish(expect_target, timeout)
@@ -1044,8 +1185,12 @@ class Region(object):
         self.dc_backend.keys_type(text_list, modifiers)
         return self
 
-    def type_at(self, text: list[str] | str, target_or_location: "Match | Location | str | Target",
-                modifiers: list[str] = None) -> "Match":
+    def type_at(
+        self,
+        text: list[str] | str,
+        target_or_location: "Match | Location | str | Target",
+        modifiers: list[str] = None,
+    ) -> "Match":
         """
         Type a list of consecutive character keys (without special keys)
         at a specified target or location.
@@ -1065,8 +1210,11 @@ class Region(object):
         self.dc_backend.keys_type(text_list, modifiers)
         return match
 
-    def _parse_text(self, text: list[str] | str,
-                    target_or_location: "Match | Location | str | Target" = None) -> list[str]:
+    def _parse_text(
+        self,
+        text: list[str] | str,
+        target_or_location: "Match | Location | str | Target" = None,
+    ) -> list[str]:
         at_str = " at %s" % target_or_location if target_or_location else ""
 
         text_list = []
@@ -1086,8 +1234,14 @@ class Region(object):
         return text_list
 
     """Mixed (form) methods"""
-    def click_at(self, anchor: "Match | Location | Target | str",
-		 dx: int, dy: int, count: int = 1) -> "Region":
+
+    def click_at(
+        self,
+        anchor: "Match | Location | Target | str",
+        dx: int,
+        dy: int,
+        count: int = 1,
+    ) -> "Region":
         """
         Clicks on a relative location using a displacement from an anchor.
 
@@ -1099,6 +1253,7 @@ class Region(object):
         :raises: :py:class:`exceptions.ValueError` if `count` is not acceptable value
         """
         from .match import Match
+
         if isinstance(anchor, Match):
             start_loc = anchor.target
         elif isinstance(anchor, Location):
@@ -1111,9 +1266,16 @@ class Region(object):
 
         return self
 
-    def fill_at(self, anchor: "Match | Location | Target | str",
-		text: str, dx: int, dy: int, del_flag: bool = True,
-		esc_flag: bool = True, mark_clicks: int = 1) -> "Region":
+    def fill_at(
+        self,
+        anchor: "Match | Location | Target | str",
+        text: str,
+        dx: int,
+        dy: int,
+        del_flag: bool = True,
+        esc_flag: bool = True,
+        mark_clicks: int = 1,
+    ) -> "Region":
         """
         Fills a new text at a text box using a displacement from an anchor.
 
@@ -1161,10 +1323,18 @@ class Region(object):
 
         return self
 
-    def select_at(self, anchor: "Match | Location | Target | str",
-		  image_or_index: str | int, dx: int, dy: int, dw: int = 0,
-		  dh: int = 0, ret_flag: bool = True, mark_clicks: int = 1,
-		  tries: int = 3) -> "Region":
+    def select_at(
+        self,
+        anchor: "Match | Location | Target | str",
+        image_or_index: str | int,
+        dx: int,
+        dy: int,
+        dw: int = 0,
+        dh: int = 0,
+        ret_flag: bool = True,
+        mark_clicks: int = 1,
+        tries: int = 3,
+    ) -> "Region":
         """
         Select an option at a dropdown list using either an integer index
         or an option image if the order cannot be easily inferred.
@@ -1221,10 +1391,14 @@ class Region(object):
             # list, therefore a total of 2 option heights spanning the haystack height.
             # The haystack y displacement relative to 'loc' is then 1/2*1/2*dh
             loc = self.get_mouse_location()
-            dropdown_haystack = Region(xpos=int(loc.x - dw / 2),
-                                       ypos=int(loc.y - dh / 4),
-                                       width=dw, height=dh,
-                                       dc=self.dc_backend, cv=self.cv_backend)
+            dropdown_haystack = Region(
+                xpos=int(loc.x - dw / 2),
+                ypos=int(loc.y - dh / 4),
+                width=dw,
+                height=dh,
+                dc=self.dc_backend,
+                cv=self.cv_backend,
+            )
             try:
                 dropdown_haystack.click(image_or_index)
             except FindError:
@@ -1232,7 +1406,15 @@ class Region(object):
                 if tries == 1:
                     raise
                 logging.info("Opening the dropdown menu didn't work, retrying")
-                self.select_at(anchor, image_or_index, dx, dy, dw, dh,
-                               mark_clicks=mark_clicks, tries=tries-1)
+                self.select_at(
+                    anchor,
+                    image_or_index,
+                    dx,
+                    dy,
+                    dw,
+                    dh,
+                    mark_clicks=mark_clicks,
+                    tries=tries - 1,
+                )
 
         return self

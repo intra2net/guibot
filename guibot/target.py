@@ -38,7 +38,7 @@ from .finder import *
 from .errors import *
 
 
-__all__ = ['Target', 'Image', 'Text', 'Pattern', 'Chain']
+__all__ = ["Target", "Image", "Text", "Pattern", "Chain"]
 
 
 class Target(object):
@@ -70,7 +70,9 @@ class Target(object):
         elif extension == ".steps":
             target = Chain(name)
         else:
-            raise IncompatibleTargetFileError("The target file %s is not among any of the known types" % filename)
+            raise IncompatibleTargetFileError(
+                "The target file %s is not among any of the known types" % filename
+            )
 
         return target
 
@@ -88,7 +90,13 @@ class Target(object):
         match_filename = os.path.splitext(filename)[0] + ".match"
         finder = Finder.from_match_file(match_filename)
 
-        if finder.params["find"]["backend"] in ("autopy", "contour", "template", "feature", "tempfeat"):
+        if finder.params["find"]["backend"] in (
+            "autopy",
+            "contour",
+            "template",
+            "feature",
+            "tempfeat",
+        ):
             target = Image(filename, match_settings=finder)
         elif finder.params["find"]["backend"] == "text":
             target = Text(name, match_settings=finder)
@@ -144,6 +152,7 @@ class Target(object):
         :returns: similarity required for the image to be matched
         """
         return self.match_settings.params["find"]["similarity"].value
+
     similarity = property(fget=get_similarity)
 
     def get_center_offset(self) -> Location:
@@ -156,6 +165,7 @@ class Target(object):
         it is then taken when matching to produce a clicking target for a match.
         """
         return self._center_offset
+
     center_offset = property(fget=get_center_offset)
 
     def load(self, filename: str, **kwargs: dict[str, type]) -> None:
@@ -234,8 +244,13 @@ class Image(Target):
 
     _cache = {}
 
-    def __init__(self, image_filename: str = "", pil_image: PIL.Image.Image = None,
-                 match_settings: "Finder" = None, use_cache: bool = True) -> None:
+    def __init__(
+        self,
+        image_filename: str = "",
+        pil_image: PIL.Image.Image = None,
+        match_settings: "Finder" = None,
+        use_cache: bool = True,
+    ) -> None:
         """
         Build an image object.
 
@@ -266,7 +281,11 @@ class Image(Target):
 
     def __str__(self) -> str:
         """Provide the image filename."""
-        return "noname" if self._filename == "" else os.path.splitext(os.path.basename(self._filename))[0]
+        return (
+            "noname"
+            if self._filename == ""
+            else os.path.splitext(os.path.basename(self._filename))[0]
+        )
 
     def get_filename(self) -> str:
         """
@@ -275,6 +294,7 @@ class Image(Target):
         :returns: filename of the image
         """
         return self._filename
+
     filename = property(fget=get_filename)
 
     def get_width(self) -> int:
@@ -284,6 +304,7 @@ class Image(Target):
         :returns: width of the image
         """
         return self._width
+
     width = property(fget=get_width)
 
     def get_height(self) -> int:
@@ -293,6 +314,7 @@ class Image(Target):
         :returns: height of the image
         """
         return self._height
+
     height = property(fget=get_height)
 
     def get_pil_image(self) -> PIL.Image.Image:
@@ -302,9 +324,12 @@ class Image(Target):
         :returns: image data of the image
         """
         return self._pil_image
+
     pil_image = property(fget=get_pil_image)
 
-    def load(self, filename: str, use_cache: bool = True, **kwargs: dict[str, type]) -> None:
+    def load(
+        self, filename: str, use_cache: bool = True, **kwargs: dict[str, type]
+    ) -> None:
         """
         Load image from a file.
 
@@ -320,7 +345,7 @@ class Image(Target):
             self._pil_image = self._cache[filename]
         else:
             # load and cache image
-            self._pil_image = PIL.Image.open(filename).convert('RGB')
+            self._pil_image = PIL.Image.open(filename).convert("RGB")
             if use_cache:
                 self._cache[filename] = self._pil_image
         self._filename = filename
@@ -351,8 +376,12 @@ class Text(Target):
     using OCR or general text detection methods.
     """
 
-    def __init__(self, value: str = None, text_filename: str = None,
-                 match_settings: "Finder" = None) -> None:
+    def __init__(
+        self,
+        value: str = None,
+        text_filename: str = None,
+        match_settings: "Finder" = None,
+    ) -> None:
         """
         Build a text object.
 
@@ -374,7 +403,7 @@ class Text(Target):
 
     def __str__(self) -> str:
         """Provide a part of the text value."""
-        return self.value[:30].replace('/', '').replace('\\', '')
+        return self.value[:30].replace("/", "").replace("\\", "")
 
     def load(self, filename: str, **kwargs: dict[str, type]) -> None:
         """
@@ -408,17 +437,18 @@ class Text(Target):
         """
         str1 = str(self.value)
         import numpy
+
         M = numpy.empty((len(str1) + 1, len(str2) + 1), int)
 
-        for a in range(0, len(str1)+1):
+        for a in range(0, len(str1) + 1):
             M[a, 0] = a
-        for b in range(0, len(str2)+1):
+        for b in range(0, len(str2) + 1):
             M[0, b] = b
 
-        for a in range(1, len(str1)+1):  # (size_t a = 1; a <= NA; ++a):
-            for b in range(1, len(str2)+1):  # (size_t b = 1; b <= NB; ++b)
-                z = M[a-1, b-1] + (0 if str1[a-1] == str2[b-1] else 1)
-                M[a, b] = min(min(M[a-1, b] + 1, M[a, b-1] + 1), z)
+        for a in range(1, len(str1) + 1):  # (size_t a = 1; a <= NA; ++a):
+            for b in range(1, len(str2) + 1):  # (size_t b = 1; b <= NB; ++b)
+                z = M[a - 1, b - 1] + (0 if str1[a - 1] == str2[b - 1] else 1)
+                M[a, b] = min(min(M[a - 1, b] + 1, M[a, b - 1] + 1), z)
 
         return M[len(str1), len(str2)]
 
@@ -522,6 +552,7 @@ class Chain(Target):
         :raises: :py:class:`errors.UnsupportedBackendError` if a chain step is of unknown type
         :raises: :py:class:`IOError` if an chain step line cannot be parsed
         """
+
         def resolve_stepsfile(filename: str) -> str:
             """
             Try to find a valid steps file from a given file name.
@@ -546,7 +577,7 @@ class Chain(Target):
 
         while lines:
             step = lines.pop(0)
-            dataconfig = re.split(r'\t+', step.rstrip('\t\n'))
+            dataconfig = re.split(r"\t+", step.rstrip("\t\n"))
 
             # read a nested steps file and append to this chain
             if dataconfig[0].endswith(".steps"):
@@ -572,12 +603,18 @@ class Chain(Target):
                 data_and_config = Pattern(data, match_settings=self.match_settings)
             elif step_backend == "text":
                 if data.endswith(".txt"):
-                    data_and_config = Text(text_filename=data, match_settings=self.match_settings)
+                    data_and_config = Text(
+                        text_filename=data, match_settings=self.match_settings
+                    )
                 else:
-                    data_and_config = Text(value=data, match_settings=self.match_settings)
+                    data_and_config = Text(
+                        value=data, match_settings=self.match_settings
+                    )
             else:
                 # in particular, we cannot have a chain within the chain since it is not useful
-                raise UnsupportedBackendError("No target step type for '%s' backend" % step_backend)
+                raise UnsupportedBackendError(
+                    "No target step type for '%s' backend" % step_backend
+                )
 
             self._steps.append(data_and_config)
 
@@ -618,7 +655,9 @@ class Chain(Target):
                 data = data_and_config.filename
             else:
                 # in particular, we cannot have a chain within the chain since it is not useful
-                raise UnsupportedBackendError("No target step type for '%s' backend" % step_backend)
+                raise UnsupportedBackendError(
+                    "No target step type for '%s' backend" % step_backend
+                )
 
             data_and_config.save(data)
             save_lines.append(data + "\t" + os.path.splitext(data)[0] + ".match\n")

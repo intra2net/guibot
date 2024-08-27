@@ -32,7 +32,7 @@ from typing import Generator
 import logging
 
 
-log = logging.getLogger('guibot.path')
+log = logging.getLogger("guibot.path")
 
 
 class FileResolver(object):
@@ -78,7 +78,9 @@ class FileResolver(object):
         # empty list but keep reference
         del FileResolver._target_paths[:]
 
-    def search(self, filename: str, restriction: str = "", silent: bool = False) -> str | None:
+    def search(
+        self, filename: str, restriction: str = "", silent: bool = False
+    ) -> str | None:
         """
         Search for a filename in the currently accessible paths.
 
@@ -97,32 +99,32 @@ class FileResolver(object):
                 return fullname
 
             # Check with .png extension for images
-            fullname = os.path.join(directory, filename + '.png')
+            fullname = os.path.join(directory, filename + ".png")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .xml extension for cascade
-            fullname = os.path.join(directory, filename + '.xml')
+            fullname = os.path.join(directory, filename + ".xml")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .txt extension for text
-            fullname = os.path.join(directory, filename + '.txt')
+            fullname = os.path.join(directory, filename + ".txt")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .csv extension for patterns
-            fullname = os.path.join(directory, filename + '.csv')
+            fullname = os.path.join(directory, filename + ".csv")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .steps extension for chains
-            fullname = os.path.join(directory, filename + '.steps')
+            fullname = os.path.join(directory, filename + ".steps")
             if os.path.exists(fullname):
                 return fullname
 
         if not silent:
-            raise FileNotFoundError('File ' + filename + ' not found')
+            raise FileNotFoundError("File " + filename + " not found")
 
         return None
 
@@ -170,7 +172,10 @@ class CustomFileResolver(object):
             file_resolver.add_path(p)
         return file_resolver
 
-    def __exit__(self, *args: tuple[type, ...],) -> None:
+    def __exit__(
+        self,
+        *args: tuple[type, ...],
+    ) -> None:
         """
         Exit this context and restore the original paths.
 

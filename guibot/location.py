@@ -53,6 +53,7 @@ class Location(object):
         :returns: x coordinate of the location
         """
         return self._xpos
+
     x = property(fget=get_x)
 
     def get_y(self) -> int:
@@ -62,4 +63,5 @@ class Location(object):
         :returns: y coordinate of the location
         """
         return self._ypos
+
     y = property(fget=get_y)

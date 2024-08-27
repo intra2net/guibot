@@ -32,8 +32,9 @@ import logging
 from .fileresolver import FileResolver as Path
 
 
-logging.getLogger("guibot.path")\
-    .warn("The `path` module is deprecated, use `fileresolver` instead.")
+logging.getLogger("guibot.path").warn(
+    "The `path` module is deprecated, use `fileresolver` instead."
+)
 
 
 __all__ = ["Path"]

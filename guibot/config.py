@@ -30,7 +30,7 @@ from typing import Any
 
 from .errors import *
 
-log = logging.getLogger('guibot.config')
+log = logging.getLogger("guibot.config")
 
 
 class GlobalConfig(type):
@@ -91,6 +91,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._toggle_delay = value
             return None
+
     #: time interval between mouse down and up in a click
     toggle_delay = property(fget=toggle_delay, fset=toggle_delay)
 
@@ -105,10 +106,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._click_delay = value
             return None
+
     #: time interval after a click (in a double or n-click)
     click_delay = property(fget=click_delay, fset=click_delay)
 
-    def delay_after_drag(self, value: float = None)  -> float | None:
+    def delay_after_drag(self, value: float = None) -> float | None:
         """
         Same as :py:func:`GlobalConfig.toggle_delay` but with
 
@@ -119,6 +121,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._drag_delay = value
             return None
+
     #: timeout before drag operation
     delay_after_drag = property(fget=delay_after_drag, fset=delay_after_drag)
 
@@ -133,6 +136,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._drop_delay = value
             return None
+
     #: timeout before drop operation
     delay_before_drop = property(fget=delay_before_drop, fset=delay_before_drop)
 
@@ -147,6 +151,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._keys_delay = value
             return None
+
     #: timeout before key press operation
     delay_before_keys = property(fget=delay_before_keys, fset=delay_before_keys)
 
@@ -161,6 +166,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._type_delay = value
             return None
+
     #: time interval between two consecutively typed keys
     delay_between_keys = property(fget=delay_between_keys, fset=delay_between_keys)
 
@@ -176,8 +182,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._rescan_speed_on_find = value
             return None
+
     #: time interval between two image matching attempts (used to reduce overhead on the CPU)
-    rescan_speed_on_find = property(fget=rescan_speed_on_find, fset=rescan_speed_on_find)
+    rescan_speed_on_find = property(
+        fget=rescan_speed_on_find, fset=rescan_speed_on_find
+    )
 
     def wait_for_animations(self, value: bool = None) -> bool | None:
         """
@@ -198,6 +207,7 @@ class GlobalConfig(type):
             return None
         else:
             raise ValueError
+
     #: whether to wait for animations to complete and match only static (not moving) targets
     wait_for_animations = property(fget=wait_for_animations, fset=wait_for_animations)
 
@@ -219,6 +229,7 @@ class GlobalConfig(type):
             return None
         else:
             raise ValueError
+
     #: whether to move the mouse cursor to a location instantly or smoothly
     smooth_mouse_drag = property(fget=smooth_mouse_drag, fset=smooth_mouse_drag)
 
@@ -239,8 +250,11 @@ class GlobalConfig(type):
             return None
         else:
             raise ValueError
+
     #: whether to preprocess capital and special characters and handle them internally
-    preprocess_special_chars = property(fget=preprocess_special_chars, fset=preprocess_special_chars)
+    preprocess_special_chars = property(
+        fget=preprocess_special_chars, fset=preprocess_special_chars
+    )
 
     def save_needle_on_error(self, value: bool = None) -> bool | None:
         """
@@ -255,8 +269,11 @@ class GlobalConfig(type):
             return None
         else:
             raise ValueError
+
     #: whether to perform an extra needle dump on matching error
-    save_needle_on_error = property(fget=save_needle_on_error, fset=save_needle_on_error)
+    save_needle_on_error = property(
+        fget=save_needle_on_error, fset=save_needle_on_error
+    )
 
     def image_logging_level(self, value: int = None) -> int | None:
         """
@@ -272,10 +289,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._image_logging_level = value
             return None
+
     #: logging level similar to the python logging module
     image_logging_level = property(fget=image_logging_level, fset=image_logging_level)
 
-    def image_logging_step_width(self, value: int = None)  -> int | None:
+    def image_logging_step_width(self, value: int = None) -> int | None:
         """
         Same as :py:func:`GlobalConfig.image_logging_level` but with
 
@@ -287,8 +305,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._image_logging_step_width = value
             return None
+
     #: number of digits when enumerating the image logging steps, e.g. value=3 for 001, 002, etc.
-    image_logging_step_width = property(fget=image_logging_step_width, fset=image_logging_step_width)
+    image_logging_step_width = property(
+        fget=image_logging_step_width, fset=image_logging_step_width
+    )
 
     def image_quality(self, value: int = None) -> int | None:
         """
@@ -303,6 +324,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._image_quality = value
             return None
+
     #: quality of the image dumps ranging from 0 for no compression to 9 for maximum compression
     # (used to save space and reduce the disk space needed for image logging)
     image_quality = property(fget=image_quality, fset=image_quality)
@@ -319,8 +341,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._image_logging_destination = value
             return None
+
     #: relative path of the image logging steps
-    image_logging_destination = property(fget=image_logging_destination, fset=image_logging_destination)
+    image_logging_destination = property(
+        fget=image_logging_destination, fset=image_logging_destination
+    )
 
     def display_control_backend(self, value: str = None) -> str | None:
         """
@@ -353,8 +378,11 @@ class GlobalConfig(type):
                 raise ValueError("Unsupported backend for GUI actions '%s'" % value)
             GlobalConfig._display_control_backend = value
             return None
+
     #: name of the display control backend
-    display_control_backend = property(fget=display_control_backend, fset=display_control_backend)
+    display_control_backend = property(
+        fget=display_control_backend, fset=display_control_backend
+    )
 
     # these methods do not check for valid values since this
     # is already done during region and target initialization
@@ -389,6 +417,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._find_backend = value
             return None
+
     #: name of the computer vision backend
     find_backend = property(fget=find_backend, fset=find_backend)
 
@@ -405,8 +434,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._contour_threshold_backend = value
             return None
+
     #: name of the contour threshold backend
-    contour_threshold_backend = property(fget=contour_threshold_backend, fset=contour_threshold_backend)
+    contour_threshold_backend = property(
+        fget=contour_threshold_backend, fset=contour_threshold_backend
+    )
 
     def template_match_backend(self, value: str = None) -> str | None:
         """
@@ -422,8 +454,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._template_match_backend = value
             return None
+
     #: name of the template matching backend
-    template_match_backend = property(fget=template_match_backend, fset=template_match_backend)
+    template_match_backend = property(
+        fget=template_match_backend, fset=template_match_backend
+    )
 
     def feature_detect_backend(self, value: str = None) -> str | None:
         """
@@ -439,8 +474,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._feature_detect_backend = value
             return None
+
     #: name of the feature detection backend
-    feature_detect_backend = property(fget=feature_detect_backend, fset=feature_detect_backend)
+    feature_detect_backend = property(
+        fget=feature_detect_backend, fset=feature_detect_backend
+    )
 
     def feature_extract_backend(self, value: str = None) -> str | None:
         """
@@ -455,8 +493,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._feature_extract_backend = value
             return None
+
     #: name of the feature extraction backend
-    feature_extract_backend = property(fget=feature_extract_backend, fset=feature_extract_backend)
+    feature_extract_backend = property(
+        fget=feature_extract_backend, fset=feature_extract_backend
+    )
 
     def feature_match_backend(self, value: str = None) -> str | None:
         """
@@ -471,8 +512,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._feature_match_backend = value
             return None
+
     #: name of the feature matching backend
-    feature_match_backend = property(fget=feature_match_backend, fset=feature_match_backend)
+    feature_match_backend = property(
+        fget=feature_match_backend, fset=feature_match_backend
+    )
 
     def text_detect_backend(self, value: str = None) -> str | None:
         """
@@ -487,6 +531,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._text_detect_backend = value
             return None
+
     #: name of the text detection backend
     text_detect_backend = property(fget=text_detect_backend, fset=text_detect_backend)
 
@@ -503,6 +548,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._text_ocr_backend = value
             return None
+
     #: name of the optical character recognition backend
     text_ocr_backend = property(fget=text_ocr_backend, fset=text_ocr_backend)
 
@@ -519,6 +565,7 @@ class GlobalConfig(type):
         else:
             GlobalConfig._deep_learn_backend = value
             return None
+
     #: name of the deep learning backend
     deep_learn_backend = property(fget=deep_learn_backend, fset=deep_learn_backend)
 
@@ -535,8 +582,11 @@ class GlobalConfig(type):
         else:
             GlobalConfig._hybrid_match_backend = value
             return None
+
     #: name of the hybrid matching backend for unconfigured one-step targets
-    hybrid_match_backend = property(fget=hybrid_match_backend, fset=hybrid_match_backend)
+    hybrid_match_backend = property(
+        fget=hybrid_match_backend, fset=hybrid_match_backend
+    )
 
 
 class GlobalConfig(object, metaclass=GlobalConfig):  # type: ignore
@@ -639,24 +689,30 @@ class LocalConfig(object):
         if synchronize:
             self.__synchronize_backend()
 
-    def __configure_backend(self, backend: str = None, category: str ="type",
-                            reset: bool = False) -> None:
+    def __configure_backend(
+        self, backend: str = None, category: str = "type", reset: bool = False
+    ) -> None:
         if category != "type":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             # reset makes no sense here since this is the base configuration
             pass
         if backend is None:
             backend = "cv"
         if backend not in self.algorithms[self.categories[category]]:
-            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
-                                          "%s" % (backend, self.algorithms[self.categories[category]]))
+            raise UnsupportedBackendError(
+                "Backend '%s' is not among the supported ones: "
+                "%s" % (backend, self.algorithms[self.categories[category]])
+            )
 
         self.params[category] = {}
         self.params[category]["backend"] = backend
 
-    def configure_backend(self, backend: str = None, category: str = "type",
-                          reset: bool = False) -> None:
+    def configure_backend(
+        self, backend: str = None, category: str = "type", reset: bool = False
+    ) -> None:
         """
         Generate configuration dictionary for a given backend.
 
@@ -681,20 +737,26 @@ class LocalConfig(object):
         """
         self.configure_backend(reset=reset)
 
-    def __synchronize_backend(self, backend: str = None, category: str = "type",
-                              reset: bool = False) -> None:
+    def __synchronize_backend(
+        self, backend: str = None, category: str = "type", reset: bool = False
+    ) -> None:
         if category != "type":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             # reset makes no sense here since this is the base configuration
             pass
         # no backend object to sync to
         backend = "cv" if backend is None else backend
         if backend not in self.algorithms[self.categories[category]]:
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+            raise UninitializedBackendError(
+                "Backend '%s' has not been configured yet" % backend
+            )
 
-    def synchronize_backend(self, backend: str = None, category: str = "type",
-                            reset: bool = False) -> None:
+    def synchronize_backend(
+        self, backend: str = None, category: str = "type", reset: bool = False
+    ) -> None:
         """
         Synchronize a category backend with the equalizer configuration.
 
@@ -707,7 +769,9 @@ class LocalConfig(object):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def synchronize(self, *args: tuple[type, ...], reset: bool = True, **kwargs: dict[str, type]) -> None:
+    def synchronize(
+        self, *args: tuple[type, ...], reset: bool = True, **kwargs: dict[str, type]
+    ) -> None:
         """
         Synchronize all backends with the current configuration dictionary.
 

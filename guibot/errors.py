@@ -26,11 +26,17 @@ INTERFACE
 """
 
 
-__all__ = ['GuiBotError', 'FileNotFoundError',
-           'IncompatibleTargetError', 'IncompatibleTargetFileError',
-           'FindError', 'NotFindError',
-           'UnsupportedBackendError', 'MissingHotmapError',
-           'UninitializedBackendError']
+__all__ = [
+    "GuiBotError",
+    "FileNotFoundError",
+    "IncompatibleTargetError",
+    "IncompatibleTargetFileError",
+    "FindError",
+    "NotFindError",
+    "UnsupportedBackendError",
+    "MissingHotmapError",
+    "UninitializedBackendError",
+]
 
 
 class GuiBotError(Exception):
@@ -75,7 +81,10 @@ class NotFindError(GuiBotError):
         :param failed_target: the target that was found
         """
         if failed_target:
-            message = "The target %s was found on the screen while it was not expected" % failed_target
+            message = (
+                "The target %s was found on the screen while it was not expected"
+                % failed_target
+            )
         else:
             message = "The target was found on the screen while it was not expected"
         super(NotFindError, self).__init__(message)

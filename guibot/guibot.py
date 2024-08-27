@@ -35,7 +35,7 @@ from .controller import Controller
 from .finder import Finder
 
 
-log = logging.getLogger('guibot')
+log = logging.getLogger("guibot")
 log.addHandler(logging.NullHandler())
 
 

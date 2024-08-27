@@ -82,6 +82,7 @@ class ImageLogger(object):
         :returns: step number prepended with zeroes to obtain a fixed length enumeration
         """
         return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
+
     printable_step = property(fget=get_printable_step)
 
     def debug(self) -> None:
@@ -119,16 +120,15 @@ class ImageLogger(object):
             shutil.rmtree(ImageLogger.logging_destination)
             os.mkdir(ImageLogger.logging_destination)
 
-        needle_name = "imglog%s-1needle-%s" % (self.printable_step,
-                                               str(self.needle))
-        needle_path = os.path.join(ImageLogger.logging_destination,
-                                   needle_name)
+        needle_name = "imglog%s-1needle-%s" % (self.printable_step, str(self.needle))
+        needle_path = os.path.join(ImageLogger.logging_destination, needle_name)
         self.needle.save(needle_path)
 
-        haystack_name = "imglog%s-2haystack-%s" % (self.printable_step,
-                                                   str(self.haystack))
-        haystack_path = os.path.join(ImageLogger.logging_destination,
-                                     haystack_name)
+        haystack_name = "imglog%s-2haystack-%s" % (
+            self.printable_step,
+            str(self.haystack),
+        )
+        haystack_path = os.path.join(ImageLogger.logging_destination, haystack_name)
         self.haystack.save(haystack_path)
 
     def dump_hotmap(self, name: str, hotmap: PIL.Image.Image | numpy.ndarray) -> None:
@@ -150,8 +150,8 @@ class ImageLogger(object):
             # numpy or other array
             pil_image = PIL.Image.fromarray(hotmap)
             # NOTE: some modes cannot be saved unless converted to RGB
-            if pil_image.mode != 'RGB':
-                pil_image = pil_image.convert('RGB')
+            if pil_image.mode != "RGB":
+                pil_image = pil_image.convert("RGB")
         pil_image.save(path, compress_level=GlobalConfig.image_quality)
 
     def clear(self) -> None:

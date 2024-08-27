@@ -120,75 +120,77 @@ class Key(object):
         """
         if key is None:
             raise ValueError("The key %s does not exist in the current key map" % key)
-        return {self.ENTER: "Enter",
-                self.TAB: "Tab",
-                self.ESC: "Esc",
-                self.BACKSPACE: "Backspace",
-                self.DELETE: "Delete",
-                self.INSERT: "Insert",
-                self.CTRL: "Ctrl",
-                self.ALT: "Alt",
-                self.SHIFT: "Shift",
-                self.META: "Meta",
-                self.RCTRL: "RightControl",
-                self.RALT: "RightAlt",
-                self.RSHIFT: "RightShift",
-                self.RMETA: "RightMeta",
-                self.F1: "F1",
-                self.F2: "F2",
-                self.F3: "F3",
-                self.F4: "F4",
-                self.F5: "F5",
-                self.F6: "F6",
-                self.F7: "F7",
-                self.F8: "F8",
-                self.F9: "F9",
-                self.F10: "F10",
-                self.F11: "F11",
-                self.F12: "F12",
-                self.F13: "F13",
-                self.F14: "F14",
-                self.F15: "F15",
-                self.F16: "F16",
-                self.F17: "F17",
-                self.F18: "F18",
-                self.F19: "F19",
-                self.F20: "F20",
-                self.HOME: "Home",
-                self.END: "End",
-                self.LEFT: "Left",
-                self.RIGHT: "Right",
-                self.UP: "Up",
-                self.DOWN: "Down",
-                self.PAGE_DOWN: "Page Down",
-                self.PAGE_UP: "Page Up",
-                self.CAPS_LOCK: "Caps Lock",
-                self.PRINTSCREEN: "Print Screen",
-                self.PAUSE: "Pause",
-                self.SCROLL_LOCK: "Scroll Lock",
-                self.NUM_LOCK: "Num Lock",
-                self.SYS_REQ: "Sys Req",
-                self.SUPER: "Super",
-                self.RSUPER: "RightSuper",
-                self.HYPER: "Hyper",
-                self.RHYPER: "RightHyper",
-                self.MENU: "Menu",
-                self.KP0: "KeyPad Number 0",
-                self.KP1: "KeyPad Number 1",
-                self.KP2: "KeyPad Number 2",
-                self.KP3: "KeyPad Number 3",
-                self.KP4: "KeyPad Number 4",
-                self.KP5: "KeyPad Number 5",
-                self.KP6: "KeyPad Number 6",
-                self.KP7: "KeyPad Number 7",
-                self.KP8: "KeyPad Number 8",
-                self.KP9: "KeyPad Number 9",
-                self.KP_ADD: "KeyPad Add",
-                self.KP_DECIMAL: "KeyPad Decimal",
-                self.KP_DIVIDE: "KeyPad Divide",
-                self.KP_ENTER: "KeyPad Enter",
-                self.KP_MULTIPLY: "KeyPad Multiply",
-                self.KP_SUBTRACT: "KeyPad Subtract"}[key]
+        return {
+            self.ENTER: "Enter",
+            self.TAB: "Tab",
+            self.ESC: "Esc",
+            self.BACKSPACE: "Backspace",
+            self.DELETE: "Delete",
+            self.INSERT: "Insert",
+            self.CTRL: "Ctrl",
+            self.ALT: "Alt",
+            self.SHIFT: "Shift",
+            self.META: "Meta",
+            self.RCTRL: "RightControl",
+            self.RALT: "RightAlt",
+            self.RSHIFT: "RightShift",
+            self.RMETA: "RightMeta",
+            self.F1: "F1",
+            self.F2: "F2",
+            self.F3: "F3",
+            self.F4: "F4",
+            self.F5: "F5",
+            self.F6: "F6",
+            self.F7: "F7",
+            self.F8: "F8",
+            self.F9: "F9",
+            self.F10: "F10",
+            self.F11: "F11",
+            self.F12: "F12",
+            self.F13: "F13",
+            self.F14: "F14",
+            self.F15: "F15",
+            self.F16: "F16",
+            self.F17: "F17",
+            self.F18: "F18",
+            self.F19: "F19",
+            self.F20: "F20",
+            self.HOME: "Home",
+            self.END: "End",
+            self.LEFT: "Left",
+            self.RIGHT: "Right",
+            self.UP: "Up",
+            self.DOWN: "Down",
+            self.PAGE_DOWN: "Page Down",
+            self.PAGE_UP: "Page Up",
+            self.CAPS_LOCK: "Caps Lock",
+            self.PRINTSCREEN: "Print Screen",
+            self.PAUSE: "Pause",
+            self.SCROLL_LOCK: "Scroll Lock",
+            self.NUM_LOCK: "Num Lock",
+            self.SYS_REQ: "Sys Req",
+            self.SUPER: "Super",
+            self.RSUPER: "RightSuper",
+            self.HYPER: "Hyper",
+            self.RHYPER: "RightHyper",
+            self.MENU: "Menu",
+            self.KP0: "KeyPad Number 0",
+            self.KP1: "KeyPad Number 1",
+            self.KP2: "KeyPad Number 2",
+            self.KP3: "KeyPad Number 3",
+            self.KP4: "KeyPad Number 4",
+            self.KP5: "KeyPad Number 5",
+            self.KP6: "KeyPad Number 6",
+            self.KP7: "KeyPad Number 7",
+            self.KP8: "KeyPad Number 8",
+            self.KP9: "KeyPad Number 9",
+            self.KP_ADD: "KeyPad Add",
+            self.KP_DECIMAL: "KeyPad Decimal",
+            self.KP_DIVIDE: "KeyPad Divide",
+            self.KP_ENTER: "KeyPad Enter",
+            self.KP_MULTIPLY: "KeyPad Multiply",
+            self.KP_SUBTRACT: "KeyPad Subtract",
+        }[key]
 
 
 class AutoPyKey(Key):
@@ -285,58 +287,58 @@ class XDoToolKey(Key):
         """Build an instance containing the key map for the xdotool backend."""
         super().__init__()
 
-        self.ENTER = 'Return'  # also 'enter'
-        self.TAB = 'Tab'
-        self.ESC = 'Escape'
-        self.BACKSPACE = 'BackSpace'
-        self.DELETE = 'Delete'
-        self.INSERT = 'Insert'
+        self.ENTER = "Return"  # also 'enter'
+        self.TAB = "Tab"
+        self.ESC = "Escape"
+        self.BACKSPACE = "BackSpace"
+        self.DELETE = "Delete"
+        self.INSERT = "Insert"
 
-        self.CTRL = 'ctrl'  # special handling
-        self.ALT = 'alt'  # special handling
-        self.SHIFT = 'shift'  # special handling
-        self.META = 'meta'  # special handling
-        self.RCTRL = 'CtrlR'
-        self.RALT = 'AltR'
-        self.RSHIFT = 'ShiftR'
-        self.RMETA = 'MetaR'
+        self.CTRL = "ctrl"  # special handling
+        self.ALT = "alt"  # special handling
+        self.SHIFT = "shift"  # special handling
+        self.META = "meta"  # special handling
+        self.RCTRL = "CtrlR"
+        self.RALT = "AltR"
+        self.RSHIFT = "ShiftR"
+        self.RMETA = "MetaR"
 
-        self.F1 = 'F1'
-        self.F2 = 'F2'
-        self.F3 = 'F3'
-        self.F4 = 'F4'
-        self.F5 = 'F5'
-        self.F6 = 'F6'
-        self.F7 = 'F7'
-        self.F8 = 'F8'
-        self.F9 = 'F9'
-        self.F10 = 'F10'
-        self.F11 = 'F11'
-        self.F12 = 'F12'
-        self.F13 = 'F13'
-        self.F14 = 'F14'
-        self.F15 = 'F15'
-        self.F16 = 'F16'
-        self.F17 = 'F17'
-        self.F18 = 'F18'
-        self.F19 = 'F19'
-        self.F20 = 'F20'
+        self.F1 = "F1"
+        self.F2 = "F2"
+        self.F3 = "F3"
+        self.F4 = "F4"
+        self.F5 = "F5"
+        self.F6 = "F6"
+        self.F7 = "F7"
+        self.F8 = "F8"
+        self.F9 = "F9"
+        self.F10 = "F10"
+        self.F11 = "F11"
+        self.F12 = "F12"
+        self.F13 = "F13"
+        self.F14 = "F14"
+        self.F15 = "F15"
+        self.F16 = "F16"
+        self.F17 = "F17"
+        self.F18 = "F18"
+        self.F19 = "F19"
+        self.F20 = "F20"
 
-        self.HOME = 'Home'
-        self.END = 'End'
-        self.LEFT = 'Left'
-        self.RIGHT = 'Right'
-        self.UP = 'Up'
-        self.DOWN = 'Down'
-        self.PAGE_DOWN = 'Page_Down'
-        self.PAGE_UP = 'Page_Up'
+        self.HOME = "Home"
+        self.END = "End"
+        self.LEFT = "Left"
+        self.RIGHT = "Right"
+        self.UP = "Up"
+        self.DOWN = "Down"
+        self.PAGE_DOWN = "Page_Down"
+        self.PAGE_UP = "Page_Up"
 
-        self.CAPS_LOCK = 'Caps_Lock'
+        self.CAPS_LOCK = "Caps_Lock"
         # TODO: 'print screen' is not available
         self.PRINTSCREEN = None
-        self.PAUSE = 'Pause'
-        self.SCROLL_LOCK = 'Scroll_Lock'
-        self.NUM_LOCK = 'Num_Lock'
+        self.PAUSE = "Pause"
+        self.SCROLL_LOCK = "Scroll_Lock"
+        self.NUM_LOCK = "Num_Lock"
         # TODO: the following are not available
         self.SYS_REQ = None
         self.SUPER = None
@@ -346,21 +348,21 @@ class XDoToolKey(Key):
         # TODO: 'menu' is not available
         self.MENU = None
 
-        self.KP0 = 'KP_0'
-        self.KP1 = 'KP_1'
-        self.KP2 = 'KP_2'
-        self.KP3 = 'KP_3'
-        self.KP4 = 'KP_4'
-        self.KP5 = 'KP_5'
-        self.KP6 = 'KP_6'
-        self.KP7 = 'KP_7'
-        self.KP8 = 'KP_8'
-        self.KP9 = 'KP_9'
-        self.KP_ENTER = 'KP_Enter'
-        self.KP_DIVIDE = 'KP_Divide'
-        self.KP_MULTIPLY = 'KP_Multiply'
-        self.KP_SUBTRACT = 'KP_Subtract'
-        self.KP_ADD = 'KP_Add'
+        self.KP0 = "KP_0"
+        self.KP1 = "KP_1"
+        self.KP2 = "KP_2"
+        self.KP3 = "KP_3"
+        self.KP4 = "KP_4"
+        self.KP5 = "KP_5"
+        self.KP6 = "KP_6"
+        self.KP7 = "KP_7"
+        self.KP8 = "KP_8"
+        self.KP9 = "KP_9"
+        self.KP_ENTER = "KP_Enter"
+        self.KP_DIVIDE = "KP_Divide"
+        self.KP_MULTIPLY = "KP_Multiply"
+        self.KP_SUBTRACT = "KP_Subtract"
+        self.KP_ADD = "KP_Add"
         self.KP_DECIMAL = None
 
 
@@ -373,77 +375,77 @@ class VNCDoToolKey(Key):
 
         # TODO: it would be preferable to translate directly to RBF like
         # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
-        self.ENTER = 'return'  # also 'enter'
-        self.TAB = 'tab'
-        self.ESC = 'esc'
-        self.BACKSPACE = 'bsp'
-        self.DELETE = 'del'  # also 'delete'
-        self.INSERT = 'ins'
+        self.ENTER = "return"  # also 'enter'
+        self.TAB = "tab"
+        self.ESC = "esc"
+        self.BACKSPACE = "bsp"
+        self.DELETE = "del"  # also 'delete'
+        self.INSERT = "ins"
 
-        self.CTRL = 'ctrl'  # also 'lctrl'
-        self.ALT = 'alt'  # also 'lalt'
-        self.SHIFT = 'shift'  # also 'lshift'
-        self.META = 'meta'  # also 'lmeta'
-        self.RCTRL = 'rctrl'
-        self.RALT = 'ralt'
-        self.RSHIFT = 'rshift'
-        self.RMETA = 'rmeta'
+        self.CTRL = "ctrl"  # also 'lctrl'
+        self.ALT = "alt"  # also 'lalt'
+        self.SHIFT = "shift"  # also 'lshift'
+        self.META = "meta"  # also 'lmeta'
+        self.RCTRL = "rctrl"
+        self.RALT = "ralt"
+        self.RSHIFT = "rshift"
+        self.RMETA = "rmeta"
 
-        self.F1 = 'f1'
-        self.F2 = 'f2'
-        self.F3 = 'f3'
-        self.F4 = 'f4'
-        self.F5 = 'f5'
-        self.F6 = 'f6'
-        self.F7 = 'f7'
-        self.F8 = 'f8'
-        self.F9 = 'f9'
-        self.F10 = 'f10'
-        self.F11 = 'f11'
-        self.F12 = 'f12'
-        self.F13 = 'f13'
-        self.F14 = 'f14'
-        self.F15 = 'f15'
-        self.F16 = 'f16'
-        self.F17 = 'f17'
-        self.F18 = 'f18'
-        self.F19 = 'f19'
-        self.F20 = 'f20'
+        self.F1 = "f1"
+        self.F2 = "f2"
+        self.F3 = "f3"
+        self.F4 = "f4"
+        self.F5 = "f5"
+        self.F6 = "f6"
+        self.F7 = "f7"
+        self.F8 = "f8"
+        self.F9 = "f9"
+        self.F10 = "f10"
+        self.F11 = "f11"
+        self.F12 = "f12"
+        self.F13 = "f13"
+        self.F14 = "f14"
+        self.F15 = "f15"
+        self.F16 = "f16"
+        self.F17 = "f17"
+        self.F18 = "f18"
+        self.F19 = "f19"
+        self.F20 = "f20"
 
-        self.HOME = 'home'
-        self.END = 'end'
-        self.LEFT = 'left'
-        self.RIGHT = 'right'
-        self.UP = 'up'
-        self.DOWN = 'down'
-        self.PAGE_DOWN = 'pgdn'
-        self.PAGE_UP = 'pgup'
+        self.HOME = "home"
+        self.END = "end"
+        self.LEFT = "left"
+        self.RIGHT = "right"
+        self.UP = "up"
+        self.DOWN = "down"
+        self.PAGE_DOWN = "pgdn"
+        self.PAGE_UP = "pgup"
 
-        self.CAPS_LOCK = 'caplk'
+        self.CAPS_LOCK = "caplk"
         # TODO: 'print screen' is not available
         self.PRINTSCREEN = None
-        self.PAUSE = 'pause'
-        self.SCROLL_LOCK = 'scrlk'
-        self.NUM_LOCK = 'numlk'
-        self.SYS_REQ = 'sysrq'
-        self.SUPER = 'super'  # also 'lsuper'
-        self.RSUPER = 'rsuper'
-        self.HYPER = 'hyper'  # also 'lhyper'
-        self.RHYPER = 'rhyper'
+        self.PAUSE = "pause"
+        self.SCROLL_LOCK = "scrlk"
+        self.NUM_LOCK = "numlk"
+        self.SYS_REQ = "sysrq"
+        self.SUPER = "super"  # also 'lsuper'
+        self.RSUPER = "rsuper"
+        self.HYPER = "hyper"  # also 'lhyper'
+        self.RHYPER = "rhyper"
         # TODO: 'menu' is not available
         self.MENU = None
 
-        self.KP0 = 'kp0'
-        self.KP1 = 'kp1'
-        self.KP2 = 'kp2'
-        self.KP3 = 'kp3'
-        self.KP4 = 'kp4'
-        self.KP5 = 'kp5'
-        self.KP6 = 'kp6'
-        self.KP7 = 'kp7'
-        self.KP8 = 'kp8'
-        self.KP9 = 'kp9'
-        self.KP_ENTER = 'kpenter'
+        self.KP0 = "kp0"
+        self.KP1 = "kp1"
+        self.KP2 = "kp2"
+        self.KP3 = "kp3"
+        self.KP4 = "kp4"
+        self.KP5 = "kp5"
+        self.KP6 = "kp6"
+        self.KP7 = "kp7"
+        self.KP8 = "kp8"
+        self.KP9 = "kp9"
+        self.KP_ENTER = "kpenter"
         # TODO: these are not available
         self.KP_DIVIDE = None
         self.KP_MULTIPLY = None
@@ -461,59 +463,59 @@ class PyAutoGUIKey(Key):
 
         # TODO: it would be preferable to translate directly to RBF like
         # 'ENTER = rfb.KEY_Return' but this is internal for the vncdotool
-        self.ENTER = 'return'  # also 'enter'
-        self.TAB = 'tab'
-        self.ESC = 'escape'  # also 'esc'
-        self.BACKSPACE = 'backspace'
-        self.DELETE = 'delete'  # also 'del'
-        self.INSERT = 'insert'
+        self.ENTER = "return"  # also 'enter'
+        self.TAB = "tab"
+        self.ESC = "escape"  # also 'esc'
+        self.BACKSPACE = "backspace"
+        self.DELETE = "delete"  # also 'del'
+        self.INSERT = "insert"
 
-        self.CTRL = 'ctrl'  # also 'lctrl'
-        self.ALT = 'alt'  # also 'lalt'
-        self.SHIFT = 'shift'  # also 'lshift'
+        self.CTRL = "ctrl"  # also 'lctrl'
+        self.ALT = "alt"  # also 'lalt'
+        self.SHIFT = "shift"  # also 'lshift'
         # TODO: 'meta key' is not available
         self.META = None
-        self.RCTRL = 'ctrlright'
-        self.RALT = 'altright'
-        self.RSHIFT = 'shiftright'
+        self.RCTRL = "ctrlright"
+        self.RALT = "altright"
+        self.RSHIFT = "shiftright"
         # TODO: 'meta key' is not available
         self.RMETA = None
 
-        self.F1 = 'f1'
-        self.F2 = 'f2'
-        self.F3 = 'f3'
-        self.F4 = 'f4'
-        self.F5 = 'f5'
-        self.F6 = 'f6'
-        self.F7 = 'f7'
-        self.F8 = 'f8'
-        self.F9 = 'f9'
-        self.F10 = 'f10'
-        self.F11 = 'f11'
-        self.F12 = 'f12'
-        self.F13 = 'f13'
-        self.F14 = 'f14'
-        self.F15 = 'f15'
-        self.F16 = 'f16'
-        self.F17 = 'f17'
-        self.F18 = 'f18'
-        self.F19 = 'f19'
-        self.F20 = 'f20'
+        self.F1 = "f1"
+        self.F2 = "f2"
+        self.F3 = "f3"
+        self.F4 = "f4"
+        self.F5 = "f5"
+        self.F6 = "f6"
+        self.F7 = "f7"
+        self.F8 = "f8"
+        self.F9 = "f9"
+        self.F10 = "f10"
+        self.F11 = "f11"
+        self.F12 = "f12"
+        self.F13 = "f13"
+        self.F14 = "f14"
+        self.F15 = "f15"
+        self.F16 = "f16"
+        self.F17 = "f17"
+        self.F18 = "f18"
+        self.F19 = "f19"
+        self.F20 = "f20"
 
-        self.HOME = 'home'
-        self.END = 'end'
-        self.LEFT = 'left'
-        self.RIGHT = 'right'
-        self.UP = 'up'
-        self.DOWN = 'down'
-        self.PAGE_DOWN = 'pgdn'
-        self.PAGE_UP = 'pgup'
+        self.HOME = "home"
+        self.END = "end"
+        self.LEFT = "left"
+        self.RIGHT = "right"
+        self.UP = "up"
+        self.DOWN = "down"
+        self.PAGE_DOWN = "pgdn"
+        self.PAGE_UP = "pgup"
 
-        self.CAPS_LOCK = 'capslock'
-        self.PRINTSCREEN = 'printscreen'
-        self.PAUSE = 'pause'
-        self.SCROLL_LOCK = 'scrolllock'
-        self.NUM_LOCK = 'numlock'
+        self.CAPS_LOCK = "capslock"
+        self.PRINTSCREEN = "printscreen"
+        self.PAUSE = "pause"
+        self.SCROLL_LOCK = "scrolllock"
+        self.NUM_LOCK = "numlock"
         # TODO: these are not available
         self.SYS_REQ = None
         self.SUPER = None
@@ -562,12 +564,16 @@ class KeyModifier(object):
         :raises: :py:class:`ValueError` if `key` is not found in the current modifier map
         """
         if key is None:
-            raise ValueError("The modifier key %s does not exist in the current modifier map" % key)
-        return {self.MOD_NONE: "None",
-                self.MOD_CTRL: "Ctrl",
-                self.MOD_ALT: "Alt",
-                self.MOD_SHIFT: "Shift",
-                self.MOD_META: "Meta"}[key]
+            raise ValueError(
+                "The modifier key %s does not exist in the current modifier map" % key
+            )
+        return {
+            self.MOD_NONE: "None",
+            self.MOD_CTRL: "Ctrl",
+            self.MOD_ALT: "Alt",
+            self.MOD_SHIFT: "Shift",
+            self.MOD_META: "Meta",
+        }[key]
 
 
 class AutoPyKeyModifier(KeyModifier):
@@ -596,10 +602,10 @@ class XDoToolKeyModifier(KeyModifier):
 
         # TODO: 'none' is not available
         self.MOD_NONE = None
-        self.MOD_CTRL = 'ctrl'
-        self.MOD_ALT = 'alt'
-        self.MOD_SHIFT = 'shift'
-        self.MOD_META = 'meta'
+        self.MOD_CTRL = "ctrl"
+        self.MOD_ALT = "alt"
+        self.MOD_SHIFT = "shift"
+        self.MOD_META = "meta"
 
 
 class VNCDoToolKeyModifier(KeyModifier):
@@ -611,10 +617,10 @@ class VNCDoToolKeyModifier(KeyModifier):
 
         # TODO: 'none' is not available
         self.MOD_NONE = None
-        self.MOD_CTRL = 'ctrl'
-        self.MOD_ALT = 'alt'
-        self.MOD_SHIFT = 'shift'
-        self.MOD_META = 'meta'
+        self.MOD_CTRL = "ctrl"
+        self.MOD_ALT = "alt"
+        self.MOD_SHIFT = "shift"
+        self.MOD_META = "meta"
 
 
 class PyAutoGUIKeyModifier(KeyModifier):
@@ -626,9 +632,9 @@ class PyAutoGUIKeyModifier(KeyModifier):
 
         # TODO: 'none' is not available
         self.MOD_NONE = None
-        self.MOD_CTRL = 'ctrl'
-        self.MOD_ALT = 'alt'
-        self.MOD_SHIFT = 'shift'
+        self.MOD_CTRL = "ctrl"
+        self.MOD_ALT = "alt"
+        self.MOD_SHIFT = "shift"
         # TODO: 'meta' is not available
         self.MOD_META = None
 
@@ -653,9 +659,11 @@ class MouseButton(object):
         """
         if key is None:
             raise ValueError("The key %s does not exist in the current mouse map" % key)
-        return {self.LEFT_BUTTON: "MouseLeft",
-                self.RIGHT_BUTTON: "MouseRight",
-                self.CENTER_BUTTON: "MouseCenter"}[key]
+        return {
+            self.LEFT_BUTTON: "MouseLeft",
+            self.RIGHT_BUTTON: "MouseRight",
+            self.CENTER_BUTTON: "MouseCenter",
+        }[key]
 
 
 class AutoPyMouseButton(MouseButton):
@@ -703,6 +711,6 @@ class PyAutoGUIMouseButton(MouseButton):
         """Build an instance containing the mouse button map for the PyAutoGUI backend."""
         super().__init__()
 
-        self.LEFT_BUTTON = 'left'
-        self.RIGHT_BUTTON = 'right'
-        self.CENTER_BUTTON = 'middle'
+        self.LEFT_BUTTON = "left"
+        self.RIGHT_BUTTON = "right"
+        self.CENTER_BUTTON = "middle"
