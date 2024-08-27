@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Class and functionality related to target matches on screen.
 
 SUMMARY
 ------------------------------------------------------
-Class and functionality related to target matches on screen.
 
 
 INTERFACE
@@ -32,10 +32,7 @@ from .finder import Finder
 
 
 class Match(Region):
-    """
-    Wrapper around image which adds data necessary for manipulation
-    of matches on a screen.
-    """
+    """Wrapper around region which adds data necessary for manipulation of matches on a screen."""
 
     def __init__(
         self,

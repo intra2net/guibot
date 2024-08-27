@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Calibration and benchmarking for all CV backends on a given matching target.
 
 SUMMARY
 ------------------------------------------------------
-Calibration and benchmarking for all CV backends on a given matching target.
 
 
 INTERFACE
@@ -29,6 +29,7 @@ import time
 import math
 import copy
 from typing import Generator
+import logging
 
 from .finder import *
 from .target import Target, Image
@@ -36,7 +37,6 @@ from .imagelogger import ImageLogger
 from .errors import *
 from .location import Location
 
-import logging
 
 log = logging.getLogger("guibot.calibrator")
 
@@ -51,9 +51,9 @@ benchmark_blacklist = [
 
 class Calibrator(object):
     """
-    Provides with a group of methods to facilitate and automate the selection
-    of algorithms and parameters that are most suitable for a given preselected
-    image matching pair.
+    Provides with a group of methods to facilitate and automate the selection of algorithms and parameters.
+
+    This is most suitable for a given preselected image matching pair.
 
     Use the benchmarking method to choose the best algorithm to find your image.
     Use the calibration method to find the best parameters if you have already
@@ -108,8 +108,7 @@ class Calibrator(object):
         **kwargs: dict[str, type]
     ) -> list[tuple[str, float, float]]:
         """
-        Perform benchmarking on all available algorithms of a finder
-        for a given needle and haystack.
+        Perform benchmarking on all available algorithms of a finder for a given needle and haystack.
 
         :param finder: CV backend whose backend algorithms will be benchmarked
         :param random_starts: number of random starts to try with (0 for nonrandom)
@@ -205,8 +204,10 @@ class Calibrator(object):
         **kwargs: dict[str, type]
     ) -> float:
         """
-        Search for the best match configuration for a given needle and haystack
-        using calibration from random initial conditions.
+        Search for best match configuration via random initial condition calibration.
+
+        Find the best match configuration for a given needle and haystack using
+        calibration from random initial conditions.
 
         :param finder: CV backend to use in order to determine deltas, fixed, and free
                        parameters and ultimately tweak to minimize error
@@ -291,8 +292,9 @@ class Calibrator(object):
         self, finder: Finder, max_attempts: int = 3, **kwargs: dict[str, type]
     ) -> float:
         """
-        Calibrate the available match configuration for a given needle
-        and haystack minimizing the matchign error.
+        Calibrate the available match configuration for a given needle and haystack.
+
+        The calibration minimizes the matching error.
 
         :param finder: configuration for the CV backend to calibrate
         :param max_attempts: maximal number of refinements to reach
@@ -530,8 +532,7 @@ class Calibrator(object):
 
     def run_performance(self, finder: Finder, **kwargs: dict[str, type]) -> float:
         """
-        Run a match case and return error from the match as dissimilarity
-        and linear performance penalty.
+        Run a match case and return error from the match as dissimilarity and linear performance penalty.
 
         :param finder: finder with match configuration to use for the run
         :returns: error obtained as unity minus similarity
@@ -561,8 +562,9 @@ class Calibrator(object):
 
     def run_peak(self, finder: Finder, **kwargs: dict[str, type]) -> float:
         """
-        Run a match case and return error from the match as failure to obtain
-        high similarity of one match and low similarity of all others.
+        Run match case and return a peak error from the match.
+
+        A peak error is a failure to obtain high similarity of one match and low similarity of all others.
 
         :param finder: finder with match configuration to use for the run
         :returns: error obtained as unity minus similarity

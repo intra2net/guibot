@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Exceptions used by all guibot interfaces and modules.
 
 SUMMARY
 ------------------------------------------------------
-Exceptions used by all guibot interfaces and modules.
 
 
 INTERFACE
@@ -40,23 +40,23 @@ __all__ = [
 
 
 class GuiBotError(Exception):
-    """GuiBot exception base class"""
+    """GuiBot exception base class."""
 
 
 class FileNotFoundError(GuiBotError):
-    """Exception raised when a picture file cannot be found on disc"""
+    """Exception raised when a picture file cannot be found on disc."""
 
 
 class IncompatibleTargetError(GuiBotError):
-    """Exception raised when a matched target is of type that cannot be handled by the finder"""
+    """Exception raised when a matched target is of type that cannot be handled by the finder."""
 
 
 class IncompatibleTargetFileError(GuiBotError):
-    """Exception raised when a matched target is restored from a file of unsupported type"""
+    """Exception raised when a matched target is restored from a file of unsupported type."""
 
 
 class FindError(GuiBotError):
-    """Exception raised when an Image cannot be found on the screen"""
+    """Exception raised when an Image cannot be found on the screen."""
 
     def __init__(self, failed_target: "Target" = None) -> None:
         """
@@ -72,7 +72,7 @@ class FindError(GuiBotError):
 
 
 class NotFindError(GuiBotError):
-    """Exception raised when an Image can be found on the screen but should not be"""
+    """Exception raised when an Image can be found on the screen but should not be."""
 
     def __init__(self, failed_target: "Target" = None) -> None:
         """
@@ -91,12 +91,12 @@ class NotFindError(GuiBotError):
 
 
 class UnsupportedBackendError(GuiBotError):
-    """Exception raised when a non-existent method is used for finding a target"""
+    """Exception raised when a non-existent method is used for finding a target."""
 
 
 class MissingHotmapError(GuiBotError):
-    """Exception raised when an attempt to access a non-existent hotmap in the image logger is made"""
+    """Exception raised when an attempt to access a non-existent hotmap in the image logger is made."""
 
 
 class UninitializedBackendError(GuiBotError):
-    """Exception raised when a region is created within an empty screen (a disconnected display control backend)"""
+    """Exception raised when a region is created within an empty screen (a disconnected display control backend)."""

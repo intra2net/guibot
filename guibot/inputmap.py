@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Key mappings, modifiers, and mouse buttons.
 
 SUMMARY
 ------------------------------------------------------
-Key mappings, modifiers, and mouse buttons.
 
 
 INTERFACE
@@ -111,8 +111,7 @@ class Key(object):
 
     def to_string(self, key: str) -> str:
         """
-        Provide with a text representation of a desired key
-        according to the custom BC backend.
+        Provide with a text representation of a desired key according to the custom BC backend.
 
         :param key: selected key name according to the custom backend
         :returns: text representation of the selected key
@@ -556,8 +555,7 @@ class KeyModifier(object):
 
     def to_string(self, key: str) -> str:
         """
-        Provide with a text representation of a desired modifier key
-        according to the custom BC backend.
+        Provide with a text representation of a desired modifier key according to the custom BC backend.
 
         :param key: selected modifier name according to the current backend
         :returns: text representation of the selected modifier
@@ -650,8 +648,7 @@ class MouseButton(object):
 
     def to_string(self, key: str) -> str:
         """
-        Provide with a text representation of a desired mouse button
-        according to the custom BC backend.
+        Provide with a text representation of a desired mouse button according to the custom BC backend.
 
         :param key: selected mouse button according to the current backend
         :returns: text representation of the selected mouse button

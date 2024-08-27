@@ -14,16 +14,15 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Secondary (and more advanced) interface for generic screen regions.
 
 SUMMARY
 ------------------------------------------------------
-Secondary (and more advanced) interface for generic screen regions.
 
 The main guibot interface is just a specialized region where we could match
 and work with subregions. Any region instance can also be a complete screen,
 hence the increased generality of using this as an interface and calling it
 directly.
-
 
 INTERFACE
 ------------------------------------------------------
@@ -32,6 +31,7 @@ INTERFACE
 
 import time
 import os
+import logging
 
 # interconnected classes - carefully avoid circular reference
 from .config import GlobalConfig
@@ -42,15 +42,15 @@ from .target import *
 from .finder import *
 from .controller import *
 
-import logging
 
 log = logging.getLogger("guibot.region")
 
 
 class Region(object):
     """
-    Region of the screen supporting vertex and nearby region selection,
-    validation of expected images, and mouse and keyboard control.
+    Region of the screen at a given position and with a given size.
+
+    It supports vertex and nearby region selection, validation of expected images, and mouse and keyboard control.
     """
 
     def __init__(
@@ -293,8 +293,7 @@ class Region(object):
 
     def nearby(self, rrange: int = 50) -> "Region":
         """
-        Obtain a region containing the previous one but enlarged
-        by a number of pixels on each side.
+        Obtain a region containing the previous one but enlarged by a number of pixels on each side.
 
         :param rrange: number of pixels to add
         :returns: new region enlarged by `rrange` on all sides
@@ -318,8 +317,7 @@ class Region(object):
 
     def above(self, rrange: int = 0) -> "Region":
         """
-        Obtain a region containing the previous one but enlarged
-        by a number of pixels on the upper side.
+        Obtain an enlarged region by a number of pixels on the upper side.
 
         :param rrange: number of pixels to add
         :returns: new region enlarged by `rrange` on upper side
@@ -347,8 +345,7 @@ class Region(object):
 
     def below(self, rrange: int = 0) -> "Region":
         """
-        Obtain a region containing the previous one but enlarged
-        by a number of pixels on the lower side.
+        Obtain an enlarged region by a number of pixels on the lower side.
 
         :param rrange: number of pixels to add
         :returns: new region enlarged by `rrange` on lower side
@@ -371,8 +368,7 @@ class Region(object):
 
     def left(self, rrange: int = 0) -> "Region":
         """
-        Obtain a region containing the previous one but enlarged
-        by a number of pixels on the left side.
+        Obtain an enlarged region by a number of pixels on the left side..
 
         :param rrange: number of pixels to add
         :returns: new region enlarged by `rrange` on left side
@@ -400,8 +396,7 @@ class Region(object):
 
     def right(self, rrange: int = 0) -> "Region":
         """
-        Obtain a region containing the previous one but enlarged
-        by a number of pixels on the right side.
+        Obtain an enlarged region by a number of pixels on the right side.
 
         :param rrange: number of pixels to add
         :returns: new region enlarged by `rrange` on right side
@@ -495,14 +490,14 @@ class Region(object):
                         moving_targets = True
                         last_matches.append(new_match)
                 self._last_match = last_matches[-1]
-                if not GlobalConfig.wait_for_animations == True or not moving_targets:
+                if GlobalConfig.wait_for_animations is not True or not moving_targets:
                     return last_matches
 
             elif time.time() > timeout_limit:
                 if allow_zero:
                     return last_matches
                 else:
-                    if GlobalConfig.save_needle_on_error == True:
+                    if GlobalConfig.save_needle_on_error is True:
                         if not os.path.exists(ImageLogger.logging_destination):
                             os.mkdir(ImageLogger.logging_destination)
                         dump_path = GlobalConfig.image_logging_destination
@@ -555,8 +550,9 @@ class Region(object):
 
     def sample(self, target: str | Target) -> float:
         """
-        Sample the similarity between a target and the screen,
-        i.e. an empirical probability that the target is on the screen.
+        Sample the similarity between a target and the screen.
+
+        Similarity here means an empirical probability that the target is on the screen.
 
         :param target: target to look for
         :returns: similarity with best match on the screen
@@ -577,8 +573,7 @@ class Region(object):
 
     def exists(self, target: str | Target, timeout: int = 0) -> "Match | None":
         """
-        Check if a target exists on the screen using the matching
-        success as a threshold for the existence.
+        Check if a target exists on the screen using similarity as a threshold.
 
         :param target: target to look for
         :param timeout: timeout before giving up
@@ -594,8 +589,7 @@ class Region(object):
 
     def wait(self, target: str | Target, timeout: int = 30) -> "Match":
         """
-        Wait for a target to appear (be matched) with a given timeout
-        as failing tolerance.
+        Wait for a target to appear (be matched) with a given timeout as failing tolerance.
 
         :param target: target to look for
         :param timeout: timeout before giving up
@@ -607,8 +601,7 @@ class Region(object):
 
     def wait_vanish(self, target: str | Target, timeout: int = 30) -> "Region":
         """
-        Wait for a target to disappear (be unmatched, i.e. matched
-        without success) with a given timeout as failing tolerance.
+        Wait for a target to disappear (be unmatched) with a given timeout as failing tolerance.
 
         :param target: target to look for
         :param timeout: timeout before giving up
@@ -683,8 +676,9 @@ class Region(object):
         modifiers: list[str] = None,
     ) -> "Match | None":
         """
-        Click on a target or location using the left mouse button and
-        optionally holding special keys.
+        Click on a target or location using the left mouse button.
+
+        Optionally we can hold some special keys.
 
         :param target_or_location: target or location to click on
         :param modifiers: special keys to hold during clicking
@@ -708,8 +702,9 @@ class Region(object):
         modifiers: list[str] = None,
     ) -> "Match | None":
         """
-        Click on a target or location using the right mouse button and
-        optionally holding special keys.
+        Click on a target or location using the right mouse button.
+
+        Optionally we can hold some special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
@@ -726,8 +721,9 @@ class Region(object):
         modifiers: list[str] = None,
     ) -> "Match | None":
         """
-        Click on a target or location using the middle mouse button and
-        optionally holding special keys.
+        Click on a target or location using the middle mouse button.
+
+        Optionally we can hold some special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
@@ -744,8 +740,7 @@ class Region(object):
         modifiers: list[str] = None,
     ) -> "Match | None":
         """
-        Double click on a target or location using the left mouse button
-        and optionally holding special keys.
+        Double click on a target or location using the left mouse button special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
@@ -763,8 +758,9 @@ class Region(object):
         modifiers: list[str] = None,
     ) -> "Match | None":
         """
-        Click N times on a target or location using the left mouse button
-        and optionally holding special keys.
+        Click N times on a target or location using the left mouse button.
+
+        Optionally we can hold some special keys.
 
         Arguments and return values are analogical to :py:func:`Region.click`.
         """
@@ -843,8 +839,7 @@ class Region(object):
         timeout: int = 10,
     ) -> "Match":
         """
-        Find all instances of an anchor image and click on the one with the
-        desired index given that they are horizontally then vertically sorted.
+        Find and click on a specific instance of an anchor image indexed by horizontal and vertical sorting.
 
         :param anchor: image to find all matches of
         :param index: index of the match to click on (assuming >=1 matches),
@@ -1048,8 +1043,7 @@ class Region(object):
         target_or_location: "Match | Location | str | Target",
     ) -> "Match":
         """
-        Press a single key or a list of keys simultaneously
-        at a specified target or location.
+        Press a single key or a list of keys simultaneously at a specified target or location.
 
         This method is similar to :py:func:`Region.press_keys` but
         with an extra argument like :py:func:`Region.click`.
@@ -1192,8 +1186,9 @@ class Region(object):
         modifiers: list[str] = None,
     ) -> "Match":
         """
-        Type a list of consecutive character keys (without special keys)
-        at a specified target or location.
+        Type a list of consecutive keys at a specified target or location.
+
+        These are meant to be characters and not special keys.
 
         This method is similar to :py:func:`Region.type_text` but
         with an extra argument like :py:func:`Region.click`.
@@ -1277,7 +1272,7 @@ class Region(object):
         mark_clicks: int = 1,
     ) -> "Region":
         """
-        Fills a new text at a text box using a displacement from an anchor.
+        Fill a new text at a text box using a displacement from an anchor.
 
         :param anchor: target of reference for the input field
         :param text: text to fill in
@@ -1336,8 +1331,10 @@ class Region(object):
         tries: int = 3,
     ) -> "Region":
         """
-        Select an option at a dropdown list using either an integer index
-        or an option image if the order cannot be easily inferred.
+        Select an option at a dropdown list using an index or an image.
+
+        The caller can use either integer index or an option image if the
+        order cannot be easily inferred.
 
         :param anchor: target of reference for the input dropdown menu
         :param image_or_index: item image or item index

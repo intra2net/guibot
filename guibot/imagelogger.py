@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Image logging for enhanced debugging and verbosity of guibot's operation.
 
 SUMMARY
 ------------------------------------------------------
-Image logging for enhanced debugging and verbosity of guibot's operation.
 
 
 INTERFACE

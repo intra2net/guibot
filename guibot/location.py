@@ -14,14 +14,13 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Simple class to hold screen location data.
 
 SUMMARY
 ------------------------------------------------------
-Simple class to hold screen location data.
 
 ..note:: Unless this class becomes more useful for the extra OOP abstraction
 it might get deprecated in favor of a simple (x, y) tuple.
-
 
 INTERFACE
 ------------------------------------------------------

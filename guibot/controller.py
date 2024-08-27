@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Display controllers (DC backends) to perform user operations.
 
 SUMMARY
 ------------------------------------------------------
-Display controllers (DC backends) to perform user operations.
 
 
 INTERFACE
@@ -52,8 +52,10 @@ __all__ = [
 
 class Controller(LocalConfig):
     """
-    Screen control backend, responsible for performing desktop operations
-    like mouse clicking, key pressing, text typing, etc.
+    Screen control backend, responsible for performing display operations.
+
+    Examples of display operations include mouse clicking mouse clicking,
+    key pressing, text typing, etc.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -171,6 +173,8 @@ class Controller(LocalConfig):
         self, backend: str = None, category: str = "control", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -195,6 +199,8 @@ class Controller(LocalConfig):
         self, backend: str = None, category: str = "control", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -358,8 +364,9 @@ class Controller(LocalConfig):
 
 class AutoPyController(Controller):
     """
-    Screen control backend implemented through AutoPy which is a small
-    python library portable to Windows and Linux operating systems.
+    Screen control backend implemented through AutoPy.
+
+    AutoPy is a small python library portable to Windows and Linux operating systems.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -372,6 +379,8 @@ class AutoPyController(Controller):
 
     def get_mouse_location(self) -> Location:
         """
+        Getter for readonly attribute.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -406,6 +415,8 @@ class AutoPyController(Controller):
         self, backend: str = None, category: str = "autopy", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -443,6 +454,8 @@ class AutoPyController(Controller):
         self, backend: str = None, category: str = "autopy", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -451,6 +464,8 @@ class AutoPyController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -485,6 +500,8 @@ class AutoPyController(Controller):
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -500,6 +517,8 @@ class AutoPyController(Controller):
         self, button: int = None, count: int = 1, modifiers: list[str] = None
     ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -520,6 +539,8 @@ class AutoPyController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -528,6 +549,8 @@ class AutoPyController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -536,6 +559,8 @@ class AutoPyController(Controller):
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -545,6 +570,8 @@ class AutoPyController(Controller):
 
     def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -564,10 +591,7 @@ class AutoPyController(Controller):
 
 
 class XDoToolController(Controller):
-    """
-    Screen control backend implemented through the xdotool client and
-    thus portable to Linux operating systems.
-    """
+    """Screen control backend implemented through the xdotool client and thus portable to Linux operating systems."""
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a DC backend using XDoTool."""
@@ -579,6 +603,8 @@ class XDoToolController(Controller):
 
     def get_mouse_location(self) -> Location:
         """
+        Getter for readonly attribute.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -608,6 +634,8 @@ class XDoToolController(Controller):
         self, backend: str = None, category: str = "xdotool", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -653,6 +681,8 @@ class XDoToolController(Controller):
         self, backend: str = None, category: str = "xdotool", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -661,6 +691,8 @@ class XDoToolController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -688,6 +720,8 @@ class XDoToolController(Controller):
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -708,6 +742,8 @@ class XDoToolController(Controller):
         self, button: int = None, count: int = 1, modifiers: list[str] = None
     ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -729,6 +765,8 @@ class XDoToolController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -737,6 +775,8 @@ class XDoToolController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -745,6 +785,8 @@ class XDoToolController(Controller):
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -757,6 +799,8 @@ class XDoToolController(Controller):
 
     def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -773,8 +817,9 @@ class XDoToolController(Controller):
 
 class VNCDoToolController(Controller):
     """
-    Screen control backend implemented through the VNCDoTool client and
-    thus portable to any guest OS that is accessible through a VNC/RFB protocol.
+    Screen control backend implemented through the VNCDoTool client.
+
+    This backend is thus portable to any guest OS that is accessible through a VNC/RFB protocol.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -808,6 +853,8 @@ class VNCDoToolController(Controller):
         self, backend: str = None, category: str = "vncdotool", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -873,6 +920,8 @@ class VNCDoToolController(Controller):
         self, backend: str = None, category: str = "vncdotool", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -881,6 +930,8 @@ class VNCDoToolController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -895,6 +946,8 @@ class VNCDoToolController(Controller):
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -909,6 +962,8 @@ class VNCDoToolController(Controller):
         self, button: int = None, count: int = 1, modifiers: list[str] = None
     ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -931,6 +986,8 @@ class VNCDoToolController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -939,6 +996,8 @@ class VNCDoToolController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -947,6 +1006,8 @@ class VNCDoToolController(Controller):
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -965,6 +1026,8 @@ class VNCDoToolController(Controller):
 
     def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -991,8 +1054,9 @@ class VNCDoToolController(Controller):
 
 class PyAutoGUIController(Controller):
     """
-    Screen control backend implemented through PyAutoGUI which is a python
-    library portable to MacOS, Windows, and Linux operating systems.
+    Screen control backend implemented through PyAutoGUI.
+
+    PyAutoGUI is a python library portable to MacOS, Windows, and Linux operating systems.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -1005,6 +1069,8 @@ class PyAutoGUIController(Controller):
 
     def get_mouse_location(self) -> Location:
         """
+        Getter for readonly attribute.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1031,6 +1097,8 @@ class PyAutoGUIController(Controller):
         self, backend: str = None, category: str = "pyautogui", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1069,6 +1137,8 @@ class PyAutoGUIController(Controller):
         self, backend: str = None, category: str = "pyautogui", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1077,6 +1147,8 @@ class PyAutoGUIController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1088,6 +1160,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1102,6 +1176,8 @@ class PyAutoGUIController(Controller):
         self, button: int = None, count: int = 1, modifiers: list[str] = None
     ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1124,6 +1200,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1132,6 +1210,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1140,6 +1220,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_scroll(self, clicks: int = 10, horizontal: bool = False) -> None:
         """
+        Scroll the mouse for a number of clicks.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1151,6 +1233,8 @@ class PyAutoGUIController(Controller):
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1163,6 +1247,8 @@ class PyAutoGUIController(Controller):
 
     def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.

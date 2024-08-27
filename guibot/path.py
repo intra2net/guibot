@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Old module for path resolution - to be deprecated.
 
 SUMMARY
 ------------------------------------------------------
-Old module for path resolution - to be deprecated.
 
 
 INTERFACE

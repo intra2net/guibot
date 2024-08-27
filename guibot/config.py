@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Global and local (per target or region instance) configuration.
 
 SUMMARY
 ------------------------------------------------------
-Global and local (per target or region instance) configuration.
 
 
 INTERFACE
@@ -29,6 +29,7 @@ import logging
 from typing import Any
 
 from .errors import *
+
 
 log = logging.getLogger("guibot.config")
 
@@ -81,10 +82,10 @@ class GlobalConfig(type):
 
     def toggle_delay(self, value: float = None) -> float | None:
         """
-        Getter/setter for property attribute.
+        Get or set property attribute.
 
         :param value: time interval between mouse down and up in a click
-        :returns: current value if no argument was passed otherwise only sets it
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._toggle_delay
@@ -97,9 +98,10 @@ class GlobalConfig(type):
 
     def click_delay(self, value: float = None) -> float | None:
         """
-        Same as :py:func:`GlobalConfig.toggle_delay` but with
+        Get or set property attribute.
 
         :param value: time interval after a click (in a double or n-click)
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._click_delay
@@ -112,9 +114,10 @@ class GlobalConfig(type):
 
     def delay_after_drag(self, value: float = None) -> float | None:
         """
-        Same as :py:func:`GlobalConfig.toggle_delay` but with
+        Get or set property attribute.
 
         :param value: timeout before drag operation
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._drag_delay
@@ -127,9 +130,10 @@ class GlobalConfig(type):
 
     def delay_before_drop(self, value: float = None) -> float | None:
         """
-        Same as :py:func:`GlobalConfig.toggle_delay` but with
+        Get or set property attribute.
 
         :param value: timeout before drop operation
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._drop_delay
@@ -142,9 +146,10 @@ class GlobalConfig(type):
 
     def delay_before_keys(self, value: float = None) -> float | None:
         """
-        Same as :py:func:`GlobalConfig.toggle_delay` but with
+        Get or set property attribute.
 
         :param value: timeout before key press operation
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._keys_delay
@@ -157,9 +162,10 @@ class GlobalConfig(type):
 
     def delay_between_keys(self, value: float = None) -> float | None:
         """
-        Same as :py:func:`GlobalConfig.toggle_delay` but with
+        Get or set property attribute.
 
         :param value: time interval between two consecutively typed keys
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._type_delay
@@ -172,10 +178,11 @@ class GlobalConfig(type):
 
     def rescan_speed_on_find(self, value: float = None) -> float | None:
         """
-        Same as :py:func:`GlobalConfig.toggle_delay` but with
+        Get or set property attribute.
 
         :param value: time interval between two image matching attempts
                       (used to reduce overhead on the CPU)
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._rescan_speed_on_find
@@ -193,7 +200,7 @@ class GlobalConfig(type):
         Getter/setter for property attribute.
 
         :param value: whether to wait for animations to complete and match only static (not moving) targets
-        :returns: current value if no argument was passed otherwise only sets it
+        :returns: current value if no argument was passed otherwise None
         :raises: :py:class:`ValueError` if value is not boolean or None
 
         This is useful to handle highly animated environments with lots of moving
@@ -216,7 +223,7 @@ class GlobalConfig(type):
         Getter/setter for property attribute.
 
         :param value: whether to move the mouse cursor to a location instantly or smoothly
-        :returns: current value if no argument was passed otherwise only sets it
+        :returns: current value if no argument was passed otherwise None
         :raises: :py:class:`ValueError` if value is not boolean or None
 
         This is useful if a routine task has to be executed faster without
@@ -235,10 +242,11 @@ class GlobalConfig(type):
 
     def preprocess_special_chars(self, value: bool = None) -> bool | None:
         """
-        Same as :py:func:`GlobalConfig.smooth_mouse_drag` but with
+        Getter/setter for property attribute.
 
         :param value: whether to preprocess capital and special characters and
                       handle them internally
+        :returns: current value if no argument was passed otherwise None
 
         .. warning:: The characters will be forcefully preprocessed for the
             autopy on linux (capital and special) and vncdotool (capital) backends.
@@ -258,9 +266,10 @@ class GlobalConfig(type):
 
     def save_needle_on_error(self, value: bool = None) -> bool | None:
         """
-        Same as :py:func:`GlobalConfig.smooth_mouse_drag` but with
+        Getter/setter for property attribute.
 
         :param value: whether to perform an extra needle dump on matching error
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._save_needle_on_error
@@ -280,7 +289,7 @@ class GlobalConfig(type):
         Getter/setter for property attribute.
 
         :param value: logging level similar to the python logging module
-        :returns: current value if no argument was passed otherwise only sets it
+        :returns: current value if no argument was passed otherwise None
 
         .. seealso:: See the image logging documentation for more details.
         """
@@ -295,10 +304,11 @@ class GlobalConfig(type):
 
     def image_logging_step_width(self, value: int = None) -> int | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_level` but with
+        Getter/setter for property attribute.
 
         :param value: number of digits when enumerating the image
                       logging steps, e.g. value=3 for 001, 002, etc.
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._image_logging_step_width
@@ -313,11 +323,12 @@ class GlobalConfig(type):
 
     def image_quality(self, value: int = None) -> int | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_level` but with
+        Getter/setter for property attribute.
 
         :param value: quality of the image dumps ranging from 0 for no compression
                       to 9 for maximum compression (used to save space and reduce
                       the disk space needed for image logging)
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._image_quality
@@ -334,7 +345,7 @@ class GlobalConfig(type):
         Getter/setter for property attribute.
 
         :param value: relative path of the image logging steps
-        :returns: current value if no argument was passed otherwise only sets it
+        :returns: current value if no argument was passed otherwise None
         """
         if value is None:
             return GlobalConfig._image_logging_destination
@@ -349,9 +360,10 @@ class GlobalConfig(type):
 
     def display_control_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the display control backend
+        :returns: current value if no argument was passed otherwise None
         :raises: :py:class:`ValueError` if value is not among the supported backends
 
         Supported backends:
@@ -388,9 +400,10 @@ class GlobalConfig(type):
     # is already done during region and target initialization
     def find_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the computer vision backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends:
             * autopy - simple bitmap matching provided by AutoPy
@@ -423,9 +436,10 @@ class GlobalConfig(type):
 
     def contour_threshold_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the contour threshold backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: normal, adaptive, canny.
         """
@@ -442,9 +456,10 @@ class GlobalConfig(type):
 
     def template_match_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the template matching backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: autopy, sqdiff, ccorr, ccoeff, sqdiff_normed,
         ccorr_normed, ccoeff_normed.
@@ -462,9 +477,10 @@ class GlobalConfig(type):
 
     def feature_detect_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the feature detection backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported  backends: BruteForce, BruteForce-L1, BruteForce-Hamming,
         BruteForce-Hamming(2), in-house-raw, in-house-region.
@@ -482,9 +498,10 @@ class GlobalConfig(type):
 
     def feature_extract_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the feature extraction backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: ORB, FAST, STAR, GFTT, HARRIS, Dense, oldSURF.
         """
@@ -501,9 +518,10 @@ class GlobalConfig(type):
 
     def feature_match_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the feature matching backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: ORB, BRIEF, FREAK.
         """
@@ -520,9 +538,10 @@ class GlobalConfig(type):
 
     def text_detect_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the text detection backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: east, erstat, contours, components.
         """
@@ -537,9 +556,10 @@ class GlobalConfig(type):
 
     def text_ocr_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the optical character recognition backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: pytesseract, tesserocr, tesseract (OpenCV), hmm, beamSearch.
         """
@@ -554,9 +574,10 @@ class GlobalConfig(type):
 
     def deep_learn_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the deep learning backend
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: pytorch, tensorflow (partial).
         """
@@ -571,9 +592,10 @@ class GlobalConfig(type):
 
     def hybrid_match_backend(self, value: str = None) -> str | None:
         """
-        Same as :py:func:`GlobalConfig.image_logging_destination` but with
+        Getter/setter for property attribute.
 
         :param value: name of the hybrid matching backend for unconfigured one-step targets
+        :returns: current value if no argument was passed otherwise None
 
         Supported backends: all nonhybrid backends of :py:func:`GlobalConfig.find_backend`.
         """
@@ -591,8 +613,7 @@ class GlobalConfig(type):
 
 class GlobalConfig(object, metaclass=GlobalConfig):  # type: ignore
     """
-    Handler for default configuration present in all
-    cases where no specific value is set.
+    Handler for default configuration present in all cases where no specific value is set.
 
     The methods of this class are shared among
     all of its instances.
@@ -603,9 +624,10 @@ class GlobalConfig(object, metaclass=GlobalConfig):  # type: ignore
 
 class TemporaryConfig(object):
     """
-    Proxies a GlobalConfig instance extending it to add context
-    support, such that once this context ends the changes to the
-    wrapped config object are restored.
+    Proxy a GlobalConfig instance extending it to add context support.
+
+    The context support is such that once this context ends the changes
+    to the wrapped config object are restored.
 
     This is useful when we have a global config instance and need to
     change it only for a few operations.
@@ -630,10 +652,12 @@ class TemporaryConfig(object):
         object.__setattr__(self, "_original_values", {})
 
     def __getattribute__(self, name: Any) -> Any:
+        """Get attribute given a name."""
         # fallback to GlobalConfig
         return getattr(GlobalConfig, name)
 
     def __setattr__(self, name: Any, value: Any) -> None:
+        """Set attribute given a name and a value."""
         original_values = object.__getattribute__(self, "_original_values")
         # store the original value only at the first set operation,
         # so further changes won't overwrite the history
@@ -642,10 +666,12 @@ class TemporaryConfig(object):
         setattr(GlobalConfig, name, value)
 
     def __enter__(self) -> "TemporaryConfig":
+        """Set up context manager upon entry."""
         # our temporary config object
         return self
 
     def __exit__(self, *_: tuple[type, ...]) -> None:
+        """Clean up context manager upon exit."""
         original_values = object.__getattribute__(self, "_original_values")
         # restore original configuration values
         for name, value in original_values.items():
@@ -656,10 +682,10 @@ class TemporaryConfig(object):
 
 class LocalConfig(object):
     """
-    Container for the configuration of all display control and
-    computer vision backends, responsible for making them behave
-    according to the selected parameters as well as for providing
-    information about them and the current parameters.
+    Contain locally the configuration of all display control and computer vision backends.
+
+    The local container is reponsible for making them behave according to the selected
+    parameters as well as for providing information about them and the current parameters.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:

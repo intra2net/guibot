@@ -17,9 +17,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mypy black
+          pip install mypy black pycodestyle pydocstyle
 
       - name: Run linters
         run: |
           mypy guibot
           black --check --diff --color guibot
+          # only excluded checks are conflicts with black and within pycodestyle
+          pycodestyle --ignore=E203,E501,W503 guibot
+          pydocstyle guibot

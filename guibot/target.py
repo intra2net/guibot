@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Classes and functionality related to sought targets on screen.
 
 SUMMARY
 ------------------------------------------------------
-Classes and functionality related to sought targets on screen.
 
 
 INTERFACE
@@ -42,10 +42,7 @@ __all__ = ["Target", "Image", "Text", "Pattern", "Chain"]
 
 
 class Target(object):
-    """
-    Target used to obtain screen location for clicking, typing,
-    validation of expected visual output, etc.
-    """
+    """Target used to obtain screen location for clicking, typing, validation of expected visual output, etc."""
 
     @staticmethod
     def from_data_file(filename: str) -> "Target":
@@ -212,8 +209,7 @@ class Target(object):
 
     def with_center_offset(self, xpos: int, ypos: int) -> "Target":
         """
-        Perform a copy of the target data with new match settings
-        and with a newly defined center offset.
+        Perform a copy of the target data with new match settings and with a newly defined center offset.
 
         :param xpos: new offset in the x direction
         :param ypos: new offset in the y direction
@@ -225,8 +221,7 @@ class Target(object):
 
     def with_similarity(self, new_similarity: float) -> "Target":
         """
-        Perform a copy of the target data with new match settings
-        and with a newly defined required similarity.
+        Perform a copy of the target data with new match settings and with a newly defined required similarity.
 
         :param new_similarity: new required similarity
         :returns: copy of the current target with new similarity
@@ -237,10 +232,7 @@ class Target(object):
 
 
 class Image(Target):
-    """
-    Container for image data supporting caching, clicking target,
-    file operations, and preprocessing.
-    """
+    """Container for image data supporting caching, clicking target, file operations, and preprocessing."""
 
     _cache = {}
 
@@ -371,10 +363,7 @@ class Image(Target):
 
 
 class Text(Target):
-    """
-    Container for text data which is visually identified
-    using OCR or general text detection methods.
-    """
+    """Container for text data which is visually identified using OCR or general text detection methods."""
 
     def __init__(
         self,
@@ -454,10 +443,7 @@ class Text(Target):
 
 
 class Pattern(Target):
-    """
-    Container for abstracted data which is obtained from
-    training of a classifier in order to recognize a target.
-    """
+    """Container for abstracted data which is obtained from training of a classifier in order to recognize a target."""
 
     def __init__(self, id: str, match_settings: "Finder" = None) -> None:
         """

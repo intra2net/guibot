@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Computer vision finders (CV backends) to perform find targets on screen.
 
 SUMMARY
 ------------------------------------------------------
-Computer vision finders (CV backends) to perform find targets on screen.
 
 
 INTERFACE
@@ -34,6 +34,7 @@ import configparser as config
 import PIL.Image
 from typing import Callable
 from typing import Any
+import logging
 
 from .config import GlobalConfig, LocalConfig
 from .imagelogger import ImageLogger
@@ -41,7 +42,6 @@ from .fileresolver import FileResolver
 from .errors import *
 from .location import Location
 
-import logging
 
 log = logging.getLogger("guibot.finder")
 
@@ -146,7 +146,7 @@ class CVParameter(object):
 
     def __eq__(self, other: "CVParameter") -> bool:
         """
-        Custom implementation for equality check.
+        Check equality for CV parameters.
 
         :returns: whether this instance is equal to another
         """
@@ -395,6 +395,8 @@ class Finder(LocalConfig):
         self, backend: str = None, category: str = "find", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -420,6 +422,8 @@ class Finder(LocalConfig):
         self, backend: str = None, category: str = "find", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -428,8 +432,9 @@ class Finder(LocalConfig):
 
     def can_calibrate(self, category: str, mark: bool) -> None:
         """
-        Fix the parameters for a given category backend algorithm,
-        i.e. disallow the calibrator to change them.
+        Fix the parameters for a given category backend algorithm.
+
+        "Fix" as in disallow the calibrator from changing them.
 
         :param category: backend category whose parameters are marked
         :param mark: whether to mark for calibration
@@ -560,6 +565,8 @@ class AutoPyFinder(Finder):
         self, backend: str = None, category: str = "autopy", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -568,6 +575,8 @@ class AutoPyFinder(Finder):
 
     def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
@@ -663,11 +672,6 @@ class ContourFinder(Finder):
     def __configure_backend(
         self, backend: str = None, category: str = "contour", reset: bool = False
     ) -> None:
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
         if category not in ["contour", "threshold"]:
             raise UnsupportedBackendError(
                 "Backend category '%s' is not supported" % category
@@ -743,6 +747,8 @@ class ContourFinder(Finder):
         self, backend: str = None, category: str = "contour", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -765,6 +771,8 @@ class ContourFinder(Finder):
         **kwargs: dict[str, type]
     ) -> None:
         """
+        Generate configuration dictionary for all backends.
+
         Custom implementation of the base method.
 
         :param threshold_filter: name of a preselected backend
@@ -774,6 +782,8 @@ class ContourFinder(Finder):
 
     def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
@@ -971,6 +981,8 @@ class ContourFinder(Finder):
 
     def log(self, lvl: int) -> None:
         """
+        Log images with an arbitrary logging level.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1032,11 +1044,6 @@ class TemplateFinder(Finder):
     def __configure_backend(
         self, backend: str = None, category: str = "template", reset: bool = False
     ) -> None:
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
         if category != "template":
             raise UnsupportedBackendError(
                 "Backend category '%s' is not supported" % category
@@ -1061,6 +1068,8 @@ class TemplateFinder(Finder):
         self, backend: str = None, category: str = "template", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1069,6 +1078,8 @@ class TemplateFinder(Finder):
 
     def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
@@ -1256,6 +1267,8 @@ class TemplateFinder(Finder):
 
     def log(self, lvl: int) -> None:
         """
+        Log images with an arbitrary logging level.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1468,6 +1481,8 @@ class FeatureFinder(Finder):
         self, backend: str = None, category: str = "feature", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         Some relevant parameters are:
@@ -1508,6 +1523,8 @@ class FeatureFinder(Finder):
         **kwargs: dict[str, type]
     ) -> None:
         """
+        Generate configuration dictionary for all backends.
+
         Custom implementation of the base method.
 
         :param feature_detect: name of a preselected backend
@@ -1584,6 +1601,8 @@ class FeatureFinder(Finder):
         self, backend: str = None, category: str = "feature", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1610,6 +1629,8 @@ class FeatureFinder(Finder):
         reset: bool = True,
     ) -> None:
         """
+        Synchronize all backends with the current configuration dictionary.
+
         Custom implementation of the base method.
 
         :param feature_detect: name of a preselected backend
@@ -1621,6 +1642,8 @@ class FeatureFinder(Finder):
 
     def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         :param needle: target iamge to search for
@@ -1834,8 +1857,11 @@ class FeatureFinder(Finder):
 
         def ratio_test(matches: list[Any]) -> list[Any]:
             """
-            The ratio test checks the first and second best match. If their
-            ratio is close to 1.0, there are both good candidates for the
+            Perform a ratio test.
+
+            The ratio test checks the first and second best match.
+
+            If their ratio is close to 1.0, there are both good candidates for the
             match and the probabilty of error when choosing one is greater.
             Therefore these matches are ignored and thus only matches of
             greater probabilty are returned.
@@ -1861,11 +1887,13 @@ class FeatureFinder(Finder):
 
         def symmetry_test(nmatches: list[Any], hmatches: list[Any]) -> list[Any]:
             """
-            Refines the matches with a symmetry test which extracts
-            only the matches in agreement with both the haystack and needle
-            sets of keypoints. The two keypoints must be best feature
-            matching of each other to ensure the error by accepting the
-            match is not too large.
+            Perform a symmetry test.
+
+            The symmetry test refines the matches with a symmetry test which extracts
+            only  in agreement with haystack and needle sets of keypoints.
+
+            The two keypoints must be best feature matching of each other
+            to ensure the error by accepting the match is not too large.
             """
             import cv2
 
@@ -2030,6 +2058,8 @@ class FeatureFinder(Finder):
 
     def log(self, lvl: int) -> None:
         """
+        Log images with an arbitrary logging level.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -2118,11 +2148,6 @@ class CascadeFinder(Finder):
     def __configure_backend(
         self, backend: str = None, category: str = "cascade", reset: bool = False
     ) -> None:
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
         if category != "cascade":
             raise UnsupportedBackendError(
                 "Backend category '%s' is not supported" % category
@@ -2143,6 +2168,8 @@ class CascadeFinder(Finder):
         self, backend: str = None, category: str = "cascade", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -2151,6 +2178,8 @@ class CascadeFinder(Finder):
 
     def find(self, needle: "Pattern", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         :param needle: target pattern (cascade) to search for
@@ -2266,11 +2295,6 @@ class TextFinder(ContourFinder):
     def __configure_backend(
         self, backend: str = None, category: str = "text", reset: bool = False
     ) -> None:
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
         if category not in [
             "text",
             "tdetect",
@@ -2467,6 +2491,8 @@ class TextFinder(ContourFinder):
         self, backend: str = None, category: str = "text", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -2501,6 +2527,8 @@ class TextFinder(ContourFinder):
         **kwargs: dict[str, type]
     ) -> None:
         """
+        Generate configuration dictionary for all backends.
+
         Custom implementation of the base method.
 
         :param text_detector: name of a preselected backend
@@ -2701,6 +2729,8 @@ class TextFinder(ContourFinder):
         self, backend: str = None, category: str = "text", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -2734,6 +2764,8 @@ class TextFinder(ContourFinder):
         reset: bool = True,
     ) -> None:
         """
+        Synchronize all backends with the current configuration dictionary.
+
         Custom implementation of the base method.
 
         :param text_detector: name of a preselected backend
@@ -2754,6 +2786,8 @@ class TextFinder(ContourFinder):
 
     def find(self, needle: "Text", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         :param needle: target text to search for
@@ -3010,8 +3044,8 @@ class TextFinder(ContourFinder):
         return text_regions
 
     def _detect_text_east(self, haystack: "Image") -> list[tuple[int, int, int, int]]:
-        #:.. note:: source implementation by Adrian Rosebrock from his post:
-        #:   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
+        # :.. note:: source implementation by Adrian Rosebrock from his post:
+        # :   https://www.pyimagesearch.com/2018/08/20/opencv-text-detection-east-text-detector/
         import cv2
         import numpy
 
@@ -3421,6 +3455,8 @@ class TextFinder(ContourFinder):
 
     def log(self, lvl: int) -> None:
         """
+        Log images with an arbitrary logging level.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -3533,6 +3569,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         self, backend: str = None, category: str = "tempfeat", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -3564,7 +3602,9 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         **kwargs: dict[str, type]
     ) -> None:
         """
-        Custom implementation of the base methods.
+        Generate configuration dictionary for all backends.
+
+        Custom implementation of the base method.
 
         See base methods for details.
         """
@@ -3580,6 +3620,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
         reset: bool = True,
     ) -> None:
         """
+        Synchronize all backends with the current configuration dictionary.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -3595,6 +3637,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
 
     def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -3766,6 +3810,8 @@ class TemplateFeatureFinder(TemplateFinder, FeatureFinder):
 
     def log(self, lvl: int) -> None:
         """
+        Log images with an arbitrary logging level.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -3851,11 +3897,6 @@ class DeepFinder(Finder):
     def __configure_backend(
         self, backend: str = None, category: str = "deep", reset: bool = False
     ) -> None:
-        """
-        Custom implementation of the base method.
-
-        See base method for details.
-        """
         if category != "deep":
             raise UnsupportedBackendError(
                 "Backend category '%s' is not supported" % category
@@ -3886,6 +3927,8 @@ class DeepFinder(Finder):
         self, backend: str = None, category: str = "deep", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -3974,6 +4017,8 @@ class DeepFinder(Finder):
         self, backend: str = None, category: str = "deep", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -3982,6 +4027,8 @@ class DeepFinder(Finder):
 
     def find(self, needle: "Pattern", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         :param needle: target pattern (cascade) to search for
@@ -4008,14 +4055,17 @@ class DeepFinder(Finder):
         assert backend == "pytorch", "Only PyTorch model zoo/garden is supported"
         import torch
 
-        classes: Callable[[Any], str] = None
         if needle.data_file is not None:
             with open(needle.data_file, "rt") as f:
                 classes_list = [line.rstrip() for line in f.readlines()]
-                classes = lambda x: classes_list[x]
+
+                def classes(x: int) -> str:
+                    return classes_list[x]
+
         else:
             # an infinite list as a string identity map
-            classes = lambda x: str(x)
+            def classes(x: Any) -> str:
+                return str(x)
 
         # set the module in evaluation mode
         self.net.eval()
@@ -4080,6 +4130,8 @@ class DeepFinder(Finder):
 
     def log(self, lvl: int) -> None:
         """
+        Log images with an arbitrary logging level.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -4174,6 +4226,8 @@ class HybridFinder(Finder):
         self, backend: str = None, category: str = "hybrid", reset: bool = False
     ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -4217,6 +4271,8 @@ class HybridFinder(Finder):
         self, backend: str = None, category: str = "hybrid", reset: bool = False
     ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -4225,6 +4281,8 @@ class HybridFinder(Finder):
 
     def find(self, needle: "Image", haystack: "Image") -> "list[Match]":
         """
+        Find all needle targets in a haystack image.
+
         Custom implementation of the base method.
 
         See base method for details.

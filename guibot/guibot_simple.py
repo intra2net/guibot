@@ -14,16 +14,15 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Simple guibot interface for short scripts, examples, and basic GUI automation.
 
 SUMMARY
 ------------------------------------------------------
-Simple guibot interface for short scripts, examples, and basic GUI automation.
 
 Frontend with simple procedural API allowing the use of a module instead of
 the :py:class:`guibot.GuiBot` object (creating and running this same
 object internally). All the methods delegate their calls to this object so
 for information about the API please refer to it and :py:class:`region.Region`.
-
 
 INTERFACE
 ------------------------------------------------------

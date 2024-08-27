@@ -14,17 +14,16 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Remote guibot interface for proxy operations using remote visual objects.
 
 SUMMARY
 ------------------------------------------------------
-Remote guibot interface for proxy operations using remote visual objects.
 
 Frontend with serialization compatible API allowing the use of PyRO modified
 :py:class:`guibot.GuiBot` object (creating and running the same object
 remotely and manipulating it locally). All the methods delegate their calls to
 this object with some additional postprocessing to make the execution remote so
 for information about the API please refer to it and :py:class:`region.Region`.
-
 
 INTERFACE
 ------------------------------------------------------
@@ -49,8 +48,7 @@ def serialize_custom_error(
     class_obj: type,
 ) -> dict[str, "str | getset_descriptor | dictproxy"]:
     """
-    Serialization method for the :py:class:`errors.UnsupportedBackendError`
-    which was chosen just as a sample.
+    Serialize the :py:class:`errors.UnsupportedBackendError` which was chosen just as a sample.
 
     :param class_obj: class object for the serialized error class
     :returns: serialization dictionary with the class name, arguments, and attributes
@@ -64,8 +62,7 @@ def serialize_custom_error(
 
 def register_exception_serialization() -> None:
     """
-    We put here any exceptions that are too complicated for the default serialization
-    and define their serialization methods.
+    Register exceptions that are too complicated for the default serialization via own serialization methods.
 
     .. note:: This would not be needed if we were using the Pickle serializer but its
         security problems at the moment made us prefer the serpent serializer paying
@@ -79,8 +76,11 @@ def register_exception_serialization() -> None:
 
 class GuiBotProxy(GuiBot):
     """
-    The proxy guibot object is just a wrapper around the actual guibot
-    object that takes care of returning easily serializable PyRO proxy objects
+    The proxy guibot object takes care of returning easily serializable PyRO proxy objects.
+
+    It is just a wrapper around the actual guibot object that replaces its real resulting objects with proxy ones.
+
+    This takes care of returning easily serializable PyRO proxy objects
     instead of the real ones or their serialized copies.
 
     It allows you to move the mouse, type text and do any other GuiBot action

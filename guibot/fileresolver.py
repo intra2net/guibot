@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Cached and reused paths for target files to search in and load target data from.
 
 SUMMARY
 ------------------------------------------------------
-Cached and reused paths for target files to search in and load target data from.
 
 
 INTERFACE
@@ -28,7 +28,6 @@ INTERFACE
 import os
 from .errors import *
 from typing import Generator
-
 import logging
 
 
@@ -37,8 +36,7 @@ log = logging.getLogger("guibot.path")
 
 class FileResolver(object):
     """
-    Handler for currently used target paths or
-    sources of targets with a desired name.
+    Handler for currently used target paths or sources of targets with a desired name.
 
     The methods of this class are shared among
     all of its instances.
@@ -49,8 +47,7 @@ class FileResolver(object):
 
     def add_path(self, directory: str) -> None:
         """
-        Add a path to the list of currently accessible paths
-        if it wasn't already added.
+        Add a path to the list of currently accessible paths if it wasn't already added.
 
         :param directory: path to add
         """
@@ -129,10 +126,12 @@ class FileResolver(object):
         return None
 
     def __iter__(self) -> Generator[str, None, None]:
+        """Iterate over the target paths."""
         for p in self._target_paths:
             yield p
 
     def __len__(self) -> int:
+        """Return total number of target paths."""
         return len(self._target_paths)
 
 
@@ -149,8 +148,7 @@ class CustomFileResolver(object):
 
     def __init__(self, *paths: tuple[type, ...]) -> None:
         """
-        Create the class with the paths that the search will be
-        restricted to.
+        Create the class with the paths that the search will be restricted to.
 
         :param paths: list of paths that the search will use
         """
