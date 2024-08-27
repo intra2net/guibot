@@ -32,7 +32,7 @@ from guibot.finder import *
 class FinderTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.file_resolver = FileResolver()
         cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
@@ -51,7 +51,7 @@ class FinderTest(unittest.TestCase):
         ssl._create_default_https_context = ssl._create_unverified_context
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         GlobalConfig.image_logging_level = cls.prev_loglevel
         GlobalConfig.image_logging_destination = cls.prev_logpath
         GlobalConfig.image_logging_step_width = cls.prev_logwidth
@@ -59,19 +59,19 @@ class FinderTest(unittest.TestCase):
         # TODO: PyTorch has bugs downloading models from their hub on Windows
         ssl._create_default_https_context = cls.orig_https_context
 
-    def setUp(self):
+    def setUp(self) -> None:
         # the image logger will recreate its logging destination
         ImageLogger.step = 1
         ImageLogger.accumulate_logging = False
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         if os.path.exists(GlobalConfig.image_logging_destination):
             shutil.rmtree(GlobalConfig.image_logging_destination)
 
-    def _get_matches_in(self, pattern, dumps):
+    def _get_matches_in(self, pattern: str, dumps: list[str]) -> list[str]:
         return [match.group(0) for d in dumps for match in [re.search(pattern, d)] if match]
 
-    def _verify_and_get_dumps(self, count, index=1, multistep=False):
+    def _verify_and_get_dumps(self, count: int, index: int = 1, multistep: bool = False) -> list[str]:
         dumps = os.listdir(self.logpath)
         self.assertEqual(len(dumps), count)
         steps = self._get_matches_in('imglog\d\d\d\d-.+', dumps)
@@ -83,7 +83,7 @@ class FinderTest(unittest.TestCase):
             self.assertLessEqual(len(first_steps), len(steps))
         return dumps
 
-    def _verify_dumped_images(self, needle_name, haystack_name, dumps, backend):
+    def _verify_dumped_images(self, needle_name, haystack_name, dumps: list[str], backend) -> None:
         needles = self._get_matches_in(".*needle.*", dumps)
         self.assertEqual(len(needles), 2)
         target, config = reversed(needles) if needles[0].endswith(".match") else needles
@@ -113,7 +113,7 @@ class FinderTest(unittest.TestCase):
         self.assertIn(haystack_name, haystack)
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, haystack)))
 
-    def _verify_single_hotmap(self, dumps, backend):
+    def _verify_single_hotmap(self, dumps: list[str], backend) -> None:
         hotmaps = self._get_matches_in('.*hotmap.*', dumps)
         self.assertEqual(len(hotmaps), 1)
         self.assertIn('3hotmap', hotmaps[0])
@@ -122,7 +122,7 @@ class FinderTest(unittest.TestCase):
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_configure_backend(self):
+    def test_configure_backend(self) -> None:
         """Test for effective configuration for all CV backends."""
         finder = Finder()
         finder.configure_backend("feature")
@@ -177,7 +177,7 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(finder.params["fmatch"]["backend"], "BruteForce-Hamming")
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
-    def test_autopy_same(self):
+    def test_autopy_same(self) -> None:
         """Test for successful match of same images for the AutoPy CV backend."""
         finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -196,7 +196,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "autopy")
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
-    def test_autopy_nomatch(self):
+    def test_autopy_nomatch(self) -> None:
         """Test for unsuccessful match of different images for the AutoPy CV backend."""
         finder = AutoPyFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -211,7 +211,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "autopy")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_contour_same(self):
+    def test_contour_same(self) -> None:
         """Test for successful match of same images for all contour CV backends."""
         finder = ContourFinder()
         # shape matching is not perfect
@@ -253,7 +253,7 @@ class FinderTest(unittest.TestCase):
                 i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_contour_nomatch(self):
+    def test_contour_nomatch(self) -> None:
         """Test for unsuccessful match of different images for all contour CV backends."""
         finder = ContourFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -287,7 +287,7 @@ class FinderTest(unittest.TestCase):
                 i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_template_same(self):
+    def test_template_same(self) -> None:
         """Test for successful match of same images for all template CV backends."""
         finder = TemplateFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -325,7 +325,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_template_nomatch(self):
+    def test_template_nomatch(self) -> None:
         """Test for unsuccessful match of different images for all template CV backends."""
         finder = TemplateFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -359,7 +359,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_template_nocolor(self):
+    def test_template_nocolor(self) -> None:
         """Test for successful match of colorless images for all template CV backends."""
         finder = TemplateFinder()
         # template matching without color is not perfect
@@ -378,7 +378,7 @@ class FinderTest(unittest.TestCase):
             self.assertEqual(matches[0].height, 151)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_template_multiple(self):
+    def test_template_multiple(self) -> None:
         """Test for multiple successful matches of images for default template CV backend."""
         finder = TemplateFinder()
         finder.find(Image('shape_red_box'), Image('all_shapes'))
@@ -399,7 +399,7 @@ class FinderTest(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_feature_same(self):
+    def test_feature_same(self) -> None:
         """Test for successful match of same images for all feature CV backends."""
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -444,7 +444,7 @@ class FinderTest(unittest.TestCase):
                         i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_feature_nomatch(self):
+    def test_feature_nomatch(self) -> None:
         """Test for unsuccessful match of different images for all feature CV backends."""
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -485,7 +485,7 @@ class FinderTest(unittest.TestCase):
                         i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_feature_scaling(self):
+    def test_feature_scaling(self) -> None:
         """Test for successful match of scaled images for default feature CV backend."""
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -497,7 +497,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 150, delta=10)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_feature_rotation(self):
+    def test_feature_rotation(self) -> None:
         """Test for successful match of rotated images for default feature CV backend."""
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.45
@@ -509,7 +509,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_feature_viewport(self):
+    def test_feature_viewport(self) -> None:
         """Test for successful match of view-trasformed images for default feature CV backend."""
         finder = FeatureFinder()
         finder.params["find"]["similarity"].value = 0.4
@@ -521,7 +521,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 235, delta=10)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_cascade_same(self):
+    def test_cascade_same(self) -> None:
         """Test for successful match of same images for the cascade CV backend."""
         finder = CascadeFinder()
         # no similarty parameter is supported - this is a binary match case
@@ -541,7 +541,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "cascade")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_cascade_nomatch(self):
+    def test_cascade_nomatch(self) -> None:
         """Test for unsuccessful match of different images for the cascade CV backend."""
         finder = CascadeFinder()
         # no similarty parameter is supported - this is a binary match case
@@ -557,7 +557,7 @@ class FinderTest(unittest.TestCase):
         self._verify_single_hotmap(dumps, "cascade")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_cascade_scaling(self):
+    def test_cascade_scaling(self) -> None:
         """Test for successful match of scaled images for the cascade CV backend."""
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_scaled'))
@@ -570,7 +570,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 165, delta=5)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_cascade_rotation(self):
+    def test_cascade_rotation(self) -> None:
         """Test for successful match of rotated images for the cascade CV backend."""
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_rotated'))
@@ -582,7 +582,7 @@ class FinderTest(unittest.TestCase):
         #self.assertAlmostEqual(matches[0].height, 180, delta=10)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_cascade_viewport(self):
+    def test_cascade_viewport(self) -> None:
         """Test for successful match of view transformed images for the cascade CV backend."""
         finder = CascadeFinder()
         matches = finder.find(Pattern('n_ibs.xml'), Image('h_ibs_viewport'))
@@ -597,7 +597,7 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_text_same(self):
+    def test_text_same(self) -> None:
         """Test for successful match of same images for all text (OCR) CV backends."""
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -673,7 +673,7 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_text_nomatch(self):
+    def test_text_nomatch(self) -> None:
         """Test for unsuccessful match of different images for all text (OCR) CV backends."""
         finder = TextFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -728,7 +728,7 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_text_basic(self):
+    def test_text_basic(self) -> None:
         """Test for successful match of basic text for default text CV (OCR) backend."""
         finder = TextFinder()
         matches = finder.find(Text('Find the word here'), Image('sentence_sans'))
@@ -742,7 +742,7 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_text_bold(self):
+    def test_text_bold(self) -> None:
         """Test for successful match of bold text for default text CV (OCR) backend."""
         finder = TextFinder()
         matches = finder.find(Text('Find the word'), Image('sentence_bold'))
@@ -755,7 +755,7 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_text_italic(self):
+    def test_text_italic(self) -> None:
         """Test for successful match of italic text for default text CV (OCR) backend."""
         finder = TextFinder()
         matches = finder.find(Text('Find the word here'), Image('sentence_italic'))
@@ -768,7 +768,7 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_text_larger(self):
+    def test_text_larger(self) -> None:
         """Test for successful match of larger text for default text CV (OCR) backend."""
         finder = TextFinder()
         matches = finder.find(Text('Find the word'), Image('sentence_larger'))
@@ -782,7 +782,7 @@ class FinderTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_text_font(self):
+    def test_text_font(self) -> None:
         """Test for successful match of different font text for default text CV (OCR) backend."""
         finder = TextFinder()
         matches = finder.find(Text('Find the word here'), Image('sentence_font'))
@@ -793,7 +793,7 @@ class FinderTest(unittest.TestCase):
         self.assertAlmostEqual(matches[0].height, 10, delta=5)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_tempfeat_same(self):
+    def test_tempfeat_same(self) -> None:
         """Test for successful match of same images for the template-feature CV backend."""
         finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 1.0
@@ -832,7 +832,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_tempfeat_nomatch(self):
+    def test_tempfeat_nomatch(self) -> None:
         """Test for unsuccessful match of different images for the template-feature CV backend."""
         finder = TemplateFeatureFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -862,7 +862,7 @@ class FinderTest(unittest.TestCase):
             i += 1
 
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
-    def test_deep_same(self):
+    def test_deep_same(self) -> None:
         """Test for successful match of same images for all deep (DL) CV backends."""
         finder = DeepFinder()
         # pattern matching is not perfect
@@ -897,7 +897,7 @@ class FinderTest(unittest.TestCase):
             finder.find(Pattern('cat'), Image('coco_cat'))
 
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
-    def test_deep_nomatch(self):
+    def test_deep_nomatch(self) -> None:
         """Test for unsuccessful match of different images for all deep (DL) CV backends."""
         finder = DeepFinder()
         finder.params["find"]["similarity"].value = 0.25
@@ -921,7 +921,7 @@ class FinderTest(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
-    def test_deep_cache(self):
+    def test_deep_cache(self) -> None:
         """Test the neural network cached storage of deep finders."""
         finder = DeepFinder(synchronize=False)
 
@@ -948,7 +948,7 @@ class FinderTest(unittest.TestCase):
                          finder.net)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
-    def test_hybrid_same(self):
+    def test_hybrid_same(self) -> None:
         """Test for successful match of same images for default hybrid CV backend."""
         finder = HybridFinder()
         finder.configure_backend("template")
@@ -968,7 +968,7 @@ class FinderTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
     @unittest.skipIf(os.environ.get('DISABLE_OCR', "0") == "1", "Disabled OCR")
-    def test_hybrid_nomatch(self):
+    def test_hybrid_nomatch(self) -> None:
         """Test for unsuccessful match of different images for default hybrid CV backend."""
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -982,7 +982,7 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names (4+4+7)
         dumps = self._verify_and_get_dumps(5+5+7, multistep=True)
 
-    def test_hybrid_fallback(self):
+    def test_hybrid_fallback(self) -> None:
         """Test successful match of fallback representations after unsuccessful one."""
         finder = HybridFinder()
         finder.configure_backend("autopy")
@@ -1000,7 +1000,7 @@ class FinderTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
-    def test_hybrid_multiconfig(self):
+    def test_hybrid_multiconfig(self) -> None:
         """Test hybrid matching with multiple chain configs."""
         finder = HybridFinder()
         # TOOD: replace autopy to improve coverage across variants
@@ -1020,7 +1020,7 @@ class FinderTest(unittest.TestCase):
 class CVParameterTest(unittest.TestCase):
     """Tests for the computer vision backends parameters."""
 
-    def test_instance_comparison(self):
+    def test_instance_comparison(self) -> None:
         """Check if equality and inequality operators are correctly implemented."""
         cv1 = CVParameter(
             3, min_val=0.003, max_val=150, delta=1030.25,
@@ -1036,7 +1036,7 @@ class CVParameterTest(unittest.TestCase):
         self.assertFalse(cv1 == 10)
         self.assertTrue(cv1 != 10)
 
-    def test_parameter_parsing(self):
+    def test_parameter_parsing(self) -> None:
         """Check that basic parameter parsing works."""
         expected = CVParameter(
             3, min_val=0.003, max_val=150, delta=1030.25,
@@ -1045,7 +1045,7 @@ class CVParameterTest(unittest.TestCase):
         parsed = CVParameter.from_string("<value='3' min='0.003' max='150' delta='1030.25' tolerance='10.2' fixed='True' enumerated='False'>")
         self.assertEqual(parsed, expected)
 
-    def test_value_with_dots(self):
+    def test_value_with_dots(self) -> None:
         """Check that the parser doesn't mark values with dots at the end as floats."""
         expected = CVParameter(
             "123456789.", min_val=None, max_val=None, delta=1030.25,
@@ -1054,7 +1054,7 @@ class CVParameterTest(unittest.TestCase):
         parsed = CVParameter.from_string("<value='123456789.' min='None' max='None' delta='1030.25' tolerance='10.2' fixed='False' enumerated='False'>")
         self.assertEqual(parsed, expected)
 
-    def test_empty_value(self):
+    def test_empty_value(self) -> None:
         """Check that the parser handles empty CVParameter value gracefully."""
         expected = CVParameter(
             "", min_val=None, max_val=None, delta=10.0,

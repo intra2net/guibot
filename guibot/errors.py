@@ -52,12 +52,11 @@ class IncompatibleTargetFileError(GuiBotError):
 class FindError(GuiBotError):
     """Exception raised when an Image cannot be found on the screen"""
 
-    def __init__(self, failed_target=None):
+    def __init__(self, failed_target: "Target" = None) -> None:
         """
         Build the exception possibly providing the failed target.
 
         :param failed_target: the target that wasn't found
-        :type failed_target: :py:class:`target.Target` or None
         """
         if failed_target:
             message = "The target %s could not be found on the screen" % failed_target
@@ -69,12 +68,11 @@ class FindError(GuiBotError):
 class NotFindError(GuiBotError):
     """Exception raised when an Image can be found on the screen but should not be"""
 
-    def __init__(self, failed_target=None):
+    def __init__(self, failed_target: "Target" = None) -> None:
         """
         Build the exception possibly providing the failed target.
 
         :param failed_target: the target that was found
-        :type failed_target: :py:class:`target.Target` or None
         """
         if failed_target:
             message = "The target %s was found on the screen while it was not expected" % failed_target

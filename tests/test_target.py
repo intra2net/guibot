@@ -28,10 +28,10 @@ from guibot.fileresolver import FileResolver
 
 class ImageTest(unittest.TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         self.file_all_shapes = os.path.join(common_test.unittest_dir, 'images', 'all_shapes.png')
 
-    def test_basic(self):
+    def test_basic(self) -> None:
         """Test basic image target initialization."""
         image = Image(self.file_all_shapes)
 
@@ -42,7 +42,7 @@ class ImageTest(unittest.TestCase):
         self.assertIsInstance(image.match_settings, Finder)
         self.assertFalse(image.use_own_settings)
 
-    def test_copy_object(self):
+    def test_copy_object(self) -> None:
         """Test sane image target copying."""
         image = Image(self.file_all_shapes)
 
@@ -55,7 +55,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.height, my_copy.height)
         self.assertEqual(image.center_offset, my_copy.center_offset)
 
-    def test_center_offset(self):
+    def test_center_offset(self) -> None:
         """Test image target center offset calculation."""
         image = Image(self.file_all_shapes)
 
@@ -80,7 +80,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(0, center_offset.x)
         self.assertEqual(0, center_offset.y)
 
-    def test_similarity(self):
+    def test_similarity(self) -> None:
         """Test image target copying based on similarity."""
         image = Image(self.file_all_shapes)
 
@@ -96,7 +96,7 @@ class ImageTest(unittest.TestCase):
         self.assertEqual(image.height, new_image.height)
         self.assertEqual(image.center_offset, new_image.center_offset)
 
-    def test_save(self):
+    def test_save(self) -> None:
         """Test image target data and match settings saving."""
         image = Image(self.file_all_shapes)
 
@@ -135,7 +135,7 @@ class ImageTest(unittest.TestCase):
                 self.assertEqual(returned_image.match_settings.params[category][key].fixed,
                                  loaded_image.match_settings.params[category][key].fixed)
 
-    def test_nonexisting_image(self):
+    def test_nonexisting_image(self) -> None:
         """Test image target initialization with missing image data."""
         try:
             Image('foobar_does_not_exist')
@@ -143,7 +143,7 @@ class ImageTest(unittest.TestCase):
         except FileNotFoundError:
             pass
 
-    def test_image_cache(self):
+    def test_image_cache(self) -> None:
         """Test image target caching for the image data."""
         image = Image(self.file_all_shapes)
 
@@ -185,7 +185,7 @@ class ChainTest(unittest.TestCase):
         os.path.join(gettempdir(), "17.csv.steps"),
     ]
 
-    def setUp(self):
+    def setUp(self) -> None:
         """Create mocks and enable patches."""
         # start with a clean environment
         self._old_paths = list(FileResolver._target_paths)
@@ -209,7 +209,7 @@ class ChainTest(unittest.TestCase):
         self._patches["PIL_Image_open"].start()
         return super().setUp()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         """Cleanup removing any patches and files created."""
         # start with a clean environment
         FileResolver().clear()
@@ -223,28 +223,26 @@ class ChainTest(unittest.TestCase):
             os.unlink(fn)
         return super().tearDown()
 
-    def _build_chain(self, stepsfile_contents, stepsfile=None):
+    def _build_chain(self, stepsfile_contents: str, stepsfile: str = None) -> Finder:
         """
         Create an instance of :py:class:`guibot.target.Chain` to be used by the tests.
 
-        :param str stepsfile_contents: contents for the stepsfile to be passed when creating the finder
-        :param str stepsfile: name of the stepsfile to load or None to use the default
+        :param stepsfile_contents: contents for the stepsfile to be passed when creating the finder
+        :param stepsfile: name of the stepsfile to load or None to use the default
         :returns: an instance of the finder
-        :rtype: :py:class:`finder.Finder`
         """
         filename = self._create_temp_file(prefix=self.stepsfile_name,
             extension=".steps", contents=stepsfile_contents)
         return Chain(os.path.splitext(filename)[0])
 
-    def _get_match_file(self, filename):
+    def _get_match_file(self, filename: str) -> Finder:
         """
         Mock function to replace py:func:`Finder.from_match_file`.
 
         It will generated a finder based on the filename provided.
 
-        :param str filename: match filename for the configuration
+        :param filename: match filename for the configuration
         :returns: target finder with the parsed (and generated) settings
-        :rtype: :py:class:`finder.Finder`
         """
         # guess the backend from the filename
         parts = filename.split("_")
@@ -257,15 +255,14 @@ class ChainTest(unittest.TestCase):
         }
         return finder_mock
 
-    def _create_temp_file(self, prefix=None, extension=None, contents=None):
+    def _create_temp_file(self, prefix: str = None, extension: str = None, contents: str = None) -> str:
         """
         Create a temporary file, keeping track of it for auto-removal.
 
-        :param str prefix: string to prepend to the file name
-        :param str extension: extension of the generated file
-        :param str contents: contents to write on the file
+        :param prefix: string to prepend to the file name
+        :param extension: extension of the generated file
+        :param contents: contents to write on the file
         :returns: name of the temporary file generated
-        :rtype: str
         """
         fd, filename = mkstemp(prefix=prefix, suffix=extension)
         if contents:
@@ -274,13 +271,12 @@ class ChainTest(unittest.TestCase):
         self._tmpfiles.append(filename)
         return filename
 
-    def _create_temp_text_file(self, filename):
+    def _create_temp_text_file(self, filename: str) -> str:
         """
         Create a temporary text file, needed for some text file including tests.
 
-        :param str filename: name of the fake text file
+        :param filename: name of the fake text file
         :returns: name of the temporary text file generated
-        :rtype: str
 
         The Text target stepfile data accepts either a file or a text string and
         we test with both modes. For the first mode we need a real file.
@@ -292,7 +288,7 @@ class ChainTest(unittest.TestCase):
         self.non_existing_files.append(basename)
         return basename
 
-    def test_stepsfile_lookup(self):
+    def test_stepsfile_lookup(self) -> None:
         """Test that the stepsfile will be searched using :py:class:`guibot.fileresolver.FileResolver`."""
         tmp_dir = mkdtemp()
         tmp_steps_file = os.path.join(tmp_dir, self.stepsfile_missing) + ".steps"
@@ -309,7 +305,7 @@ class ChainTest(unittest.TestCase):
             os.unlink(tmp_steps_file)
             os.rmdir(tmp_dir)
 
-    def test_match_file_loading(self):
+    def test_match_file_loading(self) -> None:
         """Test that all match files in the steps file are correctly loaded."""
         # actually create files as mocking os.open() would be too cumbersome
         text_file = self._create_temp_text_file("item_for_text")
@@ -331,7 +327,7 @@ class ChainTest(unittest.TestCase):
             # we need to have a finder created for each .match file (inside Chain itself)
             self.mock_match_read.assert_any_call(match)
 
-    def test_steps_list(self):
+    def test_steps_list(self) -> None:
         """Test that the resulting step chain contains all the items from the stepsfile."""
         # actually create files as mocking os.open() would be too cumbersome
         text_file = self._create_temp_text_file("item_for_text")
@@ -350,7 +346,7 @@ class ChainTest(unittest.TestCase):
         expected_types = [Image, Image, Image, Pattern, Pattern, Image, Image, Text]
         self.assertEqual([type(s) for s in chain], expected_types)
 
-    def test_step_save(self):
+    def test_step_save(self) -> None:
         """Test that dumping a chain to a file works and that the content is preserved."""
         # actually create files as mocking os.open() would be too cumbersome
         text_file = self._create_temp_text_file("some_text_file")
@@ -416,7 +412,7 @@ class ChainTest(unittest.TestCase):
         # and for the steps file itself
         self.assertEqual(generated_match_names, expected_match_names)
 
-    def test_malformed_stepsfile(self):
+    def test_malformed_stepsfile(self) -> None:
         """Test that the malformed stepsfiles are correctly handled."""
         stepsfile_contents = [
             "item_for_contour.png	some_contour_matchfile.match",
@@ -431,7 +427,7 @@ class ChainTest(unittest.TestCase):
         ]
         self.assertRaises(IOError, self._build_chain, os.linesep.join(stepsfile_contents))
 
-    def test_invalid_backends(self):
+    def test_invalid_backends(self) -> None:
         """Test that unsupported backends are detected when loading and saving."""
         # test on load
         stepsfile_contents = [
@@ -447,7 +443,7 @@ class ChainTest(unittest.TestCase):
         chain._steps.append(Text("", match_settings=finder))
         self.assertRaises(UnsupportedBackendError, chain.save, "foobar")
 
-    def test_nested_stepsfiles(self):
+    def test_nested_stepsfiles(self) -> None:
         """Test that stepsfiles within stepsfiles are correctly handled."""
         # actually create files as mocking os.open() would be too cumbersome
         text_file = self._create_temp_text_file("item_for_text")
@@ -472,7 +468,7 @@ class ChainTest(unittest.TestCase):
         expected_types = [Image, Pattern, Text]
         self.assertEqual([type(s) for s in chain._steps], expected_types)
 
-    def test_nested_stepsfiles_order(self):
+    def test_nested_stepsfiles_order(self) -> None:
         """Test that stepsfiles within stepsfiles are loaded in order."""
         # actually create files as mocking os.open() would be too cumbersome
         text_file = self._create_temp_text_file("item_for_text")

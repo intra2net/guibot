@@ -23,13 +23,13 @@ import common_test
 
 class SimpleAPITest(TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         from guibot import guibot_simple as simple
         simple.guibot = mock.MagicMock()
         simple.check_initialized = mock.MagicMock()
         self.interface = simple
 
-    def test_call_delegations(self):
+    def test_call_delegations(self) -> None:
         """Test that all calls from the interface to the actual object are valid."""
         args = [True, 1, 2.0, "test-args"]
         kwargs = {"bool": False, "int": 0, "float": 3.0, "str": "test-kwargs"}
@@ -52,7 +52,7 @@ class SimpleAPITest(TestCase):
             self.interface.check_initialized.reset_mock()
 
     @mock.patch("guibot.guibot_simple.GuiBot")
-    def test_key_imports(self, mock_guibot):
+    def test_key_imports(self, mock_guibot) -> None:
         """Test that all keys imported by the simple interface work."""
         self.interface.initialize()
         mock_guibot.return_value.dc_backend.keymap.ESC = "esc"
@@ -67,18 +67,18 @@ class SimpleAPITest(TestCase):
 
 class ProxyAPITest(TestCase):
 
-    def setUp(self):
+    def setUp(self) -> None:
         # fake the remote objects dependency for this interface
         sys.modules["Pyro4"] = mock.MagicMock()
         from guibot import guibot_proxy as remote
         self.interface = remote.GuiBotProxy(cv=None, dc=None)
         self.interface._proxify = mock.MagicMock()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         del sys.modules["Pyro4"]
 
     @mock.patch('guibot.guibot_proxy.super')
-    def test_call_delegations(self, mock_super):
+    def test_call_delegations(self, mock_super) -> None:
         """Test that all calls from the interface to the actual object are valid."""
         args = [True, 1, 2.0, "test-args"]
         kwargs = {"bool": False, "int": 0, "float": 3.0, "str": "test-kwargs"}

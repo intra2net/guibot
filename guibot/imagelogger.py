@@ -28,6 +28,7 @@ INTERFACE
 import os
 import shutil
 import PIL.Image
+import numpy
 
 from .config import GlobalConfig
 
@@ -52,14 +53,14 @@ class ImageLogger(object):
     accumulate_logging = False
 
     #: level for the image logging
-    logging_level = GlobalConfig.image_logging_level
+    logging_level: int = GlobalConfig.image_logging_level
     #: destination for the image logging in order to dump images
     #: (the executing code decides when to clean this directory)
-    logging_destination = GlobalConfig.image_logging_destination
+    logging_destination: str = GlobalConfig.image_logging_destination
     #: number of digits for the counter of logged steps
-    step_width = GlobalConfig.image_logging_step_width
+    step_width: int = GlobalConfig.image_logging_step_width
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Build an imagelogger object."""
         self.needle = None
         self.haystack = None
@@ -74,37 +75,36 @@ class ImageLogger(object):
         ImageLogger.logging_destination = GlobalConfig.image_logging_destination
         ImageLogger.step_width = GlobalConfig.image_logging_step_width
 
-    def get_printable_step(self):
+    def get_printable_step(self) -> str:
         """
         Getter for readonly attribute.
 
         :returns: step number prepended with zeroes to obtain a fixed length enumeration
-        :rtype: str
         """
         return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
     printable_step = property(fget=get_printable_step)
 
-    def debug(self):
+    def debug(self) -> None:
         """Log images with a DEBUG logging level."""
         self.log(10)
 
-    def info(self):
+    def info(self) -> None:
         """Log images with an INFO logging level."""
         self.log(20)
 
-    def warning(self):
+    def warning(self) -> None:
         """Log images with a WARNING logging level."""
         self.log(30)
 
-    def error(self):
+    def error(self) -> None:
         """Log images with an ERROR logging level."""
         self.log(40)
 
-    def critical(self):
+    def critical(self) -> None:
         """Log images with a CRITICAL logging level."""
         self.log(50)
 
-    def dump_matched_images(self):
+    def dump_matched_images(self) -> None:
         """
         Write file with the current needle and haystack.
 
@@ -131,13 +131,12 @@ class ImageLogger(object):
                                      haystack_name)
         self.haystack.save(haystack_path)
 
-    def dump_hotmap(self, name, hotmap):
+    def dump_hotmap(self, name: str, hotmap: PIL.Image.Image | numpy.ndarray) -> None:
         """
         Write a file the given hotmap.
 
-        :param str name: filename to use for the image
+        :param name: filename to use for the image
         :param hotmap: image (with matching results) to write
-        :type hotmap: :py:class:`PIL.Image` or :py:class:`numpy.ndarray`
         """
         if ImageLogger.logging_level > 30:
             return
@@ -155,7 +154,7 @@ class ImageLogger(object):
                 pil_image = pil_image.convert('RGB')
         pil_image.save(path, compress_level=GlobalConfig.image_quality)
 
-    def clear(self):
+    def clear(self) -> None:
         """Clear all accumulated logging including hotmaps, similarities, and locations."""
         self.needle = None
         self.haystack = None

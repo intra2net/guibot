@@ -26,10 +26,10 @@ from guibot.controller import Controller, PyAutoGUIController
 class RegionTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.screen = PyAutoGUIController()
 
-    def test_position_calc(self):
+    def test_position_calc(self) -> None:
         region = Region(10, 20, 300, 200)
 
         center = region.center
@@ -52,7 +52,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(310, bottom_right.x)
         self.assertEqual(220, bottom_right.y)
 
-    def test_screen_clipping(self):
+    def test_screen_clipping(self) -> None:
         screen = RegionTest.screen
         screen_width = screen.width
         screen_height = screen.height
@@ -73,7 +73,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(screen_width - region.x, region.width)
         self.assertEqual(screen_height - region.y, region.height)
 
-    def test_empty_screen_clipping(self):
+    def test_empty_screen_clipping(self) -> None:
         screen = Controller()
         screen_width = screen.width
         screen_height = screen.height
@@ -96,7 +96,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(region.width, 300)
         self.assertEqual(region.height, 200)
 
-    def test_nearby(self):
+    def test_nearby(self) -> None:
         screen = RegionTest.screen
         screen_width = screen.width
         screen_height = screen.height
@@ -120,7 +120,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(20, region.width)
         self.assertEqual(10, region.height)
 
-    def test_nearby_clipping(self):
+    def test_nearby_clipping(self) -> None:
         screen = RegionTest.screen
         screen_width = screen.width
         screen_height = screen.height
@@ -153,7 +153,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(80, region.width)
         self.assertEqual(110, region.height)
 
-    def test_above(self):
+    def test_above(self) -> None:
         region = Region(200, 100, 20, 10).above(50)
         self.assertEqual(200, region.x)
         self.assertEqual(50, region.y)
@@ -173,7 +173,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(20, region.width)
         self.assertEqual(110, region.height)
 
-    def test_below(self):
+    def test_below(self) -> None:
         screen_height = RegionTest.screen.height
 
         region = Region(200, 100, 20, 10).below(50)
@@ -195,7 +195,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(20, region.width)
         self.assertEqual(screen_height - region.y, region.height)
 
-    def test_left(self):
+    def test_left(self) -> None:
         region = Region(200, 100, 20, 10).left(50)
         self.assertEqual(150, region.x)
         self.assertEqual(100, region.y)
@@ -215,7 +215,7 @@ class RegionTest(unittest.TestCase):
         self.assertEqual(220, region.width)
         self.assertEqual(10, region.height)
 
-    def test_right(self):
+    def test_right(self) -> None:
         screen_width = RegionTest.screen.width
 
         region = Region(200, 100, 20, 10).right(50)

@@ -31,7 +31,7 @@ from guibot.errors import *
 class CalibratorTest(unittest.TestCase):
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls.patfile_resolver = FileResolver()
         cls.patfile_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
         random.seed(42)
@@ -40,12 +40,12 @@ class CalibratorTest(unittest.TestCase):
         cls.orig_https_context = ssl._create_default_https_context
         ssl._create_default_https_context = ssl._create_unverified_context
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         if os.path.exists("pairs.list"):
             os.unlink("pairs.list")
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         # TODO: PyTorch has bugs downloading models from their hub on Windows
         ssl._create_default_https_context = cls.orig_https_context
 
@@ -57,19 +57,19 @@ class CalibratorTest(unittest.TestCase):
         calibrator = Calibrator(Image(needle), Image(haystack))
         return calibrator.calibrate(finder)
 
-    def list_setUp(self):
+    def list_setUp(self) -> Calibrator:
         with open("pairs.list", "w") as f:
             f.write("n_ibs" + " " + "h_ibs_viewport" + " max" + "\n")
             f.write("n_ibs" + " " + "h_ibs_rotated" + " max" + "\n")
             f.write("n_ibs" + " " + "h_ibs_scaled" + " max" + "\n")
         return Calibrator(config="pairs.list")
 
-    def benchmark_setUp(self):
+    def benchmark_setUp(self) -> None:
         # remove any randomness in the unit tests in the Monte Carlo search
         CVParameter.random_value = lambda self, _mu, _sigma: self.value
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_calibrate(self):
+    def test_calibrate(self) -> None:
         """Check that minimal calibration with an identical image improves over time."""
         raw_similarity = self.calibration_setUp('n_ibs', 'n_ibs', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'n_ibs',
@@ -80,7 +80,7 @@ class CalibratorTest(unittest.TestCase):
                              " or equal to the similarity after calibration")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_calibrate_viewport(self):
+    def test_calibrate_viewport(self) -> None:
         """Check that minimal calibration with a view transformed image improves over time."""
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_viewport',
@@ -91,7 +91,7 @@ class CalibratorTest(unittest.TestCase):
                              " or equal to the similarity after calibration")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_calibrate_rotation(self):
+    def test_calibrate_rotation(self) -> None:
         """Check that minimal calibration with a rotated image improves over time."""
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_rotated',
@@ -102,7 +102,7 @@ class CalibratorTest(unittest.TestCase):
                              " or equal to the similarity after calibration")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_calibrate_scaling(self):
+    def test_calibrate_scaling(self) -> None:
         """Check that minimal calibration with a scaled image improves over time."""
         raw_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled', [])
         cal_similarity = self.calibration_setUp('n_ibs', 'h_ibs_scaled',
@@ -113,7 +113,7 @@ class CalibratorTest(unittest.TestCase):
                              " or equal to the similarity after calibration")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_calibrate_list(self):
+    def test_calibrate_list(self) -> None:
         """Check that calibration with a list of image pairs improves over time."""
         calibrator = self.list_setUp()
         # use a single finder type for these tests
@@ -127,7 +127,7 @@ class CalibratorTest(unittest.TestCase):
                              " or equal to the similarity after calibration")
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_search(self):
+    def test_search(self) -> None:
         """Check that search with a list of image pairs improves over time."""
         calibrator = self.list_setUp()
         # use a single finder type for these tests
@@ -141,7 +141,7 @@ class CalibratorTest(unittest.TestCase):
                              " or equal to the similarity after a search")
 
     @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
-    def test_benchmark_autopy(self):
+    def test_benchmark_autopy(self) -> None:
         """Check that benchmarking of the AutoPy backend produces correct results."""
         self.benchmark_setUp()
         calibrator = Calibrator(Image('shape_blue_circle'), Image('all_shapes'))
@@ -157,7 +157,7 @@ class CalibratorTest(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', "Exhibits hiccups on Windows")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_benchmark_contour(self):
+    def test_benchmark_contour(self) -> None:
         """Check that benchmarking of the OpenCV countour backend produces correct results."""
         self.benchmark_setUp()
         # matching all shapes will require a modification of the minArea parameter
@@ -173,7 +173,7 @@ class CalibratorTest(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', "Exhibits hiccups on Windows")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_benchmark_template(self):
+    def test_benchmark_template(self) -> None:
         """Check that benchmarking of the OpenCV template backend produces correct results."""
         self.benchmark_setUp()
         calibrator = Calibrator(Image('shape_blue_circle'), Image('all_shapes'))
@@ -189,7 +189,7 @@ class CalibratorTest(unittest.TestCase):
 
     @unittest.skip("Unit test takes too long")
     #@unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_benchmark_feature(self):
+    def test_benchmark_feature(self) -> None:
         """Check that benchmarking of the OpenCV feature backend produces correct results."""
         self.benchmark_setUp()
         calibrator = Calibrator(Image('n_ibs'), Image('n_ibs'))
@@ -205,7 +205,7 @@ class CalibratorTest(unittest.TestCase):
 
     @unittest.skipIf(os.name == 'nt', "Exhibits hiccups on Windows")
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_benchmark_cascade(self):
+    def test_benchmark_cascade(self) -> None:
         """Check that benchmarking of the OpenCV cascade backend produces correct results."""
         self.benchmark_setUp()
         calibrator = Calibrator(Pattern('shape_blue_circle.xml'), Image('all_shapes'))
@@ -222,7 +222,7 @@ class CalibratorTest(unittest.TestCase):
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_OCR', "0") == "1",
                      "Disabled OpenCV or OCR")
-    def test_benchmark_text(self):
+    def test_benchmark_text(self) -> None:
         """Check that benchmarking of OCR backends produces correct results."""
         self.benchmark_setUp()
         calibrator = Calibrator(Text('Text'), Image('all_shapes'))
@@ -256,7 +256,7 @@ class CalibratorTest(unittest.TestCase):
 
     @unittest.skip("Unit test takes too long")
     #@unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
-    def test_benchmark_tempfeat(self):
+    def test_benchmark_tempfeat(self) -> None:
         """Check that benchmarking of template-feature backends produces correct results."""
         self.benchmark_setUp()
         calibrator = Calibrator(Image('shape_blue_circle'), Image('all_shapes'))
@@ -273,7 +273,7 @@ class CalibratorTest(unittest.TestCase):
                 self.assertGreater(result[2], 0.0, "Strictly positive time is required to run case '%s' %s %s" % result)
 
     @unittest.skipIf(os.environ.get('DISABLE_PYTORCH', "0") == "1", "PyTorch disabled")
-    def test_benchmark_deep(self):
+    def test_benchmark_deep(self) -> None:
         """Check that benchmarking of deep backends produces correct results."""
         self.benchmark_setUp()
         calibrator = Calibrator(Pattern('cat'), Image('coco_cat'))

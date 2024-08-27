@@ -27,7 +27,7 @@ class ImageLoggerTest(unittest.TestCase):
     """Tests for the ImageLogger class."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         cls._original_logging_level = GlobalConfig.image_logging_level
         cls._original_destination = GlobalConfig.image_logging_destination
         ImageLogger.logging_destination
@@ -35,12 +35,12 @@ class ImageLoggerTest(unittest.TestCase):
         return super().setUpClass()
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         GlobalConfig.image_logging_level = cls._original_logging_level
         GlobalConfig.image_logging_destination = cls._original_destination
         return super().tearDownClass()
 
-    def setUp(self):
+    def setUp(self) -> None:
         ImageLogger.step = 1
         self.imglog = ImageLogger()
         self.imglog.needle = MagicMock()
@@ -50,17 +50,17 @@ class ImageLoggerTest(unittest.TestCase):
         self._patch_mkdir = patch("os.mkdir")
         self.mock_mkdir = self._patch_mkdir.start()
 
-    def tearDown(self):
+    def tearDown(self) -> None:
         self._patch_mkdir.stop()
         return super().tearDown()
 
-    def test_step_print(self):
+    def test_step_print(self) -> None:
         """Test the string representation of the current step."""
         for i in range(1, 10):
             ImageLogger.step = i
             self.assertEqual(self.imglog.get_printable_step(), "00{}".format(i))
 
-    def test_image_logging(self):
+    def test_image_logging(self) -> None:
         """Test whether the log methods are called with the correct parameters."""
         level_mapping = {
             "debug": 10,
@@ -75,14 +75,14 @@ class ImageLoggerTest(unittest.TestCase):
             getattr(self.imglog, name)()
             self.imglog.log.assert_called_once_with(level)
 
-    def test_log_level(self):
+    def test_log_level(self) -> None:
         """Check that above a certain log level, images are not logged."""
         with TemporaryConfig() as cfg:
             cfg.image_logging_level = 35
             self.assertIsNone(ImageLogger().dump_matched_images())
             self.assertIsNone(ImageLogger().dump_hotmap(None, None))
 
-    def test_image_dumping(self):
+    def test_image_dumping(self) -> None:
         """Check that images are dumped correctly."""
         ImageLogger.step = 18
         with patch("os.path.exists", side_effect=lambda _: False):
@@ -92,7 +92,7 @@ class ImageLoggerTest(unittest.TestCase):
             self.imglog.needle.save.assert_called_once_with(os.path.join('imglog', 'imglog018-1needle-test_needle'))
             self.imglog.haystack.save.assert_called_once_with(os.path.join('imglog', 'imglog018-2haystack-test_haystack'))
 
-    def test_hotmap_dumping(self):
+    def test_hotmap_dumping(self) -> None:
         """Check that hotmaps are dumped correctly."""
         ImageLogger.step = 25
         ImageLogger.logging_destination = "some_path"
