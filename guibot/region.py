@@ -1122,6 +1122,7 @@ class Region(object):
             except FindError as error:
                 if i == retries - 1:
                     raise error
+        return None
 
     def press_vanish(
         self,
