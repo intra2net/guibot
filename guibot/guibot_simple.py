@@ -14,16 +14,15 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Simple guibot interface for short scripts, examples, and basic GUI automation.
 
 SUMMARY
 ------------------------------------------------------
-Simple guibot interface for short scripts, examples, and basic GUI automation.
 
 Frontend with simple procedural API allowing the use of a module instead of
 the :py:class:`guibot.GuiBot` object (creating and running this same
 object internally). All the methods delegate their calls to this object so
 for information about the API please refer to it and :py:class:`region.Region`.
-
 
 INTERFACE
 ------------------------------------------------------
@@ -41,7 +40,7 @@ from .guibot import GuiBot
 # accessible attributes of this module
 guibot = None
 last_match = None
-buttons = namedtuple('buttons', ["mouse", "key", "mod"])
+buttons = namedtuple("buttons", ["mouse", "key", "mod"])
 
 
 def initialize() -> None:
@@ -60,7 +59,9 @@ def initialize() -> None:
 def check_initialized() -> None:
     """Make sure the simple API is initialized."""
     if guibot is None:
-        raise AssertionError("Guibot module not initialized - run initialize() before using the simple API")
+        raise AssertionError(
+            "Guibot module not initialized - run initialize() before using the simple API"
+        )
 
 
 def add_path(*args: tuple[type, ...], **kwargs: dict[str, type]) -> None:

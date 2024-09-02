@@ -3,7 +3,7 @@ name: Lint Check
 on: [push, pull_request]
 
 jobs:
-  mypy:
+  lint:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,8 +17,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install mypy
+          pip install mypy black pycodestyle pydocstyle
 
-      - name: Run mypy
+      - name: Run linters
         run: |
           mypy guibot
+          black --check --diff --color guibot
+          # only excluded checks are conflicts with black and within pycodestyle
+          pycodestyle --ignore=E203,E501,W503 guibot
+          pydocstyle guibot

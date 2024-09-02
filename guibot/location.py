@@ -14,14 +14,13 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Simple class to hold screen location data.
 
 SUMMARY
 ------------------------------------------------------
-Simple class to hold screen location data.
 
 ..note:: Unless this class becomes more useful for the extra OOP abstraction
 it might get deprecated in favor of a simple (x, y) tuple.
-
 
 INTERFACE
 ------------------------------------------------------
@@ -53,6 +52,7 @@ class Location(object):
         :returns: x coordinate of the location
         """
         return self._xpos
+
     x = property(fget=get_x)
 
     def get_y(self) -> int:
@@ -62,4 +62,5 @@ class Location(object):
         :returns: y coordinate of the location
         """
         return self._ypos
+
     y = property(fget=get_y)

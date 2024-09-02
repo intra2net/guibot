@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Package with the complete guibot modules and functionality.
 
 SUMMARY
 ------------------------------------------------------
-Package with the complete guibot modules and functionality.
 
 
 INTERFACE

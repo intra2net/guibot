@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Display controllers (DC backends) to perform user operations.
 
 SUMMARY
 ------------------------------------------------------
-Display controllers (DC backends) to perform user operations.
 
 
 INTERFACE
@@ -40,15 +40,22 @@ from .location import Location
 from .errors import *
 
 
-log = logging.getLogger('guibot.controller')
-__all__ = ['Controller', 'AutoPyController', 'XDoToolController',
-           'VNCDoToolController', 'PyAutoGUIController']
+log = logging.getLogger("guibot.controller")
+__all__ = [
+    "Controller",
+    "AutoPyController",
+    "XDoToolController",
+    "VNCDoToolController",
+    "PyAutoGUIController",
+]
 
 
 class Controller(LocalConfig):
     """
-    Screen control backend, responsible for performing desktop operations
-    like mouse clicking, key pressing, text typing, etc.
+    Screen control backend, responsible for performing display operations.
+
+    Examples of display operations include mouse clicking mouse clicking,
+    key pressing, text typing, etc.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -57,8 +64,12 @@ class Controller(LocalConfig):
 
         # available and currently fully compatible methods
         self.categories["control"] = "control_methods"
-        self.algorithms["control_methods"] = ["autopy", "pyautogui",
-                                              "xdotool", "vncdotool"]
+        self.algorithms["control_methods"] = [
+            "autopy",
+            "pyautogui",
+            "xdotool",
+            "vncdotool",
+        ]
 
         # other attributes
         self._backend_obj = None
@@ -83,6 +94,7 @@ class Controller(LocalConfig):
         :returns: width of the connected screen
         """
         return self._width
+
     width = property(fget=get_width)
 
     def get_height(self) -> int:
@@ -92,6 +104,7 @@ class Controller(LocalConfig):
         :returns: height of the connected screen
         """
         return self._height
+
     height = property(fget=get_height)
 
     def get_keymap(self) -> inputmap.Key:
@@ -101,6 +114,7 @@ class Controller(LocalConfig):
         :returns: map of keys to be used for the connected screen
         """
         return self._keymap
+
     keymap = property(fget=get_keymap)
 
     def get_mousemap(self) -> inputmap.MouseButton:
@@ -110,6 +124,7 @@ class Controller(LocalConfig):
         :returns: map of mouse buttons to be used for the connected screen
         """
         return self._mousemap
+
     mousemap = property(fget=get_mousemap)
 
     def get_modmap(self) -> inputmap.KeyModifier:
@@ -119,6 +134,7 @@ class Controller(LocalConfig):
         :returns: map of modifier keys to be used for the connected screen
         """
         return self._modmap
+
     modmap = property(fget=get_modmap)
 
     def get_mouse_location(self) -> Location:
@@ -128,46 +144,63 @@ class Controller(LocalConfig):
         :returns: location of the mouse pointer
         """
         return self._pointer
+
     mouse_location = property(fget=get_mouse_location)
 
-    def __configure_backend(self, backend: str = None, category: str = "control",
-                            reset: bool = False) -> None:
+    def __configure_backend(
+        self, backend: str = None, category: str = "control", reset: bool = False
+    ) -> None:
         if category != "control":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(Controller, self).configure_backend("dc", reset=True)
         if backend is None:
             backend = GlobalConfig.display_control_backend
         if backend not in self.algorithms[self.categories[category]]:
-            raise UnsupportedBackendError("Backend '%s' is not among the supported ones: "
-                                          "%s" % (backend, self.algorithms[self.categories[category]]))
+            raise UnsupportedBackendError(
+                "Backend '%s' is not among the supported ones: "
+                "%s" % (backend, self.algorithms[self.categories[category]])
+            )
 
         log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
         log.log(9, "%s %s\n", category, self.params[category])
 
-    def configure_backend(self, backend: str = None, category: str = "control",
-                          reset: bool = False) -> None:
+    def configure_backend(
+        self, backend: str = None, category: str = "control", reset: bool = False
+    ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend: str = None, category: str = "control",
-                              reset: bool = False) -> None:
+    def __synchronize_backend(
+        self, backend: str = None, category: str = "control", reset: bool = False
+    ) -> None:
         if category != "control":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(Controller, self).synchronize_backend("dc", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+            raise UninitializedBackendError(
+                "Backend '%s' has not been configured yet" % backend
+            )
 
-    def synchronize_backend(self, backend: str = None, category: str = "control",
-                            reset: bool = False) -> None:
+    def synchronize_backend(
+        self, backend: str = None, category: str = "control", reset: bool = False
+    ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -207,7 +240,7 @@ class Controller(LocalConfig):
             height = self._height - ypos
 
         # TODO: Switch to in-memory conversion - patch backends or request get_raw() from authors
-        with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
+        with NamedTemporaryFile(prefix="guibot", suffix=".png") as f:
             # NOTE: the file can be open twice on unix but only once on windows so simply
             # use the generated filename to avoid this difference and remove it manually
             filename = f.name
@@ -222,7 +255,9 @@ class Controller(LocalConfig):
         :returns: image of the current screen
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
@@ -232,9 +267,13 @@ class Controller(LocalConfig):
         :param smooth: whether to sue smooth transition or just teleport the mouse
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
-    def mouse_click(self, button: int = None, count: int = 1, modifiers: list[str] = None) -> None:
+    def mouse_click(
+        self, button: int = None, count: int = 1, modifiers: list[str] = None
+    ) -> None:
         """
         Click the selected mouse button N times at the current mouse location.
 
@@ -244,7 +283,9 @@ class Controller(LocalConfig):
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
     def mouse_down(self, button: int) -> None:
         """
@@ -254,7 +295,9 @@ class Controller(LocalConfig):
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
     def mouse_up(self, button: int) -> None:
         """
@@ -264,7 +307,9 @@ class Controller(LocalConfig):
                        (see :py:class:`inputmap.MouseButton` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
     def mouse_scroll(self, clicks: int = 10, horizontal: bool = False) -> None:
         """
@@ -275,7 +320,9 @@ class Controller(LocalConfig):
                            (only available on some platforms)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
@@ -286,7 +333,9 @@ class Controller(LocalConfig):
         :param up_down: hold down if true else release
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
     def keys_press(self, keys: list[str] | str) -> None:
         """
@@ -308,13 +357,16 @@ class Controller(LocalConfig):
                          (see :py:class:`inputmap.KeyModifier` for extensive list)
         :raises: :py:class:`NotImplementedError` if the base class method is called
         """
-        raise NotImplementedError("Method is not available for this controller implementation")
+        raise NotImplementedError(
+            "Method is not available for this controller implementation"
+        )
 
 
 class AutoPyController(Controller):
     """
-    Screen control backend implemented through AutoPy which is a small
-    python library portable to Windows and Linux operating systems.
+    Screen control backend implemented through AutoPy.
+
+    AutoPy is a small python library portable to Windows and Linux operating systems.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -327,6 +379,8 @@ class AutoPyController(Controller):
 
     def get_mouse_location(self) -> Location:
         """
+        Getter for readonly attribute.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -334,40 +388,57 @@ class AutoPyController(Controller):
         loc = self._backend_obj.mouse.location()
         # newer versions do their own scale conversion
         version = self._backend_obj.__version__.split(".")
-        if int(version[0]) > 3 or int(version[0]) == 3 and (int(version[1]) > 0 or int(version[2]) > 0):
+        if (
+            int(version[0]) > 3
+            or int(version[0]) == 3
+            and (int(version[1]) > 0 or int(version[2]) > 0)
+        ):
             return Location(int(loc[0] * self._scale), int(loc[1] * self._scale))
         return Location(int(loc[0] / self._scale), int(loc[1] / self._scale))
+
     mouse_location = property(fget=get_mouse_location)
 
-    def __configure_backend(self, backend: str = None, category: str = "autopy",
-                            reset: bool = False) -> None:
+    def __configure_backend(
+        self, backend: str = None, category: str = "autopy", reset: bool = False
+    ) -> None:
         if category != "autopy":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(AutoPyController, self).configure_backend("autopy", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
 
-    def configure_backend(self, backend: str = None, category: str = "autopy",
-                          reset: bool = False) -> None:
+    def configure_backend(
+        self, backend: str = None, category: str = "autopy", reset: bool = False
+    ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend: str = None, category: str = "autopy",
-                          reset: bool = False) -> None:
+    def __synchronize_backend(
+        self, backend: str = None, category: str = "autopy", reset: bool = False
+    ) -> None:
         if category != "autopy":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(AutoPyController, self).synchronize_backend("autopy", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+            raise UninitializedBackendError(
+                "Backend '%s' has not been configured yet" % backend
+            )
 
         import autopy
+
         self._backend_obj = autopy
 
         self._scale = self._backend_obj.screen.scale()
@@ -379,9 +450,12 @@ class AutoPyController(Controller):
         self._modmap = inputmap.AutoPyKeyModifier()
         self._mousemap = inputmap.AutoPyMouseButton()
 
-    def synchronize_backend(self, backend: str = None, category: str = "autopy",
-                          reset: bool = False) -> None:
+    def synchronize_backend(
+        self, backend: str = None, category: str = "autopy", reset: bool = False
+    ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -390,6 +464,8 @@ class AutoPyController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -397,22 +473,35 @@ class AutoPyController(Controller):
         xpos, ypos, width, height, filename = self._region_from_args(*args)
 
         # autopy works in points and requires a minimum of one point along a dimension
-        xpos, ypos, width, height = xpos / self._scale, ypos / self._scale, width / self._scale, height / self._scale
-        xpos, ypos = float(xpos) - (1.0 - float(width)) if width < 1.0 else xpos, float(ypos) - (1.0 - float(height)) if height < 1.0 else ypos
-        height, width = 1.0 if float(height) < 1.0 else height, 1.0 if float(width) < 1.0 else width
+        xpos, ypos, width, height = (
+            xpos / self._scale,
+            ypos / self._scale,
+            width / self._scale,
+            height / self._scale,
+        )
+        xpos, ypos = float(xpos) - (1.0 - float(width)) if width < 1.0 else xpos, (
+            float(ypos) - (1.0 - float(height)) if height < 1.0 else ypos
+        )
+        height, width = 1.0 if float(height) < 1.0 else height, (
+            1.0 if float(width) < 1.0 else width
+        )
         try:
-            autopy_bmp = self._backend_obj.bitmap.capture_screen(((xpos, ypos), (width, height)))
+            autopy_bmp = self._backend_obj.bitmap.capture_screen(
+                ((xpos, ypos), (width, height))
+            )
         except ValueError:
-            return Image("", PIL.Image.new('RGB', (1, 1)))
+            return Image("", PIL.Image.new("RGB", (1, 1)))
         autopy_bmp.save(filename)
 
         with PIL.Image.open(filename) as f:
-            pil_image = f.convert('RGB')
+            pil_image = f.convert("RGB")
         os.unlink(filename)
         return Image("", pil_image)
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -424,9 +513,12 @@ class AutoPyController(Controller):
             self._backend_obj.mouse.move(x, y)
         self._pointer = location
 
-    def mouse_click(self, button: int = None, count: int = 1,
-                    modifiers: list[str] = None) -> None:
+    def mouse_click(
+        self, button: int = None, count: int = 1, modifiers: list[str] = None
+    ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -447,6 +539,8 @@ class AutoPyController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -455,6 +549,8 @@ class AutoPyController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -463,6 +559,8 @@ class AutoPyController(Controller):
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -472,6 +570,8 @@ class AutoPyController(Controller):
 
     def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -491,10 +591,7 @@ class AutoPyController(Controller):
 
 
 class XDoToolController(Controller):
-    """
-    Screen control backend implemented through the xdotool client and
-    thus portable to Linux operating systems.
-    """
+    """Screen control backend implemented through the xdotool client and thus portable to Linux operating systems."""
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
         """Build a DC backend using XDoTool."""
@@ -506,6 +603,8 @@ class XDoToolController(Controller):
 
     def get_mouse_location(self) -> Location:
         """
+        Getter for readonly attribute.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -514,12 +613,16 @@ class XDoToolController(Controller):
         x = re.search(r"x:(\d+)", pos).group(1)
         y = re.search(r"y:(\d+)", pos).group(1)
         return Location(int(x), int(y))
+
     mouse_location = property(fget=get_mouse_location)
 
-    def __configure_backend(self, backend: str = None, category: str = "xdotool",
-                            reset: bool = False) -> None:
+    def __configure_backend(
+        self, backend: str = None, category: str = "xdotool", reset: bool = False
+    ) -> None:
         if category != "xdotool":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(XDoToolController, self).configure_backend("xdotool", reset=True)
 
@@ -527,33 +630,44 @@ class XDoToolController(Controller):
         self.params[category]["backend"] = "none"
         self.params[category]["binary"] = "xdotool"
 
-    def configure_backend(self, backend: str = None, category: str = "xdotool",
-                          reset: bool = False) -> None:
+    def configure_backend(
+        self, backend: str = None, category: str = "xdotool", reset: bool = False
+    ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend: str = None, category: str = "xdotool",
-                              reset: bool = False) -> None:
+    def __synchronize_backend(
+        self, backend: str = None, category: str = "xdotool", reset: bool = False
+    ) -> None:
         if category != "xdotool":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(XDoToolController, self).synchronize_backend("xdotool", reset=True)
         if backend is not None and self.params[category]["backend"] != backend:
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+            raise UninitializedBackendError(
+                "Backend '%s' has not been configured yet" % backend
+            )
 
         import subprocess
+
         class XDoTool(object):
             def __init__(self, dc: Controller) -> None:
                 self.dc = dc
+
             def run(self, command: str, *args: list[str]) -> str:
                 process = [self.dc.params[category]["binary"]]
                 process += [command]
                 process += args
                 return subprocess.check_output(process, shell=False).decode()
+
         self._backend_obj = XDoTool(self)
 
         self._width, self._height = self._backend_obj.run("getdisplaygeometry").split()
@@ -563,9 +677,12 @@ class XDoToolController(Controller):
         self._modmap = inputmap.XDoToolKeyModifier()
         self._mousemap = inputmap.XDoToolMouseButton()
 
-    def synchronize_backend(self, backend: str = None, category: str = "xdotool",
-                            reset: bool = False) -> None:
+    def synchronize_backend(
+        self, backend: str = None, category: str = "xdotool", reset: bool = False
+    ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -574,38 +691,59 @@ class XDoToolController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         xpos, ypos, width, height, filename = self._region_from_args(*args)
         import subprocess
-        with subprocess.Popen(("xwd", "-silent", "-root"), stdout=subprocess.PIPE) as xwd:
-            subprocess.call(("convert", "xwd:-", "-crop", "%sx%s+%s+%s" % (width, height, xpos, ypos), filename), stdin=xwd.stdout)
+
+        with subprocess.Popen(
+            ("xwd", "-silent", "-root"), stdout=subprocess.PIPE
+        ) as xwd:
+            subprocess.call(
+                (
+                    "convert",
+                    "xwd:-",
+                    "-crop",
+                    "%sx%s+%s+%s" % (width, height, xpos, ypos),
+                    filename,
+                ),
+                stdin=xwd.stdout,
+            )
         with PIL.Image.open(filename) as f:
-            pil_image = f.convert('RGB')
+            pil_image = f.convert("RGB")
         os.unlink(filename)
         return Image("", pil_image)
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         if smooth:
             # TODO: implement smooth mouse move?
-            log.warning("Smooth mouse move is not supported for the XDO controller,"
-                        " defaulting to instant mouse move")
+            log.warning(
+                "Smooth mouse move is not supported for the XDO controller,"
+                " defaulting to instant mouse move"
+            )
         self._backend_obj.run("mousemove", str(location.x), str(location.y))
         # handle race conditions where the backend coordinates are updated too
         # slowly by giving some time for the new location to take effect there
         time.sleep(0.3)
         self._pointer = location
 
-    def mouse_click(self, button: int = None, count: int = 1,
-                    modifiers: list[str] = None) -> None:
+    def mouse_click(
+        self, button: int = None, count: int = 1, modifiers: list[str] = None
+    ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -627,6 +765,8 @@ class XDoToolController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -635,6 +775,8 @@ class XDoToolController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -643,18 +785,22 @@ class XDoToolController(Controller):
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         for key in keys:
             if up_down:
-                self._backend_obj.run('keydown', str(key))
+                self._backend_obj.run("keydown", str(key))
             else:
-                self._backend_obj.run('keyup', str(key))
+                self._backend_obj.run("keyup", str(key))
 
     def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -663,7 +809,7 @@ class XDoToolController(Controller):
             self.keys_toggle(modifiers, True)
 
         for part in text:
-            self._backend_obj.run('type', str(part))
+            self._backend_obj.run("type", str(part))
 
         if modifiers is not None:
             self.keys_toggle(modifiers, False)
@@ -671,8 +817,9 @@ class XDoToolController(Controller):
 
 class VNCDoToolController(Controller):
     """
-    Screen control backend implemented through the VNCDoTool client and
-    thus portable to any guest OS that is accessible through a VNC/RFB protocol.
+    Screen control backend implemented through the VNCDoTool client.
+
+    This backend is thus portable to any guest OS that is accessible through a VNC/RFB protocol.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -683,9 +830,13 @@ class VNCDoToolController(Controller):
         if synchronize:
             self.__synchronize_backend(reset=False)
 
-    def __configure_backend(self, backend: str = None, category: str = "vncdotool", reset: bool = False) -> None:
+    def __configure_backend(
+        self, backend: str = None, category: str = "vncdotool", reset: bool = False
+    ) -> None:
         if category != "vncdotool":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(VNCDoToolController, self).configure_backend("vncdotool", reset=True)
 
@@ -698,42 +849,58 @@ class VNCDoToolController(Controller):
         # password for the vnc server
         self.params[category]["vnc_password"] = None
 
-    def configure_backend(self, backend: str = None, category: str = "vncdotool",
-                          reset: bool = False) -> None:
+    def configure_backend(
+        self, backend: str = None, category: str = "vncdotool", reset: bool = False
+    ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend: str = None, category: str = "vncdotool",
-                              reset: bool = False) -> None:
+    def __synchronize_backend(
+        self, backend: str = None, category: str = "vncdotool", reset: bool = False
+    ) -> None:
         if category != "vncdotool":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
-            super(VNCDoToolController, self).synchronize_backend("vncdotool", reset=True)
+            super(VNCDoToolController, self).synchronize_backend(
+                "vncdotool", reset=True
+            )
         if backend is not None and self.params[category]["backend"] != backend:
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+            raise UninitializedBackendError(
+                "Backend '%s' has not been configured yet" % backend
+            )
 
         from vncdotool import api
+
         if self._backend_obj:
             # api.connect() gives us a threaded client, so we need to clean up resources
             # to avoid dangling connections and deadlocks if synchronizing more than once
             self._backend_obj.disconnect()
-        self._backend_obj = api.connect('%s:%i' % (self.params[category]["vnc_hostname"],
-                                                   self.params[category]["vnc_port"]),
-                                        self.params[category]["vnc_password"])
+        self._backend_obj = api.connect(
+            "%s:%i"
+            % (
+                self.params[category]["vnc_hostname"],
+                self.params[category]["vnc_port"],
+            ),
+            self.params[category]["vnc_password"],
+        )
         # for special characters preprocessing for the vncdotool
         self._backend_obj.factory.force_caps = True
 
         # additional logging for vncdotool available so let's make use of it
-        logging.getLogger('vncdotool.client').setLevel(10)
-        logging.getLogger('vncdotool').setLevel(logging.ERROR)
-        logging.getLogger('twisted').setLevel(logging.ERROR)
+        logging.getLogger("vncdotool.client").setLevel(10)
+        logging.getLogger("vncdotool").setLevel(logging.ERROR)
+        logging.getLogger("twisted").setLevel(logging.ERROR)
 
         # screen size
-        with NamedTemporaryFile(prefix='guibot', suffix='.png') as f:
+        with NamedTemporaryFile(prefix="guibot", suffix=".png") as f:
             filename = f.name
         screen = self._backend_obj.captureScreen(filename)
         os.unlink(filename)
@@ -749,9 +916,12 @@ class VNCDoToolController(Controller):
         self._modmap = inputmap.VNCDoToolKeyModifier()
         self._mousemap = inputmap.VNCDoToolMouseButton()
 
-    def synchronize_backend(self, backend: str = None, category: str = "vncdotool",
-                            reset: bool = False) -> None:
+    def synchronize_backend(
+        self, backend: str = None, category: str = "vncdotool", reset: bool = False
+    ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -760,18 +930,24 @@ class VNCDoToolController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         xpos, ypos, width, height, _ = self._region_from_args(*args)
         self._backend_obj.refreshScreen()
-        cropped = self._backend_obj.screen.crop((xpos, ypos, xpos + width, ypos + height))
-        pil_image = cropped.convert('RGB')
+        cropped = self._backend_obj.screen.crop(
+            (xpos, ypos, xpos + width, ypos + height)
+        )
+        pil_image = cropped.convert("RGB")
         return Image("", pil_image)
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -782,9 +958,12 @@ class VNCDoToolController(Controller):
             self._backend_obj.mouseMove(location.x, location.y)
         self._pointer = location
 
-    def mouse_click(self, button: int = None, count: int = 1,
-                    modifiers: list[str] = None) -> None:
+    def mouse_click(
+        self, button: int = None, count: int = 1, modifiers: list[str] = None
+    ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -807,6 +986,8 @@ class VNCDoToolController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -815,6 +996,8 @@ class VNCDoToolController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -823,24 +1006,28 @@ class VNCDoToolController(Controller):
 
     def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         for key in keys:
             if key == "\\":
-                key = 'bslash'
+                key = "bslash"
             elif key == "/":
-                key = 'fslash'
+                key = "fslash"
             elif key == " ":
-                key = 'space'
+                key = "space"
             if up_down:
                 self._backend_obj.keyDown(key)
             else:
                 self._backend_obj.keyUp(key)
 
-    def keys_type(self, text: list[str] | str, modifiers: list [str] = None) -> None:
+    def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -851,13 +1038,13 @@ class VNCDoToolController(Controller):
         for part in text:
             for char in str(part):
                 if char == "\\":
-                    char = 'bslash'
+                    char = "bslash"
                 elif char == "/":
-                    char = 'fslash'
+                    char = "fslash"
                 elif char == " ":
-                    char = 'space'
+                    char = "space"
                 elif char == "\n":
-                    char = 'return'
+                    char = "return"
                 time.sleep(GlobalConfig.delay_between_keys)
                 self._backend_obj.keyPress(char)
 
@@ -867,8 +1054,9 @@ class VNCDoToolController(Controller):
 
 class PyAutoGUIController(Controller):
     """
-    Screen control backend implemented through PyAutoGUI which is a python
-    library portable to MacOS, Windows, and Linux operating systems.
+    Screen control backend implemented through PyAutoGUI.
+
+    PyAutoGUI is a python library portable to MacOS, Windows, and Linux operating systems.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
@@ -881,43 +1069,60 @@ class PyAutoGUIController(Controller):
 
     def get_mouse_location(self) -> Location:
         """
+        Getter for readonly attribute.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         x, y = self._backend_obj.position()
         return Location(x, y)
+
     mouse_location = property(fget=get_mouse_location)
 
-    def __configure_backend(self, backend: str = None, category: str = "pyautogui",
-                            reset: bool = False) -> None:
+    def __configure_backend(
+        self, backend: str = None, category: str = "pyautogui", reset: bool = False
+    ) -> None:
         if category != "pyautogui":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
             super(PyAutoGUIController, self).configure_backend("pyautogui", reset=True)
 
         self.params[category] = {}
         self.params[category]["backend"] = "none"
 
-    def configure_backend(self, backend: str = None, category: str = "pyautogui",
-                            reset: bool = False) -> None:
+    def configure_backend(
+        self, backend: str = None, category: str = "pyautogui", reset: bool = False
+    ) -> None:
         """
+        Generate configuration dictionary for a given backend.
+
         Custom implementation of the base method.
 
         See base method for details.
         """
         self.__configure_backend(backend, category, reset)
 
-    def __synchronize_backend(self, backend: str = None, category: str = "pyautogui",
-                              reset: bool = False) -> None:
+    def __synchronize_backend(
+        self, backend: str = None, category: str = "pyautogui", reset: bool = False
+    ) -> None:
         if category != "pyautogui":
-            raise UnsupportedBackendError("Backend category '%s' is not supported" % category)
+            raise UnsupportedBackendError(
+                "Backend category '%s' is not supported" % category
+            )
         if reset:
-            super(PyAutoGUIController, self).synchronize_backend("pyautogui", reset=True)
+            super(PyAutoGUIController, self).synchronize_backend(
+                "pyautogui", reset=True
+            )
         if backend is not None and self.params[category]["backend"] != backend:
-            raise UninitializedBackendError("Backend '%s' has not been configured yet" % backend)
+            raise UninitializedBackendError(
+                "Backend '%s' has not been configured yet" % backend
+            )
 
         import pyautogui
+
         # allow for (0,0) and edge coordinates
         pyautogui.FAILSAFE = False
         self._backend_obj = pyautogui
@@ -928,9 +1133,12 @@ class PyAutoGUIController(Controller):
         self._modmap = inputmap.PyAutoGUIKeyModifier()
         self._mousemap = inputmap.PyAutoGUIMouseButton()
 
-    def synchronize_backend(self, backend: str = None, category: str = "pyautogui",
-                            reset: bool = False) -> None:
+    def synchronize_backend(
+        self, backend: str = None, category: str = "pyautogui", reset: bool = False
+    ) -> None:
         """
+        Synchronize a category backend with the equalizer configuration.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -939,6 +1147,8 @@ class PyAutoGUIController(Controller):
 
     def capture_screen(self, *args: "list[int] | Region | None") -> Image:
         """
+        Get the current screen as image.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -950,6 +1160,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_move(self, location: Location, smooth: bool = True) -> None:
         """
+        Move the mouse to a desired location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -960,9 +1172,12 @@ class PyAutoGUIController(Controller):
             self._backend_obj.moveTo(location.x, location.y)
         self._pointer = location
 
-    def mouse_click(self, button: int = None, count: int = 1,
-                    modifiers: list[str] = None) -> None:
+    def mouse_click(
+        self, button: int = None, count: int = 1, modifiers: list[str] = None
+    ) -> None:
         """
+        Click the selected mouse button N times at the current mouse location.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -985,6 +1200,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_down(self, button: int) -> None:
         """
+        Hold down a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -993,6 +1210,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_up(self, button: int) -> None:
         """
+        Release a mouse button.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1001,6 +1220,8 @@ class PyAutoGUIController(Controller):
 
     def mouse_scroll(self, clicks: int = 10, horizontal: bool = False) -> None:
         """
+        Scroll the mouse for a number of clicks.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1010,8 +1231,10 @@ class PyAutoGUIController(Controller):
         else:
             self._backend_obj.scroll(clicks)
 
-    def keys_toggle(self, keys:  list[str] | str, up_down: bool) -> None:
+    def keys_toggle(self, keys: list[str] | str, up_down: bool) -> None:
         """
+        Hold down or release together all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.
@@ -1024,6 +1247,8 @@ class PyAutoGUIController(Controller):
 
     def keys_type(self, text: list[str] | str, modifiers: list[str] = None) -> None:
         """
+        Type (press consecutively) all provided keys.
+
         Custom implementation of the base method.
 
         See base method for details.

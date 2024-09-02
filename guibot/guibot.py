@@ -14,13 +14,12 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Main guibot interface for GUI automation.
 
 SUMMARY
 ------------------------------------------------------
-Main guibot interface for GUI automation.
 
 This frontend is recommended for use in most normal cases.
-
 
 INTERFACE
 ------------------------------------------------------
@@ -35,14 +34,13 @@ from .controller import Controller
 from .finder import Finder
 
 
-log = logging.getLogger('guibot')
+log = logging.getLogger("guibot")
 log.addHandler(logging.NullHandler())
 
 
 class GuiBot(Region):
     """
-    The main guibot object is the root (first and screen wide) region
-    with some convenience functions added.
+    The main guibot object is the root (first and screen wide) region with some convenience functions added.
 
     .. seealso:: Real API is inherited from :py:class:`region.Region`.
     """
@@ -63,8 +61,7 @@ class GuiBot(Region):
 
     def add_path(self, directory: str) -> None:
         """
-        Add a path to the list of currently accessible paths
-        if it wasn't already added.
+        Add a path to the list of currently accessible paths if it wasn't already added.
 
         :param directory: path to add
         """

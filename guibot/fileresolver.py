@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Cached and reused paths for target files to search in and load target data from.
 
 SUMMARY
 ------------------------------------------------------
-Cached and reused paths for target files to search in and load target data from.
 
 
 INTERFACE
@@ -28,17 +28,15 @@ INTERFACE
 import os
 from .errors import *
 from typing import Generator
-
 import logging
 
 
-log = logging.getLogger('guibot.path')
+log = logging.getLogger("guibot.path")
 
 
 class FileResolver(object):
     """
-    Handler for currently used target paths or
-    sources of targets with a desired name.
+    Handler for currently used target paths or sources of targets with a desired name.
 
     The methods of this class are shared among
     all of its instances.
@@ -49,8 +47,7 @@ class FileResolver(object):
 
     def add_path(self, directory: str) -> None:
         """
-        Add a path to the list of currently accessible paths
-        if it wasn't already added.
+        Add a path to the list of currently accessible paths if it wasn't already added.
 
         :param directory: path to add
         """
@@ -78,7 +75,9 @@ class FileResolver(object):
         # empty list but keep reference
         del FileResolver._target_paths[:]
 
-    def search(self, filename: str, restriction: str = "", silent: bool = False) -> str | None:
+    def search(
+        self, filename: str, restriction: str = "", silent: bool = False
+    ) -> str | None:
         """
         Search for a filename in the currently accessible paths.
 
@@ -97,40 +96,42 @@ class FileResolver(object):
                 return fullname
 
             # Check with .png extension for images
-            fullname = os.path.join(directory, filename + '.png')
+            fullname = os.path.join(directory, filename + ".png")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .xml extension for cascade
-            fullname = os.path.join(directory, filename + '.xml')
+            fullname = os.path.join(directory, filename + ".xml")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .txt extension for text
-            fullname = os.path.join(directory, filename + '.txt')
+            fullname = os.path.join(directory, filename + ".txt")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .csv extension for patterns
-            fullname = os.path.join(directory, filename + '.csv')
+            fullname = os.path.join(directory, filename + ".csv")
             if os.path.exists(fullname):
                 return fullname
 
             # Check with .steps extension for chains
-            fullname = os.path.join(directory, filename + '.steps')
+            fullname = os.path.join(directory, filename + ".steps")
             if os.path.exists(fullname):
                 return fullname
 
         if not silent:
-            raise FileNotFoundError('File ' + filename + ' not found')
+            raise FileNotFoundError("File " + filename + " not found")
 
         return None
 
     def __iter__(self) -> Generator[str, None, None]:
+        """Iterate over the target paths."""
         for p in self._target_paths:
             yield p
 
     def __len__(self) -> int:
+        """Return total number of target paths."""
         return len(self._target_paths)
 
 
@@ -147,8 +148,7 @@ class CustomFileResolver(object):
 
     def __init__(self, *paths: tuple[type, ...]) -> None:
         """
-        Create the class with the paths that the search will be
-        restricted to.
+        Create the class with the paths that the search will be restricted to.
 
         :param paths: list of paths that the search will use
         """
@@ -170,7 +170,10 @@ class CustomFileResolver(object):
             file_resolver.add_path(p)
         return file_resolver
 
-    def __exit__(self, *args: tuple[type, ...],) -> None:
+    def __exit__(
+        self,
+        *args: tuple[type, ...],
+    ) -> None:
         """
         Exit this context and restore the original paths.
 

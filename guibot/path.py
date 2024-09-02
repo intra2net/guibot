@@ -14,10 +14,10 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 """
+Old module for path resolution - to be deprecated.
 
 SUMMARY
 ------------------------------------------------------
-Old module for path resolution - to be deprecated.
 
 
 INTERFACE
@@ -32,8 +32,9 @@ import logging
 from .fileresolver import FileResolver as Path
 
 
-logging.getLogger("guibot.path")\
-    .warn("The `path` module is deprecated, use `fileresolver` instead.")
+logging.getLogger("guibot.path").warn(
+    "The `path` module is deprecated, use `fileresolver` instead."
+)
 
 
 __all__ = ["Path"]
