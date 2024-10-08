@@ -7,12 +7,12 @@ readonly version=$(echo $install_variant | cut -d '.' -f 3)
 
 if [ "$packager" == "rpm" ]; then
     sudo docker run \
-            -e DISTRO="$distro" -e VERSION="$version" -e ROOT="/" \
+            -e DISTRO="$distro" -e VERSION="$version" -e ROOT="/" -e DISABLE_AUTOPY="1" \
             -v $(pwd)/..:/guibot:rw $distro:$version \
             /bin/bash /guibot/packaging/packager_rpm.sh
 elif [ "$packager" == "deb" ]; then
     sudo docker run \
-            -e DISTRO="$distro" -e VERSION="$version" -e ROOT="/" \
+            -e DISTRO="$distro" -e VERSION="$version" -e ROOT="/" -e DISABLE_AUTOPY="1" \
             -v $(pwd)/..:/guibot:rw $distro:$version \
             /bin/bash /guibot/packaging/packager_deb.sh
 fi
