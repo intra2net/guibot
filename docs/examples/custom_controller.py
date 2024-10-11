@@ -248,8 +248,6 @@ class QemuController(Controller):
 
         See base method for details.
         """
-        toggle_timeout = GlobalConfig.toggle_delay
-        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers != None:
             self.keys_toggle(modifiers, True)
@@ -257,9 +255,9 @@ class QemuController(Controller):
             self._backend_obj.mouse_button(button)
             # BUG: QEMU's monitor doesn't handle click events sent too fast,
             # so we sleep a bit between mouse up and mouse down
-            time.sleep(toggle_timeout)
+            time.sleep(self.params["control"]["mouse_toggle_delay"])
             self._backend_obj.mouse_button(button)
-            time.sleep(click_timeout)
+            time.sleep(self.params["control"]["after_click_delay"])
         if modifiers != None:
             self.keys_toggle(modifiers, False)
 
@@ -314,6 +312,7 @@ class QemuController(Controller):
 
         See base method for details.
         """
+        time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers != None:
             self.keys_toggle(modifiers, True)
 
@@ -350,7 +349,7 @@ class QemuController(Controller):
                 elif special_chars.has_key(char) and GlobalConfig.preprocess_special_chars:
                     char = "shift-%s" % special_chars[char]
                 self._backend_obj.sendkey(char, hold_time=1)
-                time.sleep(GlobalConfig.delay_between_keys)
+                time.sleep(self.params["control"]["delay_between_keys"])
 
         if modifiers != None:
             self.keys_toggle(modifiers, False)
