@@ -20,10 +20,10 @@ jobs:
         python-version: [3.10.8, 3.11, 3.12]
         install_variant: ["pip"]
         include:
-        - python-version: 3.10.8
-          install_variant: "rpm.fedora.34"
-        - python-version: 3.7
-          install_variant: "deb.ubuntu.focal"
+          - python-version: 3.12
+            install_variant: "rpm.fedora.40"
+          - python-version: 3.12
+            install_variant: "deb.ubuntu.noble"
       fail-fast: false
 
     steps:
@@ -56,7 +56,7 @@ jobs:
           # vncdotool
           sudo apt-get -y install xfonts-base x11vnc
           # pyautogui
-          sudo apt-get -y install scrot
+          sudo apt-get -y install gnome-screenshot
         if: matrix.install_variant == 'pip'
       - name: Install any dependencies and build the package
         run: pip --default-timeout=60 install -r packaging/pip_requirements.txt
@@ -74,13 +74,14 @@ jobs:
           sleep 3
       - name: Run current semi-isolation semi-integration tests (to be separated in the future)
         run: |
-          if [[ ${{ matrix.python-version }} == '3.10.8' ]]; then export DISABLE_AUTOPY=1; fi
-          if [[ ${{ matrix.python-version }} == '3.11' ]]; then export DISABLE_AUTOPY=1; fi
-          if [[ ${{ matrix.python-version }} == '3.12' ]]; then export DISABLE_AUTOPY=1; fi
-          if [[ ${{ matrix.install_variant }} != "pip" ]]; then cd packaging && bash packager_docker.sh;
+          if [[ "${{ matrix.python-version }}" == "3.10.8" ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ "${{ matrix.python-version }}" == "3.11" ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ "${{ matrix.python-version }}" == "3.12" ]]; then export DISABLE_AUTOPY=1; fi
+          if [[ "${{ matrix.install_variant }}" != "pip" ]]; then cd packaging && bash packager_docker.sh;
           else cd tests && bash coverage_analysis.sh; fi
         env:
           INSTALL_VARIANT: ${{ matrix.install_variant }}
+          TESSDATA_PREFIX: /usr/share/tesseract-ocr/4.00/tessdata/
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
