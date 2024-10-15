@@ -69,13 +69,13 @@ class ProxyAPITest(TestCase):
 
     def setUp(self) -> None:
         # fake the remote objects dependency for this interface
-        sys.modules["Pyro4"] = mock.MagicMock()
+        sys.modules["Pyro5"] = mock.MagicMock()
         from guibot import guibot_proxy as remote
         self.interface = remote.GuiBotProxy(cv=None, dc=None)
         self.interface._proxify = mock.MagicMock()
 
     def tearDown(self) -> None:
-        del sys.modules["Pyro4"]
+        del sys.modules["Pyro5"]
 
     @mock.patch('guibot.guibot_proxy.super')
     def test_call_delegations(self, mock_super) -> None:

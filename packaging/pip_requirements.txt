@@ -16,8 +16,8 @@ vncdotool==0.12.0; sys_platform != 'win32' and platform_python_implementation !=
 pyautogui==0.9.54; platform_python_implementation != "PyPy"
 
 # optional proxy guibot interface deps
-serpent==1.40
-Pyro4==4.82
+serpent==1.41
+Pyro5==5.14
 
 # coverage analysis to use for testing
 coverage

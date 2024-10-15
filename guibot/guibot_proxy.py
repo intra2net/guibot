@@ -31,17 +31,20 @@ INTERFACE
 """
 
 import re
+import inspect
+import logging
 from typing import Any
 
-try:
-    import Pyro5 as pyro
-except ImportError:
-    import Pyro4 as pyro
+import Pyro5 as pyro
+from Pyro5 import server
 
 from . import errors
 from .guibot import GuiBot
 from .finder import Finder
 from .controller import Controller
+
+
+log = logging.getLogger("guibot.proxy")
 
 
 def serialize_custom_error(
@@ -69,7 +72,7 @@ def register_exception_serialization() -> None:
         for it with some extra setup steps and functions below.
     """
     for exception in [errors.UnsupportedBackendError]:
-        pyro.util.SerializerBase.register_class_to_dict(
+        pyro.serializers.SerializerBase.register_class_to_dict(
             exception, serialize_custom_error
         )
 
@@ -100,7 +103,22 @@ class GuiBotProxy(GuiBot):
         if isinstance(obj, (int, float, bool, str)) or obj is None:
             return obj
         if obj not in self._pyroDaemon.objectsById.values():
+            log.info("Providing proxy alternative to %s", obj)
             self._pyroDaemon.register(obj)
+            cls = type(obj)
+            # counter pyro access redesigning normal python inheritance
+            for base_cls in cls.__mro__:
+                if base_cls in (object, int, float, bool, str, tuple, frozenset):
+                    # known immutable classes should be skipped
+                    continue
+                if inspect.ismethoddescriptor(base_cls):
+                    # method descriptors should be skipped
+                    continue
+                try:
+                    server.expose(base_cls)
+                except (TypeError, AttributeError) as error:
+                    log.warning("Additional class exposing error: %s", error)
+                    continue
         return obj
 
     def nearby(self, *args: tuple[type, ...], **kwargs: dict[str, type]) -> str:
