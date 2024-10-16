@@ -1,5 +1,3 @@
-@Echo off
-
 SET DISTRO="windows"
 SET DISTRO_VERSION="10"
 SET DISTRO_ROOT="%HOMEDRIVE%"
@@ -16,17 +14,21 @@ REM Requires VNC server and thus only available on Linux
 SET DISABLE_VNCDOTOOL=1
 
 REM Main deps
-cd %DISTRO_ROOT%\
 REM Assuming a local python executable to avoid overloading the download web page
-START /WAIT python-3.9.0-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
+START /WAIT python-3.12.6-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 REM set a temporary path variable valid inside this session
-set PYTHONPATH="C:\Program Files\Python39"
+set PYTHONPATH="C:\Program Files\Python312"
 set PATH=%PYTHONPATH%;%PYTHONPATH%\Scripts;%PATH%
 REM a permanent path variable will be set by the executable once this batch exits
+
+REM Install the vc_redist for C++ silently
+REM Assuming a local executable to avoid overloading the download web page
+powershell -ExecutionPolicy Bypass -Command "Start-Process -FilePath 'C:\packages\vc_redist.x64.exe' -ArgumentList '/q' -Wait"
 
 REM GuiBot deps
 pip install --user --upgrade pip
 pip install -r %DISTRO_ROOT%\guibot\packaging\pip_requirements.txt
+pip install setuptools
 
 REM GuiBot setup
 echo Copying GuiBot files
