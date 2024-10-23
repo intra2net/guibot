@@ -278,6 +278,7 @@ class RegionTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "Disabled PyQt")
     @unittest.skipIf(os.environ.get('DISABLE_OCR', "0") == "1", "Disabled OCR")
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "Disabled OpenCV")
     def test_find_guess_target_match(self) -> None:
         """Test target guess from match file configuration (target has match config)."""
         self.show_image('all_shapes')
