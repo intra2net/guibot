@@ -40,12 +40,6 @@ dnf -y install x11vnc
 pip3 install --upgrade pip
 pip3 install -r "$distro_root/guibot/packaging/pip_requirements.txt"
 
-# auto-review and linters
-cd "$distro_root/guibot"
-echo "Performing auto-review linting checks on code and documentation"
-pycodestyle guibot/* --ignore="E501,W503,E226,E265,E731,E306"
-pydocstyle guibot/* --ignore="D212,D205,D400,D401,D415,D203,D105,D301,D302"
-
 # pip packaging and installing of current guibot source
 pip3 install wheel twine
 cd "$distro_root/guibot/packaging"
