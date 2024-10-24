@@ -1,5 +1,0 @@
-query-filters:
-  - exclude:
-      id: py/init-calls-subclass
-  - exclude:
-      id: py/inheritance/incorrect-overridden-signature
