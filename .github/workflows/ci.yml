@@ -29,16 +29,16 @@ jobs:
     steps:
       - run: echo "Job triggered by a ${{ github.event_name }} event on branch is ${{ github.ref }} in repository is ${{ github.repository }}, runner on ${{ runner.os }}"
       - name: Check out repository code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Cache large ML models
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/torch/hub/checkpoints
           key: fasterrcnn-258fb6c6+maskrcnn-bf2d0c1e
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'pip'
@@ -83,7 +83,7 @@ jobs:
           INSTALL_VARIANT: ${{ matrix.install_variant }}
           TESSDATA_PREFIX: /usr/share/tesseract-ocr/4.00/tessdata/
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           files: tests/coverage.xml
           verbose: true
