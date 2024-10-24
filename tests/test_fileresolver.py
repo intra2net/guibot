@@ -132,14 +132,15 @@ class CustomFileResolverTest(unittest.TestCase):
 
     def test_custom_paths(self) -> None:
         """Test if custom paths work correctly."""
+        os_name = os.name
         # temporary directory 1
         tmp_dir1 = mkdtemp()
-        fd_tmp_file1, tmp_file1 = mkstemp(prefix=tmp_dir1 + "/", suffix=".txt")
+        fd_tmp_file1, tmp_file1 = mkstemp(prefix=tmp_dir1 + ("/" if os_name != 'nt' else "\\"), suffix=".txt")
         os.close(fd_tmp_file1)
 
         # temporary directory 2
         tmp_dir2 = mkdtemp()
-        fd_tmp_file2, tmp_file2 = mkstemp(prefix=tmp_dir2 + "/", suffix=".txt")
+        fd_tmp_file2, tmp_file2 = mkstemp(prefix=tmp_dir2 + ("/" if os_name != 'nt' else "\\"), suffix=".txt")
         os.close(fd_tmp_file2)
 
         filename1 = os.path.basename(tmp_file1)
