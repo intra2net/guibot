@@ -64,3 +64,13 @@ class Location(object):
         return self._ypos
 
     y = property(fget=get_y)
+
+    def get_coords(self) -> tuple[int, int]:
+        """
+        Getter for readonly attributes.
+
+        :returns: tuple of (x, y) coordinates of the location
+        """
+        return self._xpos, self._ypos
+
+    coords = property(fget=get_coords)
