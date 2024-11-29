@@ -40,7 +40,6 @@ from .config import GlobalConfig, LocalConfig
 from .imagelogger import ImageLogger
 from .fileresolver import FileResolver
 from .errors import *
-from .location import Location
 
 
 log = logging.getLogger("guibot.finder")
@@ -359,10 +358,6 @@ class Finder(LocalConfig):
             "deep",
             "hybrid",
         ]
-
-        # other attributes
-        self.imglog = ImageLogger()
-        self.imglog.log = self.log
 
         # additional preparation (no synchronization available)
         if configure:
@@ -1771,9 +1766,15 @@ class FeatureFinder(Finder):
             )
             return None
         else:
-            self._log_features(
-                30, self.imglog.locations, self.imglog.hotmaps[-1], 3, 0, 0, 255
-            )
+            if 30 >= self.imglog.logging_level:
+                self.imglog.draw_locations(
+                    self.imglog.locations,
+                    self.imglog.hotmaps[-1],
+                    3,
+                    0,
+                    0,
+                    255,
+                )
             return locations_in_haystack
 
     def _detect_features(
@@ -1837,7 +1838,15 @@ class FeatureFinder(Finder):
             len(hkeypoints),
         )
         hkp_locations = [hkp.pt for hkp in hkeypoints]
-        self._log_features(10, hkp_locations, self.imglog.hotmaps[-4], 3, 255, 0, 0)
+        if 10 >= self.imglog.logging_level:
+            self.imglog.draw_locations(
+                hkp_locations,
+                self.imglog.hotmaps[-4],
+                3,
+                255,
+                0,
+                0,
+            )
 
         return (nkeypoints, ndescriptors, hkeypoints, hdescriptors)
 
@@ -1958,7 +1967,15 @@ class FeatureFinder(Finder):
 
         # these matches are half the way to being good
         mhkp_locations = [mhkp.pt for mhkp in match_hkeypoints]
-        self._log_features(10, mhkp_locations, self.imglog.hotmaps[-3], 2, 255, 255, 0)
+        if 10 >= self.imglog.logging_level:
+            self.imglog.draw_locations(
+                mhkp_locations,
+                self.imglog.hotmaps[-3],
+                2,
+                255,
+                255,
+                0,
+            )
 
         match_similarity = float(len(match_nkeypoints)) / float(len(nkeypoints))
         # update the current achieved similarity if matching similarity is used:
@@ -2035,7 +2052,15 @@ class FeatureFinder(Finder):
             if mask[i][0] == 1:
                 true_matches.append(kp)
         tmhkp_locations = [tmhkp.pt for tmhkp in true_matches]
-        self._log_features(20, tmhkp_locations, self.imglog.hotmaps[-2], 1, 0, 255, 0)
+        if 20 >= self.imglog.logging_level:
+            self.imglog.draw_locations(
+                tmhkp_locations,
+                self.imglog.hotmaps[-2],
+                1,
+                0,
+                255,
+                0,
+            )
 
         # calculate and project all point coordinates in the needle
         projected = []
@@ -2098,24 +2123,6 @@ class FeatureFinder(Finder):
 
         self.imglog.clear()
         ImageLogger.step += 1
-
-    def _log_features(
-        self,
-        lvl: int,
-        locations: list[tuple[float, float]],
-        hotmap: "Matlike",
-        radius: int = 0,
-        r: int = 255,
-        g: int = 255,
-        b: int = 255,
-    ) -> None:
-        if lvl < self.imglog.logging_level:
-            return
-        import cv2
-
-        for loc in locations:
-            x, y = loc
-            cv2.circle(hotmap, (int(x), int(y)), radius, (r, g, b))
 
 
 class CascadeFinder(Finder):

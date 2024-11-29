@@ -29,12 +29,13 @@ import os
 import re
 import time
 import logging
-
+import numpy
 import PIL.Image
 from tempfile import NamedTemporaryFile
 
 from . import inputmap
 from .config import GlobalConfig, LocalConfig
+from .imagelogger import ImageLogger
 from .target import Image
 from .location import Location
 from .errors import *
@@ -348,6 +349,8 @@ class Controller(LocalConfig):
         :param keys: characters or special keys depending on the backend
                      (see :py:class:`inputmap.Key` for extensive list)
         """
+        self.imglog.type = "keys"
+        self.imglog.log(30)
         time.sleep(self.params["control"]["delay_before_keys"])
         # BUG: pressing multiple times the same key does not work?
         self.keys_toggle(keys, True)
@@ -365,6 +368,35 @@ class Controller(LocalConfig):
         raise NotImplementedError(
             "Method is not available for this controller implementation"
         )
+
+    def log(self, lvl: int) -> None:
+        """
+        Log images with an arbitrary logging level.
+
+        :param lvl: logging level for the message
+        """
+        # below selected logging level
+        if lvl < self.imglog.logging_level:
+            self.imglog.clear()
+            return
+
+        self.imglog.hotmaps += [numpy.array(self.capture_screen().pil_image)]
+        self.imglog.draw_locations(
+            [self.get_mouse_location().coords],
+            self.imglog.hotmaps[-1],
+            30,
+            0,
+            0,
+            0,
+        )
+        name = "imglog%s-1control-%s.png" % (
+            self.imglog.printable_step,
+            self.imglog.type,
+        )
+        self.imglog.dump_hotmap(name, self.imglog.hotmaps[-1])
+
+        self.imglog.clear()
+        ImageLogger.step += 1
 
 
 class AutoPyController(Controller):
@@ -528,6 +560,8 @@ class AutoPyController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "mouse"
+        self.imglog.log(30)
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -579,6 +613,8 @@ class AutoPyController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "keys"
+        self.imglog.log(30)
         time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -752,6 +788,8 @@ class XDoToolController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "mouse"
+        self.imglog.log(30)
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -807,6 +845,8 @@ class XDoToolController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "keys"
+        self.imglog.log(30)
         time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -971,6 +1011,8 @@ class VNCDoToolController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "mouse"
+        self.imglog.log(30)
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -1033,6 +1075,8 @@ class VNCDoToolController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "keys"
+        self.imglog.log(30)
         time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -1184,6 +1228,8 @@ class PyAutoGUIController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "mouse"
+        self.imglog.log(30)
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -1253,6 +1299,8 @@ class PyAutoGUIController(Controller):
 
         See base method for details.
         """
+        self.imglog.type = "keys"
+        self.imglog.log(30)
         time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)

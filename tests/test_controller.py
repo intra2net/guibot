@@ -28,6 +28,7 @@ from guibot.controller import *
 from guibot.region import Region
 from guibot.location import Location
 from guibot.config import GlobalConfig
+from guibot.imagelogger import ImageLogger
 
 
 class ControllerTest(unittest.TestCase):
@@ -53,6 +54,16 @@ class ControllerTest(unittest.TestCase):
         cls._server = subprocess.Popen(["x11vnc", "-q", "-forever", "-display",
                                         ":99", "-rfbauth", passfile])
 
+        # preserve values of static attributes
+        cls.prev_loglevel = GlobalConfig.image_logging_level
+        cls.prev_logpath = GlobalConfig.image_logging_destination
+        cls.prev_logwidth = GlobalConfig.image_logging_step_width
+
+        cls.logpath = os.path.join(common_test.unittest_dir, 'tmp')
+        GlobalConfig.image_logging_level = 0
+        GlobalConfig.image_logging_destination = cls.logpath
+        GlobalConfig.image_logging_step_width = 4
+
     @classmethod
     def tearDownClass(cls) -> None:
         # the VNC display controller is disabled on OS-es like Windows
@@ -64,6 +75,10 @@ class ControllerTest(unittest.TestCase):
         vnc_config_dir = os.path.join(os.environ["HOME"], ".vnc")
         if os.path.exists(vnc_config_dir):
             shutil.rmtree(vnc_config_dir)
+
+        GlobalConfig.image_logging_level = cls.prev_loglevel
+        GlobalConfig.image_logging_destination = cls.prev_logpath
+        GlobalConfig.image_logging_step_width = cls.prev_logwidth
 
     def setUp(self) -> None:
         # gui test scripts
@@ -80,6 +95,10 @@ class ControllerTest(unittest.TestCase):
         self.mouse_up_control = Location(435, 135)
         self.textedit_quit_control = Location(65, 60)
         self.textedit_any_control = Location(65, 95)
+
+        # the image logger will recreate its logging destination
+        ImageLogger.step = 1
+        ImageLogger.accumulate_logging = False
 
         self.backends = []
         if os.environ.get('DISABLE_AUTOPY', "0") == "0":
@@ -132,6 +151,12 @@ class ControllerTest(unittest.TestCase):
                 break
 
             time.sleep(0.2)
+
+    def _verify_dumps(self, control_type: str) -> list[str]:
+        dumps = os.listdir(self.logpath)
+        self.assertEqual(len(dumps), 1)
+        self.assertRegex(dumps[0], rf"imglog\d\d\d\d-1control-{control_type}.png")
+        self.assertTrue(os.path.isfile(os.path.join(self.logpath, dumps[0])))
 
     def test_basic(self) -> None:
         """Check basic functionality for all display controller backends."""
@@ -264,12 +289,17 @@ class ControllerTest(unittest.TestCase):
 
                         # single right button has context menu requiring extra care
                         if button == mouse.RIGHT_BUTTON and count == 1:
+                            # remove auxiliary dumps from first mouse click
+                            shutil.rmtree(self.logpath)
                             time.sleep(3)
                             display.mouse_move(self.context_menu_close_control, smooth=False)
                             display.mouse_click(mouse.LEFT_BUTTON)
 
                         self.assertEqual(0, self.wait_end(self.child_app))
                         self.child_app = None
+
+                        self._verify_dumps("mouse")
+                        shutil.rmtree(self.logpath)
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_mouse_updown(self) -> None:
@@ -332,6 +362,9 @@ class ControllerTest(unittest.TestCase):
 
             self.child_app = None
 
+            self._verify_dumps("keys")
+            shutil.rmtree(self.logpath)
+
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_keys_type(self) -> None:
         """Check key type effect for all display controller backends."""
@@ -342,11 +375,16 @@ class ControllerTest(unittest.TestCase):
 
                 display.mouse_move(self.textedit_quit_control)
                 display.mouse_click(display.mousemap.LEFT_BUTTON)
+                # remove auxiliary dumps from mouse click
+                shutil.rmtree(self.logpath)
                 time.sleep(0.2)
                 display.keys_type('quit', modifiers)
 
                 self.assertEqual(0, self.wait_end(self.child_app))
                 self.child_app = None
+
+                self._verify_dumps("keys")
+                shutil.rmtree(self.logpath)
 
 
 if __name__ == '__main__':

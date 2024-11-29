@@ -74,9 +74,9 @@ class FinderTest(unittest.TestCase):
     def _verify_and_get_dumps(self, count: int, index: int = 1, multistep: bool = False) -> list[str]:
         dumps = os.listdir(self.logpath)
         self.assertEqual(len(dumps), count)
-        steps = self._get_matches_in('imglog\d\d\d\d-.+', dumps)
+        steps = self._get_matches_in(r'imglog\d\d\d\d-.+', dumps)
         self.assertEqual(len(steps), len(dumps))
-        first_steps = self._get_matches_in('imglog%04d-.+' % index, dumps)
+        first_steps = self._get_matches_in(r'imglog%04d-.+' % index, dumps)
         if not multistep:
             self.assertEqual(len(first_steps), len(steps))
         else:
@@ -118,7 +118,7 @@ class FinderTest(unittest.TestCase):
         self.assertEqual(len(hotmaps), 1)
         self.assertIn('3hotmap', hotmaps[0])
         # report achieved similarity in the end of the filename
-        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
+        self.assertRegex(hotmaps[0], r".*-\d\.\d+.*")
         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
@@ -242,7 +242,7 @@ class FinderTest(unittest.TestCase):
                 self.assertEqual(len(hotmaps), 3)
                 self.assertIn('3hotmap', hotmaps[0])
                 # report achieved similarity in the end of the filename
-                self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertRegex(hotmaps[0], r".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                 self.assertIn('3hotmap-1threshold', hotmaps[1])
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
@@ -276,7 +276,7 @@ class FinderTest(unittest.TestCase):
                 self.assertEqual(len(hotmaps), 3)
                 self.assertIn('3hotmap', hotmaps[0])
                 # report achieved similarity in the end of the filename
-                self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
+                self.assertRegex(hotmaps[0], r".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                 self.assertIn('3hotmap-1threshold', hotmaps[1])
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[1])))
@@ -318,7 +318,7 @@ class FinderTest(unittest.TestCase):
                 else:
                     self.assertIn('3hotmap-1template', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegex(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, r".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -352,7 +352,7 @@ class FinderTest(unittest.TestCase):
                 else:
                     self.assertIn('3hotmap-1template', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegex(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, r".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -395,7 +395,7 @@ class FinderTest(unittest.TestCase):
             else:
                 self.assertIn('3hotmap-%stemplate' % i, hotmap)
             # report achieved similarity in the end of the filename
-            self.assertRegex(hotmap, ".*-\d\.\d+.*")
+            self.assertRegex(hotmap, r".*-\d\.\d+.*")
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
@@ -434,7 +434,7 @@ class FinderTest(unittest.TestCase):
                         self.assertEqual(len(hotmaps), 4)
                         self.assertIn('3hotmap', hotmaps[0])
                         # report achieved similarity in the end of the filename
-                        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertRegex(hotmaps[0], r".*-\d\.\d+.*")
                         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                         self.assertIn('3hotmap-1detect', hotmaps[1])
                         self.assertIn('3hotmap-2match', hotmaps[2])
@@ -475,7 +475,7 @@ class FinderTest(unittest.TestCase):
                         self.assertEqual(len(hotmaps), 4)
                         self.assertIn('3hotmap', hotmaps[0])
                         # report achieved similarity in the end of the filename
-                        self.assertRegex(hotmaps[0], ".*-\d\.\d+.*")
+                        self.assertRegex(hotmaps[0], r".*-\d\.\d+.*")
                         self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmaps[0])))
                         self.assertIn('3hotmap-1detect', hotmaps[1])
                         self.assertIn('3hotmap-2match', hotmaps[2])
@@ -664,7 +664,7 @@ class FinderTest(unittest.TestCase):
                         self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
                     if j == 3 or j == 4:
                         # report achieved similarity in the end of the filename
-                        self.assertRegex(hotmap, ".*-\d\.\d+.*")
+                        self.assertRegex(hotmap, r".*-\d\.\d+.*")
                     self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
                 shutil.rmtree(self.logpath)
@@ -724,7 +724,7 @@ class FinderTest(unittest.TestCase):
                         self.assertIn('3hotmap-3ocr-%stext' % (j-2), hotmap)
                     if j == 3 or j == 4:
                         # report achieved similarity in the end of the filename
-                        self.assertRegex(hotmap, ".*-\d\.\d+.*")
+                        self.assertRegex(hotmap, r".*-\d\.\d+.*")
                     self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
                 shutil.rmtree(self.logpath)
@@ -830,7 +830,7 @@ class FinderTest(unittest.TestCase):
                 else:
                     self.assertIn('%itemplate' % int((i - 1) / 2 + 1), hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegex(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, r".*-\d\.\d+.*")
                 self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -860,7 +860,7 @@ class FinderTest(unittest.TestCase):
             self.assertNotIn('template', hotmap)
             self.assertNotIn('feature', hotmap)
             # report achieved similarity in the end of the filename
-            self.assertRegex(hotmap, ".*-\d\.\d+.*")
+            self.assertRegex(hotmap, r".*-\d\.\d+.*")
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
 
             shutil.rmtree(self.logpath)
@@ -890,7 +890,7 @@ class FinderTest(unittest.TestCase):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegex(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, r".*-\d\.\d+.*")
             else:
                 self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
@@ -920,7 +920,7 @@ class FinderTest(unittest.TestCase):
             if i == 0:
                 self.assertIn('3hotmap', hotmap)
                 # report achieved similarity in the end of the filename
-                self.assertRegex(hotmap, ".*-\d\.\d+.*")
+                self.assertRegex(hotmap, r".*-\d\.\d+.*")
             else:
                 self.assertIn('%sf' % i, hotmap)
             self.assertTrue(os.path.isfile(os.path.join(self.logpath, hotmap)))
