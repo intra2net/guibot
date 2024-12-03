@@ -47,6 +47,8 @@ jobs:
       - name: Display Python version
         run: python -c "import sys; print(sys.version)"
         if: matrix.install_variant == 'pip'
+      - name: Refresh system packager mirrors and packages
+        run: sudo apt-get -y update
       - name: Install non-python dependencies using system packager
         run: |
           # ocr
