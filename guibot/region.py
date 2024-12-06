@@ -1033,7 +1033,6 @@ class Region(object):
             self.press_keys(['a', 'b', 3])
         """
         keys_list = self._parse_keys(keys)
-        time.sleep(GlobalConfig.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return self
 
@@ -1050,7 +1049,6 @@ class Region(object):
         """
         keys_list = self._parse_keys(keys, target_or_location)
         match = self.click(target_or_location)
-        time.sleep(GlobalConfig.delay_before_keys)
         self.dc_backend.keys_press(keys_list)
         return match
 
@@ -1172,7 +1170,6 @@ class Region(object):
         typing special keys.
         """
         text_list = self._parse_text(text)
-        time.sleep(GlobalConfig.delay_before_keys)
         if modifiers is not None:
             if isinstance(modifiers, str):
                 modifiers = [modifiers]
@@ -1198,7 +1195,6 @@ class Region(object):
         match = None
         if target_or_location is not None:
             match = self.click(target_or_location)
-        time.sleep(GlobalConfig.delay_before_keys)
         if modifiers is not None:
             if isinstance(modifiers, str):
                 modifiers = [modifiers]

@@ -50,12 +50,8 @@ class GlobalConfig(type):
     """
 
     # operational parameters shared between all instances
-    _toggle_delay = 0.05
-    _click_delay = 0.1
     _drag_delay = 0.5
     _drop_delay = 0.5
-    _keys_delay = 0.2
-    _type_delay = 0.1
     _rescan_speed_on_find = 0.2
     _wait_for_animations = False
     _smooth_mouse_drag = True
@@ -79,38 +75,6 @@ class GlobalConfig(type):
     _text_ocr_backend = "pytesseract"
     _deep_learn_backend = "pytorch"
     _hybrid_match_backend = "template"
-
-    def toggle_delay(cls, value: float = None) -> float | None:
-        """
-        Get or set property attribute.
-
-        :param value: time interval between mouse down and up in a click
-        :returns: current value if no argument was passed otherwise None
-        """
-        if value is None:
-            return cls._toggle_delay
-        else:
-            cls._toggle_delay = value
-            return None
-
-    #: time interval between mouse down and up in a click
-    toggle_delay = property(fget=toggle_delay, fset=toggle_delay)
-
-    def click_delay(cls, value: float = None) -> float | None:
-        """
-        Get or set property attribute.
-
-        :param value: time interval after a click (in a double or n-click)
-        :returns: current value if no argument was passed otherwise None
-        """
-        if value is None:
-            return cls._click_delay
-        else:
-            cls._click_delay = value
-            return None
-
-    #: time interval after a click (in a double or n-click)
-    click_delay = property(fget=click_delay, fset=click_delay)
 
     def delay_after_drag(cls, value: float = None) -> float | None:
         """
@@ -143,38 +107,6 @@ class GlobalConfig(type):
 
     #: timeout before drop operation
     delay_before_drop = property(fget=delay_before_drop, fset=delay_before_drop)
-
-    def delay_before_keys(cls, value: float = None) -> float | None:
-        """
-        Get or set property attribute.
-
-        :param value: timeout before key press operation
-        :returns: current value if no argument was passed otherwise None
-        """
-        if value is None:
-            return cls._keys_delay
-        else:
-            cls._keys_delay = value
-            return None
-
-    #: timeout before key press operation
-    delay_before_keys = property(fget=delay_before_keys, fset=delay_before_keys)
-
-    def delay_between_keys(cls, value: float = None) -> float | None:
-        """
-        Get or set property attribute.
-
-        :param value: time interval between two consecutively typed keys
-        :returns: current value if no argument was passed otherwise None
-        """
-        if value is None:
-            return cls._type_delay
-        else:
-            cls._type_delay = value
-            return None
-
-    #: time interval between two consecutively typed keys
-    delay_between_keys = property(fget=delay_between_keys, fset=delay_between_keys)
 
     def rescan_speed_on_find(cls, value: float = None) -> float | None:
         """

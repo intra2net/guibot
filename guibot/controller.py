@@ -167,6 +167,10 @@ class Controller(LocalConfig):
         log.log(9, "Setting backend for %s to %s", category, backend)
         self.params[category] = {}
         self.params[category]["backend"] = backend
+        self.params[category]["mouse_toggle_delay"] = 0.05
+        self.params[category]["after_click_delay"] = 0.1
+        self.params[category]["delay_between_keys"] = 0.1
+        self.params[category]["delay_before_keys"] = 0.2
         log.log(9, "%s %s\n", category, self.params[category])
 
     def configure_backend(
@@ -344,6 +348,7 @@ class Controller(LocalConfig):
         :param keys: characters or special keys depending on the backend
                      (see :py:class:`inputmap.Key` for extensive list)
         """
+        time.sleep(self.params["control"]["delay_before_keys"])
         # BUG: pressing multiple times the same key does not work?
         self.keys_toggle(keys, True)
         self.keys_toggle(keys, False)
@@ -523,17 +528,15 @@ class AutoPyController(Controller):
 
         See base method for details.
         """
-        toggle_timeout = GlobalConfig.toggle_delay
-        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
         for _ in range(count):
             self._backend_obj.mouse.click(button)
             # BUG: the mouse button of autopy is pressed down forever (on LEFT)
-            time.sleep(toggle_timeout)
+            time.sleep(self.params["control"]["mouse_toggle_delay"])
             self.mouse_up(button)
-            time.sleep(click_timeout)
+            time.sleep(self.params["control"]["after_click_delay"])
         if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
@@ -576,13 +579,14 @@ class AutoPyController(Controller):
 
         See base method for details.
         """
+        time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
         for part in text:
             for char in str(part):
                 self._backend_obj.key.tap(char, [])
-                time.sleep(GlobalConfig.delay_between_keys)
+                time.sleep(self.params["control"]["delay_between_keys"])
             # alternative option:
             # autopy.key.type_string(text)
 
@@ -748,8 +752,6 @@ class XDoToolController(Controller):
 
         See base method for details.
         """
-        toggle_timeout = GlobalConfig.toggle_delay
-        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -757,9 +759,9 @@ class XDoToolController(Controller):
             # BUG: the xdotool click is too fast and non-configurable with timeout
             # self._backend_obj.run("click", str(button))
             self.mouse_down(button)
-            time.sleep(toggle_timeout)
+            time.sleep(self.params["control"]["mouse_toggle_delay"])
             self.mouse_up(button)
-            time.sleep(click_timeout)
+            time.sleep(self.params["control"]["after_click_delay"])
         if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
@@ -805,6 +807,7 @@ class XDoToolController(Controller):
 
         See base method for details.
         """
+        time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
@@ -968,8 +971,6 @@ class VNCDoToolController(Controller):
 
         See base method for details.
         """
-        toggle_timeout = GlobalConfig.toggle_delay
-        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -978,9 +979,9 @@ class VNCDoToolController(Controller):
             # sent too fast, so we sleep between mouse up and down and avoid mousePress
             # self._backend_obj.mousePress(button)
             self.mouse_down(button)
-            time.sleep(toggle_timeout)
+            time.sleep(self.params["control"]["mouse_toggle_delay"])
             self.mouse_up(button)
-            time.sleep(click_timeout)
+            time.sleep(self.params["control"]["after_click_delay"])
         if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
@@ -1032,6 +1033,7 @@ class VNCDoToolController(Controller):
 
         See base method for details.
         """
+        time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
@@ -1045,7 +1047,7 @@ class VNCDoToolController(Controller):
                     char = "space"
                 elif char == "\n":
                     char = "return"
-                time.sleep(GlobalConfig.delay_between_keys)
+                time.sleep(self.params["control"]["delay_between_keys"])
                 self._backend_obj.keyPress(char)
 
         if modifiers is not None:
@@ -1182,8 +1184,6 @@ class PyAutoGUIController(Controller):
 
         See base method for details.
         """
-        toggle_timeout = GlobalConfig.toggle_delay
-        click_timeout = GlobalConfig.click_delay
         button = self._mousemap.LEFT_BUTTON if button is None else button
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
@@ -1192,9 +1192,9 @@ class PyAutoGUIController(Controller):
             # control the toggle speed
             # self._backend_obj.click(clicks=count, interval=click_timeout, button=button)
             self._backend_obj.mouseDown(button=button)
-            time.sleep(toggle_timeout)
+            time.sleep(self.params["control"]["mouse_toggle_delay"])
             self._backend_obj.mouseUp(button=button)
-            time.sleep(click_timeout)
+            time.sleep(self.params["control"]["after_click_delay"])
         if modifiers is not None:
             self.keys_toggle(modifiers, False)
 
@@ -1253,11 +1253,14 @@ class PyAutoGUIController(Controller):
 
         See base method for details.
         """
+        time.sleep(self.params["control"]["delay_before_keys"])
         if modifiers is not None:
             self.keys_toggle(modifiers, True)
 
         for part in text:
-            self._backend_obj.typewrite(part, interval=GlobalConfig.delay_between_keys)
+            self._backend_obj.typewrite(
+                part, interval=self.params["control"]["delay_between_keys"]
+            )
 
         if modifiers is not None:
             self.keys_toggle(modifiers, False)
