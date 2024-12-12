@@ -599,16 +599,20 @@ class Region(object):
         log.info("Waiting for %s", target)
         return self.find(target, timeout)
 
-    def wait_vanish(self, target: str | Target, timeout: int = 30) -> "Region":
+    def _unfind(self, target: str | Target, timeout: int = 30) -> "Region":
         """
-        Wait for a target to disappear (be unmatched) with a given timeout as failing tolerance.
+        Emulate waiting for a vanishing target.
 
         :param target: target to look for
         :param timeout: timeout before giving up
         :returns: self
         :raises: :py:class:`errors.NotFindError` if match is still found
+
+        This method is meant to be as internal as `find()` but with the inverse
+        meaning. It is not meant to be used on the same level of abstraction
+        as `wait_vanish()` just like `find()` is not meant to be used on the same
+        level of abstraction as `wait()`.
         """
-        log.info("Waiting for %s to vanish", target)
         expires = time.time() + timeout
         while time.time() < expires:
             if self.exists(target, 0) is None:
@@ -619,6 +623,17 @@ class Region(object):
 
         # target is still there
         raise NotFindError(target)
+
+    def wait_vanish(self, target: str | Target, timeout: int = 30) -> "Region":
+        """
+        Wait for a target to disappear (be unmatched) with a given timeout as failing tolerance.
+
+        :param target: target to look for
+        :param timeout: timeout before giving up
+        :returns: self
+        """
+        log.info("Waiting for %s to vanish", target)
+        return self._unfind(target, timeout)
 
     def idle(self, timeout: int) -> "Region":
         """
@@ -794,7 +809,7 @@ class Region(object):
                 log.info("Retrying the mouse click (%s of %s)", i + 1, retries)
             self.click(click_image_or_location, modifiers=modifiers)
             try:
-                return self.wait(expect_target, timeout)
+                return self.find(expect_target, timeout)
             except FindError as error:
                 self.hover(Location(0, 0))
                 if i == retries - 1:
@@ -824,7 +839,7 @@ class Region(object):
                 log.info("Retrying the mouse click (%s of %s)", i + 1, retries)
             self.click(click_image_or_location, modifiers=modifiers)
             try:
-                return self.wait_vanish(expect_target, timeout)
+                return self._unfind(expect_target, timeout)
             except NotFindError as error:
                 self.hover(Location(0, 0))
                 if i == retries - 1:
@@ -1116,7 +1131,7 @@ class Region(object):
                 log.info("Retrying the key press (%s of %s)", i + 1, retries)
             self.press_keys(keys)
             try:
-                return self.wait(expect_target, timeout)
+                return self.find(expect_target, timeout)
             except FindError as error:
                 if i == retries - 1:
                     raise error
@@ -1144,7 +1159,7 @@ class Region(object):
                 log.info("Retrying the key press (%s of %s)", i + 1, retries)
             self.press_keys(keys)
             try:
-                return self.wait_vanish(expect_target, timeout)
+                return self._unfind(expect_target, timeout)
             except NotFindError as error:
                 if i == retries - 1:
                     raise error
