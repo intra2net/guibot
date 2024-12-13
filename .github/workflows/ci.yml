@@ -91,3 +91,36 @@ jobs:
           verbose: true
         if: matrix.install_variant == 'pip'
       - run: echo "🥑 This job's status is ${{ job.status }}."
+
+      # Publish release:
+      - name: Set Release Variables
+        id: set_vars
+        run: |
+          CHANGELOG_REVS=($(sed -n -e 's/^guibot[ \t]*(\([0-9]*.[0-9]*\)-[0-9]*).*/\1/p' "/home/runner/work/guibot/guibot/packaging/debian/changelog"))
+          VERSION=${CHANGELOG_REVS[0]}
+          echo "version=$VERSION" >> $GITHUB_ENV
+          if [[ "${{ matrix.install_variant }}" == "rpm.fedora.40" ]]; then
+              EXTENSION="rpm"
+              EXE_NAME="guibot"
+          else
+              EXTENSION="deb"
+              EXE_NAME="python3-guibot"
+          fi
+          echo "ext=$EXTENSION" >> $GITHUB_ENV
+          echo "name=$EXE_NAME" >> $GITHUB_ENV
+        if: matrix.install_variant != 'pip'
+
+      - name: Create Release and Push Artifacts
+        uses: ncipollo/release-action@v1.14.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: 'guibot ${{ env.version }}'
+          tag: "${{ env.version }}"
+          body: 'Auto generated release builds'
+          artifacts: '/home/runner/work/guibot/guibot/${{ env.name }}_${{ env.version }}.${{ env.ext }}'
+          updateOnlyUnreleased: 'false'
+          allowUpdates: 'true'
+          prerelease: 'false'
+          makeLatest: 'true'
+        if: matrix.install_variant != 'pip'

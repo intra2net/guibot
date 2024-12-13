@@ -51,7 +51,17 @@ tar czvf ~/rpmbuild/SOURCES/$NAME-$VERSION.tar.gz -C "$distro_root/" --exclude=.
 rpmbuild -ba "$distro_root/$NAME-$VERSION/packaging/guibot.spec" --with opencv
 cp ~/rpmbuild/RPMS/x86_64/python3-$NAME-$VERSION*.rpm "$distro_root/guibot"
 dnf -y install "$distro_root/guibot/python3-"$NAME-$VERSION*.rpm
-rm -fr "$distro_root/$NAME-$VERSION"
+
+# Find the .rpm file in $distro_root
+rpm_file=$(find "$distro_root/guibot" -type f -name "*.rpm" | head -n 1)
+# Check if the file exists
+if [[ -z "$rpm_file" ]]; then
+  echo "Error: No .rpm file found in $distro_root"
+  exit 1
+fi
+# Rename the found file
+new_file="$distro_root/guibot/${NAME}_${VERSION}.rpm"
+mv "$rpm_file" "$new_file"
 
 echo "------------- virtual display -------------"
 dnf install -y xorg-x11-server-Xvfb vim-common
