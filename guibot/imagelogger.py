@@ -69,6 +69,8 @@ class ImageLogger(object):
         self.similarities = []
         self.locations = []
 
+        self.type = "find"
+
         # sync these static methods with the general settings at each use
         ImageLogger.logging_level = GlobalConfig.image_logging_level
         # NOTE: the executing code decides when to clean this directory
@@ -84,6 +86,17 @@ class ImageLogger(object):
         return ("%0" + str(ImageLogger.step_width) + "d") % ImageLogger.step
 
     printable_step = property(fget=get_printable_step)
+
+    def log(self, _lvl: int) -> None:
+        """
+        Log images with an arbitrary logging level.
+
+        :param lvl: logging level for the message
+        """
+        raise NotImplementedError(
+            "Each finder or controller that does image logging "
+            "has to implement this itself"
+        )
 
     def debug(self) -> None:
         """Log images with a DEBUG logging level."""
@@ -104,6 +117,31 @@ class ImageLogger(object):
     def critical(self) -> None:
         """Log images with a CRITICAL logging level."""
         self.log(50)
+
+    def draw_locations(
+        self,
+        locations: list[tuple[float, float]],
+        canvas: "Matlike",
+        radius: int = 0,
+        r: int = 255,
+        g: int = 255,
+        b: int = 255,
+    ) -> None:
+        """
+        Draw locations on a canvas image to visualize points of interest.
+
+        :param locations: list of locations to draw
+        :param canvas: canvas image to draw on
+        :param radius: radius for the circled locations
+        :param r: red value for the color of the circles locations
+        :param g: green value for the color of the circles locations
+        :param b: blue value for the color of the circles locations
+        """
+        import cv2
+
+        for loc in locations:
+            x, y = loc
+            cv2.circle(canvas, (int(x), int(y)), radius, (r, g, b))
 
     def dump_matched_images(self) -> None:
         """
@@ -161,3 +199,4 @@ class ImageLogger(object):
         self.hotmaps = []
         self.similarities = []
         self.locations = []
+        self.type = "find"

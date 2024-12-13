@@ -642,6 +642,12 @@ class LocalConfig(object):
         self.categories["type"] = "backend_types"
         self.algorithms["backend_types"] = ("cv", "dc")
 
+        # other attributes
+        from .imagelogger import ImageLogger
+
+        self.imglog = ImageLogger()
+        self.imglog.log = self.log
+
         if configure:
             self.__configure_backend()
         if synchronize:

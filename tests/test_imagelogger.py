@@ -54,6 +54,11 @@ class ImageLoggerTest(unittest.TestCase):
         self._patch_mkdir.stop()
         return super().tearDown()
 
+    def test_abstract_log(self) -> None:
+        """Test the main log method requires implementation."""
+        with self.assertRaises(NotImplementedError):
+            self.imglog.log(10)
+
     def test_step_print(self) -> None:
         """Test the string representation of the current step."""
         for i in range(1, 10):
