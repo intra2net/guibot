@@ -66,7 +66,17 @@ cd "$distro_root/$NAME-$VERSION/packaging"
 debuild --no-tgz-check --no-lintian -i -us -uc -b
 cp ../${NAME}_${VERSION}*.deb "$distro_root/guibot"
 apt-get -y install "$distro_root/guibot/"${NAME}_${VERSION}*.deb
-rm -fr "$distro_root/$NAME-$VERSION"
+
+# Find the .deb file in $distro_root
+deb_file=$(find "$distro_root/guibot" -type f -name "*.deb" | head -n 1)
+# Check if the file exists
+if [[ -z "$deb_file" ]]; then
+  echo "Error: No .deb file found in $distro_root"
+  exit 1
+fi
+# Rename the found file
+new_file="$distro_root/guibot/${NAME}_${VERSION}.deb"
+mv "$deb_file" "$new_file"
 
 echo "------------- virtual display -------------"
 apt-get -y install xvfb vim-common
