@@ -83,7 +83,7 @@ jobs:
           else cd tests && bash coverage_analysis.sh; fi
         env:
           INSTALL_VARIANT: ${{ matrix.install_variant }}
-          TESSDATA_PREFIX: /usr/share/tesseract-ocr/4.00/tessdata/
+          TESSDATA_PREFIX: /usr/share/tesseract-ocr/5/tessdata
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
