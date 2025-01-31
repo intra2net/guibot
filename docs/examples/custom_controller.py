@@ -197,9 +197,10 @@ class QemuController(Controller):
         with NamedTemporaryFile(prefix='guibot', suffix='.ppm') as f:
             filename = f.name
         self._backend_obj.screendump(filename=filename, debug=True)
-        screen = PIL.Image.open(filename)
-        os.unlink(filename)
-        self._width, self._height = screen.size
+        # use context manager here and everywhere else, then also use image.flush()
+        with PIL.Image.open(filename) as screen:
+            os.unlink(filename)
+            self._width, self._height = screen.size
 
         # sync pointer
         self.mouse_move(Location(self._width, self._height), smooth=False)
@@ -229,9 +230,10 @@ class QemuController(Controller):
         xpos, ypos, width, height, filename = self._region_from_args(*args)
         # TODO: capture subregion not present - own implementation?
         self._backend_obj.screendump(filename=filename, debug=True)
-        pil_image = PIL.Image.open(filename)
-        os.unlink(filename)
-        return Image(None, pil_image)
+        with PIL.Image.open(filename) as pil_image:
+            os.unlink(filename)
+            screendump = Image(None, pil_image)
+        return screendump
 
     def mouse_move(self, location, smooth=True):
         """

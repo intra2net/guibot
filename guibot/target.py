@@ -337,7 +337,8 @@ class Image(Target):
             self._pil_image = self._cache[filename]
         else:
             # load and cache image
-            self._pil_image = PIL.Image.open(filename).convert("RGB")
+            with PIL.Image.open(filename) as pil_image:
+                self._pil_image = pil_image.convert("RGB")
             if use_cache:
                 self._cache[filename] = self._pil_image
         self._filename = filename
