@@ -13,7 +13,10 @@ sys.path.insert(0, '../..')
 # TODO: This example is still unfinished, we have to restore the full usability
 # of these instances first.
 
-import logging
+import os
+import time
+import PIL
+from tempfile import NamedTemporaryFile
 
 from guibot.controller import Controller
 from guibot.errors import *
@@ -203,9 +206,9 @@ class QemuController(Controller):
         self.mouse_move(Location(0, 0), smooth=False)
         self._pointer = Location(0, 0)
 
-        self._keymap = inputmap.QemuKey()
-        self._modmap = inputmap.QemuKeyModifier()
-        self._mousemap = inputmap.QemuMouseButton()
+        self._keymap = QemuKey()
+        self._modmap = QemuKeyModifier()
+        self._mousemap = QemuMouseButton()
 
     def synchronize_backend(self, backend=None, category="qemu", reset=False):
         """

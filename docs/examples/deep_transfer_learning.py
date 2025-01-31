@@ -37,7 +37,6 @@ https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html
 
 import logging
 import shutil
-import argparse
 import random
 import itertools
 import os
@@ -47,8 +46,7 @@ import numpy
 
 import torch
 import torch.optim as optim
-import torch.nn as nn
-from torch.utils.data import Dataset, Subset, DataLoader
+from torch.utils.data import Dataset, Subset
 import torchvision.transforms as transforms
 from tqdm import tqdm
 
