@@ -88,3 +88,26 @@ jobs:
           verbose: true
         if: matrix.install_variant == 'pip'
       - run: echo "🥑 This job's status is ${{ job.status }}."
+
+      - name: Set Artifacts and Release Variables
+        id: set_vars
+        run: |
+          VERSION="$( cat /home/runner/work/guibot/guibot/VERSION )"
+          echo "version=$VERSION" >> $GITHUB_ENV
+          readonly variant_version=$(echo ${{ matrix.install_variant }} | cut -d '.' -f 3)
+          if [[ "$(echo ${{ matrix.install_variant }} | cut -d '.' -f 2)" == "fedora" ]]; then
+              EXE_NAME="python3-guibot-${VERSION}-1.fc${variant_version}.x86_64.rpm"
+          else
+              EXE_NAME="python3-guibot_${VERSION}-1_all.deb"
+          fi
+          echo "file_name=$EXE_NAME" >> $GITHUB_ENV
+        if: matrix.install_variant != 'pip'
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: '${{ env.file_name }}'
+          path: '/home/runner/work/guibot/guibot/${{ env.file_name }}'
+        if: matrix.install_variant != 'pip'
