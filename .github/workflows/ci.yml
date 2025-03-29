@@ -1,11 +1,9 @@
 name: GH Actions
 
 on:
+  push:
   pull_request:
   workflow_dispatch:
-  push:
-    branches:
-      - master
 
 jobs:
 
