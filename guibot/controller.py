@@ -403,7 +403,7 @@ class AutoPyController(Controller):
     """
     Screen control backend implemented through AutoPy.
 
-    AutoPy is a small python library portable to Windows and Linux operating systems.
+    AutoPy is a python library portable to Windows, Linux, and MacOS operating systems.
     """
 
     def __init__(self, configure: bool = True, synchronize: bool = True) -> None:
