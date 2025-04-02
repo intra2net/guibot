@@ -1,3 +1,3 @@
 # minimal
 Pillow==9.3.0; python_version < '3.12'
-Pillow==10.3.0; python_version >= '3.12'
+Pillow==11.1.0; python_version >= '3.12'
