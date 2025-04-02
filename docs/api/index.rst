@@ -64,14 +64,14 @@ Supported Computer Vision (CV) backends are based on
 
    -  R-CNN matching through Faster R-CNN or Mask R-CNN
 
--  `autopy <https://github.com/msanders/autopy>`__
+-  `autopy <https://github.com/autopilot-rs/autopy>`__
 
    -  AutoPy matching
 
 Supported Display Controller (DC) backends are based on
 
+-  `AutoPy <https://github.com/autopilot-rs/autopy>`__
 -  `PyAutoGUI <https://github.com/asweigart/pyautogui>`__
--  `AutoPy <https://github.com/msanders/autopy>`__
 -  `VNCDoTool <https://github.com/sibson/vncdotool>`__
 -  `XDoTool <https://www.semicomplete.com/projects/xdotool>`__
 

@@ -19,7 +19,7 @@ import unittest
 
 import common_test
 from guibot.region import Region
-from guibot.controller import Controller, PyAutoGUIController
+from guibot.controller import Controller, AutoPyController
 
 
 @unittest.skipIf(os.environ.get('DISABLE_PYAUTOGUI', "0") == "1", "PyAutoGUI disabled")
@@ -27,7 +27,7 @@ class RegionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.screen = PyAutoGUIController()
+        cls.screen = AutoPyController()
 
     def test_position_calc(self) -> None:
         region = Region(10, 20, 300, 200)

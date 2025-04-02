@@ -3,7 +3,7 @@ Pillow==9.3.0; python_version < '3.12'
 Pillow==10.3.0; python_version >= '3.12'
 
 # backends
-autopy==4.0.0; python_version <= '3.8' and platform_python_implementation != "PyPy"
+autopy==4.0.1; python_version >= '3.8' and platform_python_implementation != "PyPy"
 # OCR is currently not tested on Windows due to custom Tesseract OCR installers
 pytesseract==0.3.13; sys_platform != 'win32'
 tesserocr==2.7.1; sys_platform != 'win32'

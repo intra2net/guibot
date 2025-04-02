@@ -64,7 +64,7 @@ class GlobalConfig(type):
     _image_quality = 3
 
     # backends shared between all instances
-    _display_control_backend = "pyautogui"
+    _display_control_backend = "autopy"
     _find_backend = "hybrid"
     _contour_threshold_backend = "adaptive"
     _template_match_backend = "ccoeff_normed"
@@ -299,10 +299,10 @@ class GlobalConfig(type):
         :raises: :py:class:`ValueError` if value is not among the supported backends
 
         Supported backends:
-           * pyautogui - Windows, Linux, and OS X compatible with both the GUI
-                         actions and their calls executed on the same machine
            * autopy - Windows, Linux, and OS X compatible with both the GUI
                       actions and their calls executed on the same machine.
+           * pyautogui - Windows, Linux, and OS X compatible with both the GUI
+                         actions and their calls executed on the same machine
            * vncdotool - guest OS independent or Linux remote OS with GUI
                          actions on a remote machine through vnc and their
                          calls on a vnc client machine.

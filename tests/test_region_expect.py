@@ -30,7 +30,7 @@ from guibot.match import Match
 from guibot.target import Image, Text
 from guibot.inputmap import Key
 from guibot.finder import AutoPyFinder, TemplateFinder, TextFinder
-from guibot.controller import PyAutoGUIController
+from guibot.controller import AutoPyController
 from guibot.errors import *
 
 
@@ -104,10 +104,10 @@ class RegionTest(unittest.TestCase):
 
             time.sleep(0.2)
 
-    @unittest.skipIf(os.environ.get('DISABLE_PYAUTOGUI', "0") == "1", "PyAutoGUI disabled")
+    @unittest.skipIf(os.environ.get('DISABLE_AUTOPY', "0") == "1", "AutoPy disabled")
     def test_initialize(self) -> None:
-        screen_width = PyAutoGUIController().width
-        screen_height = PyAutoGUIController().height
+        screen_width = AutoPyController().width
+        screen_height = AutoPyController().height
 
         self.assertEqual(0, self.region.x)
         self.assertEqual(0, self.region.y)

@@ -1008,7 +1008,6 @@ class FinderTest(unittest.TestCase):
     def test_hybrid_multiconfig(self) -> None:
         """Test hybrid matching with multiple chain configs."""
         finder = HybridFinder()
-        # TOOD: replace autopy to improve coverage across variants
         finder.configure_backend("autopy")
         finder.synchronize_backend("autopy")
         finder.params["find"]["similarity"].value = 1.0

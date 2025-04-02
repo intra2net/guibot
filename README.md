@@ -26,13 +26,13 @@ Supported Computer Vision (CV) backends are based on
     - Text matching through pytesseract, tesserocr, or OpenCV's bindings
 - [PyTorch](https://github.com/pytorch/pytorch)
     - R-CNN matching through Faster R-CNN or Mask R-CNN
-- [autopy](https://github.com/msanders/autopy)
+- [autopy](https://github.com/autopilot-rs/autopy)
     - AutoPy matching
 
 Supported Display Controller (DC) backends are based on
 
+- [AutoPy](https://github.com/autopilot-rs/autopy)
 - [PyAutoGUI](https://github.com/asweigart/pyautogui)
-- [AutoPy](https://github.com/msanders/autopy)
 - [VNCDoTool](https://github.com/sibson/vncdotool)
 - [XDoTool](https://www.semicomplete.com/projects/xdotool)
 
