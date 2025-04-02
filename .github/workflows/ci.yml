@@ -59,6 +59,8 @@ jobs:
           sudo apt-get -y install xfonts-base x11vnc
           # pyautogui
           sudo apt-get -y install gnome-screenshot
+          # pyqt6 for integration testing
+          sudo apt-get install libegl1 libxcb-cursor0
         if: matrix.install_variant == 'pip'
       - name: Install any dependencies and build the package
         run: pip --default-timeout=60 install -r packaging/pip_requirements.txt

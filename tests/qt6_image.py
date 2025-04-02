@@ -15,7 +15,7 @@
 # along with guibot.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from PyQt5 import QtGui, QtWidgets, QtCore
+from PyQt6 import QtGui, QtWidgets, QtCore
 
 
 app = QtWidgets.QApplication(sys.argv)
@@ -24,7 +24,7 @@ app = QtWidgets.QApplication(sys.argv)
 class ImageWithLayout(QtWidgets.QWidget):
 
     def __init__(self, filename: str, title: str = "show_picture", parent: QtWidgets.QWidget = None) -> None:
-        QtWidgets.QWidget.__init__(self, parent)
+        super().__init__(parent)
 
         self.setWindowTitle(title)
 
@@ -33,11 +33,11 @@ class ImageWithLayout(QtWidgets.QWidget):
 
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(image)
-        vbox.setAlignment(QtCore.Qt.AlignTop)
+        vbox.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
         hbox = QtWidgets.QHBoxLayout()
         hbox.addLayout(vbox)
-        hbox.setAlignment(QtCore.Qt.AlignLeft)
+        hbox.setAlignment(QtCore.Qt.AlignmentFlag.AlignLeft)
 
         self.setLayout(hbox)
         self.showFullScreen()
@@ -47,4 +47,4 @@ class ImageWithLayout(QtWidgets.QWidget):
 if __name__ == "__main__":
     some_image = ImageWithLayout(*sys.argv[1:])
     some_image.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

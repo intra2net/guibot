@@ -26,6 +26,4 @@ Pyro5==5.14
 coverage
 codecov
 # GUI to use for testing
-# TODO: the most recent version at the time works on windows but not on linux
-PyQt5==5.15.6; sys_platform == 'win32' and platform_python_implementation != "PyPy"
-PyQt5==5.14.2; sys_platform != 'win32' and platform_python_implementation != "PyPy"
+PyQt6==6.8.1; platform_python_implementation != "PyPy"

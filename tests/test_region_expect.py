@@ -41,7 +41,7 @@ class RegionTest(unittest.TestCase):
         cls.file_resolver = FileResolver()
         cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, 'images'))
 
-        cls.script_img = os.path.join(common_test.unittest_dir, 'qt5_image.py')
+        cls.script_img = os.path.join(common_test.unittest_dir, 'qt6_image.py')
 
         # preserve values of static attributes
         cls.prev_loglevel = GlobalConfig.image_logging_level

@@ -82,7 +82,7 @@ class ControllerTest(unittest.TestCase):
 
     def setUp(self) -> None:
         # gui test scripts
-        self.script_app = os.path.join(common_test.unittest_dir, 'qt5_application.py')
+        self.script_app = os.path.join(common_test.unittest_dir, 'qt6_application.py')
         self.child_app = None
 
         # prefixed controls

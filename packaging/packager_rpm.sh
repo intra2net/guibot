@@ -70,7 +70,7 @@ printenv
 python3 -c "import sys; print(sys.prefix)"
 
 echo "------------- unit tests -------------"
-dnf install -y python3-PyQt5
+dnf install -y python3-PyQt6
 cd /lib/python3*/site-packages/guibot/tests
 if (( distro_version <= 30 )); then
     COVERAGE="python3-coverage"

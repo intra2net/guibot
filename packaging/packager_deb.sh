@@ -85,7 +85,7 @@ printenv
 python3 -c "import sys; print(sys.prefix)"
 
 echo "------------- unit tests -------------"
-apt-get install -y python3-pyqt5
+apt-get install -y python3-pyqt6
 export XDG_RUNTIME_DIR="/tmp/runtime-root"
 mkdir /tmp/runtime-root
 chmod 0700 /tmp/runtime-root
