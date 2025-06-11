@@ -10,9 +10,12 @@ p = path.abspath(path.dirname(__file__))
 with open(path.join(p, '../README.md')) as f:
     README = f.read()
 
+with open(path.join(p, '../VERSION'), 'r') as f:
+    VERSION = f.read()
+
 setup(
     name='guibot',
-    version='0.51.1',
+    version=VERSION,
     description='GUI automation tool',
     long_description=README,
     long_description_content_type='text/markdown',

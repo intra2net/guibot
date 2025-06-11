@@ -61,7 +61,13 @@ jobs:
           sudo apt-get install libegl1 libxcb-cursor0
         if: matrix.install_variant == 'pip'
       - name: Install any dependencies and build the package
-        run: pip --default-timeout=60 install -r packaging/pip_requirements.txt
+        run: |
+          pip --default-timeout=60 install -r packaging/pip_requirements.txt
+          # build tools
+          pip install wheel twine
+          pushd packaging
+          python3 setup.py sdist bdist_wheel
+          popd
         if: matrix.install_variant == 'pip'
       - run: sleep 3
       - name: Prepare virtual screen (fake display)
@@ -93,21 +99,30 @@ jobs:
         id: set_vars
         run: |
           VERSION="$( cat /home/runner/work/guibot/guibot/VERSION )"
-          echo "version=$VERSION" >> $GITHUB_ENV
-          readonly variant_version=$(echo ${{ matrix.install_variant }} | cut -d '.' -f 3)
+          # Get the part before the last dot   "0.51" for example
+          prefix=${VERSION%.*}
+          # Get the part after the last dot    "1" for example
+          suffix=${VERSION##*.}
+          # Combine them with a hyphen         "0.51.1" -> "0.51-1"
+          VERSION_HYPHEN="${prefix}-${suffix}"   
           if [[ "$(echo ${{ matrix.install_variant }} | cut -d '.' -f 2)" == "fedora" ]]; then
-              EXE_NAME="python3-guibot-${VERSION}-1.fc${variant_version}.x86_64.rpm"
+              readonly variant_version=$(echo ${{ matrix.install_variant }} | cut -d '.' -f 3)
+              PACKAGE_NAME="python3-guibot-${VERSION_HYPHEN}.fc${variant_version}.x86_64.rpm"
+              PACKAGE_PATH="/home/runner/work/guibot/guibot/${PACKAGE_NAME}"
+          elif [[ "${{ matrix.install_variant }}" == "pip" ]]; then
+              PACKAGE_NAME="guibot-${VERSION}-py3-none-any.whl"
+              PACKAGE_PATH="/home/runner/work/guibot/guibot/packaging/dist/${PACKAGE_NAME}"
           else
-              EXE_NAME="python3-guibot_${VERSION}-1_all.deb"
+              PACKAGE_NAME="python3-guibot_${VERSION_HYPHEN}_all.deb"
+              PACKAGE_PATH="/home/runner/work/guibot/guibot/${PACKAGE_NAME}"
           fi
-          echo "file_name=$EXE_NAME" >> $GITHUB_ENV
-        if: matrix.install_variant != 'pip'
-
+          echo "artifact_name=$PACKAGE_NAME" >> $GITHUB_ENV
+          echo "artifact_full_path=$PACKAGE_PATH" >> $GITHUB_ENV
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          name: '${{ env.file_name }}'
-          path: '/home/runner/work/guibot/guibot/${{ env.file_name }}'
-        if: matrix.install_variant != 'pip'
+          name: '${{ env.artifact_name }}'
+          path: '${{ env.artifact_full_path }}'
+        if: matrix.install_variant != 'pip' || matrix.python-version == 3.13
