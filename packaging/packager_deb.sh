@@ -66,7 +66,6 @@ cd "$distro_root/$NAME-$VERSION/packaging"
 debuild --no-tgz-check --no-lintian -i -us -uc -b
 cp ../${NAME}_${VERSION}*.deb "$distro_root/guibot"
 apt-get -y install "$distro_root/guibot/"${NAME}_${VERSION}*.deb
-rm -fr "$distro_root/$NAME-$VERSION"
 
 echo "------------- virtual display -------------"
 apt-get -y install xvfb vim-common
