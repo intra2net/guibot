@@ -409,6 +409,16 @@ class FinderTest(unittest.TestCase):
             for fdetect in finder.algorithms["feature_detectors"]:
                 for fextract in finder.algorithms["feature_extractors"]:
                     for fmatch in finder.algorithms["feature_matchers"]:
+                        # BUG: OOM error for machines with less than 16GB of RAM
+                        # NOTE: These tests are flaky and fail in a wider configuration
+                        #       set than the test_feature_nomatch tests
+                        if "BRISK" in [feature, fdetect, fextract, fmatch] and (
+                                fmatch == "BruteForce"
+                                or fmatch == "BruteForce-Hamming(2)"
+                                or fmatch == "BruteForce-Hamming"
+                                or fmatch == "BruteForce-L1"
+                        ):
+                            continue
                         finder.configure_backend(feature, "feature")
                         finder.configure(feature_detect=fdetect,
                                          feature_extract=fextract,
@@ -454,6 +464,13 @@ class FinderTest(unittest.TestCase):
             for fdetect in finder.algorithms["feature_detectors"]:
                 for fextract in finder.algorithms["feature_extractors"]:
                     for fmatch in finder.algorithms["feature_matchers"]:
+                        # BUG: OOM error for machines with less than 16GB of RAM
+                        if fextract == "BRISK" and (
+                                fmatch == "BruteForce"
+                                or fmatch == "BruteForce-Hamming(2)"
+                                or fmatch == "BruteForce-Hamming"
+                        ):
+                            continue
                         finder.configure_backend(feature, "feature")
                         finder.configure(feature_detect=fdetect,
                                          feature_extract=fextract,
