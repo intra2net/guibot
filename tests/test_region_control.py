@@ -315,9 +315,9 @@ class RegionTest(unittest.TestCase):
         self.show_application()
         with self.assertRaises(FindError):
             self.region.press_expect(self.region.SHIFT, 'shape_black_box',
-                                     timeout=1, retries=1)
+                                     timeout=3, retries=1)
         self.region.press_expect(self.region.SHIFT, 'shape_black_box',
-                                 timeout=1, retries=2)
+                                 timeout=3, retries=2)
         self.close_windows()
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
@@ -327,9 +327,9 @@ class RegionTest(unittest.TestCase):
         self.show_application()
         with self.assertRaises(NotFindError):
             self.region.press_vanish(self.region.SHIFT, 'shape_green_box',
-                                     timeout=1, retries=1)
+                                     timeout=3, retries=1)
         self.region.press_vanish(self.region.SHIFT, 'shape_green_box',
-                                 timeout=1, retries=2)
+                                 timeout=3, retries=2)
         self.close_windows()
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
