@@ -295,7 +295,7 @@ class ControllerTest(unittest.TestCase):
                             display.mouse_move(self.context_menu_close_control, smooth=False)
                             display.mouse_click(mouse.LEFT_BUTTON)
 
-                        self.assertEqual(0, self.wait_end(self.child_app))
+                        self.assertEqual(0, self.wait_end(self.child_app, timeout=60))
                         self.child_app = None
 
                         self._verify_dumps("mouse")
