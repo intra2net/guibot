@@ -9,16 +9,19 @@ readonly distro_version="${VERSION:-8}"
 readonly distro_root="${ROOT:-$HOME}"
 readonly python_version="${PYTHON_VERSION:-3.8}"
 readonly release_tag="${RELEASE_TAG:-}"
+readonly python_path="${PYTHON_PATH:-/usr/local/lib/python"$python_version"}"
 
 # environment dependencies not provided by pip
 echo "------------- python3 packages -------------"
-if [[ $python_version == '3.10.8' ]]; then dnf -y install python3.10 python3.10-devel; fi
-if [[ $python_version == '3.11' ]]; then dnf -y install python3.11 python3.11-devel; fi
-if [[ $python_version == '3.12' ]]; then dnf -y install python3.12 python3.12-devel; fi
-if [[ $python_version == '3.13' ]]; then dnf -y install python3.13 python3.13-devel; fi
-alternatives --install /usr/bin/python3 python3 /usr/bin/python${python_version} 60 \
-             --slave /usr/bin/pip3 pip3 /usr/bin/pip${python_version}
-alternatives --set python3 /usr/bin/python${python_version}
+if [[ "$PYENV" != 1 ]]; then
+    if [[ $python_version == '3.10.8' ]]; then dnf -y install python3.10 python3.10-devel; fi
+    if [[ $python_version == '3.11' ]]; then dnf -y install python3.11 python3.11-devel; fi
+    if [[ $python_version == '3.12' ]]; then dnf -y install python3.12 python3.12-devel; fi
+    if [[ $python_version == '3.13' ]]; then dnf -y install python3.13 python3.13-devel; fi
+    alternatives --install /usr/bin/python3 python3 /usr/bin/python"${python_version}" 60 \
+                 --slave /usr/bin/pip3 pip3 /usr/bin/pip"${python_version}"
+    alternatives --set python3 /usr/bin/python"${python_version}"
+fi
 echo "-------------  pip3 dependencies (for dependencies not available as RPM) -------------"
 dnf -y install gcc libX11-devel libXtst-devel libpng-devel redhat-rpm-config
 echo "------------- text matching -------------"
@@ -56,11 +59,11 @@ echo "------------- unit tests -------------"
 # We need xcb lib utils to run the pyqt6 app
 dnf install -y xcb-util*
 pip install PyQt6
-export QT_QPA_PLATFORM_PLUGIN_PATH=/usr/local/lib/python"$python_version"/site-packages/PyQt6/Qt6/plugins/platforms
+export QT_QPA_PLATFORM_PLUGIN_PATH="$python_path"/site-packages/PyQt6/Qt6/plugins/platforms
 # the tests and misc data are not included in the PIP package
-cp -r "$distro_root/guibot/tests" /usr/local/lib/python"$python_version"/site-packages/guibot/
-cp -r "$distro_root/guibot/misc" /usr/local/lib/python"$python_version"/site-packages/guibot/
-cd /usr/local/lib/python"$python_version"/site-packages/guibot/tests/
+cp -r "$distro_root/guibot/tests" "$python_path"/site-packages/guibot/
+cp -r "$distro_root/guibot/misc" "$python_path"/site-packages/guibot/
+cd "$python_path"/site-packages/guibot/tests/
 
 COVERAGE="coverage"
 LIBPATH=".." COVERAGE="$COVERAGE" sh coverage_analysis.sh
