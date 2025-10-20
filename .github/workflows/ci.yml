@@ -1,4 +1,4 @@
-name: GH Actions
+name: CI
 
 on:
   push:
