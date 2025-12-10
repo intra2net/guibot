@@ -521,12 +521,9 @@ class AutoPyController(Controller):
         height, width = 1.0 if float(height) < 1.0 else height, (
             1.0 if float(width) < 1.0 else width
         )
-        try:
-            autopy_bmp = self._backend_obj.bitmap.capture_screen(
-                ((xpos, ypos), (width, height))
-            )
-        except ValueError:
-            return Image("", PIL.Image.new("RGB", (1, 1)))
+        autopy_bmp = self._backend_obj.bitmap.capture_screen(
+            ((xpos, ypos), (width, height))
+        )
         autopy_bmp.save(filename)
 
         with PIL.Image.open(filename) as f:
