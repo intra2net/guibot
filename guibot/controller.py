@@ -215,12 +215,14 @@ class Controller(LocalConfig):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def _region_from_args(self, *args: "Region") -> tuple[int, int, int, int, str]:
+    def _region_from_args(
+        self, *args: "list[int | Region]"
+    ) -> tuple[int, int, int, int, str]:
         if len(args) == 4:
-            xpos = args[0]
-            ypos = args[1]
-            width = args[2]
-            height = args[3]
+            xpos = int(args[0])
+            ypos = int(args[1])
+            width = int(args[2])
+            height = int(args[3])
         elif len(args) == 1:
             region = args[0]
             xpos = region.x
