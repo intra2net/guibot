@@ -424,15 +424,7 @@ class AutoPyController(Controller):
         See base method for details.
         """
         loc = self._backend_obj.mouse.location()
-        # newer versions do their own scale conversion
-        version = self._backend_obj.__version__.split(".")
-        if (
-            int(version[0]) > 3
-            or int(version[0]) == 3
-            and (int(version[1]) > 0 or int(version[2]) > 0)
-        ):
-            return Location(int(loc[0] * self._scale), int(loc[1] * self._scale))
-        return Location(int(loc[0] / self._scale), int(loc[1] / self._scale))
+        return Location(int(loc[0] * self._scale), int(loc[1] * self._scale))
 
     mouse_location = property(fget=get_mouse_location)
 
