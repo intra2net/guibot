@@ -125,7 +125,7 @@ jobs:
         with:
           name: '${{ env.artifact_name }}'
           path: '${{ env.artifact_full_path }}'
-        if: matrix.install_variant != 'pip' || matrix.python-version == 3.13
+        if: matrix.install_variant != 'pip' || matrix.python-version == 3.13 || matrix.python-version ==3.14
 
   windows:
     name: Windows with any available coverage
