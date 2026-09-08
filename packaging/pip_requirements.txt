@@ -5,11 +5,12 @@ Pillow==12.3.0
 autopy==4.0.2; python_version >= '3.8' and platform_python_implementation != "PyPy"
 # OCR is currently not tested on Windows due to custom Tesseract OCR installers
 pytesseract==0.3.13; sys_platform != 'win32'
-tesserocr==2.7.1; sys_platform != 'win32'
+tesserocr==2.7.1; sys_platform != 'win32' and python_version < '3.14'
+tesserocr>=2.10.0; sys_platform != 'win32' and python_version >= '3.14'
 # TODO: OpenCV and PyTorch don't control their "numpy" dependency
 numpy==1.26.4; python_version < '3.12' and platform_python_implementation != "PyPy"
 numpy==2.2.4; python_version >= '3.12' and python_version < '3.14' and platform_python_implementation != "PyPy"
-numpy==2.2.4; python_version >= '3.14' and platform_python_implementation != "PyPy"
+numpy>=2.3.2; python_version >= '3.14' and platform_python_implementation != "PyPy"
 opencv-contrib-python==4.11.0.86; python_version < '3.14' and platform_python_implementation != "PyPy"
 opencv-contrib-python==4.11.0.86; python_version >= '3.14' and platform_python_implementation != "PyPy"
 torch==2.2.0; python_version < '3.12' and 'generic' not in platform_release and platform_python_implementation != "PyPy"
