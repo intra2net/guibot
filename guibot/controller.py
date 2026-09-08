@@ -473,8 +473,12 @@ class AutoPyController(Controller):
                 "Backend '%s' has not been configured yet" % backend
             )
 
-        import autopy
-
+        try:
+            import autopy
+        except ImportError:
+            raise UninitializedBackendError(
+                "AutoPy is not installed for this Python version/platform"
+            )
         self._backend_obj = autopy
 
         self._scale = self._backend_obj.screen.scale()
