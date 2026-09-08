@@ -391,7 +391,7 @@ class ControllerTest(unittest.TestCase):
         """Check key type effect for all display controller backends."""
         for display in self.backends:
             # include some modifiers without direct effect in this case
-            alt_key = getattr(getattr(display, 'keymap', None), 'AlT', None)
+            alt_key = getattr(getattr(display, 'keymap', None), 'ALT', None)
             modifier_list = [None, [alt_key]] if alt_key else [None]
             for modifiers in modifier_list:
                 shutil.rmtree(self.logpath, ignore_errors=True)
