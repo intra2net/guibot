@@ -35,5 +35,16 @@ class ConfigTest(unittest.TestCase):
         # value should be restored once we exit the context
         self.assertEqual(GlobalConfig.delay_before_drop, original_value)
 
+    def test_save_needle_on_error_deprecated(self) -> None:
+        """Check that the deprecated setting warns but still works."""
+        with self.assertWarns(DeprecationWarning):
+            original = GlobalConfig.save_needle_on_error
+        with self.assertWarns(DeprecationWarning):
+            GlobalConfig.save_needle_on_error = not original
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(GlobalConfig.save_needle_on_error, not original)
+        with self.assertWarns(DeprecationWarning):
+            GlobalConfig.save_needle_on_error = original
+
 if __name__ == '__main__':
     unittest.main()
