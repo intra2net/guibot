@@ -25,6 +25,7 @@ INTERFACE
 
 """
 
+import logging
 import os
 import shutil
 import PIL.Image
@@ -143,14 +144,14 @@ class ImageLogger(object):
             x, y = loc
             cv2.circle(canvas, (int(x), int(y)), radius, (r, g, b))
 
-    def dump_matched_images(self) -> None:
+    def dump_matched_images(self, max_level: int = logging.WARNING) -> None:
         """
         Write file with the current needle and haystack.
 
         The current needle and haystack (matched images) are stored
         as `needle` and `haystack` attributes.
         """
-        if ImageLogger.logging_level > 30:
+        if ImageLogger.logging_level > max_level:
             return
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
@@ -168,6 +169,17 @@ class ImageLogger(object):
         )
         haystack_path = os.path.join(ImageLogger.logging_destination, haystack_name)
         self.haystack.save(haystack_path)
+
+    def dump_find_error(self) -> None:
+        """
+        Write the needle and haystack of a failed find.
+
+        This is a near minimal verbosity dump that is also active
+        at the default ERROR logging level.
+        """
+        self.dump_matched_images(max_level=logging.ERROR)
+        if ImageLogger.logging_level <= logging.ERROR:
+            ImageLogger.step += 1
 
     def dump_hotmap(self, name: str, hotmap: PIL.Image.Image | numpy.ndarray) -> None:
         """

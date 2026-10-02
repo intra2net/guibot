@@ -26,6 +26,7 @@ INTERFACE
 """
 
 import logging
+import warnings
 from typing import Any
 
 from .errors import *
@@ -202,6 +203,11 @@ class GlobalConfig(type):
         :param value: whether to perform an extra needle dump on matching error
         :returns: current value if no argument was passed otherwise None
         """
+        warnings.warn(
+            "save_needle_on_error is deprecated, " "use image_logging_level instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if value is None:
             return cls._save_needle_on_error
         elif value is True or value is False:
