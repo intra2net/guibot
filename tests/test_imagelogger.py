@@ -21,6 +21,7 @@ from unittest.mock import MagicMock, patch
 
 from guibot.imagelogger import ImageLogger
 from guibot.config import GlobalConfig, TemporaryConfig
+from guibot.target import Chain, Image as ImageTarget, Pattern, Text
 
 
 class ImageLoggerTest(unittest.TestCase):
@@ -96,6 +97,25 @@ class ImageLoggerTest(unittest.TestCase):
             # assert for folder creation and actual file saving
             self.imglog.needle.save.assert_called_once_with(os.path.join('imglog', 'imglog018-1needle-test_needle'))
             self.imglog.haystack.save.assert_called_once_with(os.path.join('imglog', 'imglog018-2haystack-test_haystack'))
+
+    def test_target_dumping(self) -> None:
+        """Test that logging saves individual targets but never a whole chain."""
+        for target_type in (ImageTarget, Text, Pattern, Chain):
+            with self.subTest(target=target_type.__name__), \
+                    patch('os.path.exists', return_value=False):
+                ImageLogger.step = 18
+                self.imglog.needle = MagicMock(spec=target_type)
+                self.imglog.needle.__str__.return_value = 'test_needle'
+                self.imglog.haystack.reset_mock()
+                self.imglog.dump_matched_images()
+
+                if target_type is Chain:
+                    self.imglog.needle.save.assert_not_called()
+                else:
+                    self.imglog.needle.save.assert_called_once_with(
+                        os.path.join('imglog', 'imglog018-1needle-test_needle'))
+                self.imglog.haystack.save.assert_called_once_with(
+                    os.path.join('imglog', 'imglog018-2haystack-test_haystack'))
 
     def test_hotmap_dumping(self) -> None:
         """Check that hotmaps are dumped correctly."""
