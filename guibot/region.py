@@ -1294,6 +1294,7 @@ class Region(object):
         :param mark_clicks: 0, 1, 2, ... clicks to highlight previous text
         :returns: self
         :raises: :py:class:`exceptions.ValueError` if `mark_click` is not acceptable value
+        :raises: :py:class:`exceptions.ValueError` if `text` is empty
 
         If the delete flag is set the previous content will be deleted or
         otherwise the new text will be added in the end of the current text.
@@ -1305,9 +1306,8 @@ class Region(object):
         single, double or triple click to mark the already present text that
         has to be replaced.
         """
-        # NOTE: handle cases of empty value no filling anything
         if not text:
-            return self
+            raise ValueError("fill_at requires a non-empty text to fill in")
         self.click_at(anchor, dx, dy, count=mark_clicks)
         # make sure any highlighting is given enough time
         self.idle(1)
