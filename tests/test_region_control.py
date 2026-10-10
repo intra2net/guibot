@@ -370,6 +370,11 @@ class RegionTest(unittest.TestCase):
         self.child_app = None
 
     @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
+    def test_fill_at_empty(self) -> None:
+        with self.assertRaises(ValueError):
+            self.region.fill_at(self.textedit_quit_control, '', 0, 0)
+
+    @unittest.skipIf(os.environ.get('DISABLE_PYQT', "0") == "1", "PyQt disabled")
     def test_select_at(self) -> None:
         # NOTE: autopy has a bug with arrow keys which would result in a fatal error
         # here breaking the entire run
