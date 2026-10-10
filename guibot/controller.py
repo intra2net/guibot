@@ -215,12 +215,14 @@ class Controller(LocalConfig):
         """
         self.__synchronize_backend(backend, category, reset)
 
-    def _region_from_args(self, *args: "Region") -> tuple[int, int, int, int, str]:
+    def _region_from_args(
+        self, *args: "int | Region"
+    ) -> tuple[int, int, int, int, str]:
         if len(args) == 4:
-            xpos = args[0]
-            ypos = args[1]
-            width = args[2]
-            height = args[3]
+            xpos = int(args[0])
+            ypos = int(args[1])
+            width = int(args[2])
+            height = int(args[3])
         elif len(args) == 1:
             region = args[0]
             xpos = region.x
@@ -422,15 +424,7 @@ class AutoPyController(Controller):
         See base method for details.
         """
         loc = self._backend_obj.mouse.location()
-        # newer versions do their own scale conversion
-        version = self._backend_obj.__version__.split(".")
-        if (
-            int(version[0]) > 3
-            or int(version[0]) == 3
-            and (int(version[1]) > 0 or int(version[2]) > 0)
-        ):
-            return Location(int(loc[0] * self._scale), int(loc[1] * self._scale))
-        return Location(int(loc[0] / self._scale), int(loc[1] / self._scale))
+        return Location(int(loc[0] * self._scale), int(loc[1] * self._scale))
 
     mouse_location = property(fget=get_mouse_location)
 
@@ -521,12 +515,9 @@ class AutoPyController(Controller):
         height, width = 1.0 if float(height) < 1.0 else height, (
             1.0 if float(width) < 1.0 else width
         )
-        try:
-            autopy_bmp = self._backend_obj.bitmap.capture_screen(
-                ((xpos, ypos), (width, height))
-            )
-        except ValueError:
-            return Image("", PIL.Image.new("RGB", (1, 1)))
+        autopy_bmp = self._backend_obj.bitmap.capture_screen(
+            ((xpos, ypos), (width, height))
+        )
         autopy_bmp.save(filename)
 
         with PIL.Image.open(filename) as f:
