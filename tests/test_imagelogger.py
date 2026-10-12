@@ -97,6 +97,16 @@ class ImageLoggerTest(unittest.TestCase):
             self.imglog.needle.save.assert_called_once_with(os.path.join('imglog', 'imglog018-1needle-test_needle'))
             self.imglog.haystack.save.assert_called_once_with(os.path.join('imglog', 'imglog018-2haystack-test_haystack'))
 
+    def test_find_error_dumping(self) -> None:
+        """Check that a failed find dumps the needle and haystack."""
+        ImageLogger.step = 18
+        with patch("os.path.exists", side_effect=lambda _: False):
+            self.imglog.dump_find_error()
+            self.imglog.needle.save.assert_called_once_with(
+                os.path.join('imglog', 'imglog018-1needle-test_needle'))
+            self.imglog.haystack.save.assert_called_once_with(
+                os.path.join('imglog', 'imglog018-2haystack-test_haystack'))
+
     def test_hotmap_dumping(self) -> None:
         """Check that hotmaps are dumped correctly."""
         ImageLogger.step = 25

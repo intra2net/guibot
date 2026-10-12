@@ -20,6 +20,7 @@ import unittest
 import time
 import shutil
 import subprocess
+from unittest.mock import patch
 from typing import Any
 
 import common_test
@@ -173,6 +174,17 @@ class RegionTest(unittest.TestCase):
             self.fail('exception was not thrown')
         except FindError as e:
             pass
+
+        target = Image('shape_blue_circle.png')
+        with patch("guibot.region.ImageLogger") as logger_type:
+            self.assertRaises(FindError, self.region.find_all, target, 0)
+        logger = logger_type.return_value
+        self.assertIs(logger.needle, target)
+        logger.dump_find_error.assert_called_once_with()
+
+        with patch("guibot.region.ImageLogger") as logger_type:
+            logger_type.return_value.dump_find_error.side_effect = OSError("unwritable")
+            self.assertRaises(FindError, self.region.find_all, target, 0)
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
                      os.environ.get('DISABLE_PYQT', "0") == "1",
