@@ -1038,6 +1038,76 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names (+1 as we match with template)
         dumps = self._verify_and_get_dumps(9, multistep=True)
 
+class TextFinderTest(unittest.TestCase):
+    """Unit tests for Tesseract text detection and GUI preprocessing."""
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_removal(self) -> None:
+        """Test that OCR preprocessing removes GUI lines without uint8 residue."""
+        import numpy
+
+        binary_image = numpy.zeros((40, 40), dtype=numpy.uint8)
+
+        # long crossing lines and nearby short fragments emulate the rough
+        # edges produced when GUI borders are adaptively thresholded
+        binary_image[8:10, 2:38] = 255
+        binary_image[2:30, 30:32] = 255
+        binary_image[7, 2:7] = 255
+        binary_image[7, 9:14] = 255
+        binary_image[2:7, 29] = 255
+        binary_image[9:14, 29] = 255
+
+        # a shorter L-shaped glyph must survive a segment-size threshold of 10
+        binary_image[31:37, 3] = 255
+        binary_image[36, 3:9] = 255
+        original_image = binary_image.copy()
+
+        processed_image = TextFinder._remove_segment_lines(binary_image, 10, 10)
+
+        self.assertFalse(numpy.any(processed_image[7:11, 2:38]))
+        self.assertFalse(numpy.any(processed_image[2:30, 29:33]))
+        numpy.testing.assert_array_equal(
+            processed_image[31:37, 3:9], original_image[31:37, 3:9]
+        )
+        numpy.testing.assert_array_equal(binary_image, original_image)
+        numpy.testing.assert_array_equal(
+            TextFinder._remove_segment_lines(binary_image, 1, 1), original_image
+        )
+        self.assertTrue(numpy.isin(processed_image, [0, 255]).all())
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_gui_line_removal(self) -> None:
+        """Test that thresholded GUI labels survive nearby border removal."""
+        import numpy
+        import PIL.Image
+        import PIL.ImageDraw
+
+        canvas = PIL.Image.new('RGB', (240, 160), (220, 220, 220))
+        draw = PIL.ImageDraw.Draw(canvas)
+        draw.rectangle((0, 0, 239, 29), fill='black')
+        draw.text((8, 8), 'Activities', fill='white')
+        draw.line((40, 60, 235, 60), fill=(100, 100, 100))
+        draw.line((40, 60, 40, 155), fill=(100, 100, 100))
+        finder = TextFinder(synchronize=False)
+        binary_image = finder._binarize_image(numpy.array(canvas))
+        processed_image = finder._remove_segment_lines(binary_image, 96, 32)
+
+        # The light Activities label creates a long foreground halo after
+        # thresholding. It must survive independently of the nearby borders.
+        self.assertTrue(numpy.any(binary_image[5:23, 5:65]))
+        numpy.testing.assert_array_equal(
+            processed_image[5:23, 5:65], binary_image[5:23, 5:65]
+        )
+        for area in [
+            (slice(56, 65), slice(50, 230)),
+            (slice(70, 150), slice(36, 45)),
+        ]:
+            self.assertLess(
+                numpy.count_nonzero(processed_image[area]),
+                0.02 * numpy.count_nonzero(binary_image[area]),
+            )
+
+
 class CVParameterTest(unittest.TestCase):
     """Tests for the computer vision backends parameters."""
 
