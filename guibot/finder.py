@@ -2364,7 +2364,13 @@ class TextFinder(ContourFinder):
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 self.params[category]["extra_configs"] = CVParameter("")
                 self.params[category]["binarize_detection"] = CVParameter(False)
-                self.params[category]["segment_line_max"] = CVParameter(1, 1, None, 1.0)
+                # One disables removal independently for that direction.
+                self.params[category]["segment_line_max_horizontal"] = CVParameter(
+                    1, 1, None, 1.0
+                )
+                self.params[category]["segment_line_max_vertical"] = CVParameter(
+                    1, 1, None, 1.0
+                )
                 self.params[category]["recursion_height"] = CVParameter(
                     0.3, 0.0, 1.0, 0.01
                 )
@@ -2973,9 +2979,10 @@ class TextFinder(ContourFinder):
 
             # remove borders left by thresholded GUI elements before asking
             # tesseract to segment the image as document text
-            max_segment = self.params["tdetect"]["segment_line_max"].value
             detection_img = self._remove_segment_lines(
-                detection_img, max_segment, max_segment
+                detection_img,
+                self.params["tdetect"]["segment_line_max_horizontal"].value,
+                self.params["tdetect"]["segment_line_max_vertical"].value,
             )
 
         else:

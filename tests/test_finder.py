@@ -19,6 +19,8 @@ import re
 import unittest
 import shutil
 import ssl
+import tempfile
+from unittest.mock import Mock, patch
 
 import common_test
 from guibot.config import GlobalConfig
@@ -1041,6 +1043,11 @@ class FinderTest(unittest.TestCase):
 class TextFinderTest(unittest.TestCase):
     """Unit tests for Tesseract text detection and GUI preprocessing."""
 
+    def setUp(self) -> None:
+        self.logdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.logdir.cleanup)
+        self.logpath = self.logdir.name
+
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_text_segment_line_removal(self) -> None:
         """Test that OCR preprocessing removes GUI lines without uint8 residue."""
@@ -1076,6 +1083,33 @@ class TextFinderTest(unittest.TestCase):
         self.assertTrue(numpy.isin(processed_image, [0, 255]).all())
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_directions(self) -> None:
+        """Test independent cutoffs and disabling each line-removal direction."""
+        import numpy
+
+        binary_image = numpy.zeros((60, 80), dtype=numpy.uint8)
+        binary_image[8, 5:60] = 255
+        binary_image[5:55, 70] = 255
+        binary_image[30, 5:25] = 255
+        binary_image[42:56, 40] = 255
+
+        for horizontal, vertical in [(32, 10), (31, 9), (1, 10), (32, 1)]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                processed_image = TextFinder._remove_segment_lines(
+                    binary_image, horizontal, vertical
+                )
+                horizontal_pixel = 255 if horizontal == 1 else 0
+                vertical_pixel = 255 if vertical == 1 else 0
+                self.assertTrue(numpy.all(processed_image[30, 5:25] == 255))
+                self.assertTrue(numpy.all(processed_image[8, 5:60] == horizontal_pixel))
+                self.assertTrue(numpy.all(processed_image[5:55, 70] == vertical_pixel))
+                self.assertTrue(numpy.all(processed_image[42:56, 40] == vertical_pixel))
+
+        processed_image = TextFinder._remove_segment_lines(binary_image, 10, 32)
+        self.assertFalse(numpy.any(processed_image[30, 5:25]))
+        self.assertTrue(numpy.all(processed_image[42:56, 40] == 255))
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_text_gui_line_removal(self) -> None:
         """Test that thresholded GUI labels survive nearby border removal."""
         import numpy
@@ -1105,6 +1139,53 @@ class TextFinderTest(unittest.TestCase):
             self.assertLess(
                 numpy.count_nonzero(processed_image[area]),
                 0.02 * numpy.count_nonzero(binary_image[area]),
+            )
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_settings(self) -> None:
+        """Test independent line-removal settings through match files."""
+        import PIL.Image
+
+        os.makedirs(self.logpath, exist_ok=True)
+        match_file = os.path.join(self.logpath, 'lines.match')
+        with open(match_file, 'w') as config:
+            config.write('[find]\nbackend = text\n[tdetect]\nbackend = pytesseract\n')
+            config.write(
+                'segment_line_max_horizontal = %s\n' % CVParameter(32, 1, None, 1.0)
+            )
+        with patch.object(TextFinder, 'synchronize'):
+            finder = Finder.from_match_file(match_file)
+        self.assertEqual(finder.params['tdetect']['segment_line_max_horizontal'].value, 32)
+        self.assertEqual(finder.params['tdetect']['segment_line_max_vertical'].value, 1)
+        finder.params['tdetect']['binarize_detection'].value = True
+        finder.tbox = Mock()
+        finder.tbox.run_and_get_output.return_value = ''
+        finder.tbox_config = '--psm 3'
+        haystack = Image(pil_image=PIL.Image.new('RGB', (80, 60), 'white'))
+
+        for horizontal, vertical in [(32, 1), (32, 10), (1, 24), (1, 1)]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                finder.params['tdetect'][
+                    'segment_line_max_horizontal'
+                ].value = horizontal
+                finder.params['tdetect']['segment_line_max_vertical'].value = vertical
+                with patch.object(
+                    finder, '_remove_segment_lines', wraps=finder._remove_segment_lines
+                ) as remove:
+                    finder._detect_text_boxes(haystack)
+                self.assertEqual(remove.call_args.args[1:], (horizontal, vertical))
+
+        finder.params['tdetect']['segment_line_max_horizontal'].value = 96
+        finder.params['tdetect']['segment_line_max_vertical'].value = 32
+        Finder.to_match_file(finder, match_file)
+        with patch.object(TextFinder, 'synchronize'):
+            loaded = Finder.from_match_file(match_file)
+        for name in [
+            'segment_line_max_horizontal',
+            'segment_line_max_vertical',
+        ]:
+            self.assertEqual(
+                loaded.params['tdetect'][name], finder.params['tdetect'][name]
             )
 
 
