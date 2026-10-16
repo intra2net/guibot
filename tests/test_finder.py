@@ -19,6 +19,8 @@ import re
 import unittest
 import shutil
 import ssl
+import tempfile
+from unittest.mock import Mock, patch
 
 import common_test
 from guibot.config import GlobalConfig
@@ -1037,6 +1039,276 @@ class FinderTest(unittest.TestCase):
 
         # verify dumped files count and names (+1 as we match with template)
         dumps = self._verify_and_get_dumps(9, multistep=True)
+
+class TextFinderTest(unittest.TestCase):
+    """Unit tests for Tesseract text detection and GUI preprocessing."""
+
+    def setUp(self) -> None:
+        self.logdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.logdir.cleanup)
+        self.logpath = self.logdir.name
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_removal(self) -> None:
+        """Test that OCR preprocessing removes GUI lines without uint8 residue."""
+        import numpy
+
+        binary_image = numpy.zeros((40, 40), dtype=numpy.uint8)
+
+        # long crossing lines and nearby short fragments emulate the rough
+        # edges produced when GUI borders are adaptively thresholded
+        binary_image[8:10, 2:38] = 255
+        binary_image[2:30, 30:32] = 255
+        binary_image[7, 2:7] = 255
+        binary_image[7, 9:14] = 255
+        binary_image[2:7, 29] = 255
+        binary_image[9:14, 29] = 255
+
+        # a shorter L-shaped glyph must survive a segment-size threshold of 10
+        binary_image[31:37, 3] = 255
+        binary_image[36, 3:9] = 255
+        original_image = binary_image.copy()
+
+        processed_image = TextFinder._remove_segment_lines(binary_image, 10, 10)
+
+        self.assertFalse(numpy.any(processed_image[7:11, 2:38]))
+        self.assertFalse(numpy.any(processed_image[2:30, 29:33]))
+        numpy.testing.assert_array_equal(
+            processed_image[31:37, 3:9], original_image[31:37, 3:9]
+        )
+        numpy.testing.assert_array_equal(binary_image, original_image)
+        numpy.testing.assert_array_equal(
+            TextFinder._remove_segment_lines(binary_image, 1, 1), original_image
+        )
+        self.assertTrue(numpy.isin(processed_image, [0, 255]).all())
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_directions(self) -> None:
+        """Test independent cutoffs and disabling each line-removal direction."""
+        import numpy
+
+        binary_image = numpy.zeros((60, 80), dtype=numpy.uint8)
+        binary_image[8, 5:60] = 255
+        binary_image[5:55, 70] = 255
+        binary_image[30, 5:25] = 255
+        binary_image[42:56, 40] = 255
+
+        for horizontal, vertical in [(32, 10), (31, 9), (1, 10), (32, 1)]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                processed_image = TextFinder._remove_segment_lines(
+                    binary_image, horizontal, vertical
+                )
+                horizontal_pixel = 255 if horizontal == 1 else 0
+                vertical_pixel = 255 if vertical == 1 else 0
+                self.assertTrue(numpy.all(processed_image[30, 5:25] == 255))
+                self.assertTrue(numpy.all(processed_image[8, 5:60] == horizontal_pixel))
+                self.assertTrue(numpy.all(processed_image[5:55, 70] == vertical_pixel))
+                self.assertTrue(numpy.all(processed_image[42:56, 40] == vertical_pixel))
+
+        processed_image = TextFinder._remove_segment_lines(binary_image, 10, 32)
+        self.assertFalse(numpy.any(processed_image[30, 5:25]))
+        self.assertTrue(numpy.all(processed_image[42:56, 40] == 255))
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_gui_line_removal(self) -> None:
+        """Test that thresholded GUI labels survive nearby border removal."""
+        import numpy
+        import PIL.Image
+        import PIL.ImageDraw
+
+        canvas = PIL.Image.new('RGB', (240, 160), (220, 220, 220))
+        draw = PIL.ImageDraw.Draw(canvas)
+        draw.rectangle((0, 0, 239, 29), fill='black')
+        draw.text((8, 8), 'Activities', fill='white')
+        draw.line((40, 60, 235, 60), fill=(100, 100, 100))
+        draw.line((40, 60, 40, 155), fill=(100, 100, 100))
+        finder = TextFinder(synchronize=False)
+        binary_image = finder._binarize_image(numpy.array(canvas))
+        processed_image = finder._remove_segment_lines(binary_image, 96, 32)
+
+        # The light Activities label creates a long foreground halo after
+        # thresholding. It must survive independently of the nearby borders.
+        self.assertTrue(numpy.any(binary_image[5:23, 5:65]))
+        numpy.testing.assert_array_equal(
+            processed_image[5:23, 5:65], binary_image[5:23, 5:65]
+        )
+        for area in [
+            (slice(56, 65), slice(50, 230)),
+            (slice(70, 150), slice(36, 45)),
+        ]:
+            self.assertLess(
+                numpy.count_nonzero(processed_image[area]),
+                0.02 * numpy.count_nonzero(binary_image[area]),
+            )
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_settings(self) -> None:
+        """Test independent line-removal settings through match files."""
+        import PIL.Image
+
+        os.makedirs(self.logpath, exist_ok=True)
+        match_file = os.path.join(self.logpath, 'lines.match')
+        with open(match_file, 'w') as config:
+            config.write('[find]\nbackend = text\n[tdetect]\nbackend = pytesseract\n')
+            config.write(
+                'segment_line_max_horizontal = %s\n' % CVParameter(32, 1, None, 1.0)
+            )
+        with patch.object(TextFinder, 'synchronize'):
+            finder = Finder.from_match_file(match_file)
+        self.assertEqual(finder.params['tdetect']['segment_line_max_horizontal'].value, 32)
+        self.assertEqual(finder.params['tdetect']['segment_line_max_vertical'].value, 1)
+        finder.params['tdetect']['binarize_detection'].value = True
+        finder.tbox = Mock()
+        finder.tbox.image_to_data.return_value = {'level': []}
+        finder.tbox_config = '--psm 3'
+        haystack = Image(pil_image=PIL.Image.new('RGB', (80, 60), 'white'))
+
+        for horizontal, vertical in [(32, 1), (32, 10), (1, 24), (1, 1)]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                finder.params['tdetect'][
+                    'segment_line_max_horizontal'
+                ].value = horizontal
+                finder.params['tdetect']['segment_line_max_vertical'].value = vertical
+                with patch.object(
+                    finder, '_remove_segment_lines', wraps=finder._remove_segment_lines
+                ) as remove:
+                    finder._detect_text_boxes(haystack)
+                self.assertEqual(remove.call_args.args[1:], (horizontal, vertical))
+
+        finder.params['tdetect']['segment_line_max_horizontal'].value = 96
+        finder.params['tdetect']['segment_line_max_vertical'].value = 32
+        Finder.to_match_file(finder, match_file)
+        with patch.object(TextFinder, 'synchronize'):
+            loaded = Finder.from_match_file(match_file)
+        for name in [
+            'segment_line_max_horizontal',
+            'segment_line_max_vertical',
+        ]:
+            self.assertEqual(
+                loaded.params['tdetect'][name], finder.params['tdetect'][name]
+            )
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_terminal_regions(self) -> None:
+        """Retain large phrases and recover words with a native TSV fallback."""
+        import cv2
+        import numpy
+        import PIL.Image
+
+        haystack = Image(pil_image=PIL.Image.new('RGB', (100, 60), (90, 120, 150)))
+        for recovery in ('original', 'line', 'native', 'empty'):
+            with self.subTest(recovery=recovery):
+                finder = TextFinder(synchronize=False)
+                finder.configure_backend('pytesseract', 'tdetect')
+                finder.params['tdetect']['binarize_detection'].value = True
+                finder.tbox = Mock()
+                finder.tbox_config = '--psm 3'
+                output = {
+                    'level': [4, 5, 5, 5, 4, 5],
+                    'text': ['', 'sender', 'words', 'invalid', '', 'extra']
+                    if recovery != 'empty' else ['', '', '', 'invalid', '', 'extra'],
+                    'left': [10, 15, 40, 0, 0, 1],
+                    'top': [12, 10, 14, 0, 45, 40],
+                    'width': [70, 20, 22, 0, 20, 18],
+                    'height': [12, 24, 8, 8, 8, 16],
+                }
+                words = {
+                    'level': [4, 5, 5, 5, 5, 5] if recovery == 'original' else [],
+                    'text': ['', 'sender', 'words', 'sender', 'invalid', 'sender words']
+                    if recovery == 'original'
+                    else [],
+                    'left': [0, 5, 30, 5, 0, 0],
+                    'top': [0, 2, 2, 2, 0, 0],
+                    'width': [70, 20, 22, 20, 0, 70],
+                    'height': [12, 8, 8, 8, 0, 12],
+                }
+                if recovery == 'line':
+                    words = {
+                        'level': [4, 5, 5], 'text': ['', 'sender', 'words'],
+                        'left': [5, 5, 16], 'top': [2, 2, 2],
+                        'width': [25, 10, 14], 'height': [8, 8, 8],
+                    }
+                finder.tbox.image_to_data.side_effect = [output, words]
+                with patch.object(
+                    finder,
+                    '_binarize_image',
+                    return_value=numpy.zeros((60, 100), dtype=numpy.uint8),
+                ):
+                    regions = finder._detect_text_boxes(haystack)
+
+                expected = [[10, 12, 70, 12], [0, 45, 20, 8]]
+                if recovery == 'original':
+                    expected.extend([[15, 14, 20, 8], [40, 14, 22, 8]])
+                elif recovery == 'line':
+                    expected.extend([[15, 14, 10, 8], [26, 14, 14, 8]])
+                elif recovery == 'native':
+                    expected.extend([[15, 10, 20, 24], [40, 14, 22, 8]])
+                self.assertEqual(regions, expected)
+                self.assertEqual(finder.tbox.image_to_data.call_count, 2)
+                finder.tbox.run_and_get_output.assert_not_called()
+                numpy.testing.assert_array_equal(
+                    finder.tbox.image_to_data.call_args.args[0],
+                    cv2.cvtColor(
+                        numpy.array(haystack.pil_image)[12:24, 10:80],
+                        cv2.COLOR_RGB2GRAY,
+                    ),
+                )
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_line_regions(self) -> None:
+        """Use TSV coordinates directly without expanding normal lines to words."""
+        import PIL.Image
+
+        finder = TextFinder(synchronize=False)
+        finder.configure_backend('pytesseract', 'tdetect')
+        finder.tbox = Mock()
+        finder.tbox_config = '--psm 3'
+        finder.tbox.image_to_data.return_value = {
+            'level': [1, 2, 3, 4, 5, 5, 4, 4, 5],
+            'text': ['', '', '', '', 'first', 'second', '', '', 'invalid'],
+            'left': [0, 0, 0, 10, 10, 20, 10, 0, 0],
+            'top': [0, 0, 0, 12, 12, 12, 12, 0, 0],
+            'width': [100, 100, 100, 20, 8, 10, 20, 0, 10],
+            'height': [60, 60, 60, 8, 8, 8, 8, 0, 10],
+        }
+        haystack = Image(pil_image=PIL.Image.new('RGB', (100, 60), 'white'))
+
+        self.assertEqual(finder._detect_text_boxes(haystack), [[10, 12, 20, 8]])
+        finder.tbox.image_to_data.assert_called_once()
+        finder.tbox.run_and_get_output.assert_not_called()
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_recovered_word_coverage(self) -> None:
+        """Suppress covered words without double-counting overlapping detections."""
+        import PIL.Image
+
+        haystack = Image(pil_image=PIL.Image.new('RGB', (100, 60), 'white'))
+        for second_left in (20, 5):
+            with self.subTest(second_left=second_left):
+                finder = TextFinder(synchronize=False)
+                finder.configure_backend('pytesseract', 'tdetect')
+                finder.tbox = Mock()
+                finder.tbox_config = '--psm 3'
+                output = {
+                    'level': [4, 4, 4], 'text': ['', '', ''],
+                    'left': [10, 10, 10 + second_left], 'top': [12, 14, 14],
+                    'width': [70, 20, 20], 'height': [12, 8, 8],
+                }
+                words = {
+                    'level': [5, 5],
+                    'text': ['covered', 'missing'],
+                    'left': [0, 45], 'top': [2, 2],
+                    'width': [40, 20], 'height': [8, 8],
+                }
+                finder.tbox.image_to_data.side_effect = [output, words]
+
+                expected = [[10, 12, 70, 12],
+                            [10, 14, 20, 8], [10 + second_left, 14, 20, 8]]
+                if second_left == 5:
+                    expected.append([10, 14, 40, 8])
+                expected.append([55, 14, 20, 8])
+                self.assertEqual(finder._detect_text_boxes(haystack), expected)
+
 
 class CVParameterTest(unittest.TestCase):
     """Tests for the computer vision backends parameters."""

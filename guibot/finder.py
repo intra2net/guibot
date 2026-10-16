@@ -2364,7 +2364,13 @@ class TextFinder(ContourFinder):
                 self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
                 self.params[category]["extra_configs"] = CVParameter("")
                 self.params[category]["binarize_detection"] = CVParameter(False)
-                self.params[category]["segment_line_max"] = CVParameter(1, 1, None, 1.0)
+                # One disables removal independently for that direction.
+                self.params[category]["segment_line_max_horizontal"] = CVParameter(
+                    1, 1, None, 1.0
+                )
+                self.params[category]["segment_line_max_vertical"] = CVParameter(
+                    1, 1, None, 1.0
+                )
                 self.params[category]["recursion_height"] = CVParameter(
                     0.3, 0.0, 1.0, 0.01
                 )
@@ -2606,9 +2612,7 @@ class TextFinder(ContourFinder):
                 self.params["tdetect"]["oem"].value,
                 self.params["tdetect"]["psmode"].value,
             )
-            self.tbox_config += (
-                r"-c tessedit_char_whitelist='%s' %s batch.nochop wordstrbox"
-            )
+            self.tbox_config += r"-c tessedit_char_whitelist='%s' %s batch.nochop"
             self.tbox_config %= (
                 self.params["tdetect"]["char_whitelist"].value,
                 self.params["tdetect"]["extra_configs"].value,
@@ -2967,23 +2971,18 @@ class TextFinder(ContourFinder):
         import cv2
         import numpy
 
-        detection_img = numpy.array(haystack.pil_image)
+        original_img = numpy.array(haystack.pil_image)
+        detection_img = original_img
         if self.params["tdetect"]["binarize_detection"].value:
             detection_img = self._binarize_image(detection_img)
 
-            # remove segment line residue from thresholding text containing boxes (GUI elements)
-            max_segment = self.params["tdetect"]["segment_line_max"].value
-            for i in range(1, max_segment):
-                hline = cv2.getStructuringElement(cv2.MORPH_RECT, (max_segment, i))
-                hlopened = cv2.morphologyEx(
-                    detection_img, cv2.MORPH_OPEN, hline, iterations=1
-                )
-                vline = cv2.getStructuringElement(cv2.MORPH_RECT, (i, max_segment))
-                vlopened = cv2.morphologyEx(
-                    detection_img, cv2.MORPH_OPEN, vline, iterations=1
-                )
-                detection_img -= hlopened
-                detection_img -= vlopened
+            # remove borders left by thresholded GUI elements before asking
+            # tesseract to segment the image as document text
+            detection_img = self._remove_segment_lines(
+                detection_img,
+                self.params["tdetect"]["segment_line_max_horizontal"].value,
+                self.params["tdetect"]["segment_line_max_vertical"].value,
+            )
 
         else:
             detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
@@ -2995,63 +2994,139 @@ class TextFinder(ContourFinder):
         )
 
         char_canvas = detection_img
-        text_canvas = numpy.array(haystack.pil_image)
+        text_canvas = original_img.copy()
         self.imglog.hotmaps.append(char_canvas)
         self.imglog.hotmaps.append(text_canvas)
 
         text_regions = []
-        recursive_regions = [(0, 0, detection_img)]
-        while len(recursive_regions) > 0:
-            offset_x, offset_y, next_region = recursive_regions.pop()
-            region_w, region_h = next_region.shape[1], next_region.shape[0]
-
-            # TODO: activate flag for word-only matching if there is enough interest for this
-            # output = self.tbox.image_to_boxes(next_region, self.params["tdetect"]["language"].value,
-            #                                  config=self.tbox_config, output_type=self.tbox.Output.DICT)
-            # ...process dict
-            output = self.tbox.run_and_get_output(
-                next_region,
-                "box",
-                self.params["tdetect"]["language"].value,
-                config=self.tbox_config,
-            )
-            for line in output.splitlines():
-                tokens = line.rstrip().split(" ", maxsplit=6)
-                if tokens[0] != "WordStr":
+        recovery_regions = []
+        line_words = None
+        output = self.tbox.image_to_data(
+            detection_img,
+            lang=self.params["tdetect"]["language"].value,
+            config=self.tbox_config,
+            output_type=self.tbox.Output.DICT,
+        )
+        for i, level in enumerate(output["level"]):
+            if level == 4:
+                # TSV line rows have empty text and top-left coordinates.
+                line_words = None
+                box = [output[name][i] for name in ("left", "top", "width", "height")]
+                x, y, w, h = box
+                if w <= 0 or h <= 0 or box in text_regions:
                     continue
-                left = int(tokens[1])
-                bottom = region_h - int(tokens[2])
-                right = int(tokens[3])
-                top = region_h - int(tokens[4])
-                text = tokens[6][1:]
-
-                dx, dy, w, h = left, top, right - left, bottom - top
-                x, y = offset_x + dx, offset_y + dy
-                if text == "":
-                    logging.debug("Empty text found, skipping region")
-                    continue
-                if (w > detection_width and h > 0) or (h > detection_height and w > 0):
-                    subregion_npy = next_region[
-                        max(dy, 0) : min(dy + h, region_h),
-                        max(dx, 0) : min(dx + w, region_w),
-                    ]
-                    if next_region.shape != subregion_npy.shape:
-                        logging.debug(
-                            "Large region of size %sx%s detected, rescanning inside of it",
-                            w,
-                            h,
-                        )
-                        recursive_regions.append((x, y, subregion_npy))
-                    continue
-
-                logging.debug(
-                    "Found text '%s' with tesseract-provided box %s", text, (x, y, w, h)
+                text_regions.append(box)
+                if w > detection_width or h > detection_height:
+                    line_words = []
+                    recovery_regions.append((box, line_words))
+            elif level == 5 and line_words is not None and output["text"][i].strip():
+                # Cache words only for lines that previously required rescanning.
+                line_words.append(
+                    [output[name][i] for name in ("left", "top", "width", "height")]
                 )
-                cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 0, 0), 2)
-                cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 255, 0), 1)
-                text_regions.append([x, y, w, h])
 
+        # Prefer original pixels, using native words if recovery finds nothing.
+        for parent, native_words in sorted(
+            recovery_regions, key=lambda r: r[0][2] * r[0][3], reverse=True
+        ):
+            x, y, w, h = parent
+            word_img = cv2.cvtColor(
+                original_img[y : y + h, x : x + w], cv2.COLOR_RGB2GRAY
+            )
+            words = self.tbox.image_to_data(
+                word_img,
+                lang=self.params["tdetect"]["language"].value,
+                config=self.tbox_config,
+                output_type=self.tbox.Output.DICT,
+            )
+            recovered_boxes = [
+                [
+                    x + words["left"][i],
+                    y + words["top"][i],
+                    words["width"][i],
+                    words["height"][i],
+                ]
+                for i, word in enumerate(words["text"])
+                if word.strip() and words["width"][i] > 0 and words["height"][i] > 0
+            ]
+            for wx, wy, ww, wh in recovered_boxes or native_words:
+                word_box = [wx, wy, ww, wh]
+                if ww <= 0 or wh <= 0 or word_box in text_regions:
+                    continue
+
+                # Account for the union of existing boxes, including words
+                # recovered from larger parents, without counting overlaps twice.
+                covered = numpy.zeros((wh, ww), dtype=bool)
+                for region in text_regions:
+                    if region == parent:
+                        continue  # Retain words within their own phrase candidate.
+                    rx, ry, rw, rh = region
+                    left, top = max(wx, rx), max(wy, ry)
+                    right, bottom = min(wx + ww, rx + rw), min(wy + wh, ry + rh)
+                    if left < right and top < bottom:
+                        covered[top - wy : bottom - wy, left - wx : right - wx] = True
+                # Allow small edge differences between detections of the same word.
+                if numpy.count_nonzero(covered) < 0.8 * ww * wh:
+                    text_regions.append(word_box)
+
+        for x, y, w, h in text_regions:
+            cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 255, 0), 1)
         return text_regions
+
+    @staticmethod
+    def _remove_segment_lines(
+        image: "Matlike", horizontal_size: int, vertical_size: int
+    ) -> "Matlike":
+        """Remove long horizontal and vertical runs from a binary image.
+
+        The extracted masks are widened by one pixel perpendicular to each
+        line.  This removes short fringe fragments left beside thresholded
+        GUI borders without needlessly extending a mask over nearby text.
+        Combining the masks before using OpenCV's saturating subtraction also
+        prevents uint8 underflow where horizontal and vertical lines cross.
+
+        Each size is the minimum run length to remove in that direction.
+        A size of one disables removal for that direction.
+        """
+        import cv2
+        import numpy
+
+        if horizontal_size <= 1 and vertical_size <= 1:
+            return image
+
+        # Opening with the same default anchor twice shifts even-sized
+        # kernels.  Complementary anchors keep the extracted mask aligned.
+        horizontal_lines = numpy.zeros_like(image)
+        if horizontal_size > 1:
+            horizontal_kernel = cv2.getStructuringElement(
+                cv2.MORPH_RECT, (horizontal_size, 1)
+            )
+            horizontal_lines = cv2.erode(
+                image, horizontal_kernel, anchor=((horizontal_size - 1) // 2, 0)
+            )
+            horizontal_lines = cv2.dilate(
+                horizontal_lines, horizontal_kernel, anchor=(horizontal_size // 2, 0)
+            )
+            horizontal_smoothing = cv2.getStructuringElement(cv2.MORPH_RECT, (1, 3))
+            horizontal_lines = cv2.dilate(horizontal_lines, horizontal_smoothing)
+
+        vertical_lines = numpy.zeros_like(image)
+        if vertical_size > 1:
+            vertical_kernel = cv2.getStructuringElement(
+                cv2.MORPH_RECT, (1, vertical_size)
+            )
+            vertical_lines = cv2.erode(
+                image, vertical_kernel, anchor=(0, (vertical_size - 1) // 2)
+            )
+            vertical_lines = cv2.dilate(
+                vertical_lines, vertical_kernel, anchor=(0, vertical_size // 2)
+            )
+            vertical_smoothing = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 1))
+            vertical_lines = cv2.dilate(vertical_lines, vertical_smoothing)
+
+        line_mask = cv2.bitwise_or(horizontal_lines, vertical_lines)
+        return cv2.subtract(image, line_mask)
 
     def _detect_text_east(self, haystack: "Image") -> list[tuple[int, int, int, int]]:
         # :.. note:: source implementation by Adrian Rosebrock from his post:
