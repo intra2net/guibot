@@ -1189,6 +1189,72 @@ class TextFinderTest(unittest.TestCase):
             )
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_terminal_regions(self) -> None:
+        """Retain large phrases and recover words with a native TSV fallback."""
+        import cv2
+        import numpy
+        import PIL.Image
+
+        haystack = Image(pil_image=PIL.Image.new('RGB', (100, 60), (90, 120, 150)))
+        for recovery in ('original', 'line', 'native', 'empty'):
+            with self.subTest(recovery=recovery):
+                finder = TextFinder(synchronize=False)
+                finder.configure_backend('pytesseract', 'tdetect')
+                finder.params['tdetect']['binarize_detection'].value = True
+                finder.tbox = Mock()
+                finder.tbox_config = '--psm 3'
+                output = {
+                    'level': [4, 5, 5, 5, 4, 5],
+                    'text': ['', 'sender', 'words', 'invalid', '', 'extra']
+                    if recovery != 'empty' else ['', '', '', 'invalid', '', 'extra'],
+                    'left': [10, 15, 40, 0, 0, 1],
+                    'top': [12, 10, 14, 0, 45, 40],
+                    'width': [70, 20, 22, 0, 20, 18],
+                    'height': [12, 24, 8, 8, 8, 16],
+                }
+                words = {
+                    'level': [4, 5, 5, 5, 5, 5] if recovery == 'original' else [],
+                    'text': ['', 'sender', 'words', 'sender', 'invalid', 'sender words']
+                    if recovery == 'original'
+                    else [],
+                    'left': [0, 5, 30, 5, 0, 0],
+                    'top': [0, 2, 2, 2, 0, 0],
+                    'width': [70, 20, 22, 20, 0, 70],
+                    'height': [12, 8, 8, 8, 0, 12],
+                }
+                if recovery == 'line':
+                    words = {
+                        'level': [4, 5, 5], 'text': ['', 'sender', 'words'],
+                        'left': [5, 5, 16], 'top': [2, 2, 2],
+                        'width': [25, 10, 14], 'height': [8, 8, 8],
+                    }
+                finder.tbox.image_to_data.side_effect = [output, words]
+                with patch.object(
+                    finder,
+                    '_binarize_image',
+                    return_value=numpy.zeros((60, 100), dtype=numpy.uint8),
+                ):
+                    regions = finder._detect_text_boxes(haystack)
+
+                expected = [[10, 12, 70, 12], [0, 45, 20, 8]]
+                if recovery == 'original':
+                    expected.extend([[15, 14, 20, 8], [40, 14, 22, 8]])
+                elif recovery == 'line':
+                    expected.extend([[15, 14, 10, 8], [26, 14, 14, 8]])
+                elif recovery == 'native':
+                    expected.extend([[15, 10, 20, 24], [40, 14, 22, 8]])
+                self.assertEqual(regions, expected)
+                self.assertEqual(finder.tbox.image_to_data.call_count, 2)
+                finder.tbox.run_and_get_output.assert_not_called()
+                numpy.testing.assert_array_equal(
+                    finder.tbox.image_to_data.call_args.args[0],
+                    cv2.cvtColor(
+                        numpy.array(haystack.pil_image)[12:24, 10:80],
+                        cv2.COLOR_RGB2GRAY,
+                    ),
+                )
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
     def test_text_line_regions(self) -> None:
         """Use TSV coordinates directly without expanding normal lines to words."""
         import PIL.Image
@@ -1210,6 +1276,38 @@ class TextFinderTest(unittest.TestCase):
         self.assertEqual(finder._detect_text_boxes(haystack), [[10, 12, 20, 8]])
         finder.tbox.image_to_data.assert_called_once()
         finder.tbox.run_and_get_output.assert_not_called()
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_recovered_word_coverage(self) -> None:
+        """Suppress covered words without double-counting overlapping detections."""
+        import PIL.Image
+
+        haystack = Image(pil_image=PIL.Image.new('RGB', (100, 60), 'white'))
+        for second_left in (20, 5):
+            with self.subTest(second_left=second_left):
+                finder = TextFinder(synchronize=False)
+                finder.configure_backend('pytesseract', 'tdetect')
+                finder.tbox = Mock()
+                finder.tbox_config = '--psm 3'
+                output = {
+                    'level': [4, 4, 4], 'text': ['', '', ''],
+                    'left': [10, 10, 10 + second_left], 'top': [12, 14, 14],
+                    'width': [70, 20, 20], 'height': [12, 8, 8],
+                }
+                words = {
+                    'level': [5, 5],
+                    'text': ['covered', 'missing'],
+                    'left': [0, 45], 'top': [2, 2],
+                    'width': [40, 20], 'height': [8, 8],
+                }
+                finder.tbox.image_to_data.side_effect = [output, words]
+
+                expected = [[10, 12, 70, 12],
+                            [10, 14, 20, 8], [10 + second_left, 14, 20, 8]]
+                if second_left == 5:
+                    expected.append([10, 14, 40, 8])
+                expected.append([55, 14, 20, 8])
+                self.assertEqual(finder._detect_text_boxes(haystack), expected)
 
 
 class CVParameterTest(unittest.TestCase):

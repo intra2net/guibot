@@ -2971,7 +2971,8 @@ class TextFinder(ContourFinder):
         import cv2
         import numpy
 
-        detection_img = numpy.array(haystack.pil_image)
+        original_img = numpy.array(haystack.pil_image)
+        detection_img = original_img
         if self.params["tdetect"]["binarize_detection"].value:
             detection_img = self._binarize_image(detection_img)
 
@@ -2985,13 +2986,21 @@ class TextFinder(ContourFinder):
 
         else:
             detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
+        detection_width = int(
+            self.params["tdetect"]["recursion_width"].value * haystack.width
+        )
+        detection_height = int(
+            self.params["tdetect"]["recursion_height"].value * haystack.height
+        )
 
         char_canvas = detection_img
-        text_canvas = numpy.array(haystack.pil_image)
+        text_canvas = original_img.copy()
         self.imglog.hotmaps.append(char_canvas)
         self.imglog.hotmaps.append(text_canvas)
 
         text_regions = []
+        recovery_regions = []
+        line_words = None
         output = self.tbox.image_to_data(
             detection_img,
             lang=self.params["tdetect"]["language"].value,
@@ -2999,14 +3008,66 @@ class TextFinder(ContourFinder):
             output_type=self.tbox.Output.DICT,
         )
         for i, level in enumerate(output["level"]):
-            if level != 4:
-                continue
-            # TSV line rows have empty text and top-left coordinates.
-            box = [output[name][i] for name in ("left", "top", "width", "height")]
-            x, y, w, h = box
-            if w <= 0 or h <= 0 or box in text_regions:
-                continue
-            text_regions.append(box)
+            if level == 4:
+                # TSV line rows have empty text and top-left coordinates.
+                line_words = None
+                box = [output[name][i] for name in ("left", "top", "width", "height")]
+                x, y, w, h = box
+                if w <= 0 or h <= 0 or box in text_regions:
+                    continue
+                text_regions.append(box)
+                if w > detection_width or h > detection_height:
+                    line_words = []
+                    recovery_regions.append((box, line_words))
+            elif level == 5 and line_words is not None and output["text"][i].strip():
+                # Cache words only for lines that previously required rescanning.
+                line_words.append(
+                    [output[name][i] for name in ("left", "top", "width", "height")]
+                )
+
+        # Prefer original pixels, using native words if recovery finds nothing.
+        for parent, native_words in sorted(
+            recovery_regions, key=lambda r: r[0][2] * r[0][3], reverse=True
+        ):
+            x, y, w, h = parent
+            word_img = cv2.cvtColor(
+                original_img[y : y + h, x : x + w], cv2.COLOR_RGB2GRAY
+            )
+            words = self.tbox.image_to_data(
+                word_img,
+                lang=self.params["tdetect"]["language"].value,
+                config=self.tbox_config,
+                output_type=self.tbox.Output.DICT,
+            )
+            recovered_boxes = [
+                [
+                    x + words["left"][i],
+                    y + words["top"][i],
+                    words["width"][i],
+                    words["height"][i],
+                ]
+                for i, word in enumerate(words["text"])
+                if word.strip() and words["width"][i] > 0 and words["height"][i] > 0
+            ]
+            for wx, wy, ww, wh in recovered_boxes or native_words:
+                word_box = [wx, wy, ww, wh]
+                if ww <= 0 or wh <= 0 or word_box in text_regions:
+                    continue
+
+                # Account for the union of existing boxes, including words
+                # recovered from larger parents, without counting overlaps twice.
+                covered = numpy.zeros((wh, ww), dtype=bool)
+                for region in text_regions:
+                    if region == parent:
+                        continue  # Retain words within their own phrase candidate.
+                    rx, ry, rw, rh = region
+                    left, top = max(wx, rx), max(wy, ry)
+                    right, bottom = min(wx + ww, rx + rw), min(wy + wh, ry + rh)
+                    if left < right and top < bottom:
+                        covered[top - wy : bottom - wy, left - wx : right - wx] = True
+                # Allow small edge differences between detections of the same word.
+                if numpy.count_nonzero(covered) < 0.8 * ww * wh:
+                    text_regions.append(word_box)
 
         for x, y, w, h in text_regions:
             cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 0, 0), 2)
