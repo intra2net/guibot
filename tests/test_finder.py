@@ -1159,7 +1159,7 @@ class TextFinderTest(unittest.TestCase):
         self.assertEqual(finder.params['tdetect']['segment_line_max_vertical'].value, 1)
         finder.params['tdetect']['binarize_detection'].value = True
         finder.tbox = Mock()
-        finder.tbox.run_and_get_output.return_value = ''
+        finder.tbox.image_to_data.return_value = {'level': []}
         finder.tbox_config = '--psm 3'
         haystack = Image(pil_image=PIL.Image.new('RGB', (80, 60), 'white'))
 
@@ -1187,6 +1187,29 @@ class TextFinderTest(unittest.TestCase):
             self.assertEqual(
                 loaded.params['tdetect'][name], finder.params['tdetect'][name]
             )
+
+    @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1", "OpenCV disabled")
+    def test_text_line_regions(self) -> None:
+        """Use TSV coordinates directly without expanding normal lines to words."""
+        import PIL.Image
+
+        finder = TextFinder(synchronize=False)
+        finder.configure_backend('pytesseract', 'tdetect')
+        finder.tbox = Mock()
+        finder.tbox_config = '--psm 3'
+        finder.tbox.image_to_data.return_value = {
+            'level': [1, 2, 3, 4, 5, 5, 4, 4, 5],
+            'text': ['', '', '', '', 'first', 'second', '', '', 'invalid'],
+            'left': [0, 0, 0, 10, 10, 20, 10, 0, 0],
+            'top': [0, 0, 0, 12, 12, 12, 12, 0, 0],
+            'width': [100, 100, 100, 20, 8, 10, 20, 0, 10],
+            'height': [60, 60, 60, 8, 8, 8, 8, 0, 10],
+        }
+        haystack = Image(pil_image=PIL.Image.new('RGB', (100, 60), 'white'))
+
+        self.assertEqual(finder._detect_text_boxes(haystack), [[10, 12, 20, 8]])
+        finder.tbox.image_to_data.assert_called_once()
+        finder.tbox.run_and_get_output.assert_not_called()
 
 
 class CVParameterTest(unittest.TestCase):
