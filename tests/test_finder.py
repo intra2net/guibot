@@ -23,7 +23,7 @@ import tempfile
 from unittest.mock import Mock, patch
 
 import common_test
-from guibot.config import GlobalConfig
+from guibot.config import GlobalConfig, TemporaryConfig
 from guibot.fileresolver import FileResolver
 from guibot.imagelogger import ImageLogger
 from guibot.target import Image, Text, Pattern, Chain
@@ -1128,6 +1128,77 @@ class TextFinderTest(unittest.TestCase):
             finder.params["tdetect"]["segment_line_max_vertical"].value,
         )
         numpy.testing.assert_array_equal(processed_image, expected_image)
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_line_regions(self) -> None:
+        """Check correct TSV coordinates lines filtering."""
+        finder = TextFinder(synchronize=False)
+        finder.configure_backend("pytesseract", "tdetect")
+        finder.tbox = Mock()
+        finder.tbox_config = ""
+        finder.tbox.image_to_data.return_value = {
+            "level": [1, 2, 3, 4, 5, 5, 4, 4, 5, 4, 5, 5, 4, 5],
+            "text": [
+                "",
+                "",
+                "",
+                "",
+                "first",
+                "second",
+                "",
+                "",
+                "invalid",
+                "",
+                "L",
+                "L",
+                "",
+                "5",
+            ],
+            "left": [0, 0, 0, 10, 10, 20, 10, 0, 0, 15, 15, 307, 23, 23],
+            "top": [0, 0, 0, 12, 12, 12, 12, 0, 0, 12, 12, 14, 245, 245],
+            "width": [400, 400, 400, 20, 8, 10, 20, 0, 10, 359, 33, 33, 354, 354],
+            "height": [300, 300, 300, 8, 8, 8, 8, 0, 10, 77, 77, 77, 42, 42],
+        }
+        haystack = Image("all_shapes")
+
+        # level 5 lines only extend level 4, 3 and below are ignored
+        # while duplicate, zero-sized and oversized symbol regions are discarded
+        self.assertEqual(finder._detect_text_boxes(haystack), [[10, 12, 20, 8]])
+        # once call is enough, no recursion needed
+        finder.tbox.image_to_data.assert_called_once()
+
+    @unittest.skipIf(
+        os.environ.get("DISABLE_OPENCV", "0") == "1"
+        or os.environ.get("DISABLE_OCR", "0") == "1",
+        "Disabled OpenCV or OCR",
+    )
+    def test_text_tesseract_phrases(self) -> None:
+        """Check keeping complete phrases even when they span most of the input image."""
+        with TemporaryConfig() as config:
+            config.image_logging_destination = self.logpath
+            for image, text, x, y, width, height in [
+                ("sentence_sans", "Find the word here", 12, 12, 118, 11),
+                ("sentence_bold", "Find the word", 12, 13, 100, 10),
+                ("sentence_italic", "Find the word here", 11, 12, 120, 11),
+                ("sentence_larger", "Find the word", 12, 13, 106, 12),
+                ("sentence_font", "Find the word here", 7, 13, 123, 11),
+            ]:
+                with self.subTest(image=image):
+                    finder = TextFinder(synchronize=False)
+                    finder.configure_backend("pytesseract", "tdetect")
+                    finder.configure_backend("pytesseract", "ocr")
+                    finder.params["find"]["similarity"].value = 1.0
+                    finder.synchronize()
+                    with patch.object(
+                        finder.tbox, "image_to_data", wraps=finder.tbox.image_to_data
+                    ) as detect:
+                        matches = finder.find(Text(text), Image(image))
+                    detect.assert_called_once()
+                    self.assertEqual(len(matches), 1)
+                    self.assertAlmostEqual(matches[0].x, x, delta=1)
+                    self.assertAlmostEqual(matches[0].y, y, delta=1)
+                    self.assertAlmostEqual(matches[0].width, width, delta=2)
+                    self.assertAlmostEqual(matches[0].height, height, delta=2)
 
 
 class CVParameterTest(unittest.TestCase):

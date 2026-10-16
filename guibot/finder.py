@@ -2374,12 +2374,6 @@ class TextFinder(ContourFinder):
                 self.params[category]["segment_line_max_vertical"] = CVParameter(
                     32, 0, None, 1.0
                 )
-                self.params[category]["recursion_height"] = CVParameter(
-                    0.3, 0.0, 1.0, 0.01
-                )
-                self.params[category]["recursion_width"] = CVParameter(
-                    0.3, 0.0, 1.0, 0.01
-                )
             elif backend == "east":
                 # network input dimensions - must be divisible by 32, however currently only
                 # 320x320 doesn't error out from the OpenCV implementation
@@ -2615,9 +2609,7 @@ class TextFinder(ContourFinder):
                 self.params["tdetect"]["oem"].value,
                 self.params["tdetect"]["psmode"].value,
             )
-            self.tbox_config += (
-                r"-c tessedit_char_whitelist='%s' %s batch.nochop wordstrbox"
-            )
+            self.tbox_config += r"-c tessedit_char_whitelist='%s' %s batch.nochop"
             self.tbox_config %= (
                 self.params["tdetect"]["char_whitelist"].value,
                 self.params["tdetect"]["extra_configs"].value,
@@ -2989,70 +2981,48 @@ class TextFinder(ContourFinder):
             )
         else:
             detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
-        detection_width = int(
-            self.params["tdetect"]["recursion_width"].value * haystack.width
-        )
-        detection_height = int(
-            self.params["tdetect"]["recursion_height"].value * haystack.height
-        )
 
         char_canvas = detection_img
         text_canvas = numpy.array(haystack.pil_image)
         self.imglog.hotmaps.append(char_canvas)
         self.imglog.hotmaps.append(text_canvas)
 
-        text_regions = []
-        recursive_regions = [(0, 0, detection_img)]
-        while len(recursive_regions) > 0:
-            offset_x, offset_y, next_region = recursive_regions.pop()
-            region_w, region_h = next_region.shape[1], next_region.shape[0]
-
-            # TODO: activate flag for word-only matching if there is enough interest for this
-            # output = self.tbox.image_to_boxes(next_region, self.params["tdetect"]["language"].value,
-            #                                  config=self.tbox_config, output_type=self.tbox.Output.DICT)
-            # ...process dict
-            output = self.tbox.run_and_get_output(
-                next_region,
-                "box",
-                self.params["tdetect"]["language"].value,
-                config=self.tbox_config,
-            )
-            for line in output.splitlines():
-                tokens = line.rstrip().split(" ", maxsplit=6)
-                if tokens[0] != "WordStr":
-                    continue
-                left = int(tokens[1])
-                bottom = region_h - int(tokens[2])
-                right = int(tokens[3])
-                top = region_h - int(tokens[4])
-                text = tokens[6][1:]
-
-                dx, dy, w, h = left, top, right - left, bottom - top
-                x, y = offset_x + dx, offset_y + dy
-                if text == "":
-                    logging.debug("Empty text found, skipping region")
-                    continue
-                if (w > detection_width and h > 0) or (h > detection_height and w > 0):
-                    subregion_npy = next_region[
-                        max(dy, 0) : min(dy + h, region_h),
-                        max(dx, 0) : min(dx + w, region_w),
-                    ]
-                    if next_region.shape != subregion_npy.shape:
-                        logging.debug(
-                            "Large region of size %sx%s detected, rescanning inside of it",
-                            w,
-                            h,
-                        )
-                        recursive_regions.append((x, y, subregion_npy))
-                    continue
-
-                logging.debug(
-                    "Found text '%s' with tesseract-provided box %s", text, (x, y, w, h)
+        output = self.tbox.image_to_data(
+            detection_img,
+            lang=self.params["tdetect"]["language"].value,
+            config=self.tbox_config,
+            output_type=self.tbox.Output.DICT,
+        )
+        line_lengths = {}
+        current_line = None
+        for i, level in enumerate(output["level"]):
+            if level == 4:
+                box = tuple(
+                    output[name][i] for name in ("left", "top", "width", "height")
                 )
-                cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 0, 0), 2)
-                cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 255, 0), 1)
-                text_regions.append([x, y, w, h])
+                x, y, w, h = box
+                if w <= 0 or h <= 0 or box in line_lengths:
+                    current_line = None
+                    continue
+                # the line becomes the current parent, initially with zero recognized characters
+                # while subsequent word rows populate that count
+                current_line = box
+                line_lengths[box] = 0
+            # level 5 text simply extends previous text
+            elif level == 5 and current_line is not None:
+                line_lengths[current_line] += len(output["text"][i].strip())
 
+        # allow text-like shape with two line heights per character which will
+        # retain wide phrases but reject graphics interpreted as few large symbols
+        text_regions = [
+            list(box)
+            for box, length in line_lengths.items()
+            if box[2] <= 2 * box[3] * length
+        ]
+
+        for x, y, w, h in text_regions:
+            cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 255, 0), 1)
         return text_regions
 
     @staticmethod
