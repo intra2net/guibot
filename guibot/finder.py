@@ -2360,11 +2360,20 @@ class TextFinder(ContourFinder):
                 )
                 # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
                 self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
-                # 13 different page segmentation modes - see Tesseract API
-                self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
+                # 13 different page segmentation modes - sparse text segmentation suits scattered UI labels
+                self.params[category]["psmode"] = CVParameter(
+                    11, 0, 13, enumerated=True
+                )
                 self.params[category]["extra_configs"] = CVParameter("")
                 self.params[category]["binarize_detection"] = CVParameter(False)
-                self.params[category]["segment_line_max"] = CVParameter(1, 1, None, 1.0)
+                # most text orientation is horizontal with vertical strokes typically shorter
+                # while zero disables removal independently for that direction
+                self.params[category]["segment_line_max_horizontal"] = CVParameter(
+                    80, 0, None, 1.0
+                )
+                self.params[category]["segment_line_max_vertical"] = CVParameter(
+                    32, 0, None, 1.0
+                )
                 self.params[category]["recursion_height"] = CVParameter(
                     0.3, 0.0, 1.0, 0.01
                 )
@@ -2970,9 +2979,14 @@ class TextFinder(ContourFinder):
         detection_img = numpy.array(haystack.pil_image)
         if self.params["tdetect"]["binarize_detection"].value:
             detection_img = self._binarize_image(detection_img)
-            # remove segment line residue from thresholding text containing boxes (GUI elements)
-            max_segment = self.params["tdetect"]["segment_line_max"].value
-            detection_img = self._remove_segment_lines(detection_img, max_segment)
+
+            # remove borders left by thresholded GUI elements before asking
+            # tesseract to segment the image as document text
+            detection_img = self._remove_segment_lines(
+                detection_img,
+                self.params["tdetect"]["segment_line_max_horizontal"].value,
+                self.params["tdetect"]["segment_line_max_vertical"].value,
+            )
         else:
             detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
         detection_width = int(
@@ -3042,7 +3056,9 @@ class TextFinder(ContourFinder):
         return text_regions
 
     @staticmethod
-    def _remove_segment_lines(image: "Matlike", max_segment: int) -> "Matlike":
+    def _remove_segment_lines(
+        image: "Matlike", horizontal_size: int, vertical_size: int
+    ) -> "Matlike":
         """
         Remove long horizontal and vertical segment lines from a binary image.
 
@@ -3052,16 +3068,22 @@ class TextFinder(ContourFinder):
 
         Subtraction leaves the input unchanged (no destination array).
 
-        The size is the minimum run length to remove in both directions.
-        A size of one disables removal.
+        Each size is the minimum line length to remove in that direction.
+        A size of zero disables removal independently for that direction
+        while a size of one removes every foreground pixel.
         """
         import cv2
+        import numpy
 
-        # a 1x1 opening selects the foreground itself, so leave this size disabled
-        if max_segment <= 1:
+        # return the original image when both directions are disabled
+        if horizontal_size <= 0 and vertical_size <= 0:
             return image
 
         def extract_lines(size: int, horizontal: bool) -> "Matlike":
+            # a disabled direction contributes an empty mask to the union
+            if size <= 0:
+                return numpy.zeros_like(image)
+
             # orient the strip along the requested direction
             width, height = (size, 1) if horizontal else (1, size)
             # process each row or column with a strip one pixel thick
@@ -3084,8 +3106,8 @@ class TextFinder(ContourFinder):
             # cover one pixel on either side of the border to remove thresholding fringes
             return cv2.dilate(lines, smoothing)
 
-        horizontal_lines = extract_lines(max_segment, horizontal=True)
-        vertical_lines = extract_lines(max_segment, horizontal=False)
+        horizontal_lines = extract_lines(horizontal_size, horizontal=True)
+        vertical_lines = extract_lines(vertical_size, horizontal=False)
 
         # mark each border pixel once, even where horizontal and vertical masks overlap
         line_mask = cv2.bitwise_or(horizontal_lines, vertical_lines)

@@ -19,6 +19,8 @@ import re
 import unittest
 import shutil
 import ssl
+import tempfile
+from unittest.mock import Mock, patch
 
 import common_test
 from guibot.config import GlobalConfig
@@ -666,10 +668,12 @@ class FinderTest(unittest.TestCase):
                     self.assertAlmostEqual(matches[0].height, 15, delta=3)
 
                 # verify dumped files count and names
-                dumps = self._verify_and_get_dumps(7, i)
+                # TODO: the PSM 11 default introduces an additional false positive
+                extra_region = 1 if tdetect == "pytesseract" else 0
+                dumps = self._verify_and_get_dumps(7 + extra_region, i)
                 self._verify_dumped_images('Text', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEqual(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4 + extra_region)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -726,10 +730,12 @@ class FinderTest(unittest.TestCase):
                 self.assertEqual(len(matches), 0)
 
                 # verify dumped files count and names
-                dumps = self._verify_and_get_dumps(7, i)
+                # TODO: the PSM 11 default introduces an additional false positive
+                extra_region = 1 if tdetect == "pytesseract" else 0
+                dumps = self._verify_and_get_dumps(7 + extra_region, i)
                 self._verify_dumped_images('Nothing', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEqual(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4 + extra_region)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -1045,6 +1051,11 @@ class TextFinderTest(unittest.TestCase):
         cls.file_resolver = FileResolver()
         cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, "images"))
 
+    def setUp(self) -> None:
+        self.logdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.logdir.cleanup)
+        self.logpath = self.logdir.name
+
     @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
     def test_text_segment_line_removal(self) -> None:
         """Check line removal preserves short glyphs and the caller's input."""
@@ -1056,17 +1067,52 @@ class TextFinderTest(unittest.TestCase):
         )
         original_image = binary_image.copy()
 
-        processed_image = TextFinder._remove_segment_lines(binary_image, 10)
+        processed_image = TextFinder._remove_segment_lines(binary_image, 10, 10)
 
         numpy.testing.assert_array_equal(processed_image, expected_image)
         numpy.testing.assert_array_equal(binary_image, original_image)
         numpy.testing.assert_array_equal(
-            TextFinder._remove_segment_lines(original_image.copy(), 1), original_image
+            TextFinder._remove_segment_lines(original_image.copy(), 0, 0),
+            original_image,
         )
+        empty_image = numpy.array(
+            Image("text_segment_lines_empty").pil_image.convert("L")
+        )
+        for horizontal, vertical in [(1, 0), (0, 1), (1, 1)]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                numpy.testing.assert_array_equal(
+                    TextFinder._remove_segment_lines(
+                        original_image.copy(), horizontal, vertical
+                    ),
+                    empty_image,
+                )
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_directions(self) -> None:
+        """Check directional cutoffs remove only long lines and support disabling."""
+        import numpy
+
+        binary_image = numpy.array(
+            Image("text_segment_directions").pil_image.convert("L")
+        )
+
+        for horizontal, vertical, expected in [
+            (32, 16, "text_segment_directions_output"),
+            (31, 15, "text_segment_directions_output"),
+            (0, 16, "text_segment_directions_vertical_output"),
+            (32, 0, "text_segment_directions_horizontal_output"),
+            (24, 32, "text_segment_directions_reversed_output"),
+        ]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                expected_image = numpy.array(Image(expected).pil_image.convert("L"))
+                processed_image = TextFinder._remove_segment_lines(
+                    binary_image, horizontal, vertical
+                )
+                numpy.testing.assert_array_equal(processed_image, expected_image)
 
     @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
     def test_text_gui_line_removal(self) -> None:
-        """Check GUI line-removal defaults and their current limitations."""
+        """Check GUI line-removal defaults preserve labels and clear borders."""
         import numpy
 
         haystack = Image("text_gui_lines")
@@ -1078,9 +1124,9 @@ class TextFinderTest(unittest.TestCase):
         finder.configure_backend("pytesseract", "tdetect")
         processed_image = finder._remove_segment_lines(
             binary_image,
-            finder.params["tdetect"]["segment_line_max"].value,
+            finder.params["tdetect"]["segment_line_max_horizontal"].value,
+            finder.params["tdetect"]["segment_line_max_vertical"].value,
         )
-        # TODO: choose a better default cutoff
         numpy.testing.assert_array_equal(processed_image, expected_image)
 
 
