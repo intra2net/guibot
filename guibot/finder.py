@@ -3043,16 +3043,54 @@ class TextFinder(ContourFinder):
 
     @staticmethod
     def _remove_segment_lines(image: "Matlike", max_segment: int) -> "Matlike":
+        """
+        Remove long horizontal and vertical segment lines from a binary image.
+
+        The extracted masks are widened by one pixel perpendicular to each
+        line which removes short fringe fragments left beside thresholded
+        GUI borders without needlessly extending a mask over nearby text.
+
+        Subtraction leaves the input unchanged (no destination array).
+
+        The size is the minimum run length to remove in both directions.
+        A size of one disables removal.
+        """
         import cv2
 
-        for i in range(1, max_segment):
-            hline = cv2.getStructuringElement(cv2.MORPH_RECT, (max_segment, i))
-            hlopened = cv2.morphologyEx(image, cv2.MORPH_OPEN, hline, iterations=1)
-            vline = cv2.getStructuringElement(cv2.MORPH_RECT, (i, max_segment))
-            vlopened = cv2.morphologyEx(image, cv2.MORPH_OPEN, vline, iterations=1)
-            image -= hlopened
-            image -= vlopened
-        return image
+        # a 1x1 opening selects the foreground itself, so leave this size disabled
+        if max_segment <= 1:
+            return image
+
+        def extract_lines(size: int, horizontal: bool) -> "Matlike":
+            # orient the strip along the requested direction
+            width, height = (size, 1) if horizontal else (1, size)
+            # process each row or column with a strip one pixel thick
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (width, height))
+            # locate full-length lines, rounding anchors toward the left/top
+            lines = cv2.erode(
+                image,
+                kernel,
+                anchor=((width - 1) // 2, (height - 1) // 2),
+                # treat pixels outside the image as background to preserve short edge strokes
+                borderType=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            )
+            # restore line lengths with complementary anchors to prevent even-size shifts
+            lines = cv2.dilate(lines, kernel, anchor=(width // 2, height // 2))
+            # use a kernel three pixels across the line and one along it
+            smoothing = cv2.getStructuringElement(
+                cv2.MORPH_RECT, (1, 3) if horizontal else (3, 1)
+            )
+            # cover one pixel on either side of the border to remove thresholding fringes
+            return cv2.dilate(lines, smoothing)
+
+        horizontal_lines = extract_lines(max_segment, horizontal=True)
+        vertical_lines = extract_lines(max_segment, horizontal=False)
+
+        # mark each border pixel once, even where horizontal and vertical masks overlap
+        line_mask = cv2.bitwise_or(horizontal_lines, vertical_lines)
+        # clamp negative differences to zero to prevent uint8 underflow
+        return cv2.subtract(image, line_mask)
 
     def _detect_text_east(self, haystack: "Image") -> list[tuple[int, int, int, int]]:
         # :.. note:: source implementation by Adrian Rosebrock from his post:

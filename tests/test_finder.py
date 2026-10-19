@@ -1047,7 +1047,7 @@ class TextFinderTest(unittest.TestCase):
 
     @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
     def test_text_segment_line_removal(self) -> None:
-        """Check the original line-removal behavior and its known limitations."""
+        """Check line removal preserves short glyphs and the caller's input."""
         import numpy
 
         binary_image = numpy.array(Image("text_segment_lines").pil_image.convert("L"))
@@ -1058,11 +1058,8 @@ class TextFinderTest(unittest.TestCase):
 
         processed_image = TextFinder._remove_segment_lines(binary_image, 10)
 
-        # TODO: remove shifted border residue and fringes, and prevent uint8 underflow
-        # (the saved output currently records these defects alongside the surviving glyph)
         numpy.testing.assert_array_equal(processed_image, expected_image)
-        # TODO: preserve the caller's input instead of subtracting masks in place
-        self.assertFalse(numpy.array_equal(binary_image, original_image))
+        numpy.testing.assert_array_equal(binary_image, original_image)
         numpy.testing.assert_array_equal(
             TextFinder._remove_segment_lines(original_image.copy(), 1), original_image
         )
