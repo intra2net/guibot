@@ -651,6 +651,8 @@ class FinderTest(unittest.TestCase):
                     finder.params["find"]["similarity"].value = 1.0
 
                 finder.configure_backend(tdetect, "tdetect")
+                if tdetect == "pytesseract":
+                    finder.params["tdetect"]["component_level"].value = 1
                 finder.configure_backend(ocr, "ocr")
                 # also with customized synchronization to the configuration
                 finder.synchronize_backend(tdetect, "tdetect")
@@ -720,6 +722,8 @@ class FinderTest(unittest.TestCase):
                         continue
 
                 finder.configure_backend(tdetect, "tdetect")
+                if tdetect == "pytesseract":
+                    finder.params["tdetect"]["component_level"].value = 1
                 finder.configure_backend(ocr, "ocr")
                 # also with customized synchronization to the configuration
                 finder.synchronize_backend(tdetect, "tdetect")
@@ -1134,6 +1138,7 @@ class TextFinderTest(unittest.TestCase):
         """Check correct TSV coordinates lines filtering."""
         finder = TextFinder(synchronize=False)
         finder.configure_backend("pytesseract", "tdetect")
+        finder.params["tdetect"]["component_level"].value = 1
         finder.tbox = Mock()
         finder.tbox_config = ""
         finder.tbox.image_to_data.return_value = {
@@ -1172,21 +1177,25 @@ class TextFinderTest(unittest.TestCase):
         or os.environ.get("DISABLE_OCR", "0") == "1",
         "Disabled OpenCV or OCR",
     )
-    def test_text_tesseract_phrases(self) -> None:
-        """Check keeping complete phrases even when they span most of the input image."""
+    def test_text_tesseract_matching(self) -> None:
+        """Check recognition individual words or complete phrases as different component levels."""
         with TemporaryConfig() as config:
             config.image_logging_destination = self.logpath
-            for image, text, x, y, width, height in [
-                ("sentence_sans", "Find the word here", 12, 12, 118, 11),
-                ("sentence_bold", "Find the word", 12, 13, 100, 10),
-                ("sentence_italic", "Find the word here", 11, 12, 120, 11),
-                ("sentence_larger", "Find the word", 12, 13, 106, 12),
-                ("sentence_font", "Find the word here", 7, 13, 123, 11),
+            for component_level, image, text, x, y, width, height in [
+                (0, "sentence_sans", "word", 66, 12, 31, 11),
+                (0, "sentence_sans_inverted", "word", 66, 12, 31, 11),
+                (0, "all_shapes", "Text", 22, 83, 37, 13),
+                (1, "sentence_sans", "Find the word here", 12, 12, 118, 11),
+                (1, "sentence_bold", "Find the word", 12, 13, 100, 10),
+                (1, "sentence_italic", "Find the word here", 11, 12, 120, 11),
+                (1, "sentence_larger", "Find the word", 12, 13, 106, 12),
+                (1, "sentence_font", "Find the word here", 7, 13, 123, 11),
             ]:
-                with self.subTest(image=image):
+                with self.subTest(component_level=component_level, image=image):
                     finder = TextFinder(synchronize=False)
                     finder.configure_backend("pytesseract", "tdetect")
                     finder.configure_backend("pytesseract", "ocr")
+                    finder.params["tdetect"]["component_level"].value = component_level
                     finder.params["find"]["similarity"].value = 1.0
                     finder.synchronize()
                     with patch.object(

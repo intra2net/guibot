@@ -2365,6 +2365,10 @@ class TextFinder(ContourFinder):
                     11, 0, 13, enumerated=True
                 )
                 self.params[category]["extra_configs"] = CVParameter("")
+                # 0 word regions (default), 1 whole text lines
+                self.params[category]["component_level"] = CVParameter(
+                    0, 0, 1, enumerated=True
+                )
                 self.params[category]["binarize_detection"] = CVParameter(False)
                 # most text orientation is horizontal with vertical strokes typically shorter
                 # while zero disables removal independently for that direction
@@ -2475,7 +2479,7 @@ class TextFinder(ContourFinder):
             self.params[category]["min_confidence"] = CVParameter(0, 0, 100, 25.0)
             # zoom factor for improved OCR processing due to higher resolution
             self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, 100.0, 25.0)
-            # border size to wrap around text field to improve recognition rate
+            # blank border size around the exact text crop to improve recognition
             self.params[category]["border_size"] = CVParameter(10, 0, 100, 25.0)
             # 0 erode, 1 dilate, 2 both, 3 none
             self.params[category]["erode_dilate"] = CVParameter(
@@ -2858,15 +2862,39 @@ class TextFinder(ContourFinder):
         for i, text_box in enumerate(text_regions):
 
             # main OCR preprocessing stage
+            x, y, w, h = text_box
             border = self.params["ocr"]["border_size"].value
             text_img = img_haystack[
-                max(text_box[1] - border, 0) : min(
-                    text_box[1] + text_box[3] + border, img_haystack.shape[0]
-                ),
-                max(text_box[0] - border, 0) : min(
-                    text_box[0] + text_box[2] + border, img_haystack.shape[1]
-                ),
+                max(y, 0) : min(y + h, img_haystack.shape[0]),
+                max(x, 0) : min(x + w, img_haystack.shape[1]),
             ]
+            # sample the surrounding edge for its background color only
+            surroundings = img_haystack[
+                max(y - 1, 0) : min(y + h + 1, img_haystack.shape[0]),
+                max(x - 1, 0) : min(x + w + 1, img_haystack.shape[1]),
+            ]
+            # get median background of the four edges (1 pixel extension)
+            background = numpy.median(
+                numpy.concatenate(
+                    (
+                        surroundings[0],
+                        surroundings[-1],
+                        surroundings[:, 0],
+                        surroundings[:, -1],
+                    )
+                ),
+                axis=0,
+            ).tolist()
+            # give OCR a blank margin without pulling in neighboring text.
+            text_img = cv2.copyMakeBorder(
+                text_img,
+                border,
+                border,
+                border,
+                border,
+                cv2.BORDER_CONSTANT,
+                value=background,
+            )
             factor = self.params["ocr"]["zoom_factor"].value
             log.debug("Zooming x%i candidate for improved OCR processing", factor)
             text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
@@ -2953,7 +2981,6 @@ class TextFinder(ContourFinder):
             if similarity >= self.params["find"]["similarity"].value:
                 log.debug("Text at (%s, %s) is acceptable", text_box[0], text_box[1])
                 self.imglog.locations.append((text_box[0], text_box[1]))
-                x, y, w, h = text_box
                 dx, dy = needle.center_offset.x, needle.center_offset.y
                 cv2.rectangle(final_hotmap, (x, y), (x + w, y + h), (0, 0, 0), 2)
                 cv2.rectangle(final_hotmap, (x, y), (x + w, y + h), (255, 255, 255), 1)
@@ -2993,31 +3020,32 @@ class TextFinder(ContourFinder):
             config=self.tbox_config,
             output_type=self.tbox.Output.DICT,
         )
-        line_lengths = {}
-        current_line = None
+        region_level = 5 if self.params["tdetect"]["component_level"].value == 0 else 4
+        region_lengths = {}
+        current_region = None
         for i, level in enumerate(output["level"]):
-            if level == 4:
+            if level == region_level:
                 box = tuple(
                     output[name][i] for name in ("left", "top", "width", "height")
                 )
                 x, y, w, h = box
-                if w <= 0 or h <= 0 or box in line_lengths:
-                    current_line = None
+                if w <= 0 or h <= 0 or box in region_lengths:
+                    current_region = None
                     continue
-                # the line becomes the current parent, initially with zero recognized characters
+                # the line becomes the current parent with some initial character count
                 # while subsequent word rows populate that count
-                current_line = box
-                line_lengths[box] = 0
-            # level 5 text simply extends previous text
-            elif level == 5 and current_line is not None:
-                line_lengths[current_line] += len(output["text"][i].strip())
+                # (word rows supply text directly while line rows start empty).
+                current_region = box
+                region_lengths[box] = len(output["text"][i].strip())
+            elif level == 5 and current_region is not None:
+                region_lengths[current_region] += len(output["text"][i].strip())
 
         # allow text-like shape with two line heights per character which will
         # retain wide phrases but reject graphics interpreted as few large symbols
         text_regions = [
             list(box)
-            for box, length in line_lengths.items()
-            if box[2] <= 2 * box[3] * length
+            for box, length in region_lengths.items()
+            if length > 0 and (region_level == 5 or box[2] <= 2 * box[3] * length)
         ]
 
         for x, y, w, h in text_regions:
