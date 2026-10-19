@@ -2360,16 +2360,23 @@ class TextFinder(ContourFinder):
                 )
                 # 0 original tesseract only, 1 neural nets LSTM only, 2 both, 3 anything available
                 self.params[category]["oem"] = CVParameter(3, 0, 3, enumerated=True)
-                # 13 different page segmentation modes - see Tesseract API
-                self.params[category]["psmode"] = CVParameter(3, 0, 13, enumerated=True)
-                self.params[category]["extra_configs"] = CVParameter("")
-                self.params[category]["binarize_detection"] = CVParameter(False)
-                self.params[category]["segment_line_max"] = CVParameter(1, 1, None, 1.0)
-                self.params[category]["recursion_height"] = CVParameter(
-                    0.3, 0.0, 1.0, 0.01
+                # 13 different page segmentation modes - sparse text segmentation suits scattered UI labels
+                self.params[category]["psmode"] = CVParameter(
+                    11, 0, 13, enumerated=True
                 )
-                self.params[category]["recursion_width"] = CVParameter(
-                    0.3, 0.0, 1.0, 0.01
+                self.params[category]["extra_configs"] = CVParameter("")
+                # 0 word regions (default), 1 whole text lines
+                self.params[category]["component_level"] = CVParameter(
+                    0, 0, 1, enumerated=True
+                )
+                self.params[category]["binarize_detection"] = CVParameter(False)
+                # most text orientation is horizontal with vertical strokes typically shorter
+                # while zero disables removal independently for that direction
+                self.params[category]["segment_line_max_horizontal"] = CVParameter(
+                    80, 0, None, 1.0
+                )
+                self.params[category]["segment_line_max_vertical"] = CVParameter(
+                    32, 0, None, 1.0
                 )
             elif backend == "east":
                 # network input dimensions - must be divisible by 32, however currently only
@@ -2472,7 +2479,7 @@ class TextFinder(ContourFinder):
             self.params[category]["min_confidence"] = CVParameter(0, 0, 100, 25.0)
             # zoom factor for improved OCR processing due to higher resolution
             self.params[category]["zoom_factor"] = CVParameter(1.0, 1.0, 100.0, 25.0)
-            # border size to wrap around text field to improve recognition rate
+            # blank border size around the exact text crop to improve recognition
             self.params[category]["border_size"] = CVParameter(10, 0, 100, 25.0)
             # 0 erode, 1 dilate, 2 both, 3 none
             self.params[category]["erode_dilate"] = CVParameter(
@@ -2606,9 +2613,7 @@ class TextFinder(ContourFinder):
                 self.params["tdetect"]["oem"].value,
                 self.params["tdetect"]["psmode"].value,
             )
-            self.tbox_config += (
-                r"-c tessedit_char_whitelist='%s' %s batch.nochop wordstrbox"
-            )
+            self.tbox_config += r"-c tessedit_char_whitelist='%s' %s batch.nochop"
             self.tbox_config %= (
                 self.params["tdetect"]["char_whitelist"].value,
                 self.params["tdetect"]["extra_configs"].value,
@@ -2857,15 +2862,39 @@ class TextFinder(ContourFinder):
         for i, text_box in enumerate(text_regions):
 
             # main OCR preprocessing stage
+            x, y, w, h = text_box
             border = self.params["ocr"]["border_size"].value
             text_img = img_haystack[
-                max(text_box[1] - border, 0) : min(
-                    text_box[1] + text_box[3] + border, img_haystack.shape[0]
-                ),
-                max(text_box[0] - border, 0) : min(
-                    text_box[0] + text_box[2] + border, img_haystack.shape[1]
-                ),
+                max(y, 0) : min(y + h, img_haystack.shape[0]),
+                max(x, 0) : min(x + w, img_haystack.shape[1]),
             ]
+            # sample the surrounding edge for its background color only
+            surroundings = img_haystack[
+                max(y - 1, 0) : min(y + h + 1, img_haystack.shape[0]),
+                max(x - 1, 0) : min(x + w + 1, img_haystack.shape[1]),
+            ]
+            # get median background of the four edges (1 pixel extension)
+            background = numpy.median(
+                numpy.concatenate(
+                    (
+                        surroundings[0],
+                        surroundings[-1],
+                        surroundings[:, 0],
+                        surroundings[:, -1],
+                    )
+                ),
+                axis=0,
+            ).tolist()
+            # give OCR a blank margin without pulling in neighboring text.
+            text_img = cv2.copyMakeBorder(
+                text_img,
+                border,
+                border,
+                border,
+                border,
+                cv2.BORDER_CONSTANT,
+                value=background,
+            )
             factor = self.params["ocr"]["zoom_factor"].value
             log.debug("Zooming x%i candidate for improved OCR processing", factor)
             text_img = cv2.resize(text_img, None, fx=factor, fy=factor)
@@ -2952,7 +2981,6 @@ class TextFinder(ContourFinder):
             if similarity >= self.params["find"]["similarity"].value:
                 log.debug("Text at (%s, %s) is acceptable", text_box[0], text_box[1])
                 self.imglog.locations.append((text_box[0], text_box[1]))
-                x, y, w, h = text_box
                 dx, dy = needle.center_offset.x, needle.center_offset.y
                 cv2.rectangle(final_hotmap, (x, y), (x + w, y + h), (0, 0, 0), 2)
                 cv2.rectangle(final_hotmap, (x, y), (x + w, y + h), (255, 255, 255), 1)
@@ -2971,87 +2999,118 @@ class TextFinder(ContourFinder):
         if self.params["tdetect"]["binarize_detection"].value:
             detection_img = self._binarize_image(detection_img)
 
-            # remove segment line residue from thresholding text containing boxes (GUI elements)
-            max_segment = self.params["tdetect"]["segment_line_max"].value
-            for i in range(1, max_segment):
-                hline = cv2.getStructuringElement(cv2.MORPH_RECT, (max_segment, i))
-                hlopened = cv2.morphologyEx(
-                    detection_img, cv2.MORPH_OPEN, hline, iterations=1
-                )
-                vline = cv2.getStructuringElement(cv2.MORPH_RECT, (i, max_segment))
-                vlopened = cv2.morphologyEx(
-                    detection_img, cv2.MORPH_OPEN, vline, iterations=1
-                )
-                detection_img -= hlopened
-                detection_img -= vlopened
-
+            # remove borders left by thresholded GUI elements before asking
+            # tesseract to segment the image as document text
+            detection_img = self._remove_segment_lines(
+                detection_img,
+                self.params["tdetect"]["segment_line_max_horizontal"].value,
+                self.params["tdetect"]["segment_line_max_vertical"].value,
+            )
         else:
             detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
-        detection_width = int(
-            self.params["tdetect"]["recursion_width"].value * haystack.width
-        )
-        detection_height = int(
-            self.params["tdetect"]["recursion_height"].value * haystack.height
-        )
 
         char_canvas = detection_img
         text_canvas = numpy.array(haystack.pil_image)
         self.imglog.hotmaps.append(char_canvas)
         self.imglog.hotmaps.append(text_canvas)
 
-        text_regions = []
-        recursive_regions = [(0, 0, detection_img)]
-        while len(recursive_regions) > 0:
-            offset_x, offset_y, next_region = recursive_regions.pop()
-            region_w, region_h = next_region.shape[1], next_region.shape[0]
-
-            # TODO: activate flag for word-only matching if there is enough interest for this
-            # output = self.tbox.image_to_boxes(next_region, self.params["tdetect"]["language"].value,
-            #                                  config=self.tbox_config, output_type=self.tbox.Output.DICT)
-            # ...process dict
-            output = self.tbox.run_and_get_output(
-                next_region,
-                "box",
-                self.params["tdetect"]["language"].value,
-                config=self.tbox_config,
-            )
-            for line in output.splitlines():
-                tokens = line.rstrip().split(" ", maxsplit=6)
-                if tokens[0] != "WordStr":
-                    continue
-                left = int(tokens[1])
-                bottom = region_h - int(tokens[2])
-                right = int(tokens[3])
-                top = region_h - int(tokens[4])
-                text = tokens[6][1:]
-
-                dx, dy, w, h = left, top, right - left, bottom - top
-                x, y = offset_x + dx, offset_y + dy
-                if text == "":
-                    logging.debug("Empty text found, skipping region")
-                    continue
-                if (w > detection_width and h > 0) or (h > detection_height and w > 0):
-                    subregion_npy = next_region[
-                        max(dy, 0) : min(dy + h, region_h),
-                        max(dx, 0) : min(dx + w, region_w),
-                    ]
-                    if next_region.shape != subregion_npy.shape:
-                        logging.debug(
-                            "Large region of size %sx%s detected, rescanning inside of it",
-                            w,
-                            h,
-                        )
-                        recursive_regions.append((x, y, subregion_npy))
-                    continue
-
-                logging.debug(
-                    "Found text '%s' with tesseract-provided box %s", text, (x, y, w, h)
+        output = self.tbox.image_to_data(
+            detection_img,
+            lang=self.params["tdetect"]["language"].value,
+            config=self.tbox_config,
+            output_type=self.tbox.Output.DICT,
+        )
+        region_level = 5 if self.params["tdetect"]["component_level"].value == 0 else 4
+        region_lengths = {}
+        current_region = None
+        for i, level in enumerate(output["level"]):
+            if level == region_level:
+                box = tuple(
+                    output[name][i] for name in ("left", "top", "width", "height")
                 )
-                cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 0, 0), 2)
-                cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 255, 0), 1)
-                text_regions.append([x, y, w, h])
+                x, y, w, h = box
+                if w <= 0 or h <= 0 or box in region_lengths:
+                    current_region = None
+                    continue
+                # the line becomes the current parent with some initial character count
+                # while subsequent word rows populate that count
+                # (word rows supply text directly while line rows start empty).
+                current_region = box
+                region_lengths[box] = len(output["text"][i].strip())
+            elif level == 5 and current_region is not None:
+                region_lengths[current_region] += len(output["text"][i].strip())
 
+        # allow text-like shape with two line heights per character which will
+        # retain wide phrases but reject graphics interpreted as few large symbols
+        text_regions = [
+            list(box)
+            for box, length in region_lengths.items()
+            if length > 0 and (region_level == 5 or box[2] <= 2 * box[3] * length)
+        ]
+
+        for x, y, w, h in text_regions:
+            cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 0, 0), 2)
+            cv2.rectangle(text_canvas, (x, y), (x + w, y + h), (0, 255, 0), 1)
         return text_regions
+
+    @staticmethod
+    def _remove_segment_lines(
+        image: "Matlike", horizontal_size: int, vertical_size: int
+    ) -> "Matlike":
+        """
+        Remove long horizontal and vertical segment lines from a binary image.
+
+        The extracted masks are widened by one pixel perpendicular to each
+        line which removes short fringe fragments left beside thresholded
+        GUI borders without needlessly extending a mask over nearby text.
+
+        Subtraction leaves the input unchanged (no destination array).
+
+        Each size is the minimum line length to remove in that direction.
+        A size of zero disables removal independently for that direction
+        while a size of one removes every foreground pixel.
+        """
+        import cv2
+        import numpy
+
+        # return the original image when both directions are disabled
+        if horizontal_size <= 0 and vertical_size <= 0:
+            return image
+
+        def extract_lines(size: int, horizontal: bool) -> "Matlike":
+            # a disabled direction contributes an empty mask to the union
+            if size <= 0:
+                return numpy.zeros_like(image)
+
+            # orient the strip along the requested direction
+            width, height = (size, 1) if horizontal else (1, size)
+            # process each row or column with a strip one pixel thick
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (width, height))
+            # locate full-length lines, rounding anchors toward the left/top
+            lines = cv2.erode(
+                image,
+                kernel,
+                anchor=((width - 1) // 2, (height - 1) // 2),
+                # treat pixels outside the image as background to preserve short edge strokes
+                borderType=cv2.BORDER_CONSTANT,
+                borderValue=0,
+            )
+            # restore line lengths with complementary anchors to prevent even-size shifts
+            lines = cv2.dilate(lines, kernel, anchor=(width // 2, height // 2))
+            # use a kernel three pixels across the line and one along it
+            smoothing = cv2.getStructuringElement(
+                cv2.MORPH_RECT, (1, 3) if horizontal else (3, 1)
+            )
+            # cover one pixel on either side of the border to remove thresholding fringes
+            return cv2.dilate(lines, smoothing)
+
+        horizontal_lines = extract_lines(horizontal_size, horizontal=True)
+        vertical_lines = extract_lines(vertical_size, horizontal=False)
+
+        # mark each border pixel once, even where horizontal and vertical masks overlap
+        line_mask = cv2.bitwise_or(horizontal_lines, vertical_lines)
+        # clamp negative differences to zero to prevent uint8 underflow
+        return cv2.subtract(image, line_mask)
 
     def _detect_text_east(self, haystack: "Image") -> list[tuple[int, int, int, int]]:
         # :.. note:: source implementation by Adrian Rosebrock from his post:

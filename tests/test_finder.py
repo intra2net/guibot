@@ -19,9 +19,11 @@ import re
 import unittest
 import shutil
 import ssl
+import tempfile
+from unittest.mock import Mock, patch
 
 import common_test
-from guibot.config import GlobalConfig
+from guibot.config import GlobalConfig, TemporaryConfig
 from guibot.fileresolver import FileResolver
 from guibot.imagelogger import ImageLogger
 from guibot.target import Image, Text, Pattern, Chain
@@ -649,6 +651,8 @@ class FinderTest(unittest.TestCase):
                     finder.params["find"]["similarity"].value = 1.0
 
                 finder.configure_backend(tdetect, "tdetect")
+                if tdetect == "pytesseract":
+                    finder.params["tdetect"]["component_level"].value = 1
                 finder.configure_backend(ocr, "ocr")
                 # also with customized synchronization to the configuration
                 finder.synchronize_backend(tdetect, "tdetect")
@@ -666,10 +670,12 @@ class FinderTest(unittest.TestCase):
                     self.assertAlmostEqual(matches[0].height, 15, delta=3)
 
                 # verify dumped files count and names
-                dumps = self._verify_and_get_dumps(7, i)
+                # TODO: the PSM 11 default introduces an additional false positive
+                extra_region = 1 if tdetect == "pytesseract" else 0
+                dumps = self._verify_and_get_dumps(7 + extra_region, i)
                 self._verify_dumped_images('Text', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEqual(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4 + extra_region)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -716,6 +722,8 @@ class FinderTest(unittest.TestCase):
                         continue
 
                 finder.configure_backend(tdetect, "tdetect")
+                if tdetect == "pytesseract":
+                    finder.params["tdetect"]["component_level"].value = 1
                 finder.configure_backend(ocr, "ocr")
                 # also with customized synchronization to the configuration
                 finder.synchronize_backend(tdetect, "tdetect")
@@ -726,10 +734,12 @@ class FinderTest(unittest.TestCase):
                 self.assertEqual(len(matches), 0)
 
                 # verify dumped files count and names
-                dumps = self._verify_and_get_dumps(7, i)
+                # TODO: the PSM 11 default introduces an additional false positive
+                extra_region = 1 if tdetect == "pytesseract" else 0
+                dumps = self._verify_and_get_dumps(7 + extra_region, i)
                 self._verify_dumped_images('Nothing', 'all_shapes', dumps, "text")
                 hotmaps = sorted(self._get_matches_in('.*hotmap.*', dumps))
-                self.assertEqual(len(hotmaps), 4)
+                self.assertEqual(len(hotmaps), 4 + extra_region)
                 for j, hotmap in enumerate(hotmaps):
                     if j == 0:
                         self.assertIn('3hotmap', hotmap)
@@ -1037,6 +1047,168 @@ class FinderTest(unittest.TestCase):
 
         # verify dumped files count and names (+1 as we match with template)
         dumps = self._verify_and_get_dumps(9, multistep=True)
+
+
+class TextFinderTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.file_resolver = FileResolver()
+        cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, "images"))
+
+    def setUp(self) -> None:
+        self.logdir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.logdir.cleanup)
+        self.logpath = self.logdir.name
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_removal(self) -> None:
+        """Check line removal preserves short glyphs and the caller's input."""
+        import numpy
+
+        binary_image = numpy.array(Image("text_segment_lines").pil_image.convert("L"))
+        expected_image = numpy.array(
+            Image("text_segment_lines_output").pil_image.convert("L")
+        )
+        original_image = binary_image.copy()
+
+        processed_image = TextFinder._remove_segment_lines(binary_image, 10, 10)
+
+        numpy.testing.assert_array_equal(processed_image, expected_image)
+        numpy.testing.assert_array_equal(binary_image, original_image)
+        numpy.testing.assert_array_equal(
+            TextFinder._remove_segment_lines(original_image.copy(), 0, 0),
+            original_image,
+        )
+        empty_image = numpy.array(
+            Image("text_segment_lines_empty").pil_image.convert("L")
+        )
+        for horizontal, vertical in [(1, 0), (0, 1), (1, 1)]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                numpy.testing.assert_array_equal(
+                    TextFinder._remove_segment_lines(
+                        original_image.copy(), horizontal, vertical
+                    ),
+                    empty_image,
+                )
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_directions(self) -> None:
+        """Check directional cutoffs remove only long lines and support disabling."""
+        import numpy
+
+        binary_image = numpy.array(
+            Image("text_segment_directions").pil_image.convert("L")
+        )
+
+        for horizontal, vertical, expected in [
+            (32, 16, "text_segment_directions_output"),
+            (31, 15, "text_segment_directions_output"),
+            (0, 16, "text_segment_directions_vertical_output"),
+            (32, 0, "text_segment_directions_horizontal_output"),
+            (24, 32, "text_segment_directions_reversed_output"),
+        ]:
+            with self.subTest(horizontal=horizontal, vertical=vertical):
+                expected_image = numpy.array(Image(expected).pil_image.convert("L"))
+                processed_image = TextFinder._remove_segment_lines(
+                    binary_image, horizontal, vertical
+                )
+                numpy.testing.assert_array_equal(processed_image, expected_image)
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_gui_line_removal(self) -> None:
+        """Check GUI line-removal defaults preserve labels and clear borders."""
+        import numpy
+
+        haystack = Image("text_gui_lines")
+        expected_image = numpy.array(
+            Image("text_gui_lines_output").pil_image.convert("L")
+        )
+        finder = TextFinder(synchronize=False)
+        binary_image = finder._binarize_image(numpy.array(haystack.pil_image))
+        finder.configure_backend("pytesseract", "tdetect")
+        processed_image = finder._remove_segment_lines(
+            binary_image,
+            finder.params["tdetect"]["segment_line_max_horizontal"].value,
+            finder.params["tdetect"]["segment_line_max_vertical"].value,
+        )
+        numpy.testing.assert_array_equal(processed_image, expected_image)
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_line_regions(self) -> None:
+        """Check correct TSV coordinates lines filtering."""
+        finder = TextFinder(synchronize=False)
+        finder.configure_backend("pytesseract", "tdetect")
+        finder.params["tdetect"]["component_level"].value = 1
+        finder.tbox = Mock()
+        finder.tbox_config = ""
+        finder.tbox.image_to_data.return_value = {
+            "level": [1, 2, 3, 4, 5, 5, 4, 4, 5, 4, 5, 5, 4, 5],
+            "text": [
+                "",
+                "",
+                "",
+                "",
+                "first",
+                "second",
+                "",
+                "",
+                "invalid",
+                "",
+                "L",
+                "L",
+                "",
+                "5",
+            ],
+            "left": [0, 0, 0, 10, 10, 20, 10, 0, 0, 15, 15, 307, 23, 23],
+            "top": [0, 0, 0, 12, 12, 12, 12, 0, 0, 12, 12, 14, 245, 245],
+            "width": [400, 400, 400, 20, 8, 10, 20, 0, 10, 359, 33, 33, 354, 354],
+            "height": [300, 300, 300, 8, 8, 8, 8, 0, 10, 77, 77, 77, 42, 42],
+        }
+        haystack = Image("all_shapes")
+
+        # level 5 lines only extend level 4, 3 and below are ignored
+        # while duplicate, zero-sized and oversized symbol regions are discarded
+        self.assertEqual(finder._detect_text_boxes(haystack), [[10, 12, 20, 8]])
+        # once call is enough, no recursion needed
+        finder.tbox.image_to_data.assert_called_once()
+
+    @unittest.skipIf(
+        os.environ.get("DISABLE_OPENCV", "0") == "1"
+        or os.environ.get("DISABLE_OCR", "0") == "1",
+        "Disabled OpenCV or OCR",
+    )
+    def test_text_tesseract_matching(self) -> None:
+        """Check recognition individual words or complete phrases as different component levels."""
+        with TemporaryConfig() as config:
+            config.image_logging_destination = self.logpath
+            for component_level, image, text, x, y, width, height in [
+                (0, "sentence_sans", "word", 66, 12, 31, 11),
+                (0, "sentence_sans_inverted", "word", 66, 12, 31, 11),
+                (0, "all_shapes", "Text", 22, 83, 37, 13),
+                (1, "sentence_sans", "Find the word here", 12, 12, 118, 11),
+                (1, "sentence_bold", "Find the word", 12, 13, 100, 10),
+                (1, "sentence_italic", "Find the word here", 11, 12, 120, 11),
+                (1, "sentence_larger", "Find the word", 12, 13, 106, 12),
+                (1, "sentence_font", "Find the word here", 7, 13, 123, 11),
+            ]:
+                with self.subTest(component_level=component_level, image=image):
+                    finder = TextFinder(synchronize=False)
+                    finder.configure_backend("pytesseract", "tdetect")
+                    finder.configure_backend("pytesseract", "ocr")
+                    finder.params["tdetect"]["component_level"].value = component_level
+                    finder.params["find"]["similarity"].value = 1.0
+                    finder.synchronize()
+                    with patch.object(
+                        finder.tbox, "image_to_data", wraps=finder.tbox.image_to_data
+                    ) as detect:
+                        matches = finder.find(Text(text), Image(image))
+                    detect.assert_called_once()
+                    self.assertEqual(len(matches), 1)
+                    self.assertAlmostEqual(matches[0].x, x, delta=1)
+                    self.assertAlmostEqual(matches[0].y, y, delta=1)
+                    self.assertAlmostEqual(matches[0].width, width, delta=2)
+                    self.assertAlmostEqual(matches[0].height, height, delta=2)
+
 
 class CVParameterTest(unittest.TestCase):
     """Tests for the computer vision backends parameters."""
