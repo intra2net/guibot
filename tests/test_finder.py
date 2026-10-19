@@ -1038,6 +1038,55 @@ class FinderTest(unittest.TestCase):
         # verify dumped files count and names (+1 as we match with template)
         dumps = self._verify_and_get_dumps(9, multistep=True)
 
+
+class TextFinderTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.file_resolver = FileResolver()
+        cls.file_resolver.add_path(os.path.join(common_test.unittest_dir, "images"))
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_segment_line_removal(self) -> None:
+        """Check the original line-removal behavior and its known limitations."""
+        import numpy
+
+        binary_image = numpy.array(Image("text_segment_lines").pil_image.convert("L"))
+        expected_image = numpy.array(
+            Image("text_segment_lines_output").pil_image.convert("L")
+        )
+        original_image = binary_image.copy()
+
+        processed_image = TextFinder._remove_segment_lines(binary_image, 10)
+
+        # TODO: remove shifted border residue and fringes, and prevent uint8 underflow
+        # (the saved output currently records these defects alongside the surviving glyph)
+        numpy.testing.assert_array_equal(processed_image, expected_image)
+        # TODO: preserve the caller's input instead of subtracting masks in place
+        self.assertFalse(numpy.array_equal(binary_image, original_image))
+        numpy.testing.assert_array_equal(
+            TextFinder._remove_segment_lines(original_image.copy(), 1), original_image
+        )
+
+    @unittest.skipIf(os.environ.get("DISABLE_OPENCV", "0") == "1", "OpenCV disabled")
+    def test_text_gui_line_removal(self) -> None:
+        """Check GUI line-removal defaults and their current limitations."""
+        import numpy
+
+        haystack = Image("text_gui_lines")
+        expected_image = numpy.array(
+            Image("text_gui_lines_output").pil_image.convert("L")
+        )
+        finder = TextFinder(synchronize=False)
+        binary_image = finder._binarize_image(numpy.array(haystack.pil_image))
+        finder.configure_backend("pytesseract", "tdetect")
+        processed_image = finder._remove_segment_lines(
+            binary_image,
+            finder.params["tdetect"]["segment_line_max"].value,
+        )
+        # TODO: choose a better default cutoff
+        numpy.testing.assert_array_equal(processed_image, expected_image)
+
+
 class CVParameterTest(unittest.TestCase):
     """Tests for the computer vision backends parameters."""
 

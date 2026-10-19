@@ -2970,21 +2970,9 @@ class TextFinder(ContourFinder):
         detection_img = numpy.array(haystack.pil_image)
         if self.params["tdetect"]["binarize_detection"].value:
             detection_img = self._binarize_image(detection_img)
-
             # remove segment line residue from thresholding text containing boxes (GUI elements)
             max_segment = self.params["tdetect"]["segment_line_max"].value
-            for i in range(1, max_segment):
-                hline = cv2.getStructuringElement(cv2.MORPH_RECT, (max_segment, i))
-                hlopened = cv2.morphologyEx(
-                    detection_img, cv2.MORPH_OPEN, hline, iterations=1
-                )
-                vline = cv2.getStructuringElement(cv2.MORPH_RECT, (i, max_segment))
-                vlopened = cv2.morphologyEx(
-                    detection_img, cv2.MORPH_OPEN, vline, iterations=1
-                )
-                detection_img -= hlopened
-                detection_img -= vlopened
-
+            detection_img = self._remove_segment_lines(detection_img, max_segment)
         else:
             detection_img = cv2.cvtColor(detection_img, cv2.COLOR_RGB2GRAY)
         detection_width = int(
@@ -3052,6 +3040,19 @@ class TextFinder(ContourFinder):
                 text_regions.append([x, y, w, h])
 
         return text_regions
+
+    @staticmethod
+    def _remove_segment_lines(image: "Matlike", max_segment: int) -> "Matlike":
+        import cv2
+
+        for i in range(1, max_segment):
+            hline = cv2.getStructuringElement(cv2.MORPH_RECT, (max_segment, i))
+            hlopened = cv2.morphologyEx(image, cv2.MORPH_OPEN, hline, iterations=1)
+            vline = cv2.getStructuringElement(cv2.MORPH_RECT, (i, max_segment))
+            vlopened = cv2.morphologyEx(image, cv2.MORPH_OPEN, vline, iterations=1)
+            image -= hlopened
+            image -= vlopened
+        return image
 
     def _detect_text_east(self, haystack: "Image") -> list[tuple[int, int, int, int]]:
         # :.. note:: source implementation by Adrian Rosebrock from his post:
