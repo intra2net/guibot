@@ -30,7 +30,6 @@ INTERFACE
 """
 
 import time
-import os
 import logging
 
 # interconnected classes - carefully avoid circular reference
@@ -496,18 +495,9 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    if GlobalConfig.save_needle_on_error is True:
-                        if not os.path.exists(ImageLogger.logging_destination):
-                            os.mkdir(ImageLogger.logging_destination)
-                        dump_path = GlobalConfig.image_logging_destination
-                        hdump_path = os.path.join(
-                            dump_path, "last_finderror_haystack.png"
-                        )
-                        ndump_path = os.path.join(
-                            dump_path, "last_finderror_needle.png"
-                        )
-                        screen_capture.save(hdump_path)
-                        target.save(ndump_path)
+                    imglog = ImageLogger()
+                    imglog.needle, imglog.haystack = target, screen_capture
+                    imglog.dump_find_error()
                     raise FindError(target)
 
             else:
