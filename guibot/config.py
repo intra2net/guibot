@@ -56,7 +56,6 @@ class GlobalConfig(type):
     _smooth_mouse_drag = True
     _screen_autoconnect = True
     _preprocess_special_chars = True
-    _save_needle_on_error = True
     _image_logging_level = logging.ERROR
     _image_logging_destination = "imglog"
     _image_logging_step_width = 3
@@ -193,26 +192,6 @@ class GlobalConfig(type):
     #: whether to preprocess capital and special characters and handle them internally
     preprocess_special_chars = property(
         fget=preprocess_special_chars, fset=preprocess_special_chars
-    )
-
-    def save_needle_on_error(cls, value: bool = None) -> bool | None:
-        """
-        Getter/setter for property attribute.
-
-        :param value: whether to perform an extra needle dump on matching error
-        :returns: current value if no argument was passed otherwise None
-        """
-        if value is None:
-            return cls._save_needle_on_error
-        elif value is True or value is False:
-            cls._save_needle_on_error = value
-            return None
-        else:
-            raise ValueError
-
-    #: whether to perform an extra needle dump on matching error
-    save_needle_on_error = property(
-        fget=save_needle_on_error, fset=save_needle_on_error
     )
 
     def image_logging_level(cls, value: int = None) -> int | None:
