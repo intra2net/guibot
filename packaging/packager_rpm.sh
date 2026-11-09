@@ -26,7 +26,7 @@ pip3 install pytesseract==0.3.13 tesserocr==2.7.1
 echo "------------- deep learning -------------"
 dnf -y install --skip-unavailable python3-torch python3-torch-devel
 # TODO: python3-torchvision version available is broken (no module found)
-pip3 install --no-deps torchvision==0.24.1
+pip3 install --ignore-installed torch==2.9.1 torchvision==0.24.1 --index-url https://download.pytorch.org/whl/cpu
 
 echo "------------- display controlling -------------"
 if [[ -n "$DISABLE_AUTOPY" && "$DISABLE_AUTOPY" == "1" && $distro_version -gt 32 ]]; then
