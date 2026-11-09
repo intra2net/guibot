@@ -75,7 +75,7 @@ cd /lib/python3*/site-packages/guibot/tests
 if (( distro_version <= 30 )); then
     COVERAGE="python3-coverage"
 else
-    COVERAGE="coverage"
+    COVERAGE="python3 -m coverage"
 fi
 LIBPATH=".." COVERAGE="$COVERAGE" sh coverage_analysis.sh
 
