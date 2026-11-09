@@ -34,6 +34,7 @@ if [[ -n "$DISABLE_AUTOPY" && "$DISABLE_AUTOPY" == "1" && $distro_version -gt 32
 else
     pip3 install autopy
 fi
+pip3 install --ignore-installed typing_extensions
 pip3 install vncdotool==0.12.0
 dnf -y install xdotool xwd ImageMagick
 # NOTE: No need for installing tkinter here because it's a dependency from torch (it is installed with it)
