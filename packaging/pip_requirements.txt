@@ -1,5 +1,5 @@
 # minimal
-Pillow==12.3.0
+Pillow==13.0.0
 
 # backends
 autopy==4.0.2; python_version >= '3.8' and platform_python_implementation != "PyPy"
