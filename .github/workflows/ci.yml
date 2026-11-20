@@ -19,7 +19,7 @@ jobs:
         install_variant: ["pip"]
         include:
           - python-version: 3.12
-            install_variant: "rpm.fedora.40"
+            install_variant: "rpm.fedora.44"
           - python-version: 3.12
             install_variant: "deb.ubuntu.noble"
       fail-fast: false
