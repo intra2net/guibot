@@ -173,8 +173,7 @@ class ImageLogger(object):
     def dump_find_error(self) -> None:
         """Dump the needle and haystack of a failed find."""
         self.dump_matched_images(max_level=logging.ERROR)
-        if ImageLogger.logging_level <= logging.ERROR:
-            ImageLogger.step += 1
+        ImageLogger.step += 1
 
     def dump_hotmap(self, name: str, hotmap: PIL.Image.Image | numpy.ndarray) -> None:
         """
