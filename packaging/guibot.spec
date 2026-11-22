@@ -16,7 +16,7 @@ Source0:        https://github.com/intra2net/guibot/archive/%{name}-%{version}.t
 
 Requires:       python3-pillow
 %if %{with opencv}
-Requires:       opencv >= 3.1
+Requires:       opencv >= 4.11
 Requires:       python3-opencv
 %endif
 
