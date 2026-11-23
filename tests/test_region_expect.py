@@ -175,9 +175,8 @@ class RegionTest(unittest.TestCase):
         except FindError as e:
             pass
 
-        target = Image('shape_blue_circle.png')
         with patch("guibot.region.ImageLogger") as imglog:
-            self.assertRaises(FindError, self.region.find_all, target, 0)
+            self.assertRaises(FindError, self.region.find_all, Image('shape_blue_circle.png'), 0)
             imglog.return_value.dump_find_error.assert_called_once_with()
 
     @unittest.skipIf(os.environ.get('DISABLE_OPENCV', "0") == "1" or
