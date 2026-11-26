@@ -495,9 +495,10 @@ class Region(object):
                 if allow_zero:
                     return last_matches
                 else:
-                    imglog = ImageLogger()
-                    imglog.needle, imglog.haystack = target, screen_capture
-                    imglog.dump_find_error()
+                    if GlobalConfig.save_needle_on_error is True:
+                        imglog = ImageLogger()
+                        imglog.needle, imglog.haystack = target, screen_capture
+                        imglog.dump_find_error()
                     raise FindError(target)
 
             else:
