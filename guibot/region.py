@@ -498,7 +498,8 @@ class Region(object):
                     if GlobalConfig.save_needle_on_error is True:
                         imglog = ImageLogger()
                         imglog.needle, imglog.haystack = target, screen_capture
-                        imglog.dump_find_error()
+                        imglog.dump_matched_images()
+                        ImageLogger.step += 1
                     raise FindError(target)
 
             else:

@@ -170,11 +170,6 @@ class ImageLogger(object):
         haystack_path = os.path.join(ImageLogger.logging_destination, haystack_name)
         self.haystack.save(haystack_path)
 
-    def dump_find_error(self) -> None:
-        """Dump the needle and haystack of a failed find."""
-        self.dump_matched_images()
-        ImageLogger.step += 1
-
     def dump_hotmap(self, name: str, hotmap: PIL.Image.Image | numpy.ndarray) -> None:
         """
         Write a file the given hotmap.
