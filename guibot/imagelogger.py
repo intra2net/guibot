@@ -25,6 +25,7 @@ INTERFACE
 
 """
 
+import logging
 import os
 import shutil
 import PIL.Image
@@ -143,14 +144,14 @@ class ImageLogger(object):
             x, y = loc
             cv2.circle(canvas, (int(x), int(y)), radius, (r, g, b))
 
-    def dump_matched_images(self) -> None:
+    def dump_matched_images(self, max_level: int = logging.WARNING) -> None:
         """
         Write file with the current needle and haystack.
 
         The current needle and haystack (matched images) are stored
         as `needle` and `haystack` attributes.
         """
-        if ImageLogger.logging_level > 30:
+        if ImageLogger.logging_level > max_level:
             return
         if not os.path.exists(ImageLogger.logging_destination):
             os.mkdir(ImageLogger.logging_destination)
